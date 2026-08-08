@@ -1,14 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiStar, FiUser, FiBriefcase, FiCalendar, FiMessageSquare, FiLoader } from 'react-icons/fi';
+import {
+  FiArrowLeft,
+  FiStar,
+  FiUser,
+  FiBriefcase,
+  FiLoader,
+  FiCalendar,
+  FiChevronRight
+} from 'react-icons/fi';
+import { HiSparkles } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
 import bookingService from '../../../../services/bookingService';
+import NotificationBell from '../../components/common/NotificationBell';
 
 const MyRating = () => {
   const navigate = useNavigate();
   const [ratings, setRatings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+
+  const quickCategories = [
+    { id: 'electrician', title: 'Electrician & Plumbing', image: '/cat_electrician_plumber.png' },
+    { id: 'cleaning', title: 'Deep Cleaning', image: '/cat_cleaning.png' },
+    { id: 'ac-repair', title: 'AC Service & Repair', image: '/ac_foam_jet_service.png' },
+    { id: 'scrap', title: 'Sell Scrap & Recyclables', image: '/drill_wall_decor.png' },
+  ];
 
   const fetchRatings = async (page = 1) => {
     try {
@@ -18,11 +35,11 @@ const MyRating = () => {
         setRatings(page === 1 ? response.data : [...ratings, ...response.data]);
         setPagination(response.pagination);
       } else {
-        toast.error(response.message || 'Failed to fetch ratings');
+        setRatings([]);
       }
     } catch (error) {
-      console.error('Error fetching ratings:', error);
-      toast.error('Failed to load ratings');
+      console.warn('Error fetching ratings:', error);
+      setRatings([]);
     } finally {
       setIsLoading(false);
     }
@@ -33,7 +50,7 @@ const MyRating = () => {
   }, []);
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return 'Recently';
     return new Date(dateString).toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
@@ -42,121 +59,180 @@ const MyRating = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-30">
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <FiArrowLeft className="w-5 h-5 text-black" />
-            </button>
-            <h1 className="text-xl font-black text-black">My Reviews</h1>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-28">
+      {/* Background Glow */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20" />
+      </div>
 
-      <main className="px-4 py-6 space-y-6">
-        {isLoading && pagination.page === 1 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <FiLoader className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-            <p className="text-gray-500 font-medium">Fetching your reviews...</p>
-          </div>
-        ) : ratings.length > 0 ? (
-          <div className="space-y-4">
-            {ratings.map((rating, idx) => (
-              <div
-                key={rating._id || idx}
-                className="bg-white rounded-3xl p-5 shadow-sm border border-gray-50 space-y-4 hover:shadow-md transition-shadow"
+      <div className="relative z-10">
+        {/* Sticky Header */}
+        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 shadow-2xs">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
+                aria-label="Go back"
               >
-                <div className="flex justify-between items-start">
-                  <div className="flex gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center overflow-hidden border border-blue-100/50">
-                      {rating.vendorId?.profilePhoto ? (
-                        <img src={rating.vendorId.profilePhoto} alt={rating.vendorId.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <FiUser className="w-6 h-6 text-blue-400" />
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-black text-gray-900">{rating.vendorId?.businessName || rating.vendorId?.name || 'Service Provider'}</h4>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <FiStar
-                              key={s}
-                              className={`w-3 h-3 ${s <= rating.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`}
-                            />
-                          ))}
+                <FiArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
+                  My Service Reviews
+                </h1>
+                <span className="text-[10px] text-slate-500 font-semibold">Technician Ratings & Feedback</span>
+              </div>
+            </div>
+            <NotificationBell />
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-6">
+          {isLoading && pagination.page === 1 ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <FiLoader className="w-8 h-8 text-amber-500 animate-spin mb-3" />
+              <p className="text-xs font-bold text-slate-500">Loading your service reviews...</p>
+            </div>
+          ) : ratings.length > 0 ? (
+            <div className="space-y-4">
+              {ratings.map((rating, idx) => (
+                <div
+                  key={rating._id || idx}
+                  className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs space-y-3.5 hover:border-slate-300 transition-all"
+                >
+                  <div className="flex justify-between items-start gap-3 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-[#0B132B] text-amber-400 flex items-center justify-center overflow-hidden shrink-0 border border-slate-800">
+                        {rating.vendorId?.profilePhoto ? (
+                          <img src={rating.vendorId.profilePhoto} alt={rating.vendorId.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <FiUser className="w-5 h-5" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-slate-900">
+                          {rating.vendorId?.businessName || rating.vendorId?.name || 'Zippto Technician'}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <FiStar
+                                key={s}
+                                className={`w-3.5 h-3.5 ${s <= rating.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-400">
+                            • {formatDate(rating.reviewedAt)}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase">{formatDate(rating.reviewedAt)}</span>
                       </div>
                     </div>
+
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[10px] font-bold uppercase shrink-0">
+                      {rating.serviceName || rating.serviceId?.title || 'Service'}
+                    </span>
                   </div>
-                  <div className="bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                    <span className="text-[10px] font-black text-blue-600 uppercase">{rating.serviceName || rating.serviceId?.title}</span>
+
+                  {rating.review && (
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-xs font-medium text-slate-700 italic">
+                      "{rating.review}"
+                    </div>
+                  )}
+
+                  {rating.reviewImages && rating.reviewImages.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {rating.reviewImages.map((img, i) => (
+                        <img key={i} src={img} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-200" alt="Review media" />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="pt-2 flex items-center justify-between text-xs font-semibold">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">
+                      Booking #{rating.bookingNumber || 'N/A'}
+                    </span>
+                    <button
+                      onClick={() => navigate(`/user/booking/${rating.bookingId || rating._id}`)}
+                      className="text-xs font-extrabold text-[#0B132B] hover:text-amber-600 flex items-center gap-1"
+                    >
+                      <span>View Booking</span>
+                      <FiChevronRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
+              ))}
 
-                {rating.review && (
-                  <p className="text-gray-600 text-sm leading-relaxed font-medium pl-2 border-l-4 border-blue-500/20">
-                    "{rating.review}"
+              {pagination.total > ratings.length && (
+                <button
+                  onClick={() => fetchRatings(pagination.page + 1)}
+                  className="w-full py-3.5 bg-white rounded-2xl border border-slate-200 text-slate-800 font-extrabold text-xs uppercase tracking-wider hover:bg-slate-50 transition-colors shadow-2xs"
+                >
+                  {isLoading ? <FiLoader className="animate-spin mx-auto" /> : 'Load More Reviews'}
+                </button>
+              )}
+            </div>
+          ) : (
+            /* RICH EMPTY STATE CARD */
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-2xs space-y-4 relative overflow-hidden">
+                <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-[#0B132B] via-[#1C2541] to-[#0B132B] text-amber-400 flex items-center justify-center shadow-lg border border-slate-800">
+                  <FiStar className="w-10 h-10 fill-amber-400 text-amber-400" />
+                </div>
+
+                <div className="max-w-sm mx-auto space-y-1.5">
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    No Reviews Submitted Yet
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                    You haven't reviewed any completed home services yet. Rate your doorstep technician after your next booking!
                   </p>
-                )}
+                </div>
 
-                {rating.reviewImages && rating.reviewImages.length > 0 && (
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                    {rating.reviewImages.map((img, i) => (
-                      <img key={i} src={img} className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-gray-100" alt="Review" />
-                    ))}
-                  </div>
-                )}
-
-                <div className="pt-3 border-t border-gray-50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FiBriefcase className="w-3 h-3 text-gray-400" />
-                    <span className="text-[10px] font-bold text-gray-500">Booking #{rating.bookingNumber}</span>
-                  </div>
+                <div className="pt-2">
                   <button
-                    onClick={() => navigate(`/user/booking/${rating._id}`)}
-                    className="text-[11px] font-black text-blue-600 hover:underline"
+                    onClick={() => navigate('/user/my-bookings')}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#0B132B] hover:bg-slate-800 text-white font-extrabold text-xs uppercase tracking-wider shadow-md hover:shadow-lg active:scale-95 transition-all"
                   >
-                    View Details
+                    <HiSparkles className="w-4 h-4 text-amber-400" />
+                    <span>Go to My Bookings</span>
                   </button>
                 </div>
               </div>
-            ))}
 
-            {/* Load More */}
-            {pagination.total > ratings.length && (
-              <button
-                onClick={() => fetchRatings(pagination.page + 1)}
-                className="w-full py-4 bg-white rounded-2xl border-2 border-gray-100 text-gray-600 font-black flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
-              >
-                {isLoading ? <FiLoader className="animate-spin" /> : 'Load More Reviews'}
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-[32px] p-8 text-center shadow-md border border-dashed border-gray-200 py-16">
-            <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-6 mx-auto">
-              <FiStar className="w-12 h-12 text-gray-200" />
+              {/* POPULAR CATEGORY SHORTCUTS */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-slate-900 tracking-tight px-1">
+                  Book a Service to Rate
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {quickCategories.map((cat) => (
+                    <div
+                      key={cat.id}
+                      onClick={() => navigate('/user')}
+                      className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs hover:border-slate-400 hover:shadow-xs transition-all cursor-pointer group flex flex-col items-center text-center space-y-2"
+                    >
+                      <div className="w-full aspect-square rounded-xl bg-slate-50 flex items-center justify-center p-2 overflow-hidden">
+                        <img
+                          src={cat.image}
+                          alt={cat.title}
+                          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 leading-tight">
+                        {cat.title}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <h3 className="text-lg font-black text-gray-900 mb-2">No Reviews Yet</h3>
-            <p className="text-gray-500 text-sm font-medium">
-              You haven't reviewed any services yet. After completing a booking, you can rate your experience!
-            </p>
-            <button
-              onClick={() => navigate('/user/bookings')}
-              className="mt-6 px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all"
-            >
-              Go to My Bookings
-            </button>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
