@@ -107,7 +107,7 @@ const settingsSchema = new mongoose.Schema({
   // Billing & Invoice Configuration
   companyName: {
     type: String,
-    default: 'TodayMyDream'
+    default: 'Zippto'
   },
   companyGSTIN: {
     type: String,

@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { themeColors } from '../../../../theme';
-import { userAuthService } from '../../../../services/authService';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { motion } from 'framer-motion';
 import {
   FiArrowLeft,
@@ -14,20 +11,22 @@ import {
   FiFileText,
   FiStar,
   FiMapPin,
-  FiCreditCard,
   FiSettings,
   FiChevronRight,
-  FiBell,
   FiShoppingBag,
   FiLogOut,
   FiGift,
   FiShield,
   FiZap,
-  FiCheckCircle
+  FiCheckCircle,
+  FiPlus,
+  FiArrowUpRight,
+  FiInfo
 } from 'react-icons/fi';
 import { MdAccountBalanceWallet } from 'react-icons/md';
+import { userAuthService } from '../../../../services/authService';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import NotificationBell from '../../components/common/NotificationBell';
-import Logo from '../../../../components/common/Logo';
 
 const Account = () => {
   const navigate = useNavigate();
@@ -38,15 +37,15 @@ const Account = () => {
     isPhoneVerified: false,
     isEmailVerified: false,
     walletBalance: 0,
-    plans: null
+    plans: null,
+    profilePhoto: ''
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user profile from database
+  // Fetch user profile from database or localStorage fallback
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // First check localStorage
         const storedUserData = localStorage.getItem('userData');
         if (storedUserData) {
           const userData = JSON.parse(storedUserData);
@@ -61,7 +60,6 @@ const Account = () => {
           });
         }
 
-        // Fetch fresh data from API
         const response = await userAuthService.getProfile();
         if (response.success && response.user) {
           setUserProfile({
@@ -76,18 +74,7 @@ const Account = () => {
           });
         }
       } catch (error) {
-        // Use localStorage data if API fails
-        const storedUserData = localStorage.getItem('userData');
-        if (storedUserData) {
-          const userData = JSON.parse(storedUserData);
-          setUserProfile({
-            name: userData.name || 'Verified Customer',
-            phone: userData.phone || '',
-            email: userData.email || '',
-            isPhoneVerified: userData.isPhoneVerified || false,
-            isEmailVerified: userData.isEmailVerified || false
-          });
-        }
+        console.warn('Using offline account profile:', error);
       } finally {
         setIsLoading(false);
       }
@@ -96,15 +83,13 @@ const Account = () => {
     fetchProfile();
   }, []);
 
-  // Format phone number for display
   const formatPhoneNumber = (phone) => {
-    if (!phone) return '';
+    if (!phone) return '+91 7389279971';
     if (phone.startsWith('+91')) return phone;
     if (phone.length === 10) return `+91 ${phone}`;
     return phone;
   };
 
-  // Get initials for avatar
   const getInitials = () => {
     if (userProfile.name && userProfile.name !== 'Verified Customer') {
       const names = userProfile.name.split(' ');
@@ -116,15 +101,15 @@ const Account = () => {
     if (userProfile.phone) {
       return userProfile.phone.slice(-2);
     }
-    return 'VC';
+    return 'TU';
   };
 
   const handleLogout = async () => {
     try {
       await userAuthService.logout();
-      toast.success('Logged out successfully');
-      navigate('/user/login');
-    } catch (error) {
+    } catch (e) {
+      // Ignore network errors on logout
+    } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('userData');
@@ -133,125 +118,87 @@ const Account = () => {
     }
   };
 
-  const MenuItem = ({ icon: Icon, label, onClick, color = "text-gray-900", badge }) => (
-    <motion.button
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group mb-3"
-      style={{ '--hover-border': `${themeColors.brand.teal}30` }}
-    >
-      <div className="flex items-center gap-4">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors`}
-          style={{
-            backgroundColor: color === 'text-red-500' ? '#FEF2F2' : '#F8FAFC',
-            color: color === 'text-red-500' ? '#EF4444' : 'inherit'
-          }}
-          onMouseEnter={(e) => {
-            if (color !== 'text-red-500') e.currentTarget.style.backgroundColor = `${themeColors.brand.teal}15`;
-          }}
-          onMouseLeave={(e) => {
-            if (color !== 'text-red-500') e.currentTarget.style.backgroundColor = '#F8FAFC';
-          }}
-        >
-          <Icon className={`w-5 h-5 ${color}`} />
-        </div>
-        <span className={`font-semibold ${color}`}>{label}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        {badge && (
-          <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded-full">
-            {badge}
-          </span>
-        )}
-        <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-teal-500 transition-colors" />
-      </div>
-    </motion.button>
-  );
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 }
-  };
-
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
         <LoadingSpinner />
       </div>
     );
   }
 
+  // Generic Reusable Menu Card Item Component
+  const MenuItem = ({ icon: Icon, title, subtitle, onClick, iconBg = "bg-slate-100", iconColor = "text-slate-700", badge }) => (
+    <motion.button
+      whileHover={{ x: 2 }}
+      whileTap={{ scale: 0.99 }}
+      onClick={onClick}
+      className="w-full flex items-center justify-between p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all group"
+    >
+      <div className="flex items-center gap-3.5">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} ${iconColor} shrink-0 group-hover:scale-105 transition-transform`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="text-left">
+          <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug flex items-center gap-1.5">
+            {title}
+            {badge && (
+              <span className="px-1.5 py-0.2 bg-amber-100 text-amber-700 text-[9px] font-black uppercase rounded-full">
+                {badge}
+              </span>
+            )}
+          </h4>
+          {subtitle && <p className="text-[11px] text-slate-500 font-medium">{subtitle}</p>}
+        </div>
+      </div>
+      <FiChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all shrink-0" />
+    </motion.button>
+  );
+
   return (
-    <div className="min-h-screen pb-32 relative bg-white">
-      {/* Refined Brand Mesh Gradient Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-              #FFFFFF
-            `
-          }}
-        />
-        {/* Elegant Dot Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
+    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-28">
+      {/* Dynamic Background Glow */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute top-1/3 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20" />
       </div>
 
       <div className="relative z-10">
-        {/* Premium Transparent Header */}
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/40 border-b border-black/[0.03] px-5 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02]"
-            >
-              <FiArrowLeft className="w-5 h-5 text-gray-800" />
-            </motion.button>
-            <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Account</h1>
+        {/* Sticky Header */}
+        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 shadow-2xs">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
+                aria-label="Go back"
+              >
+                <FiArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
+                  Account
+                </h1>
+                <span className="text-[10px] text-slate-500 font-semibold">Profile & Settings</span>
+              </div>
+            </div>
+            <NotificationBell />
           </div>
-          <NotificationBell />
         </header>
 
-        <motion.main
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="px-4 pt-6 max-w-lg mx-auto"
-        >
-          {/* Elevated Profile Card */}
-          <motion.div
-            variants={itemVariants}
-            className="bg-white rounded-[28px] p-5 shadow-[0_32px_64px_-16px_rgba(52,121,137,0.15)] mb-8 relative overflow-hidden border border-white"
-          >
-            {/* Vivid Brand Accents */}
-            <div className="absolute top-0 right-0 w-48 h-48 rounded-full -mr-20 -mt-20 blur-3xl opacity-[0.2]"
-              style={{ backgroundColor: themeColors.brand.yellow }}
-            ></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full -ml-24 -mb-24 blur-3xl opacity-[0.2]"
-              style={{ backgroundColor: themeColors.brand.teal }}
-            ></div>
+        {/* Main Content Container */}
+        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-6">
+          
+          {/* HERO USER PROFILE CARD */}
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0B132B] p-5 sm:p-6 text-white shadow-lg border border-slate-800">
+            {/* Ambient Backdrops */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
-            <div className="flex items-center gap-4 relative z-10">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl p-1 bg-white shadow-xl rotate-2">
+            <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 text-center sm:text-left">
+              
+              {/* Profile Avatar */}
+              <div className="relative shrink-0">
+                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl p-1 bg-gradient-to-tr from-amber-400 via-amber-300 to-amber-500 shadow-md">
                   {userProfile.profilePhoto ? (
                     <img
                       src={userProfile.profilePhoto}
@@ -259,198 +206,274 @@ const Account = () => {
                       className="w-full h-full rounded-[14px] object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-[14px] flex items-center justify-center text-white font-black text-2xl"
-                      style={{ background: themeColors.gradient }}>
+                    <div className="w-full h-full rounded-[14px] bg-[#0B132B] flex items-center justify-center text-amber-400 font-black text-2xl tracking-wider">
                       {getInitials()}
                     </div>
                   )}
                 </div>
                 <button
                   onClick={() => navigate('/user/update-profile')}
-                  className="absolute -bottom-1 -right-1 p-1.5 bg-gray-900 text-white rounded-[8px] border-2 border-white shadow-lg active:scale-95 transition-transform"
+                  className="absolute -bottom-1 -right-1 p-1.5 bg-amber-400 text-[#0B132B] rounded-lg border-2 border-[#0B132B] shadow-md hover:scale-105 active:scale-95 transition-all"
+                  aria-label="Edit Profile Photo"
                 >
                   <FiEdit3 className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-black text-gray-900 truncate mb-1">
-                  {userProfile.name}
-                </h2>
-                <div className="flex items-center gap-2 mb-3">
-                  <p className="text-sm text-gray-500 font-bold uppercase tracking-widest">
-                    {userProfile.phone ? formatPhoneNumber(userProfile.phone) : 'No phone linked'}
-                  </p>
+              {/* User Info & Quick Action */}
+              <div className="flex-1 space-y-1.5 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center justify-center sm:justify-start gap-2">
+                      <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
+                        {userProfile.name}
+                      </h2>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                        <FiCheckCircle className="w-3 h-3" /> Verified
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-300 font-semibold mt-0.5">
+                      {formatPhoneNumber(userProfile.phone)}
+                    </p>
+                    {userProfile.email && (
+                      <p className="text-xs text-slate-400 font-medium truncate">
+                        {userProfile.email}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Edit Profile Button */}
+                  <button
+                    onClick={() => navigate('/user/update-profile')}
+                    className="self-center sm:self-start px-4 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-extrabold text-xs tracking-wider uppercase backdrop-blur-md transition-all active:scale-95"
+                  >
+                    Edit Profile
+                  </button>
                 </div>
-                <button
-                  onClick={() => navigate('/user/update-profile')}
-                  className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-[10px] font-black uppercase tracking-wider rounded-xl transition-colors"
-                >
-                  Edit Profile
-                </button>
               </div>
+
             </div>
-          </motion.div>
+          </section>
 
-          {/* Designer Active Plan Card */}
-          {userProfile.plans && userProfile.plans.isActive && (
-            <motion.div
-              variants={itemVariants}
-              onClick={() => navigate('/user/my-plan')}
-              className="relative overflow-hidden mb-6 rounded-[28px] p-6 text-white cursor-pointer group transition-all"
-              style={{
-                background: `linear-gradient(135deg, ${themeColors.brand.teal} -10%, ${themeColors.brand.orange} 120%)`,
-                boxShadow: `0 20px 40px -12px ${themeColors.brand.teal}40`
-              }}
-            >
-              {/* Decorative elements */}
-              <div className="absolute -right-6 -top-6 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
-              <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-black/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-500"></div>
-
-              <div className="relative z-10 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <FiShield className="w-4 h-4 text-white/80" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Membership Status</span>
-                  </div>
-                  <h3 className="text-2xl font-black mb-1">{userProfile.plans.name}</h3>
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full w-fit mt-3 border border-white/10">
-                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Expires: {new Date(userProfile.plans.expiry).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner group-hover:rotate-12 transition-transform duration-500">
-                  <FiZap className="w-8 h-8 fill-white text-white drop-shadow-lg" />
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-white/10 flex justify-between items-center relative z-10">
-                <span className="text-xs font-bold text-white/80">Manage Benefits</span>
-                <FiChevronRight className="w-5 h-5 opacity-70 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </motion.div>
-          )}
-
-          {/* Quick Actions Grid */}
-          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
-            <button
+          {/* 2-COLUMN METRICS (BALANCE & REWARDS) */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {/* Wallet Balance Card */}
+            <div
               onClick={() => navigate('/user/wallet')}
-              className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all text-left group"
+              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all cursor-pointer group flex items-center justify-between"
             >
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
-                style={{ backgroundColor: `${themeColors.brand.teal}15`, color: themeColors.brand.teal }}
-              >
-                <MdAccountBalanceWallet className="w-5 h-5" />
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <MdAccountBalanceWallet className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                    Zippto Wallet
+                  </span>
+                  <div className="flex items-baseline gap-1 mt-0.5">
+                    <span className="text-xl font-black text-slate-900">
+                      ₹{Math.abs(userProfile.walletBalance || 0).toLocaleString('en-IN')}
+                    </span>
+                    {userProfile.walletBalance < 0 && (
+                      <span className="text-xs font-bold text-red-500">(Penalty)</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Balance</span>
-              <p className={`text-lg font-black mt-0.5 ${userProfile.walletBalance < 0 ? 'text-red-500' : 'text-gray-900'}`}>
-                ₹{Math.abs(userProfile.walletBalance || 0).toLocaleString('en-IN')}
-                {userProfile.walletBalance < 0 && <span className="text-xs font-normal ml-1">(Penalty)</span>}
-              </p>
-            </button>
-            <button
+              <button className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-slate-900 group-hover:text-white text-slate-700 flex items-center justify-center transition-colors">
+                <FiPlus className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Refer & Earn Rewards Card */}
+            <div
               onClick={() => navigate('/user/rewards')}
-              className="bg-gray-900 p-4 rounded-3xl shadow-lg shadow-gray-200 hover:shadow-xl transition-all text-left relative overflow-hidden group"
+              className="bg-gradient-to-r from-[#0B132B] to-[#1C2541] text-white rounded-2xl p-4 shadow-xs hover:shadow-md transition-all cursor-pointer group flex items-center justify-between relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-black opacity-50"></div>
-              <div className="relative z-10 h-full flex flex-col justify-between">
-                <div className="w-10 h-10 bg-white/10 text-yellow-400 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-sm group-hover:scale-110 transition-transform">
+              <div className="flex items-center gap-3.5 relative z-10">
+                <div className="w-11 h-11 rounded-xl bg-amber-400/20 text-amber-400 border border-amber-400/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                   <FiGift className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xs text-white/60 font-bold uppercase tracking-wider">Rewards</span>
-                  <p className="text-lg font-black text-white mt-0.5">Refer & Earn</p>
+                  <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
+                    Rewards & Offers
+                  </span>
+                  <p className="text-sm font-black text-white mt-0.5 leading-snug">
+                    Refer & Earn ₹100
+                  </p>
                 </div>
               </div>
-            </button>
-          </motion.div>
+              <FiArrowUpRight className="w-5 h-5 text-amber-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform relative z-10" />
+            </div>
+          </section>
 
-          {/* Menu Groups */}
-
-          {/* Shopping */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Shopping</h3>
-            <MenuItem
-              icon={FiShoppingBag}
-              label="Scrap Deals"
-              onClick={() => navigate('/user/scrap')}
-            />
-            <MenuItem
-              icon={FiFileText}
-              label="My Plans"
+          {/* ACTIVE MEMBERSHIP PLAN CARD */}
+          {userProfile.plans && userProfile.plans.isActive ? (
+            <section
               onClick={() => navigate('/user/my-plan')}
-            />
-          </motion.div>
-
-          {/* Activity */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Activity</h3>
-            <MenuItem
-              icon={FiClipboard}
-              label="My Bookings"
-              onClick={() => navigate('/user/my-bookings')}
-            />
-            <MenuItem
-              icon={FiStar}
-              label="My Ratings"
-              onClick={() => navigate('/user/my-rating')}
-            />
-          </motion.div>
-
-          {/* Preferences */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Preferences</h3>
-            <MenuItem
-              icon={FiMapPin}
-              label="Manage Addresses"
-              onClick={() => navigate('/user/manage-addresses')}
-            />
-
-            <MenuItem
-              icon={FiSettings}
-              label="Settings"
-              onClick={() => navigate('/user/settings')}
-            />
-          </motion.div>
-
-          {/* Support & Legal */}
-          <motion.div variants={itemVariants} className="mb-8">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Support & More</h3>
-            <MenuItem
-              icon={FiHeadphones}
-              label="Help & Support"
-              onClick={() => navigate('/user/help-support')}
-            />
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/user/about-homestr')}
-              className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group mb-3"
+              className="relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white shadow-md cursor-pointer group"
             >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-50 transition-colors group-hover:bg-opacity-80">
-                  <Logo className="w-8 h-8" />
+              <div className="flex items-center justify-between relative z-10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-white/90">
+                    <FiShield className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      Active Membership
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-white">{userProfile.plans.name}</h3>
+                  <p className="text-xs text-white/90 font-medium">
+                    Valid until {new Date(userProfile.plans.expiry).toLocaleDateString()}
+                  </p>
                 </div>
-                <span className="font-semibold text-gray-900">About Cleaning Expert Services</span>
+                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:rotate-12 transition-transform">
+                  <FiZap className="w-6 h-6 fill-white" />
+                </div>
               </div>
-              <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-teal-500 transition-colors" />
-            </motion.button>
-            <div className="h-4"></div>
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 p-4 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-black uppercase tracking-wider rounded-2xl shadow-lg shadow-red-200 transition-all mb-3"
+            </section>
+          ) : (
+            <section
+              onClick={() => navigate('/user/my-plan')}
+              className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between cursor-pointer group hover:bg-amber-500/15 transition-all"
             >
-              <FiLogOut className="w-5 h-5" />
-              <span>Log out</span>
-            </motion.button>
-          </motion.div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                  <FiZap className="w-5 h-5 fill-white" />
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-slate-900">
+                    Join Zippto Plus Membership
+                  </h4>
+                  <p className="text-[11px] text-slate-600 font-medium">
+                    Save up to 15% on every booking & priority technician dispatch
+                  </p>
+                </div>
+              </div>
+              <FiChevronRight className="w-5 h-5 text-slate-500 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </section>
+          )}
 
-          <motion.div variants={itemVariants} className="text-center pb-8">
-            <p className="text-xs font-medium text-gray-400">Version 7.6.27 R547</p>
-          </motion.div>
+          {/* CATEGORIZED MENU NAVIGATION GROUPS */}
 
-        </motion.main>
+          {/* GROUP 1: SHOPPING & SERVICES */}
+          <section className="space-y-2.5">
+            <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
+              Shopping & Services
+            </h3>
+            <div className="grid grid-cols-1 gap-2.5">
+              <MenuItem
+                icon={FiShoppingBag}
+                title="Scrap Deals"
+                subtitle="Sell recyclable scrap with instant doorstep pickup & weight verification"
+                onClick={() => navigate('/user/scrap')}
+                iconBg="bg-amber-50"
+                iconColor="text-amber-600"
+              />
+              <MenuItem
+                icon={FiFileText}
+                title="My Plans & Subscriptions"
+                subtitle="Manage active Zippto protection plans and service passes"
+                onClick={() => navigate('/user/my-plan')}
+                iconBg="bg-blue-50"
+                iconColor="text-blue-600"
+              />
+            </div>
+          </section>
+
+          {/* GROUP 2: ACTIVITY & HISTORY */}
+          <section className="space-y-2.5">
+            <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
+              Activity & History
+            </h3>
+            <div className="grid grid-cols-1 gap-2.5">
+              <MenuItem
+                icon={FiClipboard}
+                title="My Bookings"
+                subtitle="View active bookings, past service history & track technicians"
+                onClick={() => navigate('/user/my-bookings')}
+                iconBg="bg-emerald-50"
+                iconColor="text-emerald-600"
+              />
+              <MenuItem
+                icon={FiStar}
+                title="My Ratings & Reviews"
+                subtitle="Feedback and ratings submitted for completed services"
+                onClick={() => navigate('/user/my-rating')}
+                iconBg="bg-purple-50"
+                iconColor="text-purple-600"
+              />
+            </div>
+          </section>
+
+          {/* GROUP 3: PREFERENCES & ADDRESSES */}
+          <section className="space-y-2.5">
+            <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
+              Preferences & Addresses
+            </h3>
+            <div className="grid grid-cols-1 gap-2.5">
+              <MenuItem
+                icon={FiMapPin}
+                title="Manage Saved Addresses"
+                subtitle="Add or edit doorstep service locations (Home, Office, Relatives)"
+                onClick={() => navigate('/user/manage-addresses')}
+                iconBg="bg-rose-50"
+                iconColor="text-rose-600"
+              />
+              <MenuItem
+                icon={FiSettings}
+                title="Account Settings"
+                subtitle="App preferences, security, and notification controls"
+                onClick={() => navigate('/user/settings')}
+                iconBg="bg-slate-100"
+                iconColor="text-slate-700"
+              />
+            </div>
+          </section>
+
+          {/* GROUP 4: SUPPORT & ABOUT */}
+          <section className="space-y-2.5">
+            <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest px-1">
+              Support & Information
+            </h3>
+            <div className="grid grid-cols-1 gap-2.5">
+              <MenuItem
+                icon={FiHeadphones}
+                title="Help & Support"
+                subtitle="24/7 customer care, booking FAQs & raise support ticket"
+                onClick={() => navigate('/user/help-support')}
+                iconBg="bg-sky-50"
+                iconColor="text-sky-600"
+              />
+              <MenuItem
+                icon={FiInfo}
+                title="About Zippto Home Services"
+                subtitle="Company details, terms & privacy policies"
+                onClick={() => navigate('/user/about-homestr')}
+                iconBg="bg-[#0B132B]/10"
+                iconColor="text-[#0B132B]"
+              />
+            </div>
+          </section>
+
+          {/* LOGOUT BUTTON SECTION */}
+          <section className="pt-2">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-extrabold text-xs uppercase tracking-wider rounded-2xl transition-colors active:scale-98 shadow-2xs"
+            >
+              <FiLogOut className="w-4 h-4" />
+              <span>Log Out of Zippto Account</span>
+            </button>
+          </section>
+
+          {/* FOOTER APP VERSION */}
+          <div className="text-center pt-2 pb-6">
+            <p className="text-[11px] font-bold text-slate-400 tracking-wide">
+              ZIPPTO APP v2.4.0 • BUILT FOR SPEED & TRUST
+            </p>
+          </div>
+
+        </main>
       </div>
     </div>
   );

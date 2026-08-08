@@ -58,8 +58,8 @@ messaging.onBackgroundMessage((payload) => {
   notificationTitle = notificationTitle || 'App Notification';
   notificationBody = notificationBody || 'You have a new update.';
 
-  let icon = data.icon || notification.icon || '/cleaning-expert-logo.png';
-  let badge = '/cleaning-expert-logo.png';
+  let icon = data.icon || notification.icon || '/zippto_logo.png';
+  let badge = '/zippto_logo.png';
   let tag = data.bookingId || `notification-${Date.now()}`;
   let requireInteraction = false;
   let vibrate = [200, 100, 200];

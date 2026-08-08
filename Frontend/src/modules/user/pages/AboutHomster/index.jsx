@@ -9,7 +9,6 @@ const AboutHomestr = () => {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    // Simple entrance animation
     const ctx = gsap.context(() => {
       gsap.from('.animate-item', {
         y: 20,
@@ -23,10 +22,9 @@ const AboutHomestr = () => {
     return () => ctx.revert();
   }, []);
 
-  // Gradient Definition for re-use in inline styles
-  const homestrGradient = 'linear-gradient(135deg, #347989 0%, #BB5F36 100%)';
-  const homestrTextGradient = {
-    background: homestrGradient,
+  const zipptoGradient = 'linear-gradient(135deg, #0B132B 0%, #FFC107 100%)';
+  const zipptoTextGradient = {
+    background: zipptoGradient,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
   };
@@ -35,7 +33,7 @@ const AboutHomestr = () => {
     {
       icon: FiUsers,
       title: 'Expert Providers',
-      description: 'Verified professionals for all your needs'
+      description: 'Verified professionals for all your home needs'
     },
     {
       icon: FiShield,
@@ -62,16 +60,6 @@ const AboutHomestr = () => {
 
   return (
     <div ref={containerRef} className="min-h-screen bg-gray-50 pb-10">
-      {/* SVG Gradient Definition */}
-      <svg width="0" height="0" className="absolute">
-        <linearGradient id="homestr-about-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#347989" />
-          <stop offset="50%" stopColor="#D68F35" />
-          <stop offset="100%" stopColor="#BB5F36" />
-        </linearGradient>
-      </svg>
-
-      {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-30 border-b border-gray-100">
         <div className="px-4 py-4 flex items-center gap-3">
           <button
@@ -80,41 +68,37 @@ const AboutHomestr = () => {
           >
             <FiArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <span className="text-xl font-bold" style={homestrTextGradient}>About Cleaning Expert Services</span>
+          <span className="text-xl font-bold text-[#0B132B]">About Zippto Home Services</span>
         </div>
       </header>
 
       <main className="px-5 py-6 space-y-8">
-        {/* Hero Section */}
         <div className="animate-item text-center">
           <div className="relative w-28 h-28 mx-auto mb-6">
-            {/* Spinning Border */}
             <div
               className="absolute inset-[-3px] rounded-full opacity-70"
               style={{
-                background: 'conic-gradient(from 0deg, #347989, #D68F35, #BB5F36, #347989)',
+                background: 'conic-gradient(from 0deg, #0B132B, #FFC107, #0B132B)',
                 animation: 'spin 4s linear infinite',
               }}
             />
-            {/* White Background */}
-            <div className="absolute inset-0 bg-white rounded-full shadow-lg flex items-center justify-center">
-              <Logo className="w-16 h-16 object-contain" />
+            <div className="absolute inset-0 bg-white rounded-full shadow-lg flex items-center justify-center p-2">
+              <img src="/zippto_logo.png" alt="Zippto" className="w-full h-full object-contain rounded-full" />
             </div>
           </div>
 
           <h1 className="text-3xl font-extrabold text-gray-900 mb-2">
-            Welcome to <span style={homestrTextGradient}>Cleaning Expert Services</span>
+            Welcome to <span className="text-[#0B132B]">Zippto Home Services</span>
           </h1>
           <p className="text-gray-500 max-w-xs mx-auto leading-relaxed">
-            Your trusted partner for premium home and personal care services.
+            Your trusted partner for premium home care, repair, and electrical services.
           </p>
         </div>
 
-        {/* Stats Row */}
         <div className="animate-item flex justify-between bg-white rounded-2xl p-6 shadow-sm border border-gray-100 divide-x divide-gray-100">
           {stats.map((stat, idx) => (
             <div key={idx} className="flex-1 text-center px-2">
-              <div className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#347989] to-[#BB5F36]">
+              <div className="text-xl font-bold text-[#0B132B]">
                 {stat.number}
               </div>
               <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mt-1">
@@ -124,31 +108,28 @@ const AboutHomestr = () => {
           ))}
         </div>
 
-        {/* Mission Statement */}
         <div className="animate-item">
-          <div className="bg-gradient-to-br from-[#347989]/5 to-[#BB5F36]/5 rounded-2xl p-6 border border-[#347989]/10 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-5">
+          <div className="bg-slate-900 text-white rounded-2xl p-6 relative overflow-hidden shadow-md">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
               <FiGlobe className="w-24 h-24" />
             </div>
-            <h3 className="text-lg font-bold text-gray-800 mb-3">Our Mission</h3>
-            <p className="text-sm text-gray-600 leading-relaxed relative z-10">
-              Cleaning Expert Services is dedicated to revolutionizing how you experience home services. We connect you with top-tier professionals to deliver safe, reliable, and high-quality services right at your doorstep. We believe in making life simpler, one service at a time.
+            <h3 className="text-lg font-bold text-amber-400 mb-3">Our Mission</h3>
+            <p className="text-sm text-slate-200 leading-relaxed relative z-10">
+              Zippto Home Services is dedicated to revolutionizing how you experience home services. We connect you with top-tier verified professionals to deliver safe, reliable, and high-quality services right at your doorstep.
             </p>
           </div>
         </div>
 
-        {/* Why Choose Us Grid */}
         <div className="animate-item">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 px-1">Why Choose Cleaning Expert Services?</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-4 px-1">Why Choose Zippto Home Services?</h3>
           <div className="grid grid-cols-2 gap-3">
             {features.map((feature, index) => (
               <div
                 key={index}
                 className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow group"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300"
-                  style={{ background: 'linear-gradient(135deg, rgba(52, 121, 137, 0.1), rgba(187, 95, 54, 0.1))' }}>
-                  <feature.icon className="w-5 h-5" style={{ stroke: 'url(#homestr-about-gradient)' }} />
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <feature.icon className="w-5 h-5 text-slate-800" />
                 </div>
                 <h4 className="text-sm font-bold text-gray-800 mb-1">{feature.title}</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">{feature.description}</p>
@@ -157,7 +138,6 @@ const AboutHomestr = () => {
           </div>
         </div>
 
-        {/* How It Works */}
         <div className="animate-item">
           <h3 className="text-lg font-bold text-gray-800 mb-4 px-1">How We Work</h3>
           <div className="bg-white rounded-2xl p-1 shadow-sm border border-gray-100">
@@ -167,8 +147,7 @@ const AboutHomestr = () => {
               { title: 'Relax', desc: 'Enjoy high-quality service', icon: FiSmile },
             ].map((step, i) => (
               <div key={i} className="flex items-center p-4 border-b last:border-0 border-gray-50 relative">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 mr-4 shadow-sm text-white font-bold text-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#347989] to-[#BB5F36]" />
+                <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 mr-4 shadow-sm text-white font-bold text-lg relative overflow-hidden bg-[#0B132B]">
                   <span className="relative z-10">{i + 1}</span>
                 </div>
                 <div>
@@ -180,10 +159,9 @@ const AboutHomestr = () => {
           </div>
         </div>
 
-        {/* Footer Info */}
         <div className="animate-item text-center pt-4 border-t border-gray-200">
           <p className="text-xs text-gray-400 mb-1">Designed & Developed by</p>
-          <span className="text-sm font-bold tracking-wide" style={homestrTextGradient}>Cleaning Expert Services Team</span>
+          <span className="text-sm font-bold tracking-wide text-[#0B132B]">Zippto Team</span>
           <p className="text-[10px] text-gray-300 mt-4">v7.6.27 • Made with ❤️ in India</p>
         </div>
       </main>

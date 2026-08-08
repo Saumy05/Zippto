@@ -54,6 +54,7 @@ const lazyLoad = (importFunc) => {
 };
 
 // Lazy load all user pages for code splitting with error handling
+const UserDashboard = lazyLoad(() => import('../pages/UserDashboard'));
 const Home = lazyLoad(() => import('../pages/Home'));
 const Rewards = lazyLoad(() => import('../pages/Rewards'));
 const Account = lazyLoad(() => import('../pages/Account'));
@@ -99,7 +100,7 @@ const UserRoutes = () => {
   // useAppNotifications('user');
 
   // Pages where BottomNav should be shown
-  const bottomNavPages = ['/user', '/user/', '/user/my-bookings', '/user/scrap', '/user/cart', '/user/account'];
+  const bottomNavPages = ['/user', '/user/', '/user/dashboard', '/user/my-bookings', '/user/scrap', '/user/cart', '/user/account'];
   const shouldShowBottomNav = bottomNavPages.includes(location.pathname);
 
   // Check if we hide the live booking card (e.g. if we are on the specific booking details or track page)
@@ -122,7 +123,9 @@ const UserRoutes = () => {
               <Route path="/signup" element={<PublicRoute userType="user"><Signup /></PublicRoute>} />
 
               {/* Protected routes (auth required) */}
-              <Route path="/" element={<ProtectedRoute userType="user"><Home /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute userType="user"><UserDashboard /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute userType="user"><UserDashboard /></ProtectedRoute>} />
+              <Route path="/home-legacy" element={<ProtectedRoute userType="user"><Home /></ProtectedRoute>} />
               <Route path="/native" element={<ProtectedRoute userType="user"><Native /></ProtectedRoute>} />
 
               <Route path="/rewards" element={<ProtectedRoute userType="user"><Rewards /></ProtectedRoute>} />
@@ -155,7 +158,7 @@ const UserRoutes = () => {
       {/* These components are OUTSIDE Suspense so they persist during page loads */}
       {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
       {shouldShowBottomNav && <BottomNav />}
-      {(location.pathname === '/user' || location.pathname === '/user/') && <Footer />}
+      {(location.pathname === '/user' || location.pathname === '/user/' || location.pathname.includes('dashboard')) && <Footer />}
     </ErrorBoundary>
   );
 };

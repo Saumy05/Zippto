@@ -2,16 +2,15 @@ import React, { forwardRef } from 'react';
 
 /**
  * Centralized Logo Component
- * Usage: <Logo className="h-8 w-auto" />
- * Supports ref for animations
+ * Usage: <Logo className="h-9 w-auto" />
  */
-const Logo = forwardRef(({ className = "h-8 w-auto", ...props }, ref) => {
+const Logo = forwardRef(({ className = "h-9 w-auto", ...props }, ref) => {
   return (
     <img
       ref={ref}
-      src="/cleaning-expert-logo.png"
-      alt="Cleaning Expert Services"
-      className={`${className} aspect-square object-cover rounded-full shadow-sm border border-gray-100`}
+      src="/zippto_logo.png"
+      alt="Zippto Home Services"
+      className={`${className} object-contain rounded-xl shadow-xs`}
       {...props}
     />
   );
