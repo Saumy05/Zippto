@@ -11,36 +11,44 @@ const StatsCards = memo(({ stats }) => {
     {
       title: "Today's Earnings",
       value: `₹${stats.todayEarnings.toLocaleString()}`,
+      subtitle: 'Daily net revenue',
       icon: FaWallet,
-      gradient: 'linear-gradient(135deg, #001947 0%, #003b77 100%)',
+      iconBg: 'bg-teal-50 text-teal-600 border border-teal-100',
+      badgeBg: 'bg-teal-50/80 text-teal-700',
       onClick: () => navigate('/vendor/wallet')
     },
     {
       title: 'Pending Alerts',
       value: stats.pendingAlerts,
+      subtitle: stats.pendingAlerts > 0 ? 'Requires attention' : 'All caught up',
       icon: FiClock,
-      gradient: 'linear-gradient(135deg, #406788 0%, #304a63 100%)',
+      iconBg: stats.pendingAlerts > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200/60' : 'bg-slate-50 text-slate-600 border border-slate-200/60',
+      badgeBg: stats.pendingAlerts > 0 ? 'bg-amber-100/80 text-amber-800 font-bold' : 'bg-slate-100 text-slate-600',
       onClick: () => navigate('/vendor/booking-alerts')
     },
     {
       title: 'Active Jobs',
       value: stats.activeJobs,
+      subtitle: 'Currently in progress',
       icon: FiBriefcase,
-      gradient: 'linear-gradient(135deg, #406788 0%, #304a63 100%)',
+      iconBg: 'bg-indigo-50 text-indigo-600 border border-indigo-100',
+      badgeBg: 'bg-indigo-50/80 text-indigo-700',
       onClick: () => navigate('/vendor/jobs')
     },
     {
-      title: 'Completed',
+      title: 'Completed Jobs',
       value: stats.completedJobs,
+      subtitle: 'Total fulfilled',
       icon: FiCheckCircle,
-      gradient: 'linear-gradient(135deg, #001947 0%, #003b77 100%)',
+      iconBg: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
+      badgeBg: 'bg-emerald-50/80 text-emerald-700',
       onClick: () => navigate('/vendor/jobs')
     }
   ];
 
   return (
-    <div className="px-4 pt-4">
-      <div className="grid grid-cols-2 gap-3 mb-4">
+    <div className="w-full">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         {cards.map((card, index) => {
           const IconComponent = card.icon;
 
@@ -48,42 +56,23 @@ const StatsCards = memo(({ stats }) => {
             <div
               key={index}
               onClick={card.onClick}
-              className="rounded-xl p-4 relative overflow-hidden cursor-pointer active:scale-95 transition-transform"
-              style={{
-                background: card.gradient,
-                border: '2px solid rgba(255, 255, 255, 0.2)',
-              }}
+              className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-200 cursor-pointer group flex flex-col justify-between"
             >
-              {/* Decorative Pattern */}
-              <div
-                className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-20"
-                style={{
-                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
-                  transform: 'translate(20px, -20px)',
-                }}
-              />
-              <div className="relative z-10">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-white font-semibold mb-1 opacity-90 uppercase tracking-wide">
-                      {card.title}
-                    </p>
-                    <p className="text-2xl font-bold text-white leading-tight">
-                      {card.value}
-                    </p>
-                  </div>
-                  <div
-                    className="p-3 rounded-xl flex-shrink-0"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.25)',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                    }}
-                  >
-                    <IconComponent className="w-6 h-6" style={{ color: '#FFFFFF' }} />
-                  </div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-slate-500 tracking-tight">
+                  {card.title}
+                </span>
+                <div className={`p-2.5 rounded-xl ${card.iconBg} transition-transform group-hover:scale-105`}>
+                  <IconComponent className="w-5 h-5" />
                 </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none mb-2">
+                  {card.value}
+                </p>
+                <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-md ${card.badgeBg}`}>
+                  {card.subtitle}
+                </span>
               </div>
             </div>
           );

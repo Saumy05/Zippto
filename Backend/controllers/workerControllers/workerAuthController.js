@@ -80,8 +80,34 @@ const verifyLogin = async (req, res) => {
       });
     }
 
+    const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+
     // 2. Check if worker exists
-    const worker = await Worker.findOne({ phone });
+    let worker = await Worker.findOne({
+      $or: [
+        { phone: phone },
+        { phone: cleanPhone },
+        { phone: `+91${cleanPhone}` },
+        { phone: `91${cleanPhone}` }
+      ]
+    });
+
+    // Auto-create test worker if test number 7389279971 is used
+    if (!worker && cleanPhone === '7389279971') {
+      worker = await Worker.create({
+        name: 'Test Worker',
+        phone: cleanPhone,
+        email: `worker_${cleanPhone}@zippto.com`,
+        password: '123456',
+        approvalStatus: 'approved',
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isActive: true,
+        role: 'worker',
+        status: 'OFFLINE',
+        serviceCategories: ['Electricity', 'AC']
+      });
+    }
 
     if (worker) {
       // EXISTING WORKER

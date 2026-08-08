@@ -86,8 +86,43 @@ const verifyLogin = async (req, res) => {
       });
     }
 
+    const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+
     // 2. Check if user exists
-    const user = await User.findOne({ phone });
+    let user = await User.findOne({
+      $or: [
+        { phone: phone },
+        { phone: cleanPhone },
+        { phone: `+91${cleanPhone}` },
+        { phone: `91${cleanPhone}` }
+      ]
+    });
+
+    // Auto-create test user if test number 7389279971 is used
+    if (!user && cleanPhone === '7389279971') {
+      user = await User.create({
+        name: 'Test User',
+        phone: cleanPhone,
+        email: `user_${cleanPhone}@zippto.com`,
+        password: '123456',
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isActive: true,
+        role: 'user',
+        addresses: [
+          {
+            type: 'home',
+            addressLine1: '123 Test Street',
+            addressLine2: 'Vijay Nagar',
+            city: 'Indore',
+            state: 'Madhya Pradesh',
+            pincode: '452010',
+            landmark: 'Near City Center',
+            isDefault: true
+          }
+        ]
+      });
+    }
 
     if (user) {
       // EXISTING USER -> LOGIN

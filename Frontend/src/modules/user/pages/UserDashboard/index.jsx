@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import {
   FiSearch,
   FiUser,
@@ -21,8 +21,10 @@ import {
   FiCheck
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useCart } from '../../../../context/CartContext';
 
 const UserDashboard = () => {
+  const { cartCount = 0 } = useCart() || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [newsletterInput, setNewsletterInput] = useState('');
@@ -353,8 +355,78 @@ const UserDashboard = () => {
             </div>
           </div>
 
+          {/* DESKTOP/TABLET NAVIGATION LINKS */}
+          <nav className="hidden md:flex items-center gap-1 xl:gap-1.5 shrink-0">
+            <NavLink
+              to="/user"
+              end
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                    : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`
+              }
+            >
+              Home
+            </NavLink>
+            <NavLink
+              to="/user/my-bookings"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                    : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`
+              }
+            >
+              Bookings
+            </NavLink>
+            <NavLink
+              to="/user/scrap"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                    : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`
+              }
+            >
+              Scrap & Sell
+            </NavLink>
+            <NavLink
+              to="/user/my-plan"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                    : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`
+              }
+            >
+              My Plan
+            </NavLink>
+            <NavLink
+              to="/user/cart"
+              className={({ isActive }) =>
+                `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1 ${
+                  isActive
+                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                    : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`
+              }
+            >
+              Cart
+              {cartCount > 0 && (
+                <span className="bg-red-500 text-white font-black text-[9px] px-1.5 py-0.2 rounded-full">
+                  {cartCount}
+                </span>
+              )}
+            </NavLink>
+          </nav>
+
           {/* CENTER: Integrated Search Bar (Desktop / Tablet) */}
-          <div className="hidden md:flex flex-1 max-w-md items-center mx-2">
+          <div className="hidden md:flex flex-1 max-w-xs xl:max-w-sm items-center mx-1">
             <div className="relative w-full flex items-center">
               <FiSearch className="absolute left-3 text-slate-400 w-4 h-4 pointer-events-none" />
               <input

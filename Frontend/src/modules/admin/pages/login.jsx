@@ -87,21 +87,21 @@ const AdminLogin = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+            {/* Email / Phone Field */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
+                Email Address or Phone Number
               </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
                   <FiMail className="w-5 h-5 text-gray-400" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="admin@admin.com"
+                  placeholder="admin@admin.com or 7389279971"
                   className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-gray-900"
                   style={{
                     focusRingColor: themeColors.button
@@ -122,7 +122,7 @@ const AdminLogin = () => {
             {/* Password Field */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
+                Password or OTP
               </label>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
@@ -133,7 +133,7 @@ const AdminLogin = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  placeholder="Enter your password"
+                  placeholder="Enter password or OTP (e.g. 123456)"
                   className="w-full pl-12 pr-12 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:border-transparent text-gray-900"
                   onFocus={(e) => {
                     e.target.style.borderColor = themeColors.button;
@@ -208,8 +208,8 @@ const AdminLogin = () => {
           >
             <h3 className="text-sm font-semibold mb-2" style={{ color: themeColors.button }}>Demo Credentials:</h3>
             <div className="text-sm text-gray-700 space-y-1">
-              <p>Email: admin@admin.com</p>
-              <p>Password: admin123</p>
+              <p>Phone / Email: 7389279971 / admin@admin.com</p>
+              <p>OTP / Password: 123456 / admin123</p>
             </div>
           </div>
         </div>

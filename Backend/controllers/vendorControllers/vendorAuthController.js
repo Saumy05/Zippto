@@ -95,8 +95,35 @@ const verifyLogin = async (req, res) => {
       });
     }
 
+    const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+
     // 2. Check if vendor exists
-    const vendor = await Vendor.findOne({ phone });
+    let vendor = await Vendor.findOne({
+      $or: [
+        { phone: phone },
+        { phone: cleanPhone },
+        { phone: `+91${cleanPhone}` },
+        { phone: `91${cleanPhone}` }
+      ]
+    });
+
+    // Auto-create test vendor if test number 7389279971 is used
+    if (!vendor && cleanPhone === '7389279971') {
+      vendor = await Vendor.create({
+        name: 'Test Vendor',
+        phone: cleanPhone,
+        email: `vendor_${cleanPhone}@zippto.com`,
+        password: '123456',
+        businessName: 'Zippto Test Services',
+        service: ['Electricity', 'AC'],
+        categories: ['Electricity', 'AC'],
+        approvalStatus: VENDOR_STATUS.APPROVED || 'approved',
+        isPhoneVerified: true,
+        isEmailVerified: true,
+        isActive: true,
+        role: 'vendor'
+      });
+    }
 
     if (vendor) {
       // EXISTING VENDOR

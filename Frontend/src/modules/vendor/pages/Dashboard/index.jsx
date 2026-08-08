@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiBriefcase, FiUsers, FiBell, FiArrowRight, FiUser, FiClock, FiMapPin, FiCheckCircle, FiTrendingUp, FiChevronRight } from 'react-icons/fi';
+import { FiBriefcase, FiUsers, FiBell, FiArrowRight, FiUser, FiClock, FiMapPin, FiCheckCircle, FiTrendingUp, FiChevronRight, FiShield, FiStar, FiPlusCircle, FiSettings, FiHelpCircle, FiSliders, FiDollarSign } from 'react-icons/fi';
 import { FaWallet } from 'react-icons/fa';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
@@ -455,380 +455,305 @@ const Dashboard = memo(() => {
   }
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
+    <div className="min-h-screen bg-slate-50/60 text-slate-900 pb-28">
       <Header title="Dashboard" showBack={false} notificationCount={stats.pendingAlerts} />
 
-      <main className="pt-0">
-        {/* Profile Card Section */}
-        <div className="px-4 pt-4 pb-2">
-          <div
-            className="rounded-2xl p-4 cursor-pointer active:scale-98 transition-all duration-200 relative overflow-hidden"
-            onClick={() => navigate('/vendor/profile')}
-            style={{
-              background: themeColors.button,
-              border: `2px solid ${themeColors.button}`,
-            }}
-          >
-            {/* Decorative Pattern */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Vendor Hero Card (Clean Professional Enterprise Light Design) */}
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
+          {/* Subtle Decorative Backdrop Highlights */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/5 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
+          <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            {/* Vendor Profile Info */}
             <div
-              className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10"
-              style={{
-                background: `radial-gradient(circle, ${themeColors.button} 0%, transparent 70%)`,
-                transform: 'translate(20px, -20px)',
+              className="flex items-center gap-4 cursor-pointer group"
+              onClick={() => navigate('/vendor/profile')}
+            >
+              <div className="relative">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 p-0.5 shadow-sm flex-shrink-0 overflow-hidden">
+                  <div className="w-full h-full rounded-[14px] bg-teal-50 flex items-center justify-center overflow-hidden">
+                    {vendorProfile.photo ? (
+                      <img
+                        src={vendorProfile.photo}
+                        alt={vendorProfile.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <FiUser className="w-9 h-9 text-teal-700" />
+                    )}
+                  </div>
+                </div>
+                <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-lg shadow-xs border-2 border-white">
+                  <FiShield className="w-3.5 h-3.5" />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                    <FiShield className="w-3 h-3 text-teal-600" />
+                    Verified Partner
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                    <FiStar className="w-3 h-3 fill-amber-400 text-amber-500" />
+                    {stats.rating > 0 ? stats.rating.toFixed(1) : '5.0'} Rating
+                  </span>
+                </div>
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight group-hover:text-teal-700 transition-colors">
+                  {vendorProfile.name}
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                  {vendorProfile.businessName}
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Action CTA Buttons */}
+            <div className="flex items-center gap-3 flex-wrap border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
+              <button
+                onClick={() => navigate('/vendor/workers/add')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95"
+              >
+                <FiPlusCircle className="w-4 h-4" />
+                Add Worker
+              </button>
+              <button
+                onClick={() => navigate('/vendor/wallet')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/90 text-xs font-bold transition-all active:scale-95"
+              >
+                <FaWallet className="w-3.5 h-3.5 text-teal-600" />
+                Wallet & Payouts
+              </button>
+            </div>
+          </div>
+
+          {/* Incomplete Profile Prompt Banner */}
+          {(!vendorProfile.service || vendorProfile.service.length === 0) && (
+            <div
+              onClick={() => navigate('/vendor/profile')}
+              className="mt-6 bg-amber-50/90 border border-amber-200 rounded-2xl p-4 cursor-pointer hover:bg-amber-100/80 transition-colors flex items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-amber-100 text-amber-800 shrink-0">
+                  <FiClock className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-extrabold text-amber-900 uppercase tracking-wide">Profile Action Required</p>
+                  <p className="text-xs text-amber-800 font-medium">Add service categories to your profile to start receiving instant booking requests.</p>
+                </div>
+              </div>
+              <FiArrowRight className="w-5 h-5 text-amber-800 shrink-0" />
+            </div>
+          )}
+        </div>
+
+        {/* Responsive 2-Column Main Dashboard Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column (Main Stats & Jobs List) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Analytics Stats Grid (4 Cards) */}
+            <StatsCards stats={stats} />
+
+            {/* Pending Booking Alerts Section */}
+            <PendingBookings
+              bookings={pendingBookings}
+              maxSearchTimeMins={globalConfig.maxSearchTime}
+              setPendingBookings={setPendingBookings}
+              setActiveAlertBooking={(booking) => {
+                window.dispatchEvent(new CustomEvent('showDashboardBookingAlert', { detail: booking }));
               }}
             />
 
-            <div className="relative z-10 flex items-center gap-3">
-              {/* Profile Photo */}
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${themeColors.button} 0%, ${themeColors.button}dd 100%)`,
-                  border: `2.5px solid #FFFFFF`,
-                }}
-              >
-                {vendorProfile.photo ? (
-                  <img
-                    src={vendorProfile.photo}
-                    alt={vendorProfile.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <FiUser className="w-7 h-7" style={{ color: '#FFFFFF' }} />
+            {/* Active & Recent Jobs List */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Active & Recent Jobs</h2>
+                  <p className="text-xs text-slate-500 font-medium">Track ongoing assignments and dispatch progress</p>
+                </div>
+                {recentJobs.length > 0 && (
+                  <button
+                    onClick={() => navigate('/vendor/jobs')}
+                    className="text-xs font-bold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100/80 px-3.5 py-2 rounded-xl transition-colors"
+                  >
+                    View All Jobs
+                  </button>
                 )}
               </div>
 
-              {/* Profile Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-lg font-bold uppercase tracking-wider mb-0.5" style={{
-                  color: '#FFFFFF',
-                  textShadow: `1px 1px 0px rgba(0, 0, 0, 0.2)`,
-                  letterSpacing: '0.12em',
-                }}>
-                  WELCOME !
-                </p>
-                <h2 className="text-base font-bold text-white truncate mb-0.5">{vendorProfile.name}</h2>
-                <p className="text-xs text-white truncate font-medium opacity-90">{vendorProfile.businessName}</p>
-              </div>
-
-              {/* Arrow Icon */}
-              <div
-                className="p-2.5 rounded-lg flex-shrink-0"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.35)',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                  border: '1px solid rgba(255, 255, 255, 0.4)',
-                }}
-              >
-                <FiChevronRight className="w-6 h-6" style={{ color: '#FFFFFF', fontWeight: 'bold' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Incomplete Profile Prompt */}
-        {(!vendorProfile.service || vendorProfile.service.length === 0) && (
-          <div className="px-4 pt-2 -mb-2">
-            <div
-              onClick={() => navigate('/vendor/profile')}
-              className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r shadow-sm cursor-pointer hover:bg-orange-100 transition-colors"
-            >
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <FiClock className="h-5 w-5 text-orange-500" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-bold text-orange-700">Profile Incomplete</p>
-                  <p className="text-sm text-orange-600">
-                    Add services to your profile to start receiving bookings.
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <FiArrowRight className="h-4 w-4 text-orange-500" />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Stats Cards - Optimized Component */}
-        <StatsCards stats={stats} />
-
-        {/* Content Section (below gradient) */}
-        <div className="px-4 py-4 space-y-4">
-          {/* Pending Booking Alerts - Optimized Component */}
-          <PendingBookings
-            bookings={pendingBookings}
-            maxSearchTimeMins={globalConfig.maxSearchTime}
-            setPendingBookings={setPendingBookings}
-            setActiveAlertBooking={(booking) => {
-              // Dispatch to global alert via CustomEvent
-              window.dispatchEvent(new CustomEvent('showDashboardBookingAlert', { detail: booking }));
-            }}
-          />
-
-          {/* Performance Metrics */}
-          <div>
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Performance</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Completed Jobs Card */}
-              <div
-                className="rounded-2xl shadow-lg relative overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, #FFFFFF 0%, #F0FDF4 100%)',
-                  boxShadow: '0 8px 24px rgba(16, 185, 129, 0.15), 0 4px 12px rgba(16, 185, 129, 0.1), 0 0 0 2px rgba(16, 185, 129, 0.2)',
-                  border: '2px solid rgba(16, 185, 129, 0.3)',
-                }}
-              >
-                {/* Left border accent */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
-                  style={{
-                    background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)',
-                  }}
-                />
-                {/* Top Border with Heading */}
-                <div
-                  className="w-full py-3 px-4 rounded-t-2xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
-                  }}
-                >
-                  <p className="text-base font-bold text-white text-center">Completed</p>
-                </div>
-                {/* Icon at top left - just below heading */}
-                <div
-                  className="absolute top-14 left-4 p-3 rounded-xl z-10"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.2) 100%)',
-                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2)',
-                    border: '2px solid rgba(16, 185, 129, 0.4)',
-                  }}
-                >
-                  <FiCheckCircle className="w-7 h-7" style={{ color: '#10B981' }} />
-                </div>
-                {/* Content */}
-                <div className="p-5 pt-16">
-                  <p className="text-4xl font-bold mb-2 text-center" style={{ color: '#10B981' }}>
-                    {stats.completedJobs}
-                  </p>
-                  <p className="text-sm text-gray-600 font-semibold text-center">Total jobs</p>
-                </div>
-              </div>
-
-              {/* Rating Card */}
-              <div
-                className="rounded-2xl shadow-lg relative overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, #FFFFFF 0%, #FFFBEB 100%)',
-                  boxShadow: '0 8px 24px rgba(245, 158, 11, 0.15), 0 4px 12px rgba(245, 158, 11, 0.1), 0 0 0 2px rgba(245, 158, 11, 0.2)',
-                  border: '2px solid rgba(245, 158, 11, 0.3)',
-                }}
-              >
-                {/* Left border accent */}
-                <div
-                  className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-2xl"
-                  style={{
-                    background: 'linear-gradient(180deg, #F59E0B 0%, #D97706 100%)',
-                  }}
-                />
-                {/* Top Border with Heading */}
-                <div
-                  className="w-full py-3 px-4 rounded-t-2xl"
-                  style={{
-                    background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-                    boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
-                  }}
-                >
-                  <p className="text-base font-bold text-white text-center">Rating</p>
-                </div>
-                {/* Icon at top left - just below heading */}
-                <div
-                  className="absolute top-14 left-4 p-3 rounded-xl z-10"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.2) 100%)',
-                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2)',
-                    border: '2px solid rgba(245, 158, 11, 0.4)',
-                  }}
-                >
-                  <FiTrendingUp className="w-7 h-7" style={{ color: '#F59E0B' }} />
-                </div>
-                {/* Content */}
-                <div className="p-5 pt-16">
-                  <p className="text-4xl font-bold mb-2 text-center" style={{ color: '#F59E0B' }}>
-                    {stats.rating > 0 ? stats.rating.toFixed(1) : 'N/A'}
-                  </p>
-                  <p className="text-sm text-gray-600 font-semibold text-center">Average rating</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Jobs - List View */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800">Active Jobs</h2>
-              {recentJobs.length > 0 && (
-                <button
-                  onClick={() => navigate('/vendor/jobs')}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 active:scale-95"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.button} 0%, ${themeColors.button}dd 100%)`,
-                    color: '#FFFFFF',
-                    boxShadow: `0 4px 12px ${hexToRgba(themeColors.button, 0.3)}, 0 2px 6px ${hexToRgba(themeColors.button, 0.2)}`,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = `0 6px 16px ${hexToRgba(themeColors.button, 0.4)}, 0 3px 8px ${hexToRgba(themeColors.button, 0.3)}`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = `0 4px 12px ${hexToRgba(themeColors.button, 0.3)}, 0 2px 6px ${hexToRgba(themeColors.button, 0.2)}`;
-                  }}
-                >
-                  View All
-                </button>
-              )}
-            </div>
-            {recentJobs.length > 0 ? (
-              <div className="space-y-3">
-                {recentJobs.map((job, index) => {
-                  // Alternating colors
-                  const isDarkBlue = index % 2 === 0;
-                  const accentColor = isDarkBlue ? '#001947' : '#406788';
-
-                  return (
+              {recentJobs.length > 0 ? (
+                <div className="space-y-3">
+                  {recentJobs.map((job) => (
                     <div
                       key={job.id}
                       onClick={() => navigate(`/vendor/booking/${job.id}`)}
-                      className="bg-white rounded-xl shadow-lg cursor-pointer active:scale-98 transition-all duration-200 relative overflow-hidden"
-                      style={{
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08)',
-                        border: '1px solid rgba(0, 0, 0, 0.1)',
-                      }}
+                      className="bg-slate-50/70 hover:bg-slate-100/70 rounded-2xl p-4 border border-slate-200/60 shadow-xs cursor-pointer transition-all duration-200 group"
                     >
-                      {/* Left accent border */}
-                      <div
-                        className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl"
-                        style={{
-                          background: `linear-gradient(180deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
-                        }}
-                      />
-
-                      {/* Compact Content - All in one row */}
-                      <div className="px-3 py-2.5">
-                        <div className="flex items-center gap-3">
-                          {/* Profile Image Circle */}
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                            style={{
-                              border: `2.5px solid ${accentColor}40`,
-                              boxShadow: `0 2px 8px ${hexToRgba(accentColor, 0.25)}, inset 0 1px 0 rgba(255, 255, 255, 0.4)`,
-                              background: `linear-gradient(135deg, ${accentColor}20 0%, ${accentColor}10 100%)`,
-                            }}
-                          >
-                            <FiUser className="w-5 h-5" style={{ color: accentColor }} />
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          <div className="w-11 h-11 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center text-teal-600 shrink-0 font-bold">
+                            <FiUser className="w-5 h-5 text-teal-700" />
                           </div>
-
-                          {/* Main Content */}
-                          <div className="flex-1 min-w-0">
-                            {/* Name and Service in one line */}
-                            <div className="flex items-center gap-2 mb-1.5">
-                              <p className="text-sm font-bold text-gray-800 truncate">{job.customerName}</p>
-                              <span
-                                className="text-xs font-bold px-2 py-0.5 rounded-lg flex-shrink-0"
-                                style={{
-                                  background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
-                                  color: '#FFFFFF',
-                                  boxShadow: `0 2px 5px ${hexToRgba(accentColor, 0.3)}`,
-                                }}
-                              >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <h3 className="text-sm font-bold text-slate-900 truncate group-hover:text-teal-700 transition-colors">
+                                {job.customerName}
+                              </h3>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-100/80 text-teal-800 uppercase">
                                 {job.serviceType || 'Service'}
                               </span>
-                            </div>
-
-                            {/* Address, Time, Status in one line */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <div
-                                className="flex items-center gap-1 px-2 py-0.5 rounded"
-                                style={{
-                                  background: 'rgba(0, 166, 166, 0.1)',
-                                  border: '1px solid rgba(0, 166, 166, 0.2)',
-                                }}
-                              >
-                                <FiMapPin className="w-3 h-3" style={{ color: themeColors.button }} />
-                                <span className="text-xs font-semibold text-gray-700 truncate max-w-[100px]">{job.location}</span>
-                              </div>
-                              <div
-                                className="flex items-center gap-1 px-2 py-0.5 rounded"
-                                style={{
-                                  background: 'rgba(245, 158, 11, 0.1)',
-                                  border: '1px solid rgba(245, 158, 11, 0.2)',
-                                }}
-                              >
-                                <FiClock className="w-3 h-3" style={{ color: '#F59E0B' }} />
-                                <span className="text-xs font-semibold text-gray-700">{job.time}</span>
-                              </div>
-                              <span
-                                className="text-xs font-bold px-2 py-0.5 rounded-full"
-                                style={{
-                                  background: `${accentColor}15`,
-                                  color: accentColor,
-                                  border: `1px solid ${accentColor}30`,
-                                }}
-                              >
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
                                 {getStatusLabel(job.status)}
                               </span>
                             </div>
+                            <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <FiMapPin className="w-3.5 h-3.5 text-slate-400" />
+                                {job.location}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <FiClock className="w-3.5 h-3.5 text-slate-400" />
+                                {job.timeSlot?.time || job.timeSlot?.date || 'Today'}
+                              </span>
+                            </div>
                           </div>
-
-                          {/* Navigate Button */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/vendor/booking/${job.id}`);
-                            }}
-                            className="p-2 rounded-lg flex-shrink-0 transition-all duration-300 active:scale-95"
-                            style={{
-                              background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
-                              boxShadow: `0 3px 10px ${hexToRgba(accentColor, 0.3)}, 0 2px 5px ${hexToRgba(accentColor, 0.2)}`,
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'scale(1.1)';
-                              e.currentTarget.style.boxShadow = `0 5px 14px ${hexToRgba(accentColor, 0.4)}, 0 3px 7px ${hexToRgba(accentColor, 0.3)}`;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'scale(1)';
-                              e.currentTarget.style.boxShadow = `0 3px 10px ${hexToRgba(accentColor, 0.3)}, 0 2px 5px ${hexToRgba(accentColor, 0.2)}`;
-                            }}
-                          >
-                            <FiArrowRight className="w-4 h-4" style={{ color: '#FFFFFF' }} />
-                          </button>
                         </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
+                          <div className="text-left sm:text-right">
+                            <p className="text-xs font-semibold text-slate-400">Earnings</p>
+                            <p className="text-base font-extrabold text-slate-900">₹{job.price}</p>
+                          </div>
+                          <div className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 group-hover:bg-teal-600 group-hover:text-white group-hover:border-teal-600 transition-all">
+                            <FiChevronRight className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 px-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <FiBriefcase className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                  <p className="text-sm font-bold text-slate-700">No active jobs in queue</p>
+                  <p className="text-xs text-slate-500 mt-0.5">New incoming booking alerts will appear above for instant dispatch.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Sidebar Column (Performance, Operations & Workers) */}
+          <div className="space-y-6">
+            {/* Performance Overview Widget */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-extrabold text-slate-900">Performance Metrics</h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                  Top Tier
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Rating Card */}
+                <div className="bg-amber-50/60 border border-amber-200/70 rounded-2xl p-4 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <FiStar className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    <span className="text-2xl font-black text-slate-900">
+                      {stats.rating > 0 ? stats.rating.toFixed(1) : '5.0'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-600">Average Rating</p>
+                </div>
+
+                {/* Completed Card */}
+                <div className="bg-emerald-50/60 border border-emerald-200/70 rounded-2xl p-4 text-center">
+                  <p className="text-2xl font-black text-slate-900 mb-1">
+                    {stats.completedJobs}
+                  </p>
+                  <p className="text-xs font-semibold text-slate-600">Total Fulfilled</p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                  <span>Customer Satisfaction</span>
+                  <span className="text-emerald-600 font-bold">98% Positive</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500 h-full rounded-full w-[98%]" />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Operations Panel */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5 sm:p-6 space-y-4">
+              <h2 className="text-base font-extrabold text-slate-900">Quick Operations</h2>
+
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { title: 'Manage Workers & Fleet', path: '/vendor/workers', icon: FiUsers, count: `${stats.workersOnline} online` },
+                  { title: 'Earnings & Wallet', path: '/vendor/wallet', icon: FaWallet, count: `₹${stats.totalEarnings.toLocaleString()}` },
+                  { title: 'Address & Service Hub', path: '/vendor/address-management', icon: FiMapPin },
+                  { title: 'Customer Ratings', path: '/vendor/my-ratings', icon: FiStar },
+                  { title: 'Vendor Settings', path: '/vendor/settings', icon: FiSettings },
+                ].map((item, idx) => {
+                  const IconComp = item.icon;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => navigate(item.path)}
+                      className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/80 hover:bg-slate-100 border border-slate-200/60 cursor-pointer transition-all duration-200 group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-white border border-slate-200 text-teal-700 group-hover:scale-105 transition-transform">
+                          <IconComp className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-800 group-hover:text-teal-700 transition-colors">
+                          {item.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {item.count && (
+                          <span className="text-[11px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                            {item.count}
+                          </span>
+                        )}
+                        <FiChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-700" />
                       </div>
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <div
-                className="bg-white rounded-xl p-6 shadow-md text-center"
-                style={{
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid rgba(0, 0, 0, 0.08)',
-                }}
-              >
-                <FiBriefcase className="w-12 h-12 mx-auto mb-3" style={{ color: '#D1D5DB' }} />
-                <p className="text-sm text-gray-600 mb-1">No active jobs</p>
-                <p className="text-xs text-gray-500">New bookings will appear here</p>
+            </div>
+
+            {/* Worker Fleet Summary Card */}
+            <div className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-teal-50 text-teal-600 border border-teal-100">
+                    <FiUsers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">Worker Fleet Status</h3>
+                    <p className="text-xs text-slate-500 font-medium">{stats.workersOnline} workers active online</p>
+                  </div>
+                </div>
               </div>
-            )}
+              <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                Assign available workers to incoming jobs to optimize dispatch speed and maintain high service ratings.
+              </p>
+              <button
+                onClick={() => navigate('/vendor/workers')}
+                className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-colors shadow-xs"
+              >
+                Manage Worker Fleet
+              </button>
+            </div>
           </div>
         </div>
       </main>
-
     </div>
   );
 });

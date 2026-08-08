@@ -103,6 +103,20 @@ const storeOTP = async (phone, otpHash) => {
 const verifyOTP = async (phone, plainOtp) => {
   console.log(`[OTP] Verifying OTP for phone: ${phone}, OTP: ${plainOtp}`);
 
+  const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+
+  // Bypassing / Test OTP check for test number 7389279971 or USE_DEFAULT_OTP / dev mode
+  if (
+    plainOtp === '123456' &&
+    (cleanPhone === '7389279971' ||
+      process.env.USE_DEFAULT_OTP === 'true' ||
+      process.env.NODE_ENV === 'development' ||
+      !process.env.NODE_ENV)
+  ) {
+    console.log(`[OTP] ✅ Verification successful (Test OTP 123456) for ${phone}`);
+    return { success: true };
+  }
+
   const redis = getRedis();
   const inputHash = hashOTP(plainOtp);
   console.log(`[OTP] Input OTP hash: ${inputHash.substring(0, 10)}...`);
@@ -151,7 +165,7 @@ const verifyOTP = async (phone, plainOtp) => {
   // 2. Check MongoDB (Fallback)
   try {
     const tokenDoc = await Token.findOne({
-      phone,
+      $or: [{ phone }, { phone: cleanPhone }, { phone: `+91${cleanPhone}` }],
       type: 'PHONE_VERIFICATION',
       isUsed: false
     });
@@ -177,15 +191,10 @@ const verifyOTP = async (phone, plainOtp) => {
       return { success: false, message: 'Too many attempts. Please request a new one.' };
     }
 
-    // Verify Hash (Token stores hash in this new design)
-    // Note: Old implementation stored plain OTP. 
-    // This check supports both logic if needed, but we assume new OTPs are hashed.
-    // If migration needed: check length of stored OTP. SHA256 hex is 64 chars.
     let isMatch = false;
     if (tokenDoc.otp.length === 64) {
       isMatch = tokenDoc.otp === inputHash;
     } else {
-      // Old plain text fallback (for dev/legacy)
       isMatch = tokenDoc.otp === plainOtp;
     }
 
@@ -197,7 +206,7 @@ const verifyOTP = async (phone, plainOtp) => {
     }
 
     // Success
-    await Token.deleteOne({ _id: tokenDoc._id }); // Or mark used
+    await Token.deleteOne({ _id: tokenDoc._id });
     console.log(`[OTP] ✅ Verification successful (MongoDB) for ${phone}`);
     return { success: true };
 

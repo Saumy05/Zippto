@@ -113,12 +113,12 @@ const AboutHomestr = () => {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <div className="bg-slate-900 text-white rounded-2xl p-6 relative overflow-hidden shadow-md">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
+          <div className="bg-gradient-to-br from-teal-50/80 via-slate-50 to-white text-slate-900 rounded-2xl p-6 relative overflow-hidden shadow-xs border border-teal-200/80">
+            <div className="absolute top-0 right-0 p-4 opacity-10 text-teal-700">
               <FiGlobe className="w-24 h-24" />
             </div>
-            <h3 className="text-lg font-bold text-amber-400 mb-3">Our Mission</h3>
-            <p className="text-sm text-slate-200 leading-relaxed relative z-10">
+            <h3 className="text-lg font-bold text-teal-800 mb-3">Our Mission</h3>
+            <p className="text-sm text-slate-600 leading-relaxed relative z-10 font-medium">
               Zippto is dedicated to empowering home service experts and agencies with transparent technology, live tracking, and steady customer bookings.
             </p>
           </div>

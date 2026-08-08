@@ -10,6 +10,7 @@ const connectDB = require('../config/db');
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
 const Worker = require('../models/Worker');
+const Admin = require('../models/Admin');
 const Token = require('../models/Token');
 const { VENDOR_STATUS } = require('../utils/constants');
 
@@ -138,7 +139,30 @@ const seedLogin = async () => {
       console.log(`✅ Created new Worker for phone ${PHONE}`);
     }
 
-    // 4. Seed persistent OTP Token
+    // 4. Seed Admin
+    let admin = await Admin.findOne({ $or: [{ phone: PHONE }, { email: 'admin@zippto.com' }, { email: 'admin@admin.com' }] });
+    if (admin) {
+      admin.name = 'Test Super Admin';
+      admin.phone = PHONE;
+      admin.email = 'admin@zippto.com';
+      admin.password = PASSWORD;
+      admin.role = 'super_admin';
+      admin.isActive = true;
+      await admin.save();
+      console.log(`✅ Updated existing Admin for phone ${PHONE}`);
+    } else {
+      admin = await Admin.create({
+        name: 'Test Super Admin',
+        phone: PHONE,
+        email: 'admin@zippto.com',
+        password: PASSWORD,
+        role: 'super_admin',
+        isActive: true
+      });
+      console.log(`✅ Created new Admin for phone ${PHONE}`);
+    }
+
+    // 5. Seed persistent OTP Token
     const otpHash = hashOTP(OTP);
     await Token.deleteMany({ phone: PHONE, type: 'PHONE_VERIFICATION' });
     await Token.create({
@@ -157,7 +181,7 @@ const seedLogin = async () => {
     console.log(`Phone:    ${PHONE}`);
     console.log(`OTP:      ${OTP}`);
     console.log(`Password: ${PASSWORD}`);
-    console.log('Roles Created/Updated: User, Vendor, Worker');
+    console.log('Roles Created/Updated: User, Vendor, Worker, Admin');
     console.log('-------------------------------------------\n');
 
   } catch (error) {

@@ -69,100 +69,79 @@ const BottomNav = memo(() => {
   }
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 bg-white"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        width: '100%',
-        zIndex: 40,
-        willChange: 'transform',
-        transform: 'translateZ(0)',
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden',
-        borderTop: '2px solid rgba(0, 0, 0, 0.35)',
-        borderTopLeftRadius: '20px',
-        borderTopRightRadius: '20px',
-        boxShadow: '0 -8px 24px rgba(0, 0, 0, 0.15), 0 -4px 12px rgba(0, 0, 0, 0.1), 0 -2px 6px rgba(0, 0, 0, 0.08)',
-        background: 'linear-gradient(to top, #FFFFFF 0%, #FAFAFA 100%)',
-      }}
-    >
-      <div className="flex items-center justify-around px-2 py-2">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path ||
-            (item.path === '/vendor/dashboard' && location.pathname === '/vendor');
-          const IconComponent = isActive ? item.activeIcon : item.icon;
+    <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center pb-0 md:pb-4">
+      <nav
+        className="pointer-events-auto w-full md:max-w-xl bg-white/95 backdrop-blur-md border-t md:border border-slate-200/90 md:rounded-2xl shadow-lg md:shadow-xl transition-all duration-300"
+      >
+        <div className="flex items-center justify-around px-3 py-2">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path ||
+              (item.path === '/vendor/dashboard' && location.pathname === '/vendor');
+            const IconComponent = isActive ? item.activeIcon : item.icon;
 
-          return (
-            <button
-              key={item.path}
-              onClick={() => handleNavClick(item.path)}
-              className="flex flex-col items-center justify-center relative w-16 h-14 rounded-xl transition-all duration-200 group hover:scale-105"
-            >
-              {/* Active Indicator Bar - Gradient Accent */}
-              {isActive && (
-                <div
-                  className="absolute -top-2 w-10 h-1 rounded-b-full"
-                  style={{
-                    background: themeColors.gradient,
-                    boxShadow: `0 2px 8px ${themeColors.brand.teal}4D`,
-                  }}
-                />
-              )}
-
-              {/* Active Background - Very Subtle Teal Tint */}
-              {isActive && (
-                <div
-                  className="absolute inset-0 rounded-xl scale-90"
-                  style={{ backgroundColor: `${themeColors.brand.teal}0A` }}
-                />
-              )}
-
-              <div className="relative z-10 flex flex-col items-center justify-center">
-                <div className="relative mb-0.5">
-                  <IconComponent
-                    className={`w-6 h-6 transition-all duration-300 ${isActive ? 'scale-110' : 'text-gray-400 group-hover:text-gray-600'}`}
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNavClick(item.path)}
+                className="flex flex-col items-center justify-center relative w-16 h-12 rounded-xl transition-all duration-200 group"
+              >
+                {/* Active Indicator Pill */}
+                {isActive && (
+                  <div
+                    className="absolute -top-2 w-8 h-1 rounded-b-full bg-teal-600"
                     style={{
-                      color: isActive ? themeColors.button : '#9CA3AF',
-                      filter: isActive ? `drop-shadow(0 2px 4px ${themeColors.brand.teal}1A)` : 'none'
+                      backgroundColor: themeColors.button,
+                      boxShadow: `0 2px 8px ${themeColors.brand.teal}4D`,
                     }}
                   />
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span
-                      className="absolute bg-gradient-to-br from-red-500 to-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center"
+                )}
+
+                {/* Active Background - Very Subtle Tint */}
+                {isActive && (
+                  <div
+                    className="absolute inset-0 rounded-xl scale-95"
+                    style={{ backgroundColor: `${themeColors.brand.teal}0D` }}
+                  />
+                )}
+
+                <div className="relative z-10 flex flex-col items-center justify-center">
+                  <div className="relative mb-0.5">
+                    <IconComponent
+                      className={`w-5 h-5 transition-all duration-200 ${isActive ? 'scale-110' : 'text-slate-400 group-hover:text-slate-600'}`}
                       style={{
-                        top: '-6px',
-                        right: '-8px',
-                        minWidth: '18px',
-                        height: '18px',
-                        padding: '0 4px',
-                        fontSize: '10px',
-                        lineHeight: '18px',
-                        border: '2px solid white',
-                        boxShadow: '0 2px 5px rgba(239, 68, 68, 0.4)',
-                        zIndex: 50,
+                        color: isActive ? themeColors.button : '#94A3B8',
                       }}
-                    >
-                      {item.badge > 9 ? '9+' : item.badge}
-                    </span>
-                  )}
+                    />
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span
+                        className="absolute -top-1.5 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1"
+                        style={{
+                          minWidth: '16px',
+                          height: '16px',
+                          border: '1.5px solid white',
+                          boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                          zIndex: 50,
+                        }}
+                      >
+                        {item.badge > 9 ? '9+' : item.badge}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`text-[11px] transition-colors duration-200 ${isActive ? 'font-bold' : 'font-medium text-slate-500'}`}
+                    style={{
+                      color: isActive ? themeColors.button : '#64748B',
+                    }}
+                  >
+                    {item.label}
+                  </span>
                 </div>
-                <span
-                  className={`text-[10px] transition-colors duration-300 ${isActive ? 'font-bold' : 'font-medium text-gray-500'}`}
-                  style={{
-                    color: isActive ? themeColors.button : '#6B7280',
-                  }}
-                >
-                  {item.label}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
   );
 });
 

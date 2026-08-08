@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { FiSearch, FiBell, FiMapPin, FiChevronDown, FiCreditCard, FiX } from 'react-icons/fi';
 import { useCity } from '../../../../context/CityContext';
+import { useCart } from '../../../../context/CartContext';
 import CitySelectorModal from '../common/CitySelectorModal';
 
 const Header = ({ location: userLocationProp, onLocationClick }) => {
   const { currentCity } = useCity();
+  const { cartCount } = useCart();
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,7 +46,7 @@ const Header = ({ location: userLocationProp, onLocationClick }) => {
           </div>
         </Link>
 
-        {/* 2. LOCATION PIN & DROPDOWN (Always visible on mobile!) */}
+        {/* 2. LOCATION PIN & DROPDOWN */}
         <div
           onClick={onLocationClick || (() => setIsCityModalOpen(true))}
           className="flex items-center gap-1 cursor-pointer group shrink min-w-0 px-1"
@@ -56,8 +58,78 @@ const Header = ({ location: userLocationProp, onLocationClick }) => {
           </div>
         </div>
 
-        {/* 3. CENTER SEARCH BAR (Desktop/Tablet) */}
-        <div className="hidden md:flex flex-1 max-w-md items-center mx-2">
+        {/* 3. DESKTOP/TABLET NAVIGATION LINKS */}
+        <nav className="hidden md:flex items-center gap-1 xl:gap-1.5">
+          <NavLink
+            to="/user"
+            end
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-full text-xs transition-all ${
+                isActive
+                  ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                  : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`
+            }
+          >
+            Home
+          </NavLink>
+          <NavLink
+            to="/user/my-bookings"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-full text-xs transition-all ${
+                isActive
+                  ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                  : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`
+            }
+          >
+            Bookings
+          </NavLink>
+          <NavLink
+            to="/user/scrap"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-full text-xs transition-all ${
+                isActive
+                  ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                  : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`
+            }
+          >
+            Scrap & Sell
+          </NavLink>
+          <NavLink
+            to="/user/my-plan"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-full text-xs transition-all ${
+                isActive
+                  ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                  : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`
+            }
+          >
+            My Plan
+          </NavLink>
+          <NavLink
+            to="/user/cart"
+            className={({ isActive }) =>
+              `px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1 ${
+                isActive
+                  ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                  : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`
+            }
+          >
+            Cart
+            {cartCount > 0 && (
+              <span className="bg-red-500 text-white font-black text-[9px] px-1.5 py-0.2 rounded-full">
+                {cartCount}
+              </span>
+            )}
+          </NavLink>
+        </nav>
+
+        {/* 4. CENTER SEARCH BAR (Desktop/Tablet) */}
+        <div className="hidden md:flex flex-1 max-w-xs xl:max-w-sm items-center mx-1">
           <div className="relative w-full flex items-center">
             <FiSearch className="absolute left-3 text-slate-400 w-4 h-4 pointer-events-none" />
             <input
