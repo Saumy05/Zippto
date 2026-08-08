@@ -26,7 +26,6 @@ import SearchOverlay from './components/SearchOverlay';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
 import ScrapPromotionCard from './components/ScrapPromotionCard';
-import DebugConsole from '../../components/common/DebugConsole';
 
 
 
@@ -717,8 +716,6 @@ const Home = () => {
         onHouseNumberChange={setHouseNumber}
         onSave={handleAddressSave}
       />
-
-      <DebugConsole />
     </div>
   );
 };

@@ -35,9 +35,7 @@ const DebugConsole = () => {
     };
   }, []);
 
-  if (import.meta.env.MODE === 'production' && !window.location.search.includes('debug=true')) {
-    return null;
-  }
+  return null;
 
   return (
     <>

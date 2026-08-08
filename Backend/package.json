@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "test": "node tests",
     "seed:admin": "node scripts/seedAdmin.js",
+    "seed:login": "node scripts/seedLoginUser.js",
     "seed:database": "node scripts/seedDatabase.js",
     "seed:electrician": "node scripts/seedElectricianService.js",
     "seed:category-sections": "node scripts/seedHomeCategorySections.js",
