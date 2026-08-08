@@ -1,79 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiCheck, FiStar, FiCheckCircle, FiShield, FiZap, FiGift } from 'react-icons/fi';
+import {
+  FiArrowLeft,
+  FiCheck,
+  FiStar,
+  FiZap,
+  FiGift,
+  FiArrowRight,
+  FiShield
+} from 'react-icons/fi';
+import { HiSparkles } from 'react-icons/hi';
 import { getPlans } from '../../services/planService';
 import { userAuthService } from '../../../../services/authService';
-import { toast } from 'react-hot-toast';
+import NotificationBell from '../../components/common/NotificationBell';
 
 const MyPlan = () => {
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Helper to determine card styling based on plan name
-  const getCardStyle = (name) => {
-    const lower = name.toLowerCase();
-
-    if (lower.includes('platinum')) {
-      return {
-        container: 'bg-slate-900 border-slate-700 text-white',
-        badge: 'bg-emerald-500 text-white',
-        includes: 'text-slate-400',
-        check: 'text-emerald-400',
-        price: 'text-white',
-        button: 'bg-white text-slate-900 hover:bg-slate-100'
-      };
-    }
-    if (lower.includes('diamond')) {
-      return {
-        container: 'bg-indigo-50 border-indigo-100 text-indigo-900',
-        badge: 'bg-emerald-500 text-white',
-        includes: 'text-indigo-600',
-        check: 'text-indigo-500',
-        price: 'text-indigo-900',
-        button: 'bg-indigo-600 text-white hover:bg-indigo-700'
-      }
-    }
-    if (lower.includes('gold')) {
-      return {
-        container: 'bg-[#FEF9C3] border-yellow-200 text-[#854D0E]',
-        badge: 'bg-[#22C55E] text-white',
-        includes: 'text-[#854D0E] opacity-70',
-        check: 'text-[#854D0E]',
-        price: 'text-[#854D0E]',
-        button: 'bg-[#854D0E] text-white hover:bg-amber-900'
-      };
-    }
-    if (lower.includes('silver')) {
-      return {
-        container: 'bg-[#F1F5F9] border-slate-200 text-slate-800',
-        badge: 'bg-[#22C55E] text-white',
-        includes: 'text-slate-500',
-        check: 'text-slate-400',
-        price: 'text-slate-900',
-        button: 'bg-slate-800 text-white hover:bg-slate-900'
-      };
-    }
-
-    // Default
-    return {
-      container: 'bg-white border-gray-200 text-gray-800',
-      badge: 'bg-emerald-500 text-white',
-      includes: 'text-gray-500',
-      check: 'text-primary-500',
-      price: 'text-gray-900',
-      button: 'bg-primary-600 text-white hover:bg-primary-700'
-    };
-  };
-
-  const getPreviousPlanNote = (name) => {
-    const lower = name.toLowerCase();
-    if (lower.includes('platinum')) return 'Everything in Diamond & More';
-    if (lower.includes('diamond')) return 'Everything in Gold & More';
-    if (lower.includes('gold')) return 'Everything in Silver & More';
-    return null;
-  };
 
   useEffect(() => {
     fetchData();
@@ -90,101 +35,152 @@ const MyPlan = () => {
       if (userRes.success) setUser(userRes.user);
 
     } catch (error) {
-      console.error(error);
-      toast.error('Could not load data');
+      console.warn('Subscription fetch issue:', error);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-30">
-        <div className="px-4 py-4 flex items-center gap-3 max-w-7xl mx-auto">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <FiArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <h1 className="text-xl font-bold text-gray-900">Subscription Plans</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-28">
+      {/* Background Glow */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20" />
+      </div>
 
-      <main className="px-4 py-12 max-w-7xl mx-auto">
-        <div className="mb-12 bg-white/40 backdrop-blur-sm p-8 rounded-[2.5rem] border border-white shadow-sm">
-          <h2 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">Pick Your Membership</h2>
-          <p className="text-slate-500 font-bold text-lg max-w-2xl leading-relaxed">
-            Choose a plan that fits your home. Higher plans automatically include benefits from the tiers below them.
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center p-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+      <div className="relative z-10">
+        {/* Sticky Top Header */}
+        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 shadow-2xs">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
+                aria-label="Go back"
+              >
+                <FiArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
+                  Subscription Plans
+                </h1>
+                <span className="text-[10px] text-slate-500 font-semibold">Zippto Plus Protection</span>
+              </div>
+            </div>
+            <NotificationBell />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-            {plans.map((plan) => {
-              const style = getCardStyle(plan.name || '');
-              const currentPlan = user?.plans;
-              const isCurrent = currentPlan?.isActive && currentPlan?.name === plan.name;
+        </header>
 
-              const userPlanPrice = currentPlan?.price || 0;
-              const isUpgrade = currentPlan?.isActive && plan.price > userPlanPrice;
-              const isDowngradeOrSame = currentPlan?.isActive && plan.price <= userPlanPrice && !isCurrent;
-              const isDisabled = isCurrent || isDowngradeOrSame;
+        {/* Main Content Area */}
+        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-6">
+          
+          {/* HERO BANNER - Elegant Dark Navy */}
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0B132B] p-5 sm:p-6 text-white shadow-md border border-slate-800 space-y-3">
+            <div className="flex items-center gap-2 text-amber-400 text-xs font-black uppercase tracking-wider">
+              <HiSparkles className="w-4 h-4" />
+              <span>Zippto Plus Membership</span>
+            </div>
 
-              let buttonText = `Select ${plan.name}`;
-              if (isCurrent) buttonText = 'Current Plan';
-              else if (isUpgrade) buttonText = 'Upgrade';
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+              Elevate Your Home Care with Zippto Plus
+            </h2>
 
-              return (
-                <div
-                  key={plan._id}
-                  onClick={() => navigate(`/user/my-plan/${plan._id}`)}
-                  className={`relative cursor-pointer rounded-3xl border shadow-sm transition-all flex flex-col overflow-hidden ${style.container}`}
-                >
-                  <div className="p-8 pb-8 flex-1 relative">
-                    {/* Top Row: Name and Status */}
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="flex flex-col">
-                        <h3 className="text-3xl font-black tracking-tight">{plan.name}</h3>
-                        {plan.tagline && (
-                          <div className={`mt-2 flex items-center`}>
-                             <span className={`inline-block px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.15em] shadow-sm border ${
-                               plan.name.toLowerCase().includes('platinum') 
-                               ? 'bg-white/10 border-white/20 text-white' 
-                               : 'bg-primary-50 border-primary-100 text-primary-600'
-                             }`}>
-                               {plan.tagline}
-                             </span>
-                          </div>
+            <p className="text-xs text-slate-300 font-medium leading-relaxed max-w-xl">
+              Enjoy up to 20% discount on every home booking, zero doorstep inspection fees, free service vouchers, and priority technician dispatch.
+            </p>
+
+            <div className="flex flex-wrap gap-2 pt-1 text-[11px] font-bold text-slate-200">
+              <span className="bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+                ✓ Up to 20% Off Services
+              </span>
+              <span className="bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+                ✓ Free Doorstep Inspection
+              </span>
+              <span className="bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+                ✓ Priority Dispatch
+              </span>
+            </div>
+          </section>
+
+          {/* UNIFIED ELEGANT CARDS GRID */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs animate-pulse space-y-4">
+                  <div className="h-6 w-32 bg-slate-200 rounded"></div>
+                  <div className="h-8 w-24 bg-slate-200 rounded"></div>
+                  <div className="h-12 bg-slate-100 rounded-2xl"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {plans.map((plan) => {
+                const currentPlan = user?.plans;
+                const isCurrent = currentPlan?.isActive && currentPlan?.name === plan.name;
+                const isPopular = plan.name.toLowerCase().includes('gold') || plan.name.toLowerCase().includes('diamond');
+
+                const userPlanPrice = currentPlan?.price || 0;
+                const isUpgrade = currentPlan?.isActive && plan.price > userPlanPrice;
+                const isDowngradeOrSame = currentPlan?.isActive && plan.price <= userPlanPrice && !isCurrent;
+                const isDisabled = isCurrent || isDowngradeOrSame;
+
+                let buttonText = `Select ${plan.name}`;
+                if (isCurrent) buttonText = 'Active Membership';
+                else if (isUpgrade) buttonText = 'Upgrade Plan';
+
+                return (
+                  <div
+                    key={plan._id}
+                    onClick={() => navigate(`/user/my-plan/${plan._id}`)}
+                    className={`relative cursor-pointer rounded-3xl p-6 transition-all flex flex-col justify-between overflow-hidden bg-white border ${
+                      isPopular
+                        ? 'border-amber-400 shadow-md ring-1 ring-amber-400/20'
+                        : 'border-slate-200/90 shadow-2xs hover:border-slate-300'
+                    }`}
+                  >
+                    {/* Header Tag for Most Popular */}
+                    {isPopular && (
+                      <div className="absolute top-0 right-0 bg-amber-400 text-[#0B132B] font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-bl-xl shadow-xs">
+                        Most Popular
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      {/* Name & Active Badge */}
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <h3 className="text-xl font-black text-slate-900 tracking-tight">{plan.name}</h3>
+                          {plan.tagline && (
+                            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[9.5px] font-bold text-slate-600 bg-slate-100 border border-slate-200">
+                              {plan.tagline}
+                            </span>
+                          )}
+                        </div>
+
+                        {isCurrent && (
+                          <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Active
+                          </span>
                         )}
                       </div>
-                      {isCurrent && (
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${style.badge}`}>
-                          Active
-                        </span>
-                      )}
-                    </div>
 
-                    {/* Price and Duration */}
-                    <div className="flex items-baseline mb-8">
-                      <span className={`text-4xl font-black ${style.price}`}>₹{plan.price}</span>
-                      <span className="text-sm font-bold opacity-40 ml-2">/ {plan.duration || '1'} Months</span>
-                    </div>
+                      {/* Pricing */}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black text-slate-900">₹{plan.price}</span>
+                        <span className="text-xs font-semibold text-slate-400">/ {plan.duration || '1'} Month</span>
+                      </div>
 
-                    {/* Benefits Section */}
-                    <div className="space-y-6">
-                      <ul className="space-y-3.5">
+                      {/* Benefits & Included Vouchers */}
+                      <div className="space-y-2 pt-1 text-xs font-semibold text-slate-700 border-t border-slate-100">
                         {(plan.freeCategories || []).map((cat, idx) => (
-                          <li key={`cat-${idx}`} className="flex items-start gap-3">
-                            <FiZap className="w-4 h-4 mt-1 shrink-0 text-amber-500 fill-amber-500" />
-                            <span className="text-[14px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">Free {cat.title || cat.name}</span>
-                          </li>
+                          <div key={`cat-${idx}`} className="flex items-center gap-2">
+                            <FiZap className="w-4 h-4 text-amber-500 shrink-0 fill-amber-500" />
+                            <span className="font-bold text-slate-800">Free {cat.title || cat.name} Included</span>
+                          </div>
                         ))}
+
                         {((() => {
                           const groups = new Map();
                           (plan.freeServices || []).forEach(svc => {
@@ -194,24 +190,16 @@ const MyPlan = () => {
                             if (!groups.has(key)) groups.set(key, svc);
                           });
                           
-                          return Array.from(groups.values()).map((svc, idx) => {
-                            const catTitle = svc.categoryId?.title || 'Service';
-                            return (
-                              <li key={`svc-${idx}`} className="flex items-start gap-3">
-                                <FiZap className="w-4 h-4 mt-1 shrink-0 text-amber-500 fill-amber-500" />
-                                <div className="flex flex-col gap-0.5">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-black uppercase text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">{catTitle}</span>
-                                    <span className="text-[14px] font-extrabold text-rose-600">Free {svc.title || svc.name}</span>
-                                  </div>
-                                </div>
-                              </li>
-                            );
-                          });
+                          return Array.from(groups.values()).map((svc, idx) => (
+                            <div key={`svc-${idx}`} className="flex items-center gap-2">
+                              <FiZap className="w-4 h-4 text-amber-500 shrink-0 fill-amber-500" />
+                              <span className="font-bold text-slate-800">Free {svc.title || svc.name} Voucher</span>
+                            </div>
+                          ));
                         })())}
-                        
+
                         {(() => {
-                          const planOrder = ['Silver', 'Gold', 'Platinum', 'Diamond'];
+                          const planOrder = ['Silver', 'Gold', 'Diamond', 'Platinum'];
                           const currentName = plan.name || '';
                           const baseName = planOrder.find(p => currentName.toLowerCase().includes(p.toLowerCase()));
                           const currentIndex = baseName ? planOrder.indexOf(baseName) : -1;
@@ -220,97 +208,53 @@ const MyPlan = () => {
                           if (!prevName) return null;
 
                           return (
-                            <div className="mt-6 mb-2 p-3 bg-white/40 rounded-xl border border-dashed border-current opacity-80 flex items-center gap-2">
-                              <FiGift className="w-4 h-4" />
-                              <p className="text-[10px] font-black uppercase tracking-wider">
-                                Benefits from <span className="underline decoration-2">{prevName}</span> Tier Included
-                              </p>
+                            <div className="mt-2 p-2 bg-slate-50 rounded-xl border border-slate-200/80 text-[10px] font-bold text-slate-600 flex items-center gap-2">
+                              <FiGift className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                              <span>Includes All Benefits from {prevName} Tier</span>
                             </div>
                           );
                         })()}
+                      </div>
 
-                        {/* Grouped Previous Tier Benefit Display */}
-                        {(() => {
-                          const groups = new Map();
-                          (plan.bonusServices || []).forEach(bs => {
-                            const svc = bs.serviceId;
-                            if (!svc) return;
-                            const cid = String(bs.categoryId?._id || bs.categoryId || svc.categoryId?._id || svc.categoryId || 'unknown');
-                            const tkey = (svc.title || '').trim().toLowerCase();
-                            const key = `${cid}_${tkey}`;
-                            if (!groups.has(key)) {
-                              groups.set(key, bs);
-                            }
-                          });
-                          
-                          return Array.from(groups.values()).map((bs, idx) => {
-                            const svc = bs.serviceId;
-                            if (!svc) return null;
-                            const catTitle = bs.categoryId?.title || svc.categoryId?.title || 'Service';
-                            
-                            return (
-                              <li key={idx} className="flex items-start gap-3 p-3 bg-amber-50/70 rounded-xl border border-amber-100 shadow-sm">
-                                <div className="mt-1 w-5 h-5 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
-                                  <FiStar className="w-3 h-3 fill-amber-600" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-[10px] font-black uppercase text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">{catTitle}</span>
-                                    <span className="text-[13px] font-extrabold text-amber-800">Free {svc.title}</span>
-                                  </div>
-                                  <span className="text-[10px] font-black uppercase tracking-[0.1em] text-[#854D0E] opacity-50 ml-1">Inherited from previous plan</span>
-                                </div>
-                              </li>
-                            );
-                          });
-                        })()}
-                      </ul>
+                      {plan.description && (
+                        <p className="text-xs leading-relaxed text-slate-500 font-medium">
+                          {plan.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Uniform Clean Button Action */}
+                    <div className="pt-5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/user/my-plan/${plan._id}`);
+                        }}
+                        className={`w-full py-3 px-4 rounded-2xl font-extrabold text-xs uppercase tracking-wider shadow-2xs transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                          isCurrent
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-[#0B132B] hover:bg-slate-800 text-amber-400'
+                        } ${isDisabled && !isCurrent ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <span>{buttonText}</span>
+                        <FiArrowRight className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
 
-                  {/* Action Button */}
-                  <div className="px-8 pb-8 mt-auto">
-                    {plan.description && (
-                      <div className={`mb-8 p-4 rounded-2xl border-l-[4px] shadow-sm flex items-start gap-4 transition-all duration-300 transform group-hover:scale-[1.02] ${
-                        plan.name.toLowerCase().includes('platinum') 
-                          ? 'bg-white/5 border-emerald-400' 
-                          : 'bg-white/60 border-primary-500 backdrop-blur-md'
-                      }`}>
-                         <p className={`text-[12px] font-bold leading-relaxed ${
-                            plan.name.toLowerCase().includes('platinum') 
-                              ? 'text-slate-300' 
-                              : 'text-slate-600'
-                         }`}>
-                           {plan.description}
-                         </p>
-                      </div>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/user/my-plan/${plan._id}`);
-                      }}
-                      className={`w-full py-4 px-6 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95 transform hover:translate-y-[-2px] ${style.button} ${isDisabled && !isCurrent ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}
-                    >
-                      {buttonText}
-                    </button>
-                    {isCurrent && (
-                       <p className="text-center text-[10px] font-bold uppercase tracking-widest opacity-30 mt-3">Membership In Good Standing</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {plans.length === 0 && !loading && (
-          <div className="text-center py-24 bg-white rounded-3xl border border-dashed border-gray-200 shadow-inner">
-            <FiStar className="h-12 w-12 text-gray-200 mx-auto mb-4" />
-            <p className="text-gray-400 font-bold">No subscription plans found at this time.</p>
-          </div>
-        )}
-      </main>
+          {plans.length === 0 && !loading && (
+            <div className="text-center py-20 bg-white rounded-3xl border border-slate-200/80 shadow-2xs p-6 space-y-2">
+              <FiStar className="h-10 w-10 text-slate-300 mx-auto" />
+              <h3 className="text-base font-bold text-slate-900">No Membership Plans Available</h3>
+              <p className="text-xs text-slate-500 font-medium">Please check back later for new subscription offers.</p>
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 };
