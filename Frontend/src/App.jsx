@@ -8,18 +8,16 @@ import { CityProvider } from './context/CityContext';
 import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
 import { LocationPermissionChecker } from './components/common';
 
-// Global Scroll to Top component: Ensures all pages open from top (scrollTop: 0) on every route change
+// Global Scroll to Top component: Clean, instant scroll to top without smooth-scroll conflict jitter
 const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant'
-    });
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+    document.documentElement.style.scrollBehavior = 'smooth';
   }, [pathname]);
 
   return null;
@@ -32,7 +30,6 @@ function App() {
 
     // Setup foreground notification handler
     setupForegroundNotificationHandler((payload) => {
-      // Dispatch update events for listening components to refresh UI
       window.dispatchEvent(new Event('vendorJobsUpdated'));
       window.dispatchEvent(new Event('vendorStatsUpdated'));
       window.dispatchEvent(new Event('workerJobsUpdated'));

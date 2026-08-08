@@ -320,7 +320,7 @@ const UserDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pt-15 pb-0 selection:bg-slate-900 selection:text-white">
+    <div className={`min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-24 lg:pb-12 selection:bg-slate-900 selection:text-white transition-[padding] duration-200 ${mobileSearchOpen ? 'pt-[108px]' : 'pt-15'}`}>
       {/* -------------------------------------------------------------
           TOP NAVBAR HEADER (Fixed Top Navbar - Never Hides on Scroll!)
          ------------------------------------------------------------- */}
@@ -413,29 +413,31 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Mobile Expandable Search Bar */}
-        {mobileSearchOpen && (
-          <div className="md:hidden px-4 pb-3 pt-1 border-t border-slate-100 bg-slate-50 animate-fadeIn">
-            <div className="relative flex items-center">
-              <FiSearch className="absolute left-3 text-slate-400 w-4 h-4" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search electrician, plumber, AC service..."
-                className="w-full bg-white text-slate-900 text-xs rounded-full pl-9 pr-8 py-2 border border-slate-200 focus:border-slate-900 outline-none"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 text-slate-400"
-                >
-                  <FiX className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+        {/* Mobile Expandable Search Bar — rendered inside fixed header, part of sticky stack */}
+        <div
+          className={`md:hidden overflow-hidden transition-all duration-200 ease-in-out bg-white/95 border-t border-slate-100 ${
+            mobileSearchOpen ? 'max-h-16 opacity-100 py-2 px-4' : 'max-h-0 opacity-0 py-0 px-4'
+          }`}
+        >
+          <div className="relative flex items-center">
+            <FiSearch className="absolute left-3 text-slate-400 w-4 h-4 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search electrician, plumber, AC service..."
+              className="w-full bg-slate-50 text-slate-900 text-xs rounded-full pl-9 pr-8 py-2 border border-slate-200 focus:bg-white focus:border-slate-900 outline-none transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 text-slate-400 hover:text-slate-600"
+              >
+                <FiX className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-        )}
+        </div>
       </header>
 
       {/* -------------------------------------------------------------
@@ -562,7 +564,7 @@ const UserDashboard = () => {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 space-y-5">
           
           {/* COMPACT HERO AWARENESS BANNER */}
-          <section className="w-full rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100 border border-amber-200/80 p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden shadow-2xs">
+          <section className="flex w-full rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100 border border-amber-200/80 p-4 sm:p-5 flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden shadow-2xs">
             <div className="space-y-2 max-w-xl text-left">
               <span className="font-extrabold text-[10px] tracking-widest text-slate-900 uppercase">
                 ZIPPTO HOME SERVICES
@@ -632,9 +634,9 @@ const UserDashboard = () => {
           </section>
 
           {/* =============================================================
-              SECTION: "New and noteworthy"
+              SECTION: "New and noteworthy" (Desktop / Tablet Only)
              ============================================================= */}
-          <section className="space-y-2 relative">
+          <section className="hidden md:block space-y-2 relative">
             <h2 className="text-base font-bold text-[#111827] tracking-tight">
               New and noteworthy
             </h2>
@@ -693,8 +695,8 @@ const UserDashboard = () => {
             </div>
           </section>
 
-          {/* SECTION: "Most booked services" */}
-          <section className="space-y-2 relative">
+          {/* SECTION: "Most booked services" (Desktop / Tablet Only) */}
+          <section className="hidden md:block space-y-2 relative">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-[#111827] tracking-tight">
                 Most booked services
@@ -779,8 +781,8 @@ const UserDashboard = () => {
             </div>
           </section>
 
-          {/* NATIVE WATER PURIFIER BANNER */}
-          <section className="w-full rounded-2xl bg-[#EBE7DF] overflow-hidden border border-slate-200/60 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+          {/* NATIVE WATER PURIFIER BANNER (Desktop / Tablet Only) */}
+          <section className="hidden md:flex w-full rounded-2xl bg-[#EBE7DF] overflow-hidden border border-slate-200/60 p-4 sm:p-5 flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
             <div className="space-y-1.5 max-w-lg">
               <span className="inline-block bg-[#007F5F] text-white font-bold text-[9px] px-2 py-0.5 rounded-[3px]">
                 Up to ₹3,550 off
@@ -807,8 +809,8 @@ const UserDashboard = () => {
             </div>
           </section>
 
-          {/* SECTION: "Cleaning Essentials" */}
-          <section className="space-y-2 relative">
+          {/* SECTION: "Cleaning Essentials" (Desktop / Tablet Only) */}
+          <section className="hidden md:block space-y-2 relative">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-base font-bold text-[#111827] tracking-tight">
@@ -898,8 +900,8 @@ const UserDashboard = () => {
             </div>
           </section>
 
-          {/* SECTION: "Appliance repair & service" */}
-          <section className="space-y-2 relative">
+          {/* SECTION: "Appliance repair & service" (Desktop / Tablet Only) */}
+          <section className="hidden md:block space-y-2 relative">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-[#111827] tracking-tight">
                 Appliance repair & service
@@ -982,8 +984,8 @@ const UserDashboard = () => {
             </div>
           </section>
 
-          {/* SECTION: "Home repair & installation" */}
-          <section className="space-y-2 relative">
+          {/* SECTION: "Home repair & installation" (Desktop / Tablet Only) */}
+          <section className="hidden md:block space-y-2 relative">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-[#111827] tracking-tight">
                 Home repair & installation
@@ -1061,8 +1063,8 @@ const UserDashboard = () => {
             </div>
           </section>
 
-          {/* STATUS BAND */}
-          <section className="bg-slate-900 text-white rounded-lg py-2.5 px-3.5 flex flex-col sm:flex-row items-center justify-between gap-1.5 shadow-2xs">
+          {/* STATUS BAND (Desktop / Tablet Only) */}
+          <section className="hidden md:flex bg-slate-900 text-white rounded-lg py-2.5 px-3.5 flex-col sm:flex-row items-center justify-between gap-1.5 shadow-2xs">
             <div className="flex items-center gap-2 text-[11px] sm:text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
               <span className="font-bold">All Zippto Networks Operational</span>
@@ -1074,8 +1076,8 @@ const UserDashboard = () => {
             </Link>
           </section>
 
-          {/* FOOTER CTA BAND */}
-          <footer className="bg-white border border-slate-200/80 rounded-lg p-3.5 shadow-2xs">
+          {/* FOOTER CTA BAND (Desktop / Tablet Only) */}
+          <footer className="hidden md:block bg-white border border-slate-200/80 rounded-lg p-3.5 shadow-2xs">
             <div className="flex flex-col md:flex-row items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-md bg-slate-100 text-slate-900 flex items-center justify-center font-bold shrink-0">

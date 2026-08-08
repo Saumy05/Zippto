@@ -36,7 +36,7 @@ const Footer = () => {
     : '428-A Sarvsampanna Nagar, Indore, Madhya Pradesh - 465116';
 
   return (
-    <footer className="bg-slate-50/90 border-t border-slate-200/80 pt-8 pb-24 lg:pb-12 mt-4 relative overflow-hidden">
+    <footer className="hidden md:block bg-slate-50/90 border-t border-slate-200/80 pt-8 pb-24 lg:pb-12 mt-4 relative overflow-hidden">
       {/* Decorative Blur Backdrops */}
       <div className="absolute top-0 right-0 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl -mr-36 -mt-36 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-72 h-72 bg-slate-900/5 rounded-full blur-3xl -ml-36 -mb-36 pointer-events-none" />
