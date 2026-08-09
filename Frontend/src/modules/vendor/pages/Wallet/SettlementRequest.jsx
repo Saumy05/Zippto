@@ -107,7 +107,7 @@ const SettlementRequest = () => {
 
   const uploadToCloudinary = async (file) => {
     // 1. Get Signature from Backend
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiUrl = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
     const sigRes = await fetch(`${apiUrl}/api/upload/sign-signature`);
     const sigData = await sigRes.json();
 

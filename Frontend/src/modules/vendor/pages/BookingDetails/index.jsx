@@ -1054,23 +1054,27 @@ export default function BookingDetails() {
           <div className="bg-white rounded-xl p-4 mb-4 shadow-md border-t-4 border-green-500">
             <p className="text-sm font-semibold text-gray-700 mb-3">Work Evidence (Photos)</p>
             <div className="grid grid-cols-2 gap-2">
-              {booking.workPhotos.map((photo, index) => (
+              {booking.workPhotos.map((photo, index) => {
+                const uploadBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+                const photoSrc = photo.startsWith('http') ? photo : photo.replace('/api/upload', `${uploadBase}/upload`);
+                return (
                 <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100 border relative group">
                   <img
-                    src={photo.replace('/api/upload', 'http://localhost:5000/upload')}
+                    src={photoSrc}
                     alt={`Work evidence ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button
-                      onClick={() => window.open(photo.replace('/api/upload', 'http://localhost:5000/upload'), '_blank')}
+                      onClick={() => window.open(photoSrc, '_blank')}
                       className="bg-white text-gray-900 px-3 py-1 rounded-full text-xs font-bold"
                     >
                       View
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
 
             {/* Approval/Reject Buttons */}
