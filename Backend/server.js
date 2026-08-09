@@ -285,9 +285,11 @@ if (process.env.VERCEL !== '1' && !process.env.VERCEL_ENV) {
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (err) => {
     console.error('Unhandled Promise Rejection:', err);
-    server.close(() => {
-      process.exit(1);
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      if (server) {
+        server.close(() => process.exit(1));
+      }
+    }
   });
 } else {
   // For Vercel, create HTTP server for Socket.io
