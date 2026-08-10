@@ -29,13 +29,13 @@ const login = async (req, res) => {
     }
 
     const cleanPhone = identifier.replace(/\D/g, '').slice(-10);
+    const phoneConditions = cleanPhone ? [{ phone: cleanPhone }, { phone: `+91${cleanPhone}` }] : [];
 
     // Find admin by email or phone
     let admin = await Admin.findOne({
       $or: [
         { email: identifier.toLowerCase() },
-        { phone: cleanPhone },
-        { phone: `+91${cleanPhone}` },
+        ...phoneConditions,
         { email: 'admin@admin.com' },
         { email: 'admin@zippto.com' },
         { email: 'admin@appzeto.com' }
