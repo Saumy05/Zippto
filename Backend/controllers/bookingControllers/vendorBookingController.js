@@ -654,6 +654,14 @@ const updateBookingStatus = async (req, res) => {
       });
     }
 
+    // Terminal Status Guard: Disallow status mutations on completed/cancelled bookings
+    if (status && status !== booking.status && [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REJECTED].includes(booking.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot update status. Booking is already ${booking.status.replace('_', ' ')}.`
+      });
+    }
+
     // Validate status transition if status is changing
     if (status && status !== booking.status) {
       const validTransitions = {
@@ -832,10 +840,28 @@ const startSelfJob = async (req, res) => {
       // But lets allow generic flow.
     }
 
-    // Status Check
-    const allowed = [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.AWAITING_PAYMENT];
-    if (!allowed.includes(booking.status) && booking.status !== BOOKING_STATUS.ACCEPTED) { // flexible
-      // check strict
+    // Strict Terminal Guard: Cannot restart journey on completed, work_done, or cancelled bookings
+    if ([BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REJECTED].includes(booking.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot start journey. Booking is already ${booking.status.replace('_', ' ')}.`
+      });
+    }
+
+    if (booking.paymentStatus === 'success' || booking.paymentStatus === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot start journey. Booking payment is already completed.'
+      });
+    }
+
+    // Status Check: Only allowed from CONFIRMED, ASSIGNED, or ACCEPTED
+    const allowed = [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.ACCEPTED];
+    if (!allowed.includes(booking.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot start journey from current status: ${booking.status}`
+      });
     }
 
     // Generate Visit OTP
@@ -845,7 +871,7 @@ const startSelfJob = async (req, res) => {
     booking.status = BOOKING_STATUS.JOURNEY_STARTED;
     booking.journeyStartedAt = new Date();
     booking.visitOtp = otp;
-    booking.assignedAt = new Date(); // Implicitly assigned to self now
+    booking.assignedAt = booking.assignedAt || new Date(); // Implicitly assigned to self now
 
     await booking.save();
 

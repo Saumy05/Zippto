@@ -216,6 +216,21 @@ const startJob = async (req, res) => {
       });
     }
 
+    // Terminal Status Guard
+    if ([BOOKING_STATUS.COMPLETED, BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.CANCELLED].includes(booking.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot start journey. Job is already ${booking.status.replace('_', ' ')}.`
+      });
+    }
+
+    if (booking.paymentStatus === 'success' || booking.paymentStatus === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot start journey. Job payment has already been completed.'
+      });
+    }
+
     if (booking.status !== BOOKING_STATUS.ASSIGNED && booking.status !== BOOKING_STATUS.CONFIRMED && booking.status !== BOOKING_STATUS.ACCEPTED) {
       return res.status(400).json({
         success: false,
