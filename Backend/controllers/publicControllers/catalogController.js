@@ -17,15 +17,26 @@ const getPublicCategories = async (req, res) => {
     const { cityId } = req.query;
 
     // Build query
-    const query = { status: 'active' };
+    let query = { status: 'active' };
     if (cityId) {
-      query.cityIds = cityId;
+      query.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
     }
 
-    const categories = await Category.find(query)
+    let categories = await Category.find(query)
       .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome')
       .sort({ homeOrder: 1, createdAt: -1 })
       .lean();
+
+    if (!categories || categories.length === 0) {
+      categories = await Category.find({ status: 'active' })
+        .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome')
+        .sort({ homeOrder: 1, createdAt: -1 })
+        .lean();
+    }
 
     // Fetch only necessary fields for initial category list
     const initialCategories = categories.map(cat => ({
@@ -379,14 +390,30 @@ const getPublicHomeData = async (req, res) => {
   try {
     const { cityId } = req.query;
 
+    let categoryQuery = { status: 'active' };
+    if (cityId) {
+      categoryQuery.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
+    }
+
     // Fetch both in parallel
-    const [categoriesRes, homeContent] = await Promise.all([
-      Category.find({ status: 'active', cityIds: cityId ? cityId : { $exists: true } })
+    let [categoriesRes, homeContent] = await Promise.all([
+      Category.find(categoryQuery)
         .select('title slug homeIconUrl homeBadge hasSaleBadge')
         .sort({ homeOrder: 1 })
         .lean(),
       HomeContent.getHomeContent(cityId)
     ]);
+
+    if (!categoriesRes || categoriesRes.length === 0) {
+      categoriesRes = await Category.find({ status: 'active' })
+        .select('title slug homeIconUrl homeBadge hasSaleBadge')
+        .sort({ homeOrder: 1 })
+        .lean();
+    }
 
     const formattedCategories = categoriesRes.map(cat => ({
       id: cat._id.toString(),
