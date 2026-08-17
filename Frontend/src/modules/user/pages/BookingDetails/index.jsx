@@ -153,7 +153,7 @@ const BookingDetails = () => {
     // We also show if it was never shown and we have a pending payment request
     const hasShown = sessionStorage.getItem(`payment_modal_shown_${booking._id}`);
 
-    if (!isPaymentDone && (hasNewOtpRequest || (!hasShown && (booking.customerConfirmationOTP || booking.qrPaymentInitiated)))) {
+    if (!isPaymentDone && (hasNewOtpRequest || (!hasShown && (booking.customerConfirmationOTP || booking.qrPaymentInitiated || booking.billGenerated || booking.status === 'awaiting_payment')))) {
       setShowPaymentModal(true);
       sessionStorage.setItem(`payment_modal_shown_${booking._id}`, 'true');
       if (booking.customerConfirmationOTP) {
@@ -190,6 +190,11 @@ const BookingDetails = () => {
             return newData;
           });
 
+          if (data.billGenerated || data.payOnlineTriggered) {
+            setShowPaymentModal(true);
+            toast.success('Bill ready! You can now pay online.', { icon: '💳' });
+          }
+
           // Fetch full data to ensure consistency
           loadBooking();
 
@@ -200,10 +205,12 @@ const BookingDetails = () => {
       };
 
       socket.on('booking_updated', handleUpdate);
+      socket.on('bill_generated_pay_online', handleUpdate);
       socket.on('notification', handleUpdate);
 
       return () => {
         socket.off('booking_updated', handleUpdate);
+        socket.off('bill_generated_pay_online', handleUpdate);
         socket.off('notification', handleUpdate);
       };
     }
@@ -306,48 +313,7 @@ const BookingDetails = () => {
   };
 
   const handleOnlinePayment = async () => {
-    if (paying) return;
-
-    // If a Razorpay order already exists for this booking and hasn't been used, skip creating a new one
-    if (booking.razorpayOrderId) {
-      // Open Razorpay with existing order
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: Math.round((booking.finalAmount || 0) * 100),
-        currency: 'INR',
-        order_id: booking.razorpayOrderId,
-        name: 'Homestr',
-        description: `Payment for ${booking.serviceName}`,
-        handler: async function (response) {
-          toast.loading('Verifying payment...');
-          const verifyResponse = await paymentService.verifyPayment({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature
-          });
-          toast.dismiss();
-
-          if (verifyResponse.success) {
-            toast.success('Payment successful!');
-            window.location.reload();
-          } else {
-            toast.error('Payment verification failed');
-          }
-          setPaying(false);
-        },
-        modal: {
-          ondismiss: function () {
-            setPaying(false);
-          }
-        },
-        prefill: { name: 'User', contact: '' },
-        theme: { color: themeColors.button }
-      };
-      setPaying(true);
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-      return;
-    }
+    if (paying || !booking) return;
 
     try {
       setPaying(true);
@@ -361,13 +327,36 @@ const BookingDetails = () => {
         return;
       }
 
+      const orderData = orderResponse.data;
+
+      // Handle Sandbox / Mock payment in development when live keys are not configured
+      if (orderData.isMock || !orderData.key || typeof window.Razorpay === 'undefined') {
+        toast.loading('Verifying secure payment...');
+        const verifyResponse = await paymentService.verifyPayment({
+          razorpay_order_id: orderData.orderId,
+          razorpay_payment_id: `pay_test_${Date.now()}`,
+          razorpay_signature: 'test_signature'
+        });
+        toast.dismiss();
+
+        if (verifyResponse.success) {
+          toast.success('Payment completed successfully!', { icon: '🎉' });
+          setShowPaymentModal(false);
+          loadBooking();
+        } else {
+          toast.error('Payment verification failed');
+        }
+        setPaying(false);
+        return;
+      }
+
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: Math.round(orderResponse.data.amount * 100),
-        currency: orderResponse.data.currency || 'INR',
-        order_id: orderResponse.data.orderId,
-        name: 'Homestr',
-        description: `Payment for ${booking.serviceName}`,
+        key: orderData.key || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: Math.round((orderData.amount || booking.finalAmount || 0) * 100),
+        currency: orderData.currency || 'INR',
+        order_id: orderData.orderId,
+        name: 'Zippto',
+        description: `Payment for ${booking.serviceName || 'Service'}`,
         handler: async function (response) {
           toast.loading('Verifying payment...');
           const verifyResponse = await paymentService.verifyPayment({
@@ -378,7 +367,8 @@ const BookingDetails = () => {
           toast.dismiss();
 
           if (verifyResponse.success) {
-            toast.success('Payment successful!');
+            toast.success('Payment successful!', { icon: '🎉' });
+            setShowPaymentModal(false);
             loadBooking();
           } else {
             toast.error('Payment verification failed');
@@ -386,17 +376,16 @@ const BookingDetails = () => {
           setPaying(false);
         },
         modal: {
-          onhighlight: function () { },
           ondismiss: function () {
             setPaying(false);
           }
         },
         prefill: {
-          name: 'User',
-          contact: ''
+          name: booking.userId?.name || 'Customer',
+          contact: booking.userId?.phone || ''
         },
         theme: {
-          color: themeColors.button
+          color: "#0F766E"
         }
       };
 
@@ -404,6 +393,7 @@ const BookingDetails = () => {
       razorpay.open();
     } catch (error) {
       toast.dismiss();
+      console.error('Payment error:', error);
       toast.error('Failed to process payment');
       setPaying(false);
     }

@@ -249,16 +249,85 @@ const createOrUpdateBill = async (req, res) => {
     }
 
     // ═══════════════════════════════════════
-    // 8. UPDATE BOOKING (no earnings!)
+    // 8. UPDATE BOOKING & TRIGGER PAY ONLINE FOR USER
     // ═══════════════════════════════════════
     booking.finalAmount = grandTotal;
     booking.userPayableAmount = grandTotal;
     booking.vendorBillId = bill._id;
+
+    // Generate cash OTP if not already present
+    if (!booking.customerConfirmationOTP && !booking.paymentOtp) {
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
+      booking.customerConfirmationOTP = otp;
+      booking.paymentOtp = otp;
+    }
+
+    if (booking.status !== 'completed' && booking.status !== 'cancelled') {
+      booking.status = 'awaiting_payment';
+    }
+
     await booking.save();
+
+    // ═══════════════════════════════════════
+    // 9. EMIT REAL-TIME SOCKET ALERTS TO USER
+    // ═══════════════════════════════════════
+    try {
+      const { getIO } = require('../../sockets');
+      const io = getIO();
+      if (io) {
+        const updatePayload = {
+          bookingId: booking._id,
+          finalAmount: grandTotal,
+          userPayableAmount: grandTotal,
+          status: booking.status,
+          billGenerated: true,
+          payOnlineTriggered: true,
+          customerConfirmationOTP: booking.customerConfirmationOTP || booking.paymentOtp,
+          paymentOtp: booking.customerConfirmationOTP || booking.paymentOtp,
+          bill: billData,
+          message: `Bill generated for ₹${grandTotal.toFixed(2)}. You can now pay online!`
+        };
+
+        io.to(`user_${booking.userId}`).emit('booking_updated', updatePayload);
+        io.to(`user_${booking.userId}`).emit('bill_generated_pay_online', updatePayload);
+        io.to(`tracking_${booking._id}`).emit('booking_updated', updatePayload);
+        io.to(`tracking_${booking._id}`).emit('bill_generated_pay_online', updatePayload);
+
+        console.log(`[VendorBill] Emitted bill_generated_pay_online to user_${booking.userId} & tracking_${booking._id}`);
+      }
+    } catch (socketErr) {
+      console.error('[VendorBill] Socket emit error:', socketErr);
+    }
+
+    // ═══════════════════════════════════════
+    // 10. SEND PUSH NOTIFICATION TO USER
+    // ═══════════════════════════════════════
+    try {
+      const { createNotification } = require('../notificationControllers/notificationController');
+      await createNotification({
+        userId: booking.userId,
+        type: 'bill_generated',
+        title: '💳 Bill Ready — Pay Online Now',
+        message: `Your bill for ${booking.serviceName} is ₹${grandTotal.toFixed(2)}. Tap to view details and pay online securely.`,
+        relatedId: booking._id,
+        relatedType: 'booking',
+        priority: 'high',
+        pushData: {
+          type: 'bill_generated',
+          bookingId: booking._id.toString(),
+          payOnline: 'true',
+          finalAmount: grandTotal.toString(),
+          link: `/user/booking/${booking._id}`
+        }
+      });
+      console.log(`[VendorBill] Sent push notification for bill generation to user ${booking.userId}`);
+    } catch (notifErr) {
+      console.error('[VendorBill] Push notification error:', notifErr);
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Bill generated successfully',
+      message: 'Bill generated successfully and Pay Online activated for customer',
       bill,
       financials: {
         grandTotal,

@@ -99,6 +99,53 @@ const BillingPage = () => {
     }
   }, [id, selectedServices, selectedParts, customItems, transportCharges, applyPartsGST, loading]);
 
+  // Real-Time Payment Listener & Polling for Step 5
+  useEffect(() => {
+    if (!id) return;
+
+    let isHandled = false;
+
+    const handlePaymentReceived = (data) => {
+      if (isHandled) return;
+      const bId = data.bookingId || data.id || data.relatedId || data.data?.bookingId;
+      if (String(bId) === String(id) || !bId) {
+        if (data.paymentStatus === 'success' || data.paymentStatus === 'paid' || data.status === 'completed' || data.type === 'payment_success') {
+          isHandled = true;
+          toast.success('🎉 Customer paid online! Payment verified.', { icon: '💳' });
+          localStorage.removeItem(`billing_step_${id}`);
+          localStorage.removeItem(`billing_max_step_${id}`);
+          localStorage.removeItem(`billing_data_${id}`);
+          fetchData();
+          setTimeout(() => {
+            navigate(`/vendor/booking/${id}`);
+          }, 1000);
+        }
+      }
+    };
+
+    // 1. Polling check every 2 seconds on Step 5 / Review
+    const pollInterval = setInterval(async () => {
+      if (isHandled) return;
+      try {
+        const res = await getBookingById(id);
+        const bData = res.data || res;
+        if (bData && (bData.paymentStatus === 'success' || bData.paymentStatus === 'paid' || bData.status === 'completed')) {
+          handlePaymentReceived(bData);
+        }
+      } catch (e) {}
+    }, 2000);
+
+    // 2. Global Window Events & Sockets
+    window.addEventListener('vendorJobsUpdated', () => handlePaymentReceived({ id }));
+    window.addEventListener('vendorNotificationsUpdated', () => handlePaymentReceived({ id }));
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener('vendorJobsUpdated', () => handlePaymentReceived({ id }));
+      window.removeEventListener('vendorNotificationsUpdated', () => handlePaymentReceived({ id }));
+    };
+  }, [id, navigate]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -445,6 +492,27 @@ const BillingPage = () => {
     return expectedNewNetOwed > cashLimit;
   }, [walletInfo, calculations]);
 
+  const handleProceedToFinalReview = async () => {
+    try {
+      setSubmitting(true);
+      const res = await vendorBillService.createOrUpdateBill(id, {
+        services: selectedServices,
+        parts: selectedParts,
+        customItems,
+        transportCharges,
+        applyPartsGST
+      });
+
+      if (res.success) {
+        toast.success('Bill generated! Pay Online triggered for customer.');
+      }
+    } catch (err) {
+      console.error('Error saving bill on review:', err);
+    } finally {
+      setSubmitting(false);
+      setCurrentStep(5);
+    }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -1185,55 +1253,79 @@ const BillingPage = () => {
         {currentStep === 4 && (
           <>
             <button onClick={() => setCurrentStep(3)} className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl">Back</button>
-            <button onClick={() => setCurrentStep(5)} className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg">
-              Next: Final Review <FiArrowRight />
+            <button
+              onClick={handleProceedToFinalReview}
+              disabled={submitting}
+              className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all disabled:opacity-50"
+            >
+              {submitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Activating Pay Online...</span>
+                </>
+              ) : (
+                <>
+                  <span>Next: Final Review</span>
+                  <FiArrowRight />
+                </>
+              )}
             </button>
           </>
         )}
         {currentStep === 5 && (
-          <>
+          (booking?.status === 'completed' || booking?.paymentStatus === 'success' || booking?.paymentStatus === 'paid') ? (
             <button
-              onClick={() => setCurrentStep(4)}
-              disabled={submitting || otpLoading}
-              className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl disabled:opacity-50"
+              onClick={() => navigate(`/vendor/booking/${id}`)}
+              className="w-full py-4 bg-emerald-600 text-white font-black text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-98 transition-all"
             >
-              Back
+              <FiCheckCircle className="w-5 h-5" />
+              <span>Payment Received (Online) — View Booking →</span>
             </button>
-
-            {/* Payment Options Grid for Step 5 */}
-            <div className="flex-[2] grid grid-cols-2 gap-2">
-              {/* Cash/OTP Option - Show if either cash mode or QR generated OTP */}
-              {(isOtpSent && paymentMode === 'cash') ? (
-                <button
-                  onClick={() => setShowOtpModal(true)}
-                  disabled={otpLoading || qrLoading}
-                  className="py-3 bg-gray-900 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-[10px]"
-                >
-                  <FiKey className="w-4 h-4" />
-                  <span>Enter OTP</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleSendOTP}
-                  disabled={otpLoading || qrLoading}
-                  className="py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50 text-[10px]"
-                >
-                  <FiDollarSign className="w-4 h-4" />
-                  <span>Pay in Cash</span>
-                </button>
-              )}
-
-              {/* Online Option */}
+          ) : (
+            <>
               <button
-                onClick={handleOnlinePayment}
-                disabled={otpLoading || qrLoading}
-                className="py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50 text-[10px]"
+                onClick={() => setCurrentStep(4)}
+                disabled={submitting || otpLoading}
+                className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl disabled:opacity-50"
               >
-                <MdQrCode className="w-4 h-4" />
-                <span>{qrLoading ? '...' : 'Online (QR)'}</span>
+                Back
               </button>
-            </div>
-          </>
+
+              {/* Payment Options Grid for Step 5 */}
+              <div className="flex-[2] grid grid-cols-2 gap-2">
+                {/* Cash/OTP Option - Show if either cash mode or QR generated OTP */}
+                {(isOtpSent && paymentMode === 'cash') ? (
+                  <button
+                    onClick={() => setShowOtpModal(true)}
+                    disabled={otpLoading || qrLoading}
+                    className="py-3 bg-gray-900 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-[10px]"
+                  >
+                    <FiKey className="w-4 h-4" />
+                    <span>Enter OTP</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSendOTP}
+                    disabled={otpLoading || qrLoading}
+                    className="py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50 text-[10px]"
+                  >
+                    <FiDollarSign className="w-4 h-4" />
+                    <span>Pay in Cash</span>
+                  </button>
+                )}
+
+                {/* Online Option */}
+                <button
+                  onClick={handleOnlinePayment}
+                  disabled={otpLoading || qrLoading}
+                  className="py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50 text-[10px]"
+                >
+                  <MdQrCode className="w-4 h-4" />
+                  <span>{qrLoading ? '...' : 'Online (QR)'}</span>
+                </button>
+              </div>
+            </>
+          )
         )}
       </div>
 

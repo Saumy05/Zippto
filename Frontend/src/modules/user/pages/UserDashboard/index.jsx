@@ -26,14 +26,107 @@ import { publicCatalogService } from '../../../../services/catalogService';
 
 const toAssetUrl = (url) => {
   if (!url) return '';
-  const clean = url.replace('/api/upload', '/upload');
-  if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
-  return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+    const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
+    return `${base}/${url.replace(/^\/+/, '')}`;
+  }
+  // Frontend public static assets
+  return url;
+};
+
+const DEFAULT_CATEGORY_CONFIG = {
+  electrician: {
+    icon: '/cat_images/electrician.jpg',
+    subCategories: [
+      { id: 'switch-socket', name: 'Switch & Socket Replacement', icon: '🔌' },
+      { id: 'fan-repair', name: 'Ceiling Fan Repair & Mounting', icon: '🌀' },
+      { id: 'mcb-repair', name: 'MCB & Fuse Box Repair', icon: '⚡' },
+      { id: 'tv-install', name: 'Tv Installation & Wiring', icon: '📺' },
+    ]
+  },
+  plumber: {
+    icon: '/cat_images/plumber.jpg',
+    subCategories: [
+      { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', icon: '🚰' },
+      { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', icon: '🧼' },
+      { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', icon: '🚽' },
+      { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', icon: '🚿' },
+    ]
+  },
+  carpenter: {
+    icon: '/cat_images/carpenter.jpg',
+    subCategories: [
+      { id: 'door-lock', name: 'Door Hinge & Lock Repair', icon: '🚪' },
+      { id: 'furniture-assemble', name: 'Furniture Assembly & Repair', icon: '🪑' },
+      { id: 'sofa-repair', name: 'Sofa Repair & Upholstery', icon: '🛋️' },
+      { id: 'hanger-decor', name: 'Hanger & Wall Decor Fitting', icon: '🖼️' },
+    ]
+  },
+  'salon-for-women': {
+    icon: '/cat_images/salon_women.jpg',
+    subCategories: [
+      { id: 'waxing', name: 'Waxing', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=200' },
+      { id: 'facial', name: 'Facial', image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=200' },
+      { id: 'korean-glow', name: 'Korean Glow', image: 'https://images.unsplash.com/photo-1512290900673-700200877a56?w=200' },
+      { id: 'mani-pedi', name: 'Mani-Pedi', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=200' },
+      { id: 'hair', name: 'Hair', image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=200' },
+    ]
+  },
+  'ac-appliance-repair': {
+    icon: '/ac_repair_wall.png',
+    subCategories: [
+      { id: 'ac-service', name: 'AC Service & Repair', icon: '❄️' },
+      { id: 'refrigerator', name: 'Refrigerator Repair', icon: '🧊' },
+      { id: 'washing-machine', name: 'Washing Machine Repair', icon: '🧺' },
+      { id: 'geyser', name: 'Geyser & Water Heater', icon: '🚿' },
+    ]
+  },
+  'cleaning-service': {
+    icon: '/cat_cleaning.png',
+    subCategories: [
+      { id: 'deep-clean', name: 'Full Home Deep Cleaning', icon: '✨' },
+      { id: 'bathroom-clean', name: 'Bathroom Cleaning', icon: '🧼' },
+      { id: 'kitchen-clean', name: 'Kitchen Cleaning', icon: '🍳' },
+      { id: 'sofa-cleaning', name: 'Sofa Cleaning', icon: '🛋️' },
+    ]
+  },
+  'pest-control': {
+    icon: '/intense_bathroom_cleaning.png',
+    subCategories: [
+      { id: 'cockroach-pest', name: 'Cockroach Control', icon: '🪲' },
+      { id: 'termite-pest', name: 'Termite Treatment', icon: '🪵' },
+      { id: 'bedbug-pest', name: 'Bed Bug Eradication', icon: '🛏️' },
+    ]
+  },
+  'painting-service': {
+    icon: '/drill_wall_decor.png',
+    subCategories: [
+      { id: 'interior-paint', name: 'Full Interior Paint', icon: '🎨' },
+      { id: 'waterproofing', name: 'Waterproofing', icon: '💧' },
+      { id: 'wall-texture', name: 'Wall Texture', icon: '🖼️' },
+    ]
+  },
+  'construction-renovation': {
+    icon: '/switchboard_repair.png',
+    subCategories: [
+      { id: 'civil-repair', name: 'Civil Repair Work', icon: '🧱' },
+      { id: 'false-ceiling', name: 'False Ceiling & Gypsum', icon: '🏗️' },
+      { id: 'tile-laying', name: 'Tile & Marble Laying', icon: '📐' },
+    ]
+  },
+  'solar-service': {
+    icon: '/native_water_purifier.png',
+    subCategories: [
+      { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', icon: '⚡' },
+      { id: 'solar-panel-washing', name: 'Solar Panel Washing', icon: '🧼' },
+      { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', icon: '☀️' },
+    ]
+  }
 };
 
 const UserDashboard = () => {
-  const { cartCount = 0 } = useCart() || {};
+  const { cartItems = [], cartCount = 0, addToCart, removeItem } = useCart() || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [newsletterInput, setNewsletterInput] = useState('');
@@ -42,7 +135,45 @@ const UserDashboard = () => {
   // Interactive Flow States
   const [activeCategoryModal, setActiveCategoryModal] = useState(null);
   const [activeDetailView, setActiveDetailView] = useState(null);
-  const [addedServices, setAddedServices] = useState({});
+
+  // Cart Add / Remove Toggle Handler
+  const handleToggleAddService = async (item, sectionTitle) => {
+    try {
+      const isAlreadyInCart = cartItems.some(
+        ci => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
+      );
+
+      if (isAlreadyInCart) {
+        const foundItem = cartItems.find(
+          ci => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
+        );
+        if (foundItem && removeItem) {
+          await removeItem(foundItem._id || foundItem.id);
+          toast.success(`${item.title} removed from cart`);
+        }
+      } else {
+        const rawPriceStr = String(item.price || '99');
+        const numPrice = parseFloat(rawPriceStr.replace(/[^0-9.]/g, '')) || 99;
+
+        if (addToCart) {
+          await addToCart({
+            serviceId: item.id && item.id.length === 24 ? item.id : null,
+            title: item.title,
+            category: activeDetailView?.title || 'Home Services',
+            price: numPrice,
+            unitPrice: numPrice,
+            serviceCount: 1,
+            icon: item.image || '',
+            description: item.desc || ''
+          });
+          toast.success(`${item.title} added to cart!`);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling cart item:', error);
+      toast.error('Failed to update cart. Please try again.');
+    }
+  };
 
   // Carousel Scroll Position Tracker State
   const [scrollState, setScrollState] = useState({});
@@ -161,16 +292,22 @@ const UserDashboard = () => {
         if (catRes.success && Array.isArray(catRes.categories) && catRes.categories.length > 0) {
           const liveCats = catRes.categories
             .filter(c => !c.title.toLowerCase().includes('test'))
-            .map(c => ({
-              id: c.slug || c.id,
-              slug: c.slug || c.id,
-              title: c.title,
-              image: toAssetUrl(c.icon || c.imageUrl || '/cat_images/electrician.jpg'),
-              count: 'Services available',
-              subCategories: [
+            .map(c => {
+              const config = DEFAULT_CATEGORY_CONFIG[c.slug] || DEFAULT_CATEGORY_CONFIG[c.id] || {};
+              const iconPath = c.icon || c.homeIconUrl || config.icon || '/cat_images/electrician.jpg';
+              const subCats = config.subCategories || [
                 { id: c.slug, name: `${c.title} Services`, icon: '⚡' }
-              ]
-            }));
+              ];
+
+              return {
+                id: c.slug || c.id,
+                slug: c.slug || c.id,
+                title: c.title,
+                image: toAssetUrl(iconPath),
+                count: `${subCats.length} services available`,
+                subCategories: subCats
+              };
+            });
 
           if (liveCats.length > 0) {
             setMainCategories(liveCats);
@@ -299,21 +436,6 @@ const UserDashboard = () => {
     { id: 'switch-socket-replace', title: 'Switch replacement', image: '/switchboard_repair.png', rating: '4.83', isInstant: false, price: '₹49' },
     { id: 'door-lock-fix', title: 'Door handle & lock', image: '/drill_wall_decor.png', rating: '4.80', isInstant: true, price: '₹99' },
   ];
-
-  const handleToggleAddService = (itemId, itemTitle) => {
-    setAddedServices((prev) => {
-      const isAdded = !!prev[itemId];
-      if (isAdded) {
-        toast.success(`Removed ${itemTitle}`);
-        const copy = { ...prev };
-        delete copy[itemId];
-        return copy;
-      } else {
-        toast.success(`Added ${itemTitle} to cart`);
-        return { ...prev, [itemId]: true };
-      }
-    });
-  };
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -588,7 +710,9 @@ const UserDashboard = () => {
 
                 <div className="space-y-2.5">
                   {sec.items.map((item) => {
-                    const isAdded = !!addedServices[item.id];
+                    const isAdded = cartItems.some(
+                      ci => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
+                    );
                     return (
                       <div
                         key={item.id}
@@ -613,7 +737,8 @@ const UserDashboard = () => {
                             <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
                           </div>
                           <button
-                            onClick={() => handleToggleAddService(item.id, item.title)}
+                            type="button"
+                            onClick={() => handleToggleAddService(item, sec.sectionTitle)}
                             className={`w-16 sm:w-20 py-1 rounded-md font-bold text-[11px] transition-all shadow-2xs flex items-center justify-center gap-1 ${
                               isAdded
                                 ? 'bg-emerald-600 text-white hover:bg-emerald-700'

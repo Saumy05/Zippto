@@ -78,7 +78,8 @@ const createPaymentOrder = async (req, res) => {
         orderId: orderResult.orderId,
         amount: orderResult.amount / 100, // Convert back to rupees
         currency: orderResult.currency,
-        key: process.env.RAZORPAY_KEY_ID,
+        key: process.env.RAZORPAY_KEY_ID || '',
+        isMock: !!orderResult.isMock,
         bookingId: booking._id
       }
     });
@@ -246,6 +247,42 @@ const verifyPaymentWebhook = async (req, res) => {
         relatedType: 'booking',
         priority: 'high'
       });
+    }
+
+    // ── Emit Real-Time Socket Events to Vendor, Worker & User ──
+    try {
+      const { getIO } = require('../../sockets');
+      const io = getIO();
+      if (io) {
+        const payload = {
+          bookingId: booking._id,
+          id: booking._id,
+          bookingNumber: booking.bookingNumber,
+          status: booking.status,
+          paymentStatus: booking.paymentStatus,
+          paymentMethod: booking.paymentMethod,
+          finalAmount: booking.finalAmount,
+          completedAt: booking.completedAt,
+          message: vendorMsg
+        };
+
+        if (booking.vendorId) {
+          io.to(`vendor_${booking.vendorId}`).emit('booking_updated', payload);
+          io.to(`vendor_${booking.vendorId}`).emit('payment_success', payload);
+        }
+        if (booking.workerId) {
+          io.to(`worker_${booking.workerId}`).emit('booking_updated', payload);
+          io.to(`worker_${booking.workerId}`).emit('payment_success', payload);
+        }
+        io.to(`user_${booking.userId}`).emit('booking_updated', payload);
+        io.to(`user_${booking.userId}`).emit('payment_success', payload);
+        io.to(`tracking_${booking._id}`).emit('booking_updated', payload);
+        io.to(`tracking_${booking._id}`).emit('payment_success', payload);
+
+        console.log(`[Payment] Emitted payment_success socket events for booking ${booking._id}`);
+      }
+    } catch (socketErr) {
+      console.error('[Payment] Socket emit error:', socketErr);
     }
 
     res.status(200).json({

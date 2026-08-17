@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiChevronDown, FiChevronUp, FiSearch, FiCheck, FiX, FiTrash2, FiPlus, FiSave, FiLayers, FiAlertCircle, FiInfo, FiSliders } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiSearch, FiCheck, FiX, FiTrash2, FiPlus, FiSave, FiLayers, FiAlertCircle, FiInfo, FiSliders, FiMapPin, FiNavigation } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import { vendorAuthService } from '../../../../services/authService';
@@ -11,10 +11,13 @@ import LogoLoader from '../../../../components/common/LogoLoader';
 
 const toAssetUrl = (url) => {
   if (!url) return '';
-  const clean = url.replace('/api/upload', '/upload');
-  if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
-  return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+    const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
+    return `${base}/${url.replace(/^\/+/, '')}`;
+  }
+  // Frontend public static assets
+  return url;
 };
 
 const DEFAULT_SUB_SERVICES = {
@@ -66,14 +69,17 @@ const DEFAULT_SUB_SERVICES = {
   ]
 };
 
+const RADIUS_PRESETS = [5, 10, 15, 25, 50];
+
 const ManageServices = () => {
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
   const [categories, setCategories] = useState([]);
   const [selectedServices, setSelectedServices] = useState([]);
-  const [selectedSubServices, setSelectedSubServices] = useState([]); // Sub-services array
+  const [selectedSubServices, setSelectedSubServices] = useState([]);
   const [expandedCategoryId, setExpandedCategoryId] = useState(null);
+  const [workDistance, setWorkDistance] = useState(10); // Working distance in KM
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -114,16 +120,22 @@ const ManageServices = () => {
         const profileRes = await vendorAuthService.getProfile();
         let vendorServices = [];
         let vendorSkills = [];
+        let vendorRange = 10;
+
         if (profileRes.success && profileRes.vendor) {
           const rawServices = profileRes.vendor.service;
           vendorServices = Array.isArray(rawServices) ? rawServices : (rawServices ? [rawServices] : []);
           vendorSkills = profileRes.vendor.skills || [];
+          vendorRange = profileRes.vendor.serviceRange || profileRes.vendor.settings?.serviceRange || 10;
         } else {
           const stored = JSON.parse(localStorage.getItem('vendorData') || '{}');
           const rawServices = stored.service;
           vendorServices = Array.isArray(rawServices) ? rawServices : (rawServices ? [rawServices] : []);
           vendorSkills = stored.skills || [];
+          vendorRange = stored.serviceRange || stored.settings?.serviceRange || 10;
         }
+
+        setWorkDistance(vendorRange);
 
         // 2. Fetch public categories from API
         const catRes = await publicCatalogService.getCategories();
@@ -134,12 +146,12 @@ const ManageServices = () => {
           { id: 'plumber', slug: 'plumber', title: 'Plumber', icon: '/cat_images/plumber.jpg', description: 'Tap repair, pipe leaks & drainage clearance' },
           { id: 'carpenter', slug: 'carpenter', title: 'Carpenter', icon: '/cat_images/carpenter.jpg', description: 'Door locks, furniture assembly & wooden repair' },
           { id: 'salon-for-women', slug: 'salon-for-women', title: 'Salon for Women', icon: '/cat_images/salon_women.jpg', description: 'At-home facial, waxing, mani-pedi & hair care' },
-          { id: 'ac-appliance-repair', slug: 'ac-appliance-repair', title: 'AC & Appliance Repair', icon: 'https://cdn-icons-png.flaticon.com/512/3500/3500833.png', description: 'Split AC servicing, fridge & washing machine repair' },
-          { id: 'cleaning-service', slug: 'cleaning-service', title: 'Cleaning Service', icon: 'https://cdn-icons-png.flaticon.com/512/2933/2933290.png', description: 'Full home deep cleaning & bathroom sanitization' },
-          { id: 'pest-control', slug: 'pest-control', title: 'Pest Control', icon: 'https://cdn-icons-png.flaticon.com/512/2933/2933298.png', description: 'Cockroach, termite & mosquito pest treatment' },
-          { id: 'painting-service', slug: 'painting-service', title: 'Painting Service', icon: 'https://cdn-icons-png.flaticon.com/512/2933/2933286.png', description: 'Interior & exterior wall painting & waterproofing' },
-          { id: 'construction-renovation', slug: 'construction-renovation', title: 'Construction & Renovation', icon: 'https://cdn-icons-png.flaticon.com/512/2933/2933282.png', description: 'Civil repair, false ceiling & marble laying' },
-          { id: 'solar-service', slug: 'solar-service', title: 'Solar Service', icon: 'https://cdn-icons-png.flaticon.com/512/2933/2933258.png', description: 'Rooftop panel installation & maintenance' }
+          { id: 'ac-appliance-repair', slug: 'ac-appliance-repair', title: 'AC & Appliance Repair', icon: '/ac_repair_wall.png', description: 'Split AC servicing, fridge & washing machine repair' },
+          { id: 'cleaning-service', slug: 'cleaning-service', title: 'Cleaning Service', icon: '/cat_cleaning.png', description: 'Full home deep cleaning & bathroom sanitization' },
+          { id: 'pest-control', slug: 'pest-control', title: 'Pest Control', icon: '/intense_bathroom_cleaning.png', description: 'Cockroach, termite & mosquito pest treatment' },
+          { id: 'painting-service', slug: 'painting-service', title: 'Painting Service', icon: '/drill_wall_decor.png', description: 'Interior & exterior wall painting & waterproofing' },
+          { id: 'construction-renovation', slug: 'construction-renovation', title: 'Construction & Renovation', icon: '/switchboard_repair.png', description: 'Civil repair, false ceiling & marble laying' },
+          { id: 'solar-service', slug: 'solar-service', title: 'Solar Service', icon: '/native_water_purifier.png', description: 'Rooftop panel installation & maintenance' }
         ];
 
         if (catRes.success && Array.isArray(catRes.categories) && catRes.categories.length > 0) {
@@ -246,14 +258,18 @@ const ManageServices = () => {
       setIsSaving(true);
       const res = await vendorAuthService.updateProfile({
         serviceCategory: selectedServices,
-        skills: selectedSubServices
+        skills: selectedSubServices,
+        serviceRange: workDistance
       });
 
       if (res.success) {
-        toast.success('Offered categories & sub-services updated!');
+        toast.success('Offered services & work distance updated!');
         const stored = JSON.parse(localStorage.getItem('vendorData') || '{}');
         stored.service = selectedServices;
         stored.skills = selectedSubServices;
+        stored.serviceRange = workDistance;
+        if (!stored.settings) stored.settings = {};
+        stored.settings.serviceRange = workDistance;
         localStorage.setItem('vendorData', JSON.stringify(stored));
         window.dispatchEvent(new Event('vendorProfileUpdated'));
         setTimeout(() => navigate('/vendor/profile'), 800);
@@ -284,7 +300,7 @@ const ManageServices = () => {
 
   return (
     <div className="min-h-screen pb-24" style={{ background: themeColors.backgroundGradient }}>
-      <Header title="My Offered Services" />
+      <Header title="My Offered Services & Radius" />
 
       <main className="px-4 pt-4 max-w-xl mx-auto space-y-5">
         {/* Banner Header */}
@@ -294,11 +310,77 @@ const ManageServices = () => {
               <FiSliders className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900 leading-tight">Services & Sub-Package Opt-In</h2>
+              <h2 className="text-base font-bold text-gray-900 leading-tight">Services & Service Distance</h2>
               <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                Select main categories from the dropdown below, then expand to customize specific sub-services you perform.
+                Set your maximum travel distance and select the specific categories and sub-services you perform.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* WORK DISTANCE / SERVICE RADIUS CARD */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100/80 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <FiNavigation className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">Work Distance Radius</h3>
+                <p className="text-[11px] text-gray-500">Maximum distance you travel for bookings</p>
+              </div>
+            </div>
+            <span className="text-sm font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl border border-indigo-100">
+              {workDistance} km
+            </span>
+          </div>
+
+          {/* Slider Control */}
+          <div className="space-y-2 pt-1">
+            <input
+              type="range"
+              min="1"
+              max="50"
+              step="1"
+              value={workDistance}
+              onChange={(e) => setWorkDistance(Number(e.target.value))}
+              className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none"
+            />
+            <div className="flex justify-between text-[10px] font-bold text-gray-400">
+              <span>1 km</span>
+              <span>15 km</span>
+              <span>30 km</span>
+              <span>50 km</span>
+            </div>
+          </div>
+
+          {/* Quick Select Radius Pills */}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Quick Select:</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {RADIUS_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setWorkDistance(preset)}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                    workDistance === preset
+                      ? 'bg-indigo-600 text-white shadow-sm scale-105'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {preset} km
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Real-time Radius Info Banner */}
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 flex items-start gap-2 text-xs text-slate-600">
+            <FiMapPin className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+            <span>
+              You will automatically receive new booking alerts within a <strong className="text-slate-900">{workDistance} km</strong> radius around your location.
+            </span>
           </div>
         </div>
 
@@ -526,7 +608,7 @@ const ManageServices = () => {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
-                <FiSave className="w-4.5 h-4.5" /> Save Offered Services ({selectedServices.length} Active)
+                <FiSave className="w-4.5 h-4.5" /> Save Offered Services & Radius ({workDistance} km)
               </>
             )}
           </button>

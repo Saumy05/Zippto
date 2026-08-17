@@ -16,8 +16,8 @@ const getPublicCategories = async (req, res) => {
   try {
     const { cityId } = req.query;
 
-    // Build query
-    let query = { status: 'active' };
+    // Build query for active home categories
+    let query = { status: 'active', showOnHome: true };
     if (cityId) {
       query.$or = [
         { cityIds: cityId },
@@ -28,13 +28,13 @@ const getPublicCategories = async (req, res) => {
 
     let categories = await Category.find(query)
       .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome commissionPercentage visitingCharges')
-      .sort({ homeOrder: 1, createdAt: -1 })
+      .sort({ homeOrder: 1, createdAt: 1 })
       .lean();
 
     if (!categories || categories.length === 0) {
       categories = await Category.find({ status: 'active' })
         .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome commissionPercentage visitingCharges')
-        .sort({ homeOrder: 1, createdAt: -1 })
+        .sort({ homeOrder: 1, createdAt: 1 })
         .lean();
     }
 

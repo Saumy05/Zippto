@@ -21,7 +21,7 @@ const Profile = () => {
   };
 
   const menuItems = [
-    { id: 1, label: 'My Offered Services', icon: FiBriefcase, path: '/vendor/manage-services' },
+    { id: 1, label: 'My Offered Services & Radius', icon: FiBriefcase, path: '/vendor/manage-services' },
     { id: 2, label: 'Wallet', icon: FaWallet, path: '/vendor/wallet' },
     { id: 5, label: 'My Ratings', icon: FiStar, path: '/vendor/my-ratings' },
     { id: 6, label: 'Manage Payment Methods', icon: FiCreditCard, path: '/vendor/manage-payment-methods' },

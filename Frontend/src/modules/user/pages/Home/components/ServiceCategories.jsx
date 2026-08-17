@@ -9,10 +9,12 @@ import acApplianceRepairIcon from '../../../../../assets/images/icons/services/a
 
 const toAssetUrl = (url) => {
   if (!url) return '';
-  const clean = url.replace('/api/upload', '/upload');
-  if (clean.startsWith('http')) return clean;
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
-  return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+    const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
+    return `${base}/${url.replace(/^\/+/, '')}`;
+  }
+  return url;
 };
 
 const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllClick }) => {

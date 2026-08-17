@@ -42,6 +42,8 @@ const getProfile = async (req, res) => {
         phone: vendor.phone,
         service: vendor.service,
         skills: vendor.skills || [],
+        serviceRange: vendor.settings?.serviceRange || 10,
+        settings: vendor.settings || { serviceRange: 10 },
         address: vendor.address || null,
         rating: rating > 0 ? parseFloat(rating.toFixed(1)) : 0,
         totalJobs,
