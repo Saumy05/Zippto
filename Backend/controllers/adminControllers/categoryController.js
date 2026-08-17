@@ -41,6 +41,8 @@ const getAllCategories = async (req, res) => {
         cityIds: cat.cityIds || [],
         metaTitle: cat.metaTitle,
         metaDescription: cat.metaDescription,
+        commissionPercentage: cat.commissionPercentage ?? 15,
+        visitingCharges: cat.visitingCharges ?? 99,
         createdAt: cat.createdAt,
         updatedAt: cat.updatedAt
       }))

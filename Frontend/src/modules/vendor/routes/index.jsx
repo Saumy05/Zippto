@@ -63,6 +63,7 @@ const SettlementHistory = lazyLoad(() => import('../pages/Wallet/SettlementHisto
 const MyRatings = lazyLoad(() => import('../pages/MyRatings'));
 const AboutHomestr = lazyLoad(() => import('../pages/AboutHomster'));
 const BillingPage = lazyLoad(() => import('../pages/BillingPage'));
+const ManageServices = lazyLoad(() => import('../pages/ManageServices'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -120,6 +121,7 @@ const VendorRoutes = () => {
               <Route path="/address-management" element={<ProtectedRoute userType="vendor"><AddressManagement /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="vendor"><Notifications /></ProtectedRoute>} />
               <Route path="/my-ratings" element={<ProtectedRoute userType="vendor"><MyRatings /></ProtectedRoute>} />
+              <Route path="/manage-services" element={<ProtectedRoute userType="vendor"><ManageServices /></ProtectedRoute>} />
               <Route path="/about-homestr" element={<ProtectedRoute userType="vendor"><AboutHomestr /></ProtectedRoute>} />
             </Routes>
           </PageTransition>

@@ -76,6 +76,17 @@ const categorySchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  // Urban Company Pricing Engine Controls
+  commissionPercentage: {
+    type: Number,
+    default: 15, // Default 15% platform commission
+    min: 0,
+    max: 100
+  },
+  visitingCharges: {
+    type: Number,
+    default: 99 // Default ₹99 inspection / visiting fee
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',

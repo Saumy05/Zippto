@@ -27,18 +27,18 @@ const getPublicCategories = async (req, res) => {
     }
 
     let categories = await Category.find(query)
-      .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome')
+      .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome commissionPercentage visitingCharges')
       .sort({ homeOrder: 1, createdAt: -1 })
       .lean();
 
     if (!categories || categories.length === 0) {
       categories = await Category.find({ status: 'active' })
-        .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome')
+        .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome commissionPercentage visitingCharges')
         .sort({ homeOrder: 1, createdAt: -1 })
         .lean();
     }
 
-    // Fetch only necessary fields for initial category list
+    // Fetch necessary fields for category list
     const initialCategories = categories.map(cat => ({
       id: cat._id.toString(),
       title: cat.title,
@@ -46,7 +46,9 @@ const getPublicCategories = async (req, res) => {
       icon: cat.homeIconUrl || '',
       badge: cat.homeBadge || '',
       hasSaleBadge: cat.hasSaleBadge || false,
-      showOnHome: cat.showOnHome || false
+      showOnHome: cat.showOnHome || false,
+      commissionPercentage: cat.commissionPercentage ?? 15,
+      visitingCharges: cat.visitingCharges ?? 99
     }));
 
     res.status(200).json({

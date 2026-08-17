@@ -25,10 +25,14 @@ let messaging;
 let db;
 
 try {
-  app = initializeApp(firebaseConfig);
-  messaging = getMessaging(app);
-  db = getDatabase(app);
-  console.log('✅ Firebase initialized successfully');
+  if (firebaseConfig.projectId) {
+    app = initializeApp(firebaseConfig);
+    messaging = getMessaging(app);
+    db = getDatabase(app);
+    console.log('✅ Firebase initialized successfully');
+  } else {
+    console.warn('⚠️ Firebase projectId missing in .env, skipping push notifications initialization');
+  }
 } catch (error) {
   console.error('❌ Firebase initialization failed:', error);
 }

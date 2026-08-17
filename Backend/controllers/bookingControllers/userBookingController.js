@@ -210,26 +210,34 @@ const createBooking = async (req, res) => {
 
     // 3. Standard Pricing (Fallback) if NOT using Plan Benefits
     if (!usePlanBenefits) {
+      // Urban Company Inspection Credit Rule:
+      // If itemized catalog services are selected (totalServiceValue > 0), inspection fee is credited/waived (0).
+      // Otherwise, charge standard category visiting/inspection fee (default ₹99).
+      const categoryVisitingFee = category?.visitingCharges ?? 99;
+      if (bookedItems && bookedItems.length > 0 && totalServiceValue > 0) {
+        visitingCharges = 0; // Credited because catalog items were selected
+      } else if (reqVisitingCharges !== undefined) {
+        visitingCharges = reqVisitingCharges;
+      } else {
+        visitingCharges = categoryVisitingFee;
+      }
+
       if (amount && amount > 0) {
-        // Use amount from frontend logic
+        // Use amount from frontend breakdown
         if (reqBasePrice !== undefined && reqTax !== undefined) {
-          // Use breakdown provided by frontend
           basePrice = reqBasePrice;
           discount = reqDiscount || 0;
           tax = reqTax;
-          visitingCharges = (reqVisitingCharges !== undefined) ? reqVisitingCharges : (visitingCharges || 49);
           finalAmount = (basePrice - discount + tax + visitingCharges) + pendingPenalty;
         } else {
           // Backward compatibility: Reverse calculate
-          if (!visitingCharges) visitingCharges = 49;
           basePrice = Math.round((amount - visitingCharges) / 1.18);
-          tax = amount - basePrice - visitingCharges;
+          tax = Math.max(0, amount - basePrice - visitingCharges);
           discount = 0;
           finalAmount = amount + pendingPenalty;
         }
       } else {
         // Fallback to service pricing (if no amount sent)
-        if (!visitingCharges) visitingCharges = 49;
         basePrice = service.basePrice || 500;
         discount = service.discountPrice ? (basePrice - service.discountPrice) : 0;
         tax = Math.round(basePrice * 0.18);

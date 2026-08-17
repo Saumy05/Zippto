@@ -22,6 +22,15 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
+import { publicCatalogService } from '../../../../services/catalogService';
+
+const toAssetUrl = (url) => {
+  if (!url) return '';
+  const clean = url.replace('/api/upload', '/upload');
+  if (clean.startsWith('http')) return clean;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+};
 
 const UserDashboard = () => {
   const { cartCount = 0 } = useCart() || {};
@@ -73,9 +82,9 @@ const UserDashboard = () => {
     }
   };
 
-  // Prevent background scrolling when bottom sheet or modal view is open
+  // Prevent background scrolling ONLY when bottom sheet modal is open
   useEffect(() => {
-    if (activeCategoryModal || activeDetailView) {
+    if (activeCategoryModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -83,7 +92,7 @@ const UserDashboard = () => {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [activeCategoryModal, activeDetailView]);
+  }, [activeCategoryModal]);
 
   useEffect(() => {
     const checkAllCarousels = () => {
@@ -102,10 +111,11 @@ const UserDashboard = () => {
     return () => window.removeEventListener('resize', checkAllCarousels);
   }, []);
 
-  // Main Category Items
-  const mainCategories = [
+  // Main Category Items State (Dynamic from DB with static fallback)
+  const [mainCategories, setMainCategories] = useState([
     {
       id: 'electrician',
+      slug: 'electrician',
       title: 'Electrician',
       image: '/cat_images/electrician.jpg',
       count: '4 services available',
@@ -118,6 +128,7 @@ const UserDashboard = () => {
     },
     {
       id: 'plumber',
+      slug: 'plumber',
       title: 'Plumber',
       image: '/cat_images/plumber.jpg',
       count: '4 services available',
@@ -125,105 +136,49 @@ const UserDashboard = () => {
         { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', icon: '🚰' },
         { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', icon: '🧼' },
         { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', icon: '🚽' },
-        { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', icon: '🚿' },
-      ],
-    },
-    {
-      id: 'carpenter',
-      title: 'Carpenter',
-      image: '/cat_images/carpenter.jpg',
-      count: '5 services available',
-      subCategories: [
-        { id: 'door-lock', name: 'Door Hinge & Lock Repair', icon: '🚪' },
-        { id: 'furniture-assemble', name: 'Furniture Assembly & Repair', icon: '🪑' },
-        { id: 'sofa-repair', name: 'Sofa Repair & Upholstery', icon: '🛋️' },
-        { id: 'hanger-decor', name: 'Hanger & Wall Decor Fitting', icon: '🖼️' },
-        { id: 'mesh-install', name: 'Door Window Mesh Installation', icon: '🪟' },
-      ],
-    },
-    {
-      id: 'salon-for-women',
-      title: 'Salon for Women',
-      image: '/cat_images/salon_women.jpg',
-      count: '10 services available',
-      subCategories: [
-        { id: 'waxing', name: 'Waxing', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=200' },
-        { id: 'facial', name: 'Facial', image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=200' },
-        { id: 'korean-glow', name: 'Korean Glow', image: 'https://images.unsplash.com/photo-1512290900673-700200877a56?w=200' },
-        { id: 'mani-pedi', name: 'Mani-Pedi', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=200' },
-        { id: 'body-polishing', name: 'Body Polishing', image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=200' },
-        { id: 'clean-up', name: 'Clean-Up', image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200' },
-        { id: 'bleach-dtan-scrub', name: 'Bleach, Dtan & Scrub', image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=200' },
-        { id: 'hair', name: 'Hair', image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=200' },
-        { id: 'threading-face-wax', name: 'Threading & Face Wax', image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200' },
-        { id: 'insta-light-pack', name: 'Insta Light Pack', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200' },
-      ],
-    },
-    {
-      id: 'cleaning-service',
-      title: 'Cleaning Service',
-      image: '/cat_cleaning.png',
-      count: '6 services available',
-      subCategories: [
-        { id: 'deep-clean', name: 'Full Home Clean', icon: '✨' },
-        { id: 'bathroom-clean', name: 'Bathroom Clean', icon: '🧼' },
-        { id: 'kitchen-clean', name: 'Kitchen Sanitization', icon: '🍳' },
-        { id: 'sofa-shampoo', name: 'Sofa Shampooing', icon: '🛋️' },
-        { id: 'carpet-clean', name: 'Carpet Wash', icon: '🧹' },
-        { id: 'water-tank', name: 'Water Tank Clean', icon: '🚰' },
-      ],
-    },
-    {
-      id: 'pest-control',
-      title: 'Pest Control',
-      image: '/intense_bathroom_cleaning.png',
-      count: '4 services available',
-      subCategories: [
-        { id: 'cockroach-pest', name: 'Cockroach Control', icon: '🪲' },
-        { id: 'termite-pest', name: 'Termite Treatment', icon: '🪵' },
-        { id: 'bedbug-pest', name: 'Bed Bug Eradication', icon: '🛏️' },
-        { id: 'mosquito-pest', name: 'Mosquito Fogging', icon: '🦟' },
-      ],
-    },
-    {
-      id: 'painting-service',
-      title: 'Painting Service',
-      image: '/drill_wall_decor.png',
-      count: '5 services available',
-      subCategories: [
-        { id: 'interior-paint', name: 'Full Interior Paint', icon: '🎨' },
-        { id: 'waterproof-paint', name: 'Waterproofing', icon: '💧' },
-        { id: 'wall-texture', name: 'Wall Texture Painting', icon: '🖼️' },
-        { id: 'door-polish', name: 'Wood Polish & Varnish', icon: '🚪' },
-        { id: 'exterior-paint', name: 'Exterior Weathercoat', icon: '🏡' },
-      ],
-    },
-    {
-      id: 'construction-renovation',
-      title: 'Construction & Renovation',
-      image: '/switchboard_repair.png',
-      count: '6 services available',
-      subCategories: [
-        { id: 'civil-repair', name: 'Civil Repair Work', icon: '🧱' },
-        { id: 'false-ceiling', name: 'Gypsum False Ceiling', icon: '🏗️' },
-        { id: 'flooring-tile', name: 'Marble & Tile Laying', icon: '📐' },
-        { id: 'pop-work', name: 'POP Wall Plastering', icon: '🦺' },
-        { id: 'plaster-renovation', name: 'Room Renovation', icon: '🔨' },
-        { id: 'demolition-scrap', name: 'Debris & Scrap Removal', icon: '♻️' },
+        { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', icon: 'Shower' },
       ],
     },
     {
       id: 'solar-service',
+      slug: 'solar-service',
       title: 'Solar Service',
       image: '/native_water_purifier.png',
       count: '3 services available',
       subCategories: [
-        { id: 'rooftop-solar', name: 'Rooftop Panel Install', icon: '☀️' },
-        { id: 'solar-cleaning', name: 'Panel Washing & Maintenance', icon: '🧼' },
-        { id: 'inverter-solar', name: 'Solar Hybrid Inverter', icon: '⚡' },
-      ],
-    },
-  ];
+        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', icon: '⚡' },
+        { id: 'solar-panel-washing', name: 'Solar Panel Washing', icon: '🧼' },
+        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', icon: '☀️' }
+      ]
+    }
+  ]);
+
+  // Fetch live categories dynamically from MongoDB API
+  useEffect(() => {
+    const fetchLiveCategories = async () => {
+      try {
+        const catRes = await publicCatalogService.getCategories();
+        if (catRes.success && Array.isArray(catRes.categories) && catRes.categories.length > 0) {
+          const liveCats = catRes.categories
+            .filter(c => !c.title.toLowerCase().includes('test'))
+            .map(c => ({
+              id: c.slug || c.id,
+              slug: c.slug || c.id,
+              title: c.title,
+              image: toAssetUrl(c.icon || c.imageUrl || '/cat_images/electrician.jpg'),
+              count: 'Services available',
+              subCategories: [
+                { id: c.slug, name: `${c.title} Services`, icon: '⚡' }
+              ]
+            }));
+
+          if (liveCats.length > 0) {
+            setMainCategories(liveCats);
+          }
+        }
+      } catch (err) {
+    fetchLiveCategories();
+  }, []);
 
   // Detailed Services List for Sub-Category Detail View
   const electricianDetailData = {
@@ -1276,8 +1231,70 @@ const UserDashboard = () => {
                 {activeCategoryModal.subCategories.map((sub) => (
                   <div
                     key={sub.id}
-                    onClick={() => {
-                      setActiveCategoryModal(null);
+                    onClick={async () => {
+                      try {
+                        const categorySlug = activeCategoryModal.id || activeCategoryModal.slug || 'electrician';
+                        setActiveCategoryModal(null);
+                        
+                        // Fetch live brands & services for this category from backend API
+                        const brandRes = await publicCatalogService.getBrands({ categorySlug });
+                        
+                        if (brandRes.success && Array.isArray(brandRes.brands) && brandRes.brands.length > 0) {
+                          // Find matching brand or use first brand
+                          const matchBrand = brandRes.brands.find(b => b.slug === sub.id || b.title.toLowerCase().includes(sub.name.toLowerCase())) || brandRes.brands[0];
+                          
+                          // Fetch full brand services
+                          const fullBrandRes = await publicCatalogService.getBrandBySlug(matchBrand.slug);
+                          if (fullBrandRes.success && fullBrandRes.brand) {
+                            const brandData = fullBrandRes.brand;
+                            const sections = brandData.sections || [];
+                            
+                            const dynamicSubGrid = brandRes.brands.map(b => ({
+                              id: b.slug,
+                              name: b.title,
+                              image: toAssetUrl(b.icon || b.imageUrl || sub.image || '/cat_electrician_plumber.png')
+                            }));
+                            
+                            const dynamicSections = sections.length > 0 ? sections.map(sec => ({
+                              sectionTitle: sec.title,
+                              items: (sec.cards || []).map(card => ({
+                                id: card.id,
+                                title: card.title,
+                                rating: card.rating || '4.8',
+                                reviews: card.reviews || '100+ reviews',
+                                price: card.price ? `₹${card.price}` : (card.basePrice ? `₹${card.basePrice}` : '₹99'),
+                                desc: card.subtitle || card.features?.join(' • ') || 'Professional home service package.',
+                                image: toAssetUrl(card.imageUrl || matchBrand.icon || '/cat_electrician_plumber.png')
+                              }))
+                            })) : [{
+                              sectionTitle: sub.name,
+                              items: [{
+                                id: matchBrand.id,
+                                title: matchBrand.title,
+                                rating: '4.8',
+                                reviews: '150+ reviews',
+                                price: matchBrand.price ? `₹${matchBrand.price}` : '₹99',
+                                desc: 'Professional certified doorstep service package.',
+                                image: toAssetUrl(matchBrand.icon || '/cat_electrician_plumber.png')
+                              }]
+                            }];
+
+                            setActiveDetailView({
+                              title: activeCategoryModal.title,
+                              rating: '4.8',
+                              reviews: '1.2k+ reviews',
+                              desc: `Book certified, professional ${activeCategoryModal.title} experts at transparent doorstep prices.`,
+                              subGrid: dynamicSubGrid,
+                              detailedSections: dynamicSections
+                            });
+                            return;
+                          }
+                        }
+                      } catch (err) {
+                        console.error('Error fetching live brand services:', err);
+                      }
+
+                      // Fallback to default detail structure if network error
                       setActiveDetailView(electricianDetailData);
                     }}
                     className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
