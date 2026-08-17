@@ -184,13 +184,13 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
             onTouchMove={(e) => e.preventDefault()}
           />
 
-          {/* Bottom Sheet Modal Container (Docked above Bottom Nav) */}
+          {/* Bottom Sheet Modal Container (Full Edge-to-Edge Sheet Overlay) */}
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
-            className="fixed bottom-[54px] lg:bottom-0 left-0 right-0 z-[9999] w-full bg-white rounded-t-[32px] max-h-[80vh] sm:max-h-[85vh] overflow-y-auto overscroll-y-contain shadow-2xl border-t border-gray-100"
+            className="fixed bottom-0 left-0 right-0 z-[9999] w-full bg-white rounded-t-[32px] max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overscroll-y-contain shadow-2xl border-t border-gray-100"
             style={{
               willChange: 'transform',
               backfaceVisibility: 'hidden',

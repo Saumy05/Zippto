@@ -9,6 +9,22 @@ const BottomNav = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const { cartCount } = useCart();
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkModalState = () => {
+      setIsModalOpen(
+        document.body.style.overflow === 'hidden' ||
+        document.body.classList.contains('modal-open')
+      );
+    };
+
+    checkModalState();
+    const observer = new MutationObserver(checkModalState);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['style', 'class'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   const navItems = useMemo(
     () => [
@@ -36,6 +52,8 @@ const BottomNav = React.memo(() => {
   const handleTabClick = (path) => {
     navigate(path);
   };
+
+  if (isModalOpen) return null;
 
   return (
     <nav

@@ -1245,8 +1245,8 @@ const UserDashboard = () => {
             onTouchMove={(e) => e.preventDefault()}
           />
 
-          {/* Bottom Sheet Container (Docked above Bottom Nav) */}
-          <div className="fixed bottom-[54px] left-0 right-0 z-[9999] w-full bg-white rounded-t-[32px] max-h-[80vh] overflow-y-auto overscroll-y-contain shadow-2xl border-t border-slate-100 animate-slideUp">
+          {/* Bottom Sheet Container (Full Edge-to-Edge Sheet Overlay) */}
+          <div className="fixed bottom-0 left-0 right-0 z-[9999] w-full bg-white rounded-t-[32px] max-h-[85vh] overflow-y-auto overscroll-y-contain shadow-2xl border-t border-slate-100 animate-slideUp">
             {/* Top Handle Pill */}
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-3 mb-1"></div>
 
