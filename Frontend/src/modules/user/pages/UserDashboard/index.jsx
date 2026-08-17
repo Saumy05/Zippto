@@ -73,6 +73,18 @@ const UserDashboard = () => {
     }
   };
 
+  // Prevent background scrolling when bottom sheet or modal view is open
+  useEffect(() => {
+    if (activeCategoryModal || activeDetailView) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [activeCategoryModal, activeDetailView]);
+
   useEffect(() => {
     const checkAllCarousels = () => {
       [
@@ -93,20 +105,58 @@ const UserDashboard = () => {
   // Main Category Items
   const mainCategories = [
     {
-      id: 'electrician-plumber-carpenter',
-      title: 'Electrician / Plumber / Carpenter',
-      image: '/cat_electrician_plumber.png',
-      count: '9 services available',
+      id: 'electrician',
+      title: 'Electrician',
+      image: '/cat_images/electrician.jpg',
+      count: '4 services available',
       subCategories: [
-        { id: 'electrician', name: 'Electrician', icon: '🔌' },
-        { id: 'carpenter', name: 'Carpenter', icon: '🪚' },
-        { id: 'sofa-repair', name: 'Sofa Repair', icon: '🛋️' },
-        { id: 'furniture-assembly', name: 'Furniture Assembly', icon: '🪑' },
-        { id: 'tv-install', name: 'Tv Installation', icon: '📺' },
-        { id: 'hanger-install', name: 'Hanger Installation', icon: '🧥' },
-        { id: 'tile-grouting', name: 'Tile Grouting', icon: '🧱' },
-        { id: 'mesh-install', name: 'Door Window Mesh', icon: '🪟' },
-        { id: 'plumber', name: 'Plumber', icon: '🚰' },
+        { id: 'switch-socket', name: 'Switch & Socket Replacement', icon: '🔌' },
+        { id: 'fan-repair', name: 'Ceiling Fan Repair & Mounting', icon: '🌀' },
+        { id: 'mcb-repair', name: 'MCB & Fuse Box Repair', icon: '⚡' },
+        { id: 'tv-install', name: 'Tv Installation & Wiring', icon: '📺' },
+      ],
+    },
+    {
+      id: 'plumber',
+      title: 'Plumber',
+      image: '/cat_images/plumber.jpg',
+      count: '4 services available',
+      subCategories: [
+        { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', icon: '🚰' },
+        { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', icon: '🧼' },
+        { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', icon: '🚽' },
+        { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', icon: '🚿' },
+      ],
+    },
+    {
+      id: 'carpenter',
+      title: 'Carpenter',
+      image: '/cat_images/carpenter.jpg',
+      count: '5 services available',
+      subCategories: [
+        { id: 'door-lock', name: 'Door Hinge & Lock Repair', icon: '🚪' },
+        { id: 'furniture-assemble', name: 'Furniture Assembly & Repair', icon: '🪑' },
+        { id: 'sofa-repair', name: 'Sofa Repair & Upholstery', icon: '🛋️' },
+        { id: 'hanger-decor', name: 'Hanger & Wall Decor Fitting', icon: '🖼️' },
+        { id: 'mesh-install', name: 'Door Window Mesh Installation', icon: '🪟' },
+      ],
+    },
+    {
+      id: 'salon-for-women',
+      title: 'Salon for Women',
+      image: '/cat_images/salon_women.jpg',
+      count: '10 services available',
+      subCategories: [
+        { id: 'waxing', name: 'Waxing', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=200' },
+        { id: 'facial', name: 'Facial', image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=200' },
+        { id: 'korean-glow', name: 'Korean Glow', image: 'https://images.unsplash.com/photo-1512290900673-700200877a56?w=200' },
+        { id: 'mani-pedi', name: 'Mani-Pedi', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=200' },
+        { id: 'body-polishing', name: 'Body Polishing', image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=200' },
+        { id: 'clean-up', name: 'Clean-Up', image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200' },
+        { id: 'bleach-dtan-scrub', name: 'Bleach, Dtan & Scrub', image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=200' },
+        { id: 'hair', name: 'Hair', image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=200' },
+        { id: 'threading-face-wax', name: 'Threading & Face Wax', image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200' },
+        { id: 'insta-light-pack', name: 'Insta Light Pack', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200' },
       ],
     },
     {
@@ -1184,59 +1234,74 @@ const UserDashboard = () => {
       )}
 
       {/* -------------------------------------------------------------
-          MODAL POPUP WHEN TAPPING A CATEGORY
+          MODAL SHEET WHEN TAPPING A CATEGORY (Bottom-Up Sheet Modal)
          ------------------------------------------------------------- */}
       {activeCategoryModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-5 space-y-4 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden">
-                  <img
-                    src={activeCategoryModal.image}
-                    alt={activeCategoryModal.title}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 leading-snug">
-                    {activeCategoryModal.title}
-                  </h3>
-                  <p className="text-[11px] text-slate-400 font-medium">
-                    {activeCategoryModal.count}
-                  </p>
-                </div>
+        <>
+          {/* Backdrop (Blocks background touch scroll) */}
+          <div
+            className="fixed inset-0 z-[9998] bg-slate-900/60 backdrop-blur-xs transition-opacity animate-fadeIn touch-none"
+            onClick={() => setActiveCategoryModal(null)}
+            onTouchMove={(e) => e.preventDefault()}
+          />
+
+          {/* Bottom Sheet Container (Docked above Bottom Nav) */}
+          <div className="fixed bottom-[54px] left-0 right-0 z-[9999] w-full bg-white rounded-t-[32px] max-h-[80vh] overflow-y-auto overscroll-y-contain shadow-2xl border-t border-slate-100 animate-slideUp">
+            {/* Top Handle Pill */}
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-3 mb-1"></div>
+
+            {/* Sticky Header Bar */}
+            <div className="sticky top-0 bg-white/95 backdrop-blur-md z-10 px-5 pt-2 pb-4 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  {activeCategoryModal.title}
+                </h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  {activeCategoryModal.count}
+                </p>
               </div>
 
               <button
                 onClick={() => setActiveCategoryModal(null)}
-                className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors"
+                aria-label="Close modal"
               >
-                <FiX className="w-4 h-4" />
+                <FiX className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 pt-1">
-              {activeCategoryModal.subCategories.map((sub) => (
-                <div
-                  key={sub.id}
-                  onClick={() => {
-                    setActiveCategoryModal(null);
-                    setActiveDetailView(electricianDetailData);
-                  }}
-                  className="flex flex-col items-center text-center cursor-pointer group"
-                >
-                  <div className="w-full aspect-square rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-2xl shadow-2xs group-hover:bg-slate-100 group-hover:scale-105 transition-all">
-                    {sub.icon}
+            {/* Subcategories Grid (Circular Image Cards Matching Image 2) */}
+            <div className="px-5 py-6">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-y-7 gap-x-4">
+                {activeCategoryModal.subCategories.map((sub) => (
+                  <div
+                    key={sub.id}
+                    onClick={() => {
+                      setActiveCategoryModal(null);
+                      setActiveDetailView(electricianDetailData);
+                    }}
+                    className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
+                  >
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-50 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 text-3xl group-hover:shadow-md group-hover:scale-105 transition-all">
+                      {sub.image ? (
+                        <img
+                          src={sub.image}
+                          alt={sub.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        sub.icon
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-slate-800 text-center mt-2.5 leading-tight line-clamp-2 px-1">
+                      {sub.name}
+                    </span>
                   </div>
-                  <span className="mt-1.5 text-[11px] font-bold text-slate-800 leading-snug line-clamp-2">
-                    {sub.name}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

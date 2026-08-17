@@ -14,6 +14,11 @@ class ApiCache {
    * @returns {any|null} - Cached data or null if expired/missing
    */
   get(key) {
+    // In development mode or on localhost, bypass cache to ensure UI changes reflect immediately
+    if (import.meta.env?.DEV || typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      return null;
+    }
+
     const entry = this.cache.get(key);
     if (!entry) return null;
 
