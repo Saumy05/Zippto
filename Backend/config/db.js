@@ -10,7 +10,10 @@ const connectDB = async () => {
       return;
     }
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      family: 4 // Use IPv4 to avoid IPv6 DNS delay on Mac
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
