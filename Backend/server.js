@@ -168,6 +168,8 @@ app.use('/api/users', require('./routes/user-routes/profile.routes'));
 app.use('/api/user/wallet', require('./routes/user-routes/userWallet.routes'));
 app.use('/api/users/bookings', require('./routes/user-routes/booking.routes'));
 app.use('/api/users', require('./routes/user-routes/cart.routes'));
+app.use('/api/users', require('./routes/user-routes/coupon.routes'));
+app.use('/api/users', require('./routes/user-routes/ticket.routes'));
 app.use('/api/users/fcm-tokens', require('./routes/user-routes/fcmToken.routes'));
 
 // Scrap routes
@@ -212,6 +214,8 @@ app.use('/api/admin', require('./routes/admin-routes/paymentManagement.routes'))
 app.use('/api/admin', require('./routes/admin-routes/transactionManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/upload.routes'));
 app.use('/api/admin', require('./routes/admin-routes/planManagement.routes'));
+app.use('/api/admin', require('./routes/admin-routes/couponManagement.routes'));
+app.use('/api/admin', require('./routes/admin-routes/ticketManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/settings.routes'));
 app.use('/api/admin', require('./routes/admin-routes/reviewManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/reportManagement.routes'));
