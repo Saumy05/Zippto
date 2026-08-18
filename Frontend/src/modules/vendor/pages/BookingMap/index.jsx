@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, DirectionsRenderer, OverlayView, PolylineF } from '@react-google-maps/api';
-import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiClock, FiCheckCircle, FiX, FiMaximize, FiMinimize, FiWifiOff, FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
+import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiClock, FiCheckCircle, FiX, FiMaximize, FiMinimize, FiWifiOff, FiAlertTriangle, FiRefreshCw, FiUser, FiCopy, FiCheck, FiPlus, FiMinus } from 'react-icons/fi';
 import { FaMotorcycle } from 'react-icons/fa';
 import { getBookingById, verifySelfVisit } from '../../services/bookingService';
 import VisitVerificationModal from '../../components/common/VisitVerificationModal';
@@ -59,6 +59,7 @@ const BookingMap = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [routeError, setRouteError] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [copiedAddress, setCopiedAddress] = useState(false);
 
   // Network Status Listener
   useEffect(() => {
@@ -682,112 +683,197 @@ const BookingMap = () => {
         {/* Recenter Button */}
 
 
-        {/* Full Screen Toggle Button */}
-        <button
-          onClick={() => setIsFullScreen(!isFullScreen)}
-          className="absolute top-24 right-4 p-4 rounded-full shadow-2xl transition-all active:scale-90 z-50 bg-white text-gray-700 hover:bg-gray-50"
-          style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.2)' }}
-        >
-          {isFullScreen ? <FiMinimize className="w-6 h-6" /> : <FiMaximize className="w-6 h-6" />}
-        </button>
-
-        {/* Recenter Button */}
-        <button
-          onClick={() => {
-            setIsAutoCenter(true);
-            if (map && currentLocation) {
-              map.panTo(currentLocation);
-              // Do NOT change zoom/tilt here, respect user's current mode
-              if (!isNavigationMode) {
-                map.setZoom(15);
-              } else {
-                map.setZoom(18); // If in nav mode, ensure close zoom
-              }
-            }
-          }}
-          className={`absolute top-40 right-4 p-4 rounded-full shadow-2xl transition-all active:scale-90 z-50 ${isAutoCenter ? 'bg-teal-600 text-white animate-pulse' : 'bg-white text-gray-700'}`}
-          style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.2)' }}
-        >
-          <FiCrosshair className="w-6 h-6" />
-        </button>
-
-        {/* DEBUG: Simulation Button */}
-        {SHOW_SIMULATION_BUTTON && (
+        {/* Floating Glassmorphic Map Action Bar */}
+        <div className="absolute top-20 right-4 flex flex-col gap-2 z-50">
+          {/* Full Screen Toggle Button */}
           <button
-            onClick={isSimulating ? stopSimulation : startSimulation}
-            className={`absolute top-56 right-4 px-4 py-3 rounded-full shadow-2xl transition-all active:scale-90 z-50 text-xs font-bold ${isSimulating ? 'bg-red-500 text-white' : 'bg-purple-600 text-white'}`}
-            style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.2)' }}
+            onClick={() => setIsFullScreen(!isFullScreen)}
+            className="w-11 h-11 rounded-2xl bg-white/95 hover:bg-white backdrop-blur-md shadow-lg border border-slate-200/80 flex items-center justify-center text-slate-700 active:scale-90 transition-all cursor-pointer"
+            title={isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
           >
-            {isSimulating ? '⏹ Stop' : '🚀 Simulate'}
+            {isFullScreen ? <FiMinimize className="w-5 h-5" /> : <FiMaximize className="w-5 h-5" />}
           </button>
-        )}
+
+          {/* Recenter Button */}
+          <button
+            onClick={() => {
+              setIsAutoCenter(true);
+              if (map && currentLocation) {
+                map.panTo(currentLocation);
+                if (!isNavigationMode) {
+                  map.setZoom(15);
+                } else {
+                  map.setZoom(18);
+                }
+              }
+            }}
+            className={`w-11 h-11 rounded-2xl shadow-lg border flex items-center justify-center active:scale-90 transition-all cursor-pointer ${isAutoCenter ? 'bg-teal-600 text-white border-teal-500 shadow-teal-500/25' : 'bg-white/95 hover:bg-white backdrop-blur-md text-slate-700 border-slate-200/80'}`}
+            title="Recenter Location"
+          >
+            <FiCrosshair className="w-5 h-5" />
+          </button>
+
+          {/* Zoom In & Out Connected Pill */}
+          <div className="flex flex-col rounded-2xl bg-white/95 backdrop-blur-md shadow-lg border border-slate-200/80 overflow-hidden divide-y divide-slate-100">
+            <button
+              onClick={() => {
+                if (map) map.setZoom((map.getZoom() || 14) + 1);
+              }}
+              className="w-11 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-90 transition-all cursor-pointer hover:text-teal-700"
+              title="Zoom In"
+            >
+              <FiPlus className="w-4.5 h-4.5" />
+            </button>
+            <button
+              onClick={() => {
+                if (map) map.setZoom((map.getZoom() || 14) - 1);
+              }}
+              className="w-11 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-90 transition-all cursor-pointer hover:text-teal-700"
+              title="Zoom Out"
+            >
+              <FiMinus className="w-4.5 h-4.5" />
+            </button>
+          </div>
+
+          {/* DEBUG: Simulation Button */}
+          {SHOW_SIMULATION_BUTTON && (
+            <button
+              onClick={isSimulating ? stopSimulation : startSimulation}
+              className={`px-3.5 py-2 rounded-xl shadow-lg transition-all active:scale-90 text-[11px] font-black tracking-wide flex items-center gap-1.5 cursor-pointer ${isSimulating ? 'bg-rose-500 text-white shadow-rose-500/25' : 'bg-violet-600 text-white shadow-violet-600/25'}`}
+            >
+              <span>{isSimulating ? '⏹' : '🚀'}</span>
+              <span>{isSimulating ? 'Stop' : 'Simulate'}</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Modern Bottom Card */}
-      <div className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-20 p-6 pb-8 transition-transform duration-300 ${isFullScreen ? 'translate-y-full' : ''}`}>
-        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+      {/* Luxury Senior Bottom Sheet Card */}
+      <div className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] shadow-[0_-12px_40px_rgba(0,0,0,0.14)] border-t border-slate-100/90 z-20 p-5 pb-7 transition-transform duration-300 ${isFullScreen ? 'translate-y-full' : ''}`}>
+        {/* Grabber Handle */}
+        <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 hover:bg-slate-300 transition-colors" />
 
         {/* Time & Distance Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-sm font-medium text-teal-600 mb-1 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-teal-600 animate-pulse"></span>
-              {duration ? `Trip time: ${duration}` : 'Calculating path...'}
-            </p>
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Job Location</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 border border-teal-200/80 shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping" />
+                {duration ? `TRIP TIME: ${duration.toUpperCase()}` : 'CALCULATING PATH...'}
+              </span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              {booking?.serviceName || 'Job Location'}
+            </h2>
           </div>
+
           {distance && (
-            <div className="text-right">
-              <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Distance</p>
-              <p className="text-xl font-bold text-gray-800">{distance}</p>
+            <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl text-right shadow-2xs">
+              <p className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Distance</p>
+              <p className="text-lg font-black text-slate-800">{distance}</p>
             </div>
           )}
         </div>
 
-        {/* Address Section */}
-        <div className="bg-gray-50 rounded-2xl p-4 flex items-start gap-4 mb-4 border border-gray-100">
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-teal-600 border border-gray-100 shrink-0">
-            <FiMapPin className="w-5 h-5" />
+        {/* Customer Quick Summary Strip */}
+        <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/70 border border-slate-200/60 mb-3.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-900 text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0">
+              {((booking?.userId?.name || booking?.customerName || 'Customer')[0] || 'C').toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h4 className="text-xs font-black text-slate-800 truncate">
+                {booking?.userId?.name || booking?.customerName || 'Customer'}
+              </h4>
+              <p className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Verified Customer
+              </p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-gray-900 mb-0.5 truncate">Address</h3>
-            <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">
-              {(() => {
-                const addr = booking?.address;
-                if (!addr) return 'Address loading...';
-                if (typeof addr === 'string') return addr;
-                return `${addr.addressLine2 ? addr.addressLine2 + ', ' : ''}${addr.addressLine1 || ''}, ${addr.city || ''} ${addr.pincode || ''}`;
-              })()}
-            </p>
+
+          <div className="text-right shrink-0">
+            <span className="text-xs font-black text-slate-900 block">
+              ₹{booking?.finalAmount || booking?.totalAmount || booking?.totalPrice || 0}
+            </span>
+            <span className="text-[10px] font-bold text-slate-400">
+              {booking?.paymentMethod === 'online' || booking?.paymentStatus === 'paid' ? 'Prepaid' : 'Pay at Home'}
+            </span>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3">
+        {/* Doorstep Address Section */}
+        <div className="bg-slate-50/80 rounded-2xl p-3.5 flex items-start justify-between gap-3 mb-4 border border-slate-200/60 shadow-2xs">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+              <FiMapPin className="w-4.5 h-4.5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">
+                Service Doorstep Address
+              </span>
+              <p className="text-xs font-bold text-slate-800 line-clamp-2 leading-relaxed">
+                {(() => {
+                  const addr = booking?.address;
+                  if (!addr) return 'Address loading...';
+                  if (typeof addr === 'string') return addr;
+                  return `${addr.addressLine2 ? addr.addressLine2 + ', ' : ''}${addr.addressLine1 || ''}, ${addr.city || ''} ${addr.pincode || ''}`;
+                })()}
+              </p>
+            </div>
+          </div>
+
+          {/* Copy Address Shortcut */}
+          <button
+            type="button"
+            onClick={() => {
+              const addr = booking?.address;
+              const addrText = typeof addr === 'string'
+                ? addr
+                : `${addr?.addressLine1 || ''}, ${addr?.city || ''} ${addr?.pincode || ''}`;
+              navigator.clipboard?.writeText(addrText);
+              setCopiedAddress(true);
+              toast.success('Address copied');
+              setTimeout(() => setCopiedAddress(false), 2000);
+            }}
+            className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all shrink-0 active:scale-90 cursor-pointer shadow-2xs"
+            title="Copy Address"
+          >
+            {copiedAddress ? <FiCheck className="w-3.5 h-3.5 text-emerald-600" /> : <FiCopy className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {/* Action Buttons Grid */}
+        <div className="flex gap-2.5">
           {booking?.status === 'journey_started' && (
             <button
               onClick={() => setIsVisitModalOpen(true)}
-              className="px-6 bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-orange-500/30 transition-all active:scale-95"
+              className="px-5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all active:scale-95 cursor-pointer text-xs uppercase tracking-wider shrink-0"
             >
-              <FiCheckCircle className="w-5 h-5" /> Reached
+              <FiCheckCircle className="w-4.5 h-4.5" /> Reached
             </button>
           )}
 
           {(booking?.userId?.phone || booking?.customerPhone) && (
-            <a href={`tel:${booking.userId?.phone || booking.customerPhone}`} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-600/30 transition-all active:scale-95">
-              <FiPhone className="w-5 h-5" /> Call
+            <a
+              href={`tel:${booking.userId?.phone || booking.customerPhone}`}
+              className="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-teal-600/25 transition-all active:scale-95 text-xs uppercase tracking-wider cursor-pointer"
+            >
+              <FiPhone className="w-4.5 h-4.5" /> Call Customer
             </a>
           )}
+
           <button
             onClick={() => {
               const bAddr = booking?.address;
-              const addressStr = typeof bAddr === 'string' ? bAddr : `${bAddr.addressLine1 || ''}, ${bAddr.city || ''}`;
+              const addressStr = typeof bAddr === 'string' ? bAddr : `${bAddr?.addressLine1 || ''}, ${bAddr?.city || ''}`;
               const dest = coords ? `${coords.lat},${coords.lng}` : encodeURIComponent(addressStr);
               window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}`, '_blank');
             }}
-            className="w-14 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl flex items-center justify-center transition-all active:scale-95"
+            className="w-13 h-12 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 rounded-2xl flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-2xs cursor-pointer group"
+            title="Open Turn-by-Turn GPS in Google Maps"
           >
-            <FiNavigation className="w-6 h-6" />
+            <FiNavigation className="w-5 h-5 text-teal-700 group-hover:rotate-45 transition-transform" />
           </button>
         </div>
       </div>
