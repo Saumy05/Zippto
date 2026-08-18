@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 const ChatMessage = require('../models/ChatMessage');
+const User = require('../models/User');
+const Vendor = require('../models/Vendor');
+const Worker = require('../models/Worker');
+const Service = require('../models/Service');
+const UserService = require('../models/UserService');
 const { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } = require('./firebaseAdmin');
 
 // Allowed status mapping
