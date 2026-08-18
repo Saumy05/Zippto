@@ -192,6 +192,15 @@ const ReviewsPage = () => {
                       <div className="space-y-1">
                         {renderStars(review.rating)}
                         <p className="text-slate-700 text-xs leading-snug line-clamp-2">{review.review}</p>
+                        {review.images && review.images.length > 0 && (
+                          <div className="flex items-center gap-1.5 pt-1 overflow-x-auto">
+                            {review.images.map((img, imgIdx) => (
+                              <a key={imgIdx} href={img} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                                <img src={img} alt="Review attachment" className="w-9 h-9 rounded-lg object-cover border border-slate-200 hover:scale-105 transition-transform" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
                           {new Date(review.createdAt).toLocaleDateString(undefined, {
                             year: 'numeric',
