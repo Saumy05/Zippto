@@ -51,12 +51,10 @@ const BookingMap = () => {
   const [duration, setDuration] = useState('');
   const [routePath, setRoutePath] = useState([]);
   const [isAutoCenter, setIsAutoCenter] = useState(true);
-  const [isNavigationMode, setIsNavigationMode] = useState(false);
   const [heading, setHeading] = useState(0);
-  const [isFullScreen, setIsFullScreen] = useState(false); // Lifted state up
+  const [speed, setSpeed] = useState('--');
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
-  const [otpInput, setOtpInput] = useState(['', '', '', '']);
-  const [actionLoading, setActionLoading] = useState(false);
   const [routeError, setRouteError] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [copiedAddress, setCopiedAddress] = useState(false);
@@ -75,12 +73,7 @@ const BookingMap = () => {
     };
   }, []);
 
-  // DEBUG: Location Simulator for testing
-  const [isSimulating, setIsSimulating] = useState(false);
-  const simulationRef = useRef(null);
-
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID;
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -89,7 +82,7 @@ const BookingMap = () => {
     language: localStorage.getItem('zippto_language') || 'en'
   });
 
-  const mapRef = useRef(null);
+  const socket = useAppNotifications('vendor');
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -116,7 +109,7 @@ const BookingMap = () => {
         }
 
       } catch (error) {
-        // Error fetching booking
+        console.error('Error fetching booking:', error);
       } finally {
         setLoading(false);
       }
@@ -124,45 +117,52 @@ const BookingMap = () => {
     if (isLoaded) fetchBooking();
   }, [id, isLoaded]);
 
-  // Watch Location
+  // Real-Time GPS Tracking based on Vendor's Physical Movement
   useEffect(() => {
-    // START CHANGE: If simulating, do NOT watch real GPS position
-    if (isSimulating) return;
-    // END CHANGE
-
-    if (navigator.geolocation) {
-      const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          // START CHANGE: Double check simulating state inside callback
-          if (isSimulating) return;
-          // END CHANGE
-          const { latitude, longitude, heading: gpsHeading } = position.coords;
-          setCurrentLocation({ lat: latitude, lng: longitude });
-
-          // Use GPS heading if available (more accurate for movement)
-          if (gpsHeading !== null && !isNaN(gpsHeading)) {
-            setHeading(gpsHeading);
-          }
-        },
-        (error) => {
-          // GPS Tracking Error
-          if (error.code === 1) { // PERMISSION_DENIED
-            // toast.error("Location permission denied. Map cannot track you.");
-          }
-        },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-      );
-      return () => navigator.geolocation.clearWatch(watchId);
-    } else {
+    if (!navigator.geolocation) {
       toast.error("Geolocation not supported on this device");
+      return;
     }
-  }, [isSimulating]); // Add isSimulating to dependency array
 
-  const socket = useAppNotifications('vendor'); // Get socket instance 
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude, heading: gpsHeading, speed: gpsSpeed } = position.coords;
+        const newPos = { lat: latitude, lng: longitude };
+        setCurrentLocation(newPos);
 
-  // ... 
+        // Update real-time speed in km/h
+        if (gpsSpeed !== null && !isNaN(gpsSpeed) && gpsSpeed > 0) {
+          setSpeed(Math.round(gpsSpeed * 3.6));
+        } else {
+          setSpeed('--');
+        }
 
-  // Animated location for smooth marker movement
+        // Update heading if provided by device compass/GPS
+        if (gpsHeading !== null && !isNaN(gpsHeading)) {
+          setHeading(gpsHeading);
+        }
+
+        // Live broadcast location to customer tracker via socket
+        if (socket && id) {
+          socket.emit('update_location', {
+            bookingId: id,
+            lat: latitude,
+            lng: longitude,
+            heading: (gpsHeading !== null && !isNaN(gpsHeading)) ? gpsHeading : heading,
+            speed: (gpsSpeed !== null && !isNaN(gpsSpeed)) ? Math.round(gpsSpeed * 3.6) : 0
+          });
+        }
+      },
+      (error) => {
+        console.warn("GPS Tracking notice:", error);
+      },
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [socket, id, heading]);
+
+  // Animated location for smooth marker interpolation
   const [animatedLocation, setAnimatedLocation] = useState(null);
   const targetLocationRef = useRef(null);
   const animatedLocationRef = useRef(null);
@@ -194,7 +194,7 @@ const BookingMap = () => {
         return;
       }
 
-      const lerpFactor = 0.1;
+      const lerpFactor = 0.15;
       const newLat = current.lat + latDiff * lerpFactor;
       const newLng = current.lng + lngDiff * lerpFactor;
       const newLocation = { lat: newLat, lng: newLng };
@@ -212,153 +212,17 @@ const BookingMap = () => {
     };
   }, [currentLocation]);
 
-  // Sync Location to Backend (Periodic)
+  // Join tracking room on socket
   useEffect(() => {
     if (socket && id) {
       socket.emit('join_tracking', id);
     }
   }, [socket, id]);
 
-  useEffect(() => {
-    if (currentLocation && socket && id) {
-      const syncInterval = setInterval(() => {
-        // START CHANGE: If simulating, do NOT emit periodic updates here (simulation loop does it)
-        if (isSimulating) return;
-        // END CHANGE
-
-        if (currentLocation.lat && currentLocation.lng) {
-          socket.emit('update_location', {
-            bookingId: id,
-            lat: currentLocation.lat,
-            lng: currentLocation.lng,
-            heading: heading
-          });
-        }
-      }, 5000);
-
-      return () => clearInterval(syncInterval);
-    }
-  }, [currentLocation, socket, id, heading, isSimulating]); // Add isSimulating to dependency array
-
-  // DEBUG: Location Simulator Functions
-  const startSimulation = () => {
-    if (!currentLocation || !coords || !socket) {
-      toast.error('Wait for map to load first');
-      return;
-    }
-
-    if (!routePath || routePath.length === 0) {
-      toast.error('No road path found. Wait for route to load.');
-      return;
-    }
-
-    setIsSimulating(true);
-    toast.success('🚀 Simulation started! Following the road.');
-
-    // Generate detailed points along the specific road path
-    const pathPoints = [];
-    const stepMeters = 20; // Distance between points (smaller = smoother)
-
-    // Use the FULL path for simulation, not the sliced visualization path
-    const simPath = fullRoutePathRef.current && fullRoutePathRef.current.length > 0 ? fullRoutePathRef.current : routePath;
-
-    for (let i = 0; i < simPath.length - 1; i++) {
-      const p1 = simPath[i];
-      const p2 = simPath[i + 1];
-
-      // Helper to safely get coords whether it's a LatLng object or plain object
-      const getLat = (p) => typeof p.lat === 'function' ? p.lat() : p.lat;
-      const getLng = (p) => typeof p.lng === 'function' ? p.lng() : p.lng;
-
-      const lat1 = getLat(p1);
-      const lng1 = getLng(p1);
-      const lat2 = getLat(p2);
-      const lng2 = getLng(p2);
-
-      const p1LatLng = new window.google.maps.LatLng(lat1, lng1);
-      const p2LatLng = new window.google.maps.LatLng(lat2, lng2);
-
-      const dist = window.google.maps.geometry.spherical.computeDistanceBetween(p1LatLng, p2LatLng);
-      const steps = Math.max(1, Math.floor(dist / stepMeters));
-
-      for (let j = 0; j < steps; j++) {
-        const fraction = j / steps;
-        const lat = lat1 + (lat2 - lat1) * fraction;
-        const lng = lng1 + (lng2 - lng1) * fraction;
-        pathPoints.push({ lat, lng });
-      }
-    }
-    // Add destination
-    const last = simPath[simPath.length - 1];
-    const lastLat = typeof last.lat === 'function' ? last.lat() : last.lat;
-    const lastLng = typeof last.lng === 'function' ? last.lng() : last.lng;
-    pathPoints.push({ lat: lastLat, lng: lastLng });
-
-    let pathIndex = 0;
-
-    simulationRef.current = setInterval(() => {
-      if (pathIndex >= pathPoints.length) {
-        stopSimulation();
-        toast.success('✅ Arrived at destination!');
-        return;
-      }
-
-      const point = pathPoints[pathIndex];
-      let simHeading = heading;
-
-      // Calculate heading for correct icon rotation
-      if (pathIndex < pathPoints.length - 1) {
-        const nextPoint = pathPoints[pathIndex + 1];
-        simHeading = window.google.maps.geometry.spherical.computeHeading(
-          new window.google.maps.LatLng(point),
-          new window.google.maps.LatLng(nextPoint)
-        );
-      }
-
-      // Emit to socket
-      socket.emit('update_location', {
-        bookingId: id,
-        lat: point.lat,
-        lng: point.lng,
-        heading: simHeading
-      });
-
-      // Update local display
-      setCurrentLocation(point);
-      setHeading(simHeading);
-
-      pathIndex++;
-    }, 1000); // Update every 1 second
-  };
-
-  const stopSimulation = () => {
-    if (simulationRef.current) {
-      clearInterval(simulationRef.current);
-      simulationRef.current = null;
-    }
-    setIsSimulating(false);
-  };
-
-  // Cleanup simulation on unmount
-  useEffect(() => {
-    return () => {
-      if (simulationRef.current) {
-        clearInterval(simulationRef.current);
-      }
-    };
-  }, []);
-
-  // ... existing code ...
-
-  const prevLocationRef = useRef(null);
-  const directionsCalculatedRef = useRef(false);
-
-  const fullRoutePathRef = useRef([]);
-
   // Calculate Route ONCE on initial load only
   useEffect(() => {
     if (isLoaded && currentLocation && coords && map && !directionsCalculatedRef.current) {
-      directionsCalculatedRef.current = true; // Prevent recalculation
+      directionsCalculatedRef.current = true;
 
       const directionsService = new window.google.maps.DirectionsService();
       directionsService.route(
@@ -379,28 +243,18 @@ const BookingMap = () => {
             fullRoutePathRef.current = result.routes[0].overview_path;
             setRoutePath(result.routes[0].overview_path);
 
-            // Fit complete route bounds nicely inside viewport
-            try {
-              const bounds = new window.google.maps.LatLngBounds();
-              bounds.extend(currentLocation);
-              bounds.extend(coords);
-              map.fitBounds(bounds, {
-                top: 100,
-                bottom: 300,
-                left: 50,
-                right: 50
-              });
-            } catch (err) {
-              map.setCenter(currentLocation);
-              map.setZoom(15);
-            }
+            // Zoom closely into vendor in 3D driving perspective mode (Google Maps style)
+            map.setCenter(currentLocation);
+            map.setZoom(18);
+            map.setTilt(55);
+            if (heading) map.setHeading(heading);
           } else {
             setRouteError('Could not calculate a driving route to this location.');
           }
         }
       );
     }
-  }, [isLoaded, coords, map, currentLocation]);
+  }, [isLoaded, coords, map, currentLocation, heading]);
 
   // Update distance, ETA, and Clear Traveled Path as vendor moves
   useEffect(() => {
@@ -699,10 +553,14 @@ const BookingMap = () => {
         <GoogleMap
           mapContainerStyle={{ width: '100%', height: '100%' }}
           defaultCenter={defaultCenter}
-          defaultZoom={15}
+          defaultZoom={18}
           onLoad={map => {
             setMap(map);
-            map.setTilt(45);
+            map.setTilt(55);
+            if (currentLocation) {
+              map.setCenter(currentLocation);
+              map.setZoom(18);
+            }
           }}
           onDragStart={() => setIsAutoCenter(false)}
           options={mapOptions}
@@ -762,9 +620,11 @@ const BookingMap = () => {
           <button
             type="button"
             onClick={() => {
-              if (map) {
+              if (map && currentLocation) {
                 map.setHeading(0);
-                map.setTilt(45);
+                map.setTilt(55);
+                map.setZoom(18);
+                map.panTo(currentLocation);
                 setHeading(0);
               }
             }}
@@ -791,6 +651,7 @@ const BookingMap = () => {
                 bounds.extend(currentLocation);
                 bounds.extend(coords);
                 map.fitBounds(bounds, { top: 90, bottom: 200, left: 50, right: 50 });
+                map.setTilt(0);
               }
             }}
             className="w-12 h-12 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center justify-center text-slate-700 active:scale-90 transition-all cursor-pointer hover:bg-slate-50"
@@ -824,23 +685,13 @@ const BookingMap = () => {
             </div>
             <span>Report</span>
           </button>
-
-          {/* Simulation Toggle Badge */}
-          {SHOW_SIMULATION_BUTTON && (
-            <button
-              onClick={isSimulating ? stopSimulation : startSimulation}
-              className={`px-3 py-1.5 rounded-full shadow-lg transition-all active:scale-90 text-[10px] font-black tracking-wide flex items-center gap-1.5 cursor-pointer ${isSimulating ? 'bg-rose-500 text-white' : 'bg-purple-600 text-white'}`}
-            >
-              <span>{isSimulating ? '⏹ Stop' : '🚀 Sim'}</span>
-            </button>
-          )}
         </div>
 
         {/* 3. BOTTOM-LEFT FLOATING SPEEDOMETER & RECENTER (SCREENSHOT MATCH) */}
         <div className="absolute bottom-28 left-3.5 z-30 flex items-center gap-2 pointer-events-auto">
-          {/* Speedometer Circle */}
+          {/* Real GPS Speedometer */}
           <div className="w-14 h-14 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border-2 border-slate-200 flex flex-col items-center justify-center">
-            <span className="text-sm font-black text-slate-900 leading-none">--</span>
+            <span className="text-sm font-black text-slate-900 leading-none">{speed}</span>
             <span className="text-[9px] font-extrabold text-slate-400 uppercase mt-0.5">km/h</span>
           </div>
 
@@ -852,7 +703,7 @@ const BookingMap = () => {
               if (map && currentLocation) {
                 map.panTo(currentLocation);
                 map.setZoom(18);
-                map.setTilt(45);
+                map.setTilt(55);
                 map.setHeading(heading || 0);
               }
             }}
