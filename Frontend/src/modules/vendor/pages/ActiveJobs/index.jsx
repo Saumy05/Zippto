@@ -312,17 +312,6 @@ const ActiveJobs = memo(() => {
                         <span className="text-gray-700 font-medium truncate">{job.location?.address || 'Address not available'}</span>
                       </div>
 
-                      {job.assignedTo && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <div className="p-1 rounded" style={{ background: 'rgba(0, 0, 0, 0.03)' }}>
-                            <FiUser className="w-4 h-4" style={{ color: statusColor }} />
-                          </div>
-                          <span className="text-gray-700 font-medium">
-                            Assigned to: <span className="font-semibold">{job.assignedTo === 'SELF' ? 'Yourself' : job.assignedTo.name}</span>
-                          </span>
-                        </div>
-                      )}
-
                       <div className="flex items-center gap-2 text-sm">
                         <div className="p-1 rounded" style={{ background: 'rgba(0, 0, 0, 0.03)' }}>
                           <FiClock className="w-4 h-4" style={{ color: statusColor }} />
@@ -331,40 +320,11 @@ const ActiveJobs = memo(() => {
                       </div>
                     </div>
 
-                    {/* Quick Action Button for Unassigned Jobs */}
-                    {['ACCEPTED', 'CONFIRMED'].includes(job.status?.toUpperCase()) && !job.assignedTo && (
-                      <div className="mt-4 pt-3 border-t border-gray-100 flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAssignToSelf(job.id);
-                          }}
-                          className="flex-1 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                          style={{
-                            background: 'white',
-                            color: themeColors.button,
-                            border: `1.5px solid ${themeColors.button}`,
-                          }}
-                        >
-                          <FiUser className="w-3.5 h-3.5" />
-                          Do it Myself
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/vendor/booking/${job.id}/assign-worker`);
-                          }}
-                          className="flex-1 py-2 rounded-lg text-xs font-bold text-white transition-all active:scale-95 flex items-center justify-center gap-1.5"
-                          style={{
-                            background: themeColors.button,
-                            boxShadow: `0 2px 8px ${themeColors.button}30`,
-                          }}
-                        >
-                          <FiUser className="w-3.5 h-3.5" />
-                          Assign Worker
-                        </button>
-                      </div>
-                    )}
+                    {/* View Details Action Indicator */}
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-500">
+                      <span>Tap to view full booking details & tracking</span>
+                      <span className="text-emerald-600 font-extrabold flex items-center gap-1">Manage →</span>
+                    </div>
                   </div>
                 </div>
               );

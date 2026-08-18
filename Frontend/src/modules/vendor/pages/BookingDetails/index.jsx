@@ -14,11 +14,8 @@ import {
   verifySelfVisit,
   completeSelfJob
 } from '../../services/bookingService';
-import vendorBillService from '../../../../services/vendorBillService';
-import { CashCollectionModal, ConfirmDialog, WorkerPaymentModal, OtpVerificationModal } from '../../components/common';
-import VisitVerificationModal from '../../components/common/VisitVerificationModal';
-// Import shared WorkCompletionModal from worker directory or move to shared
-import { WorkCompletionModal } from '../../../worker/components/common';
+import { CashCollectionModal, ConfirmDialog, OtpVerificationModal } from '../../components/common';
+import WorkCompletionModal from '../../components/common/WorkCompletionModal';
 // import BillingModal from '../../components/bookings/BillingModal'; // Consumed by page now
 import vendorWalletService from '../../../../services/vendorWalletService';
 import { toast } from 'react-hot-toast';
@@ -30,8 +27,6 @@ export default function BookingDetails() {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [isPayWorkerModalOpen, setIsPayWorkerModalOpen] = useState(false);
-  const [paySubmitting, setPaySubmitting] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [isWorkDoneModalOpen, setIsWorkDoneModalOpen] = useState(false);
   const [isCashModalOpen, setIsCashModalOpen] = useState(false);
@@ -514,23 +509,20 @@ export default function BookingDetails() {
   };
 
   const handleStartJourney = async () => {
-    // If self-job, call the start API first
-    if (booking.assignedTo?.name === 'You (Self)') {
-      try {
-        setLoading(true);
-        await startSelfJob(id);
-        toast.success('Journey Started');
-        // Refresh to update status
-        const response = await getBookingById(id);
-        const apiData = response.data || response;
-        setBooking(prev => ({ ...prev, status: apiData.status }));
-      } catch (error) {
-        console.error('Error starting self journey:', error);
-        toast.error('Failed to start journey');
-        return;
-      } finally {
-        setLoading(false);
-      }
+    try {
+      setLoading(true);
+      await startSelfJob(id);
+      toast.success('Journey Started');
+      // Refresh to update status
+      const response = await getBookingById(id);
+      const apiData = response.data || response;
+      setBooking(prev => ({ ...prev, status: apiData.status }));
+    } catch (error) {
+      console.error('Error starting journey:', error);
+      toast.error('Failed to start journey');
+      return;
+    } finally {
+      setLoading(false);
     }
 
     navigate(`/vendor/booking/${booking.id || id}/map`);
@@ -644,19 +636,14 @@ export default function BookingDetails() {
             </div>
             <div className="flex flex-col items-end gap-1">
               <div
-                className="px-3 py-1 rounded-full text-sm font-semibold"
+                className="px-3 py-1 rounded-full text-sm font-semibold capitalize"
                 style={{
                   background: `${themeColors.button}15`,
                   color: themeColors.button,
                 }}
               >
-                {booking.status}
+                {booking.status?.replace('_', ' ')}
               </div>
-              {booking.assignedTo?.name === 'You (Self)' && (
-                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md border border-green-100 uppercase tracking-wider">
-                  Personal Job
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -1473,87 +1460,59 @@ export default function BookingDetails() {
               <p className="text-xs text-emerald-700 mt-1">This service is complete. Payment of ₹{(booking.finalAmount || 0).toLocaleString()} has been verified.</p>
             </div>
           ) : (
-            <>
-              {(booking.status === 'confirmed' || (booking.assignedTo && booking.workerResponse === 'rejected')) && (
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleAssignToSelf}
-                    className="flex-1 py-4 rounded-xl font-semibold border-2 transition-all active:scale-95"
-                    style={{
-                      borderColor: themeColors.button,
-                      color: themeColors.button,
-                      background: 'white',
-                    }}
-                  >
-                    Do it Myself
-                  </button>
-                  <button
-                    onClick={handleAssignWorker}
-                    className="flex-1 py-4 rounded-xl font-semibold text-white transition-all active:scale-95 px-4"
-                    style={{
-                      background: themeColors.button,
-                      boxShadow: `0 4px 12px ${themeColors.button}40`,
-                    }}
-                  >
-                    {booking.workerResponse === 'rejected' ? 'Reassign' : 'Assign'}
-                  </button>
-                </div>
+            <div className="space-y-3 pt-2">
+              {/* Confirmed / Accepted -> Start Journey */}
+              {(booking.status === 'confirmed' || booking.status === 'assigned' || booking.status === 'accepted') && (
+                <button
+                  onClick={handleStartJourney}
+                  className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #10B981, #059669)',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                  }}
+                >
+                  <FiNavigation className="w-5 h-5" />
+                  Start Journey
+                </button>
               )}
 
-              {/* Self-Job Operational Buttons */}
-              {booking.assignedTo?.name === 'You (Self)' && (
-                <div className="space-y-3 pt-2">
-                  {(booking.status === 'confirmed' || booking.status === 'assigned') && (
-                    <button
-                      onClick={handleStartJourney}
-                      className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
-                      style={{
-                        background: 'linear-gradient(135deg, #10B981, #059669)',
-                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                      }}
-                    >
-                      <FiNavigation className="w-5 h-5" />
-                      Start Journey
-                    </button>
-                  )}
-
-                  {booking.status === 'journey_started' && (
-                    <button
-                      onClick={async () => {
-                        try {
-                          setIsVisitModalOpen(true);
-                          await vendorReached(id);
-                        } catch (err) {
-                          console.error('Failed to notify reached:', err);
-                        }
-                      }}
-                      className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
-                      style={{
-                        background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
-                      }}
-                    >
-                      <FiMapPin className="w-5 h-5" />
-                      Arrived (Arrived at customer's site)
-                    </button>
-                  )}
-
-                  {(booking.status === 'visited' || booking.status === 'in_progress') && (
-                    <button
-                      onClick={() => setIsWorkDoneModalOpen(true)}
-                      className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
-                      style={{
-                        background: 'linear-gradient(135deg, #10B981, #059669)',
-                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                      }}
-                    >
-                      <FiCheckCircle className="w-5 h-5" />
-                      Work Done
-                    </button>
-                  )}
-                </div>
+              {/* Journey Started -> Arrived at Site */}
+              {booking.status === 'journey_started' && (
+                <button
+                  onClick={async () => {
+                    try {
+                      setIsVisitModalOpen(true);
+                      await vendorReached(id);
+                    } catch (err) {
+                      console.error('Failed to notify reached:', err);
+                    }
+                  }}
+                  className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                    boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+                  }}
+                >
+                  <FiMapPin className="w-5 h-5" />
+                  Arrived (Arrived at customer's site)
+                </button>
               )}
-            </>
+
+              {/* Visited / In Progress -> Work Done */}
+              {(booking.status === 'visited' || booking.status === 'in_progress') && (
+                <button
+                  onClick={() => setIsWorkDoneModalOpen(true)}
+                  className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #10B981, #059669)',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                  }}
+                >
+                  <FiCheckCircle className="w-5 h-5" />
+                  Work Done
+                </button>
+              )}
+            </div>
           )}
         </div>
       </main>
@@ -1580,16 +1539,6 @@ export default function BookingDetails() {
           handleCashCollectionConfirm(amount, extras, otp);
         }}
         loading={loading}
-      />
-
-      {/* Pay Worker Modal */}
-      <WorkerPaymentModal
-        isOpen={isPayWorkerModalOpen}
-        onClose={() => setIsPayWorkerModalOpen(false)}
-        workerName={booking.assignedTo?.name}
-        amountDue={booking.vendorEarnings * 0.9} // Estimation or based on your rule (90% to worker)
-        onConfirm={handlePayWorkerSubmit}
-        loading={paySubmitting}
       />
 
       {/* Visit OTP Modal */}

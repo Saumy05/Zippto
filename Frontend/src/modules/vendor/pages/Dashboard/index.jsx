@@ -513,18 +513,18 @@ const Dashboard = memo(() => {
             {/* Quick Action CTA Buttons */}
             <div className="flex items-center gap-3 flex-wrap border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
               <button
-                onClick={() => navigate('/vendor/workers/add')}
+                onClick={() => navigate('/vendor/manage-services')}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95"
               >
-                <FiPlusCircle className="w-4 h-4" />
-                Add Worker
+                <FiSliders className="w-4 h-4" />
+                Manage Services
               </button>
               <button
-                onClick={() => navigate('/vendor/wallet')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/90 text-xs font-bold transition-all active:scale-95"
+                onClick={() => navigate('/vendor/settings')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all active:scale-95"
               >
-                <FaWallet className="w-3.5 h-3.5 text-teal-600" />
-                Wallet & Payouts
+                <FiSettings className="w-4 h-4 text-slate-500" />
+                Settings
               </button>
             </div>
           </div>

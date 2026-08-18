@@ -56,12 +56,6 @@ const getChildRoute = (parentRoute, childName) => {
       "Vendor Analytics": "/admin/vendors/analytics",
       "Vendor Payments": "/admin/vendors/payments",
     },
-    "/admin/workers": {
-      "All Workers": "/admin/workers/all",
-      "Worker Jobs": "/admin/workers/jobs",
-      "Worker Analytics": "/admin/workers/analytics",
-      "Worker Payments": "/admin/workers/payments",
-    },
     "/admin/bookings": {
       "All Bookings": "/admin/bookings",
       "Booking Tracking": "/admin/bookings/tracking",
@@ -76,7 +70,6 @@ const getChildRoute = (parentRoute, childName) => {
     "/admin/payments": {
       "Payment Overview": "/admin/payments/overview",
       "User Payments": "/admin/payments/users",
-      "Worker Payments": "/admin/payments/workers",
       "Vendor Payments": "/admin/payments/vendors",
       "Admin Revenue": "/admin/payments/revenue",
       "Payment Reports": "/admin/payments/reports",

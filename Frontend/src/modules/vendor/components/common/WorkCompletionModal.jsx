@@ -55,16 +55,12 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
   };
 
   const calculateTotal = () => {
-    // For Plan Benefit, user only pays for Extra Charges
     if (job?.paymentMethod === 'plan_benefit') {
       return job?.extraChargesTotal || 0;
     }
-
-    // For normal bookings, prefer finalAmount (even if 0)
     if (typeof job?.finalAmount === 'number') {
       return job.finalAmount;
     }
-
     return ((job?.basePrice || 0) + (job?.tax || 0) - (job?.discount || 0));
   };
 
@@ -109,7 +105,6 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
             </div>
 
             <div className="px-8 pb-8 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
-
               <p className="text-sm text-gray-500 font-medium leading-relaxed">
                 Please upload proof of work from your camera to confirm completion.
               </p>
@@ -167,7 +162,7 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
                 {isUploading && <p className="text-blue-500 text-[10px] font-bold mt-2 ml-1 animate-pulse">Uploading photos...</p>}
               </div>
 
-              {/* Quality Checklist (Restored from Vendor Design) */}
+              {/* Quality Checklist */}
               <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100">
                 <div className="flex items-center gap-2 text-emerald-700 mb-3">
                   <FiCheckCircle className="w-5 h-5" />
@@ -175,8 +170,8 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
                 </div>
                 <ul className="space-y-2">
                   {[
-                    'Double checked the results',
-                    'Cleaned up work area',
+                    'Double checked the service quality',
+                    'Cleaned up the work area',
                     'Customer satisfaction confirmed'
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-2 text-xs font-semibold text-gray-600">
@@ -190,7 +185,7 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
               {/* Payment Info */}
               <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase">Total Bill Value</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase">Estimated Bill Value</p>
                   <p className="text-lg font-black text-gray-800">₹{calculateTotal().toFixed(2)}</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-green-600 shadow-sm">
@@ -212,7 +207,7 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
                   className="py-4 rounded-xl font-bold text-white shadow-lg shadow-green-500/30 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
                   style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}
                 >
-                  {loading ? 'Confirming...' : 'Complete Work'}
+                  {loading ? 'Confirming...' : 'Proceed to Billing'}
                 </button>
               </div>
 

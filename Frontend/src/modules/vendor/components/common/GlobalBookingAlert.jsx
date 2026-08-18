@@ -155,7 +155,6 @@ export default function GlobalBookingAlert() {
       onAccept={async (id) => {
         try {
           await acceptBooking(id);
-          await assignWorker(id, 'SELF');
 
           // Remove from local storage
           const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
@@ -168,37 +167,9 @@ export default function GlobalBookingAlert() {
 
           window.dispatchEvent(new Event('vendorJobsUpdated'));
           window.dispatchEvent(new Event('vendorStatsUpdated'));
-          toast.success('Job claimed successfully! Assigned to you.');
+          toast.success('Job accepted! You can now start journey.');
         } catch (e) {
-          const errMsg = e.response?.data?.message || 'Failed to claim job';
-          toast.error(errMsg);
-          // If already taken, remove it from alerts immediately
-          const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-          const updated = pendingJobs.filter(b => String(b.id || b._id) !== String(id));
-          localStorage.setItem('vendorPendingJobs', JSON.stringify(updated));
-          window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id } }));
-          setActiveAlertBookings(prev => prev.filter(b => String(b.id || b._id) !== String(id)));
-        }
-      }}
-      onAssign={async (id) => {
-        try {
-          await acceptBooking(id);
-
-          // Remove from local storage
-          const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-          const updated = pendingJobs.filter(b => String(b.id || b._id) !== String(id));
-          localStorage.setItem('vendorPendingJobs', JSON.stringify(updated));
-
-          // Dispatch remove event
-          window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id } }));
-          setActiveAlertBookings(prev => prev.filter(b => String(b.id || b._id) !== String(id)));
-
-          window.dispatchEvent(new Event('vendorJobsUpdated'));
-          window.dispatchEvent(new Event('vendorStatsUpdated'));
-          toast.success('Job claimed! Redirecting to assign...');
-          navigate(`/vendor/booking/${id}/assign-worker`);
-        } catch (e) {
-          const errMsg = e.response?.data?.message || 'Failed to claim job';
+          const errMsg = e.response?.data?.message || 'Failed to accept job';
           toast.error(errMsg);
           // If already taken, remove it from alerts immediately
           const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');

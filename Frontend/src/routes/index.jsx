@@ -1,10 +1,9 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Import module routes
+// Import module routes (SOW 3-Platform: Customer, Vendor, Admin)
 import UserRoutes from '../modules/user/routes';
 import VendorRoutes from '../modules/vendor/routes';
-import WorkerRoutes from '../modules/worker/routes';
 import AdminRoutes from '../modules/admin/routes';
 
 import LandingPage from '../modules/landing/pages/LandingPage';
@@ -21,11 +20,8 @@ const AppRoutes = () => {
       {/* User Routes */}
       <Route path="/user/*" element={<UserRoutes />} />
 
-      {/* Vendor Routes */}
+      {/* Vendor / Service Provider Routes */}
       <Route path="/vendor/*" element={<VendorRoutes />} />
-
-      {/* Worker Routes */}
-      <Route path="/worker/*" element={<WorkerRoutes />} />
 
       {/* Admin Routes */}
       <Route path="/admin/*" element={<AdminRoutes />} />

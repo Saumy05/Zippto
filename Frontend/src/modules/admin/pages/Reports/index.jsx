@@ -25,7 +25,6 @@ import CardShell from '../UserCategories/components/CardShell';
 import RevenueReport from './RevenueReport';
 import BookingReport from './BookingReport';
 import VendorReport from './VendorReport';
-import WorkerReport from './WorkerReport';
 
 const ReportsOverview = () => {
   const [loading, setLoading] = useState(true);
@@ -288,7 +287,6 @@ const Reports = () => {
       case 'revenue': return 'Revenue Report';
       case 'bookings': return 'Booking Report';
       case 'vendors': return 'Vendor Report';
-      case 'workers': return 'Worker Report';
       default: return 'Analytics & Reports';
     }
   };
@@ -298,7 +296,6 @@ const Reports = () => {
     { name: 'Revenue', path: '/admin/reports/revenue', icon: FiDollarSign },
     { name: 'Bookings', path: '/admin/reports/bookings', icon: FiShoppingBag },
     { name: 'Vendors', path: '/admin/reports/vendors', icon: FiUsers },
-    { name: 'Workers', path: '/admin/reports/workers', icon: FiBriefcase },
   ];
 
   const isTabActive = (tab) => {
@@ -313,7 +310,6 @@ const Reports = () => {
         <Route path="revenue" element={<RevenueReport />} />
         <Route path="bookings" element={<BookingReport />} />
         <Route path="vendors" element={<VendorReport />} />
-        <Route path="workers" element={<WorkerReport />} />
       </Routes>
     </div>
   );

@@ -223,25 +223,24 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            disabled={!!loadingAction}
-            onClick={() => handleAction(onAccept, 'accept')}
-            className="w-full py-3 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-black text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 col-span-2 disabled:opacity-50">
-            {loadingAction === 'accept' ? 'Accepting...' : 'Accept (Myself)'}
-          </button>
-          <button
-            disabled={!!loadingAction}
-            onClick={() => handleAction(onAssign, 'assign')}
-            className="w-full py-2.5 rounded-xl text-white font-black text-[11px] shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-            style={{ background: themeColors.button }}>
-            <FiUsers className="w-3.5 h-3.5" /> {loadingAction === 'assign' ? '...' : 'Forward'}
-          </button>
+        <div className="flex gap-2.5">
           <button
             disabled={!!loadingAction}
             onClick={() => handleAction(onReject, 'reject')}
-            className="w-full py-2.5 rounded-xl bg-red-50 border border-red-100 text-red-500 font-bold text-[11px] active:scale-95 transition-all uppercase flex items-center justify-center gap-1.5 disabled:opacity-50">
-            {loadingAction === 'reject' ? '...' : <><FiX className="w-3.5 h-3.5" /> Decline</>}
+            className="flex-1 py-3.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            {loadingAction === 'reject' ? 'Declining...' : <><FiX className="w-4 h-4" /> Decline</>}
+          </button>
+          <button
+            disabled={!!loadingAction}
+            onClick={() => handleAction(onAccept, 'accept')}
+            className="flex-[2] py-3.5 rounded-xl text-white font-black text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            style={{
+              background: 'linear-gradient(135deg, #10B981, #059669)',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+            }}
+          >
+            {loadingAction === 'accept' ? 'Accepting...' : 'Accept Job'}
           </button>
         </div>
       </div>

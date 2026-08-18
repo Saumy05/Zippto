@@ -22,9 +22,8 @@ const Profile = () => {
 
   const menuItems = [
     { id: 1, label: 'My Offered Services & Radius', icon: FiBriefcase, path: '/vendor/manage-services' },
-    { id: 2, label: 'Wallet', icon: FaWallet, path: '/vendor/wallet' },
+    { id: 2, label: 'Wallet & Payouts', icon: FaWallet, path: '/vendor/wallet' },
     { id: 5, label: 'My Ratings', icon: FiStar, path: '/vendor/my-ratings' },
-    { id: 6, label: 'Manage Payment Methods', icon: FiCreditCard, path: '/vendor/manage-payment-methods' },
     { id: 7, label: 'Manage Address', icon: FiMapPin, path: '/vendor/address-management' },
     { id: 8, label: 'Settings', icon: FiSettings, path: '/vendor/settings' },
     { id: 9, label: 'About Homestr', icon: null, customIcon: 'H', path: '/vendor/about-homestr' },
@@ -342,9 +341,9 @@ const Profile = () => {
               </span>
             </button>
 
-            {/* Workers */}
+            {/* Services */}
             <button
-              onClick={() => navigate('/vendor/workers')}
+              onClick={() => navigate('/vendor/manage-services')}
               className="flex flex-col items-center justify-center p-4 rounded-2xl active:scale-95 transition-all duration-300 relative overflow-hidden bg-white"
               style={{
                 boxShadow: '0 4px 12px rgba(0, 166, 166, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)',
@@ -368,10 +367,10 @@ const Profile = () => {
                   boxShadow: `0 2px 8px ${hexToRgba(themeColors.button, 0.2)}`,
                 }}
               >
-                <FiUser className="w-5 h-5" style={{ color: themeColors.button }} />
+                <FiBriefcase className="w-5 h-5" style={{ color: themeColors.button }} />
               </div>
               <span className="text-[11px] font-bold text-gray-800 text-center leading-tight">
-                Workers
+                Services
               </span>
             </button>
           </div>
