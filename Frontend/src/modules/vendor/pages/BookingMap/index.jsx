@@ -522,11 +522,17 @@ const BookingMap = () => {
     zoomControl: false,
     mapTypeId: 'roadmap',
     gestureHandling: 'greedy',
-    rotateControl: true,
-    tiltControl: true,
+    rotateControl: false,
+    tiltControl: false,
     isFractionalZoomEnabled: true,
-    mapId: mapId || '8e0a97af9386fefc',
-  }), [mapId]);
+    mapTypeControl: false,
+    mapTypeControlOptions: {
+      mapTypeIds: []
+    },
+    streetViewControl: false,
+    fullscreenControl: false,
+    styles: mapStyles
+  }), []);
 
   if (!isLoaded || loading) return <div className="h-screen bg-gray-100 flex items-center justify-center"><div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>;
 

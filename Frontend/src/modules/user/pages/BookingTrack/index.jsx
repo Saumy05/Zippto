@@ -524,13 +524,16 @@ const BookingTrack = () => {
     zoomControl: false,
     mapTypeId: 'roadmap',
     gestureHandling: 'greedy',
-    rotateControl: true,
-    tiltControl: true,
+    rotateControl: false,
+    tiltControl: false,
     isFractionalZoomEnabled: true,
     mapTypeControl: false,
+    mapTypeControlOptions: {
+      mapTypeIds: []
+    },
     streetViewControl: false,
     fullscreenControl: false,
-    mapId: '8e0a97af9386fefc',
+    styles: mapStyles
   }), []);
 
   // Memoize Map Markers to prevent flickering/blinking
