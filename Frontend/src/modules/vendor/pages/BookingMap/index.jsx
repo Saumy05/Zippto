@@ -167,6 +167,9 @@ const BookingMap = () => {
   const targetLocationRef = useRef(null);
   const animatedLocationRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const prevLocationRef = useRef(null);
+  const directionsCalculatedRef = useRef(false);
+  const fullRoutePathRef = useRef([]);
 
   useEffect(() => {
     if (!currentLocation) return;
