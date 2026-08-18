@@ -568,7 +568,7 @@ const BookingTrack = () => {
     </OverlayView>
   ), [coords]);
 
-  // Google Maps Navigation Vehicle (Blue Dot + White Ring + Direction Light Cone)
+  // Clean Google Maps Navigation Location Beacon (Royal Blue Dot + White Border Ring)
   const riderMarker = useMemo(() => animatedLocation && (
     <OverlayView
       position={animatedLocation}
@@ -582,28 +582,14 @@ const BookingTrack = () => {
         }}
         className="pointer-events-none flex items-center justify-center"
       >
-        {/* Soft forward driving light cone */}
-        <div
-          className="absolute z-10 w-28 h-28 pointer-events-none flex items-center justify-center"
-          style={{
-            transform: `rotate(${heading}deg)`,
-            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        >
-          <div
-            className="w-14 h-24 -mt-14 bg-gradient-to-t from-[#2563eb]/40 via-[#60a5fa]/20 to-transparent pointer-events-none rounded-t-full"
-            style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)' }}
-          />
-        </div>
-
         {/* Outer White Beacon Ring */}
-        <div className="relative z-20 w-7 h-7 rounded-full bg-white shadow-2xl flex items-center justify-center border-2 border-slate-100">
+        <div className="relative z-20 w-7 h-7 rounded-full bg-white shadow-[0_3px_12px_rgba(0,0,0,0.25)] flex items-center justify-center border-2 border-white">
           {/* Inner Royal Blue Dot */}
           <div className="w-4 h-4 rounded-full bg-[#1a73e8] shadow-inner" />
         </div>
       </div>
     </OverlayView>
-  ), [animatedLocation, heading]);
+  ), [animatedLocation]);
 
   // Auto-center camera on destination if rider location is not yet available
   useEffect(() => {
