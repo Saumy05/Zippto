@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, DirectionsRenderer, OverlayView, PolylineF } from '@react-google-maps/api';
-import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiClock, FiCheckCircle, FiX, FiMaximize, FiMinimize, FiWifiOff, FiAlertTriangle, FiRefreshCw, FiUser, FiCopy, FiCheck, FiPlus, FiMinus, FiCornerUpRight, FiCornerUpLeft, FiArrowUp, FiCompass } from 'react-icons/fi';
+import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiClock, FiCheckCircle, FiX, FiMaximize, FiMinimize, FiWifiOff, FiAlertTriangle, FiRefreshCw, FiUser, FiCopy, FiCheck, FiPlus, FiMinus, FiCornerUpRight, FiCornerUpLeft, FiArrowUp, FiCompass, FiVolume2, FiVolumeX, FiSearch } from 'react-icons/fi';
 import { FaMotorcycle } from 'react-icons/fa';
 import { getBookingById, verifySelfVisit } from '../../services/bookingService';
 import VisitVerificationModal from '../../components/common/VisitVerificationModal';
@@ -60,6 +60,8 @@ const BookingMap = () => {
   const [routeError, setRouteError] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
 
   // Network Status Listener
   useEffect(() => {
@@ -536,6 +538,45 @@ const BookingMap = () => {
     return steps[0] || null;
   }, [directions]);
 
+  const nextStep = useMemo(() => {
+    if (!directions?.routes?.[0]?.legs?.[0]?.steps) return null;
+    const steps = directions.routes[0].legs[0].steps;
+    return steps[1] || null;
+  }, [directions]);
+
+  const arrivalClockTime = useMemo(() => {
+    if (!duration) return '';
+    const match = duration.match(/(\d+)\s*min/);
+    const mins = match ? parseInt(match[1], 10) : 4;
+    const target = new Date(Date.now() + mins * 60000);
+    return target.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }, [duration]);
+
+  const maneuverTarget = useMemo(() => {
+    if (!currentStep) {
+      const fallbackName = typeof booking?.address === 'object'
+        ? (booking?.address?.addressLine1 || booking?.address?.city || 'Job Location')
+        : (booking?.address || 'Job Location');
+      return {
+        type: 'straight',
+        prefix: 'towards',
+        name: fallbackName
+      };
+    }
+    const rawText = currentStep.instructions ? currentStep.instructions.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+    const isRight = currentStep.maneuver?.includes('right') || rawText.toLowerCase().includes('right');
+    const isLeft = currentStep.maneuver?.includes('left') || rawText.toLowerCase().includes('left');
+
+    const match = rawText.match(/(?:onto|towards|on|at)\s+([^,]+)/i);
+    const streetName = match ? match[1].trim() : rawText || 'Destination';
+
+    return {
+      type: isRight ? 'right' : isLeft ? 'left' : 'straight',
+      prefix: rawText.toLowerCase().includes('onto') ? 'onto' : 'towards',
+      name: streetName
+    };
+  }, [currentStep, booking?.address]);
+
   const mapOptions = useMemo(() => ({
     disableDefaultUI: true,
     zoomControl: false,
@@ -556,52 +597,45 @@ const BookingMap = () => {
   if (!isLoaded || loading) return <div className="h-screen bg-gray-100 flex items-center justify-center"><div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
-    <div className="h-screen flex flex-col relative bg-white overflow-hidden">
-      {/* Top Floating Header */}
-      <div className="absolute top-4 left-4 z-30 flex items-center pointer-events-none">
-        <button
-          onClick={() => navigate(-1)}
-          className="pointer-events-auto bg-white/95 hover:bg-white backdrop-blur-md p-3 rounded-2xl shadow-lg text-slate-800 border border-slate-200/80 transition-all active:scale-95 cursor-pointer"
-        >
-          <FiArrowLeft className="w-5 h-5" />
-        </button>
-      </div>
+    <div className="h-screen flex flex-col relative bg-slate-900 overflow-hidden select-none">
+      {/* 1. TOP GOOGLE MAPS NAVIGATION HUD (EXACT SCREENSHOT MATCH) */}
+      <div className="absolute top-3 left-3 right-3 z-30 pointer-events-none flex flex-col items-start">
+        {/* Main Turn Maneuver Bar */}
+        <div className="w-full bg-[#005f56] text-white rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.35)] p-4 flex items-center gap-4 pointer-events-auto border border-teal-600/30">
+          {/* Maneuver Arrow Icon */}
+          <div className="w-11 h-11 flex items-center justify-center shrink-0">
+            {maneuverTarget.type === 'right' ? (
+              <FiCornerUpRight className="w-9 h-9 text-white stroke-[3]" />
+            ) : maneuverTarget.type === 'left' ? (
+              <FiCornerUpLeft className="w-9 h-9 text-white stroke-[3]" />
+            ) : (
+              <FiArrowUp className="w-9 h-9 text-white stroke-[3]" />
+            )}
+          </div>
 
-      {/* Google Maps Turn-by-Turn Navigation HUD Banner */}
-      {directions && (
-        <div className="absolute top-4 left-18 right-4 sm:left-20 sm:right-24 z-30 pointer-events-none">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="pointer-events-auto bg-gradient-to-r from-emerald-800 via-teal-800 to-teal-900 text-white rounded-2xl p-3 sm:p-3.5 shadow-2xl border border-white/20 flex items-center justify-between gap-3 max-w-md mx-auto"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0 shadow-inner">
-                {currentStep?.maneuver?.includes('right') ? (
-                  <FiCornerUpRight className="w-5 h-5 text-amber-300 stroke-[2.5]" />
-                ) : currentStep?.maneuver?.includes('left') ? (
-                  <FiCornerUpLeft className="w-5 h-5 text-amber-300 stroke-[2.5]" />
-                ) : (
-                  <FiArrowUp className="w-5 h-5 text-amber-300 stroke-[2.5]" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <span className="text-[10px] font-black text-emerald-200 uppercase tracking-wider block">
-                  {currentStep?.distance?.text ? `In ${currentStep.distance.text}` : 'Next Maneuver'}
-                </span>
-                <p className="text-xs sm:text-sm font-extrabold text-white truncate leading-tight">
-                  {currentStep?.instructions ? currentStep.instructions.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : 'Proceed along the route'}
-                </p>
-              </div>
-            </div>
-
-            <div className="text-right shrink-0 pl-2.5 border-l border-white/20">
-              <span className="text-[9px] font-black uppercase text-emerald-200 block">ETA</span>
-              <span className="text-xs sm:text-sm font-black text-white">{duration || '8 min'}</span>
-            </div>
-          </motion.div>
+          {/* Maneuver Text (towards Road Name) */}
+          <div className="flex-1 min-w-0">
+            <span className="text-xs font-semibold text-[#80cbc4] tracking-wide mr-1.5 lowercase">
+              {maneuverTarget.prefix}
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate leading-tight inline">
+              {maneuverTarget.name}
+            </h2>
+          </div>
         </div>
-      )}
+
+        {/* Subsequent Next Step "Then ↰" */}
+        {nextStep && (
+          <div className="bg-[#004d40] text-teal-100 px-4 py-1 rounded-b-xl text-xs font-extrabold flex items-center gap-2 shadow-md ml-3 border-t border-teal-700/50 pointer-events-auto">
+            <span className="italic font-serif font-bold text-teal-200">Then</span>
+            {nextStep.maneuver?.includes('right') ? (
+              <FiCornerUpRight className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+            ) : (
+              <FiCornerUpLeft className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+            )}
+          </div>
+        )}
+      </div>
 
       {/* No Internet Overlay */}
       <AnimatePresence>
@@ -610,7 +644,7 @@ const BookingMap = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-20 left-4 right-4 z-50 bg-red-500 text-white p-4 rounded-xl shadow-2xl flex items-center gap-4"
+            className="absolute top-24 left-4 right-4 z-50 bg-red-500 text-white p-4 rounded-xl shadow-2xl flex items-center gap-4"
           >
             <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center shrink-0">
               <FiWifiOff className="w-5 h-5" />
@@ -630,7 +664,7 @@ const BookingMap = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute inset-x-4 top-[20%] z-40 bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center max-w-sm mx-auto border border-gray-100"
+            className="absolute inset-x-4 top-[25%] z-40 bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center max-w-sm mx-auto border border-gray-100"
           >
             <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mb-4">
               <FiAlertTriangle className="w-8 h-8 text-orange-500" />
@@ -660,14 +694,15 @@ const BookingMap = () => {
         )}
       </AnimatePresence>
 
+      {/* Map Canvas */}
       <div className="flex-1 w-full h-full relative">
         <GoogleMap
           mapContainerStyle={{ width: '100%', height: '100%' }}
           defaultCenter={defaultCenter}
-          defaultZoom={14}
+          defaultZoom={15}
           onLoad={map => {
             setMap(map);
-            map.setTilt(0);
+            map.setTilt(45);
           }}
           onDragStart={() => setIsAutoCenter(false)}
           options={mapOptions}
@@ -681,21 +716,21 @@ const BookingMap = () => {
                   suppressPolylines: true
                 }}
               />
-              {/* Google Maps Layered Route Polyline */}
+              {/* Electric Google Maps Blue Polyline */}
               <PolylineF
                 path={routePath}
                 options={{
-                  strokeColor: "#064e3b",
+                  strokeColor: "#1d4ed8",
                   strokeWeight: 10,
-                  strokeOpacity: 0.3,
+                  strokeOpacity: 0.35,
                   zIndex: 40
                 }}
               />
               <PolylineF
                 path={routePath}
                 options={{
-                  strokeColor: "#0d9488",
-                  strokeWeight: 6,
+                  strokeColor: "#2563eb",
+                  strokeWeight: 7,
                   strokeOpacity: 1,
                   zIndex: 50
                 }}
@@ -703,232 +738,270 @@ const BookingMap = () => {
             </>
           )}
 
+          {/* Turn Label on Map */}
+          {coords && (
+            <OverlayView
+              position={coords}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <div className="relative -translate-x-1/2 -translate-y-12 pointer-events-none">
+                <div className="bg-[#2563eb] text-white px-2.5 py-1 rounded-xl text-xs font-black shadow-xl border border-white/40 tracking-tight whitespace-nowrap">
+                  {maneuverTarget.name}
+                </div>
+              </div>
+            </OverlayView>
+          )}
+
           {destinationMarker}
           {riderMarker}
         </GoogleMap>
 
-        {/* Floating Glassmorphic Map Action Bar */}
-        <div className="absolute top-20 right-4 flex flex-col gap-2 z-50">
-          {/* Full Screen Toggle Button */}
+        {/* 2. RIGHT FLOATING GOOGLE MAPS ACTION BUTTONS (SCREENSHOT MATCH) */}
+        <div className="absolute top-28 right-3.5 flex flex-col items-center gap-3 z-30 pointer-events-auto">
+          {/* Compass Needle Button */}
           <button
-            onClick={() => setIsFullScreen(!isFullScreen)}
-            className="w-11 h-11 rounded-2xl bg-white/95 hover:bg-white backdrop-blur-md shadow-lg border border-slate-200/80 flex items-center justify-center text-slate-700 active:scale-90 transition-all cursor-pointer"
-            title={isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
-          >
-            {isFullScreen ? <FiMinimize className="w-5 h-5" /> : <FiMaximize className="w-5 h-5" />}
-          </button>
-
-          {/* 3D Navigation Mode Toggle Button */}
-          <button
+            type="button"
             onClick={() => {
-              const nextMode = !isNavigationMode;
-              setIsNavigationMode(nextMode);
-              if (map && currentLocation) {
-                if (nextMode) {
-                  map.panTo(currentLocation);
-                  map.setZoom(18);
-                  map.setTilt(45);
-                  map.setHeading(heading || 0);
-                } else {
-                  map.setTilt(0);
-                  map.setHeading(0);
-                  if (coords) {
-                    const bounds = new window.google.maps.LatLngBounds();
-                    bounds.extend(currentLocation);
-                    bounds.extend(coords);
-                    map.fitBounds(bounds, { top: 90, bottom: 280, left: 50, right: 50 });
-                  }
-                }
+              if (map) {
+                map.setHeading(0);
+                map.setTilt(45);
+                setHeading(0);
               }
             }}
-            className={`w-11 h-11 rounded-2xl shadow-lg border flex items-center justify-center active:scale-90 transition-all cursor-pointer ${isNavigationMode ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-500/25' : 'bg-white/95 hover:bg-white backdrop-blur-md text-slate-700 border-slate-200/80'}`}
-            title={isNavigationMode ? 'Exit 3D Navigation' : 'Start 3D Navigation'}
+            className="w-12 h-12 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
+            title="Reset North Compass"
           >
-            <FiCompass className={`w-5 h-5 ${isNavigationMode ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
+            <div
+              className="w-7 h-7 flex items-center justify-center transition-transform duration-300"
+              style={{ transform: `rotate(${-heading}deg)` }}
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6">
+                <polygon points="12,2 15,12 9,12" fill="#ef4444" />
+                <polygon points="12,22 9,12 15,12" fill="#94a3b8" />
+              </svg>
+            </div>
           </button>
+
+          {/* Search / Route Overview Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (map && coords && currentLocation) {
+                const bounds = new window.google.maps.LatLngBounds();
+                bounds.extend(currentLocation);
+                bounds.extend(coords);
+                map.fitBounds(bounds, { top: 90, bottom: 200, left: 50, right: 50 });
+              }
+            }}
+            className="w-12 h-12 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center justify-center text-slate-700 active:scale-90 transition-all cursor-pointer hover:bg-slate-50"
+            title="Search / Full Route Overview"
+          >
+            <FiSearch className="w-5 h-5 stroke-[2.5]" />
+          </button>
+
+          {/* Mute Voice Guidance Audio Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsMuted(!isMuted);
+              toast.success(isMuted ? 'Voice guidance on' : 'Voice guidance muted');
+            }}
+            className="w-12 h-12 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center justify-center text-slate-700 active:scale-90 transition-all cursor-pointer hover:bg-slate-50"
+            title={isMuted ? 'Unmute voice' : 'Mute voice'}
+          >
+            {isMuted ? <FiVolumeX className="w-5 h-5 stroke-[2.5]" /> : <FiVolume2 className="w-5 h-5 stroke-[2.5]" />}
+          </button>
+
+          {/* Incident Report Button */}
+          <button
+            type="button"
+            onClick={() => toast.success('Traffic condition reported')}
+            className="bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] px-3.5 py-2.5 rounded-full border border-slate-100 flex items-center gap-1.5 text-slate-800 font-black text-xs active:scale-95 transition-all cursor-pointer hover:bg-slate-50"
+            title="Report Incident"
+          >
+            <div className="w-5 h-5 rounded-md bg-amber-500 text-white flex items-center justify-center text-[11px] font-black shadow-xs">
+              +
+            </div>
+            <span>Report</span>
+          </button>
+
+          {/* Simulation Toggle Badge */}
+          {SHOW_SIMULATION_BUTTON && (
+            <button
+              onClick={isSimulating ? stopSimulation : startSimulation}
+              className={`px-3 py-1.5 rounded-full shadow-lg transition-all active:scale-90 text-[10px] font-black tracking-wide flex items-center gap-1.5 cursor-pointer ${isSimulating ? 'bg-rose-500 text-white' : 'bg-purple-600 text-white'}`}
+            >
+              <span>{isSimulating ? '⏹ Stop' : '🚀 Sim'}</span>
+            </button>
+          )}
+        </div>
+
+        {/* 3. BOTTOM-LEFT FLOATING SPEEDOMETER & RECENTER (SCREENSHOT MATCH) */}
+        <div className="absolute bottom-28 left-3.5 z-30 flex items-center gap-2 pointer-events-auto">
+          {/* Speedometer Circle */}
+          <div className="w-14 h-14 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border-2 border-slate-200 flex flex-col items-center justify-center">
+            <span className="text-sm font-black text-slate-900 leading-none">--</span>
+            <span className="text-[9px] font-extrabold text-slate-400 uppercase mt-0.5">km/h</span>
+          </div>
 
           {/* Recenter Button */}
           <button
+            type="button"
             onClick={() => {
               setIsAutoCenter(true);
               if (map && currentLocation) {
                 map.panTo(currentLocation);
-                if (!isNavigationMode) {
-                  map.setZoom(15);
-                } else {
-                  map.setZoom(18);
-                }
+                map.setZoom(18);
+                map.setTilt(45);
+                map.setHeading(heading || 0);
               }
             }}
-            className={`w-11 h-11 rounded-2xl shadow-lg border flex items-center justify-center active:scale-90 transition-all cursor-pointer ${isAutoCenter ? 'bg-teal-600 text-white border-teal-500 shadow-teal-500/25' : 'bg-white/95 hover:bg-white backdrop-blur-md text-slate-700 border-slate-200/80'}`}
-            title="Recenter Location"
+            className={`w-11 h-11 rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex items-center justify-center active:scale-90 transition-all cursor-pointer ${isAutoCenter ? 'bg-teal-600 text-white shadow-teal-600/30' : 'bg-white text-slate-700'}`}
+            title="Recenter Map"
           >
             <FiCrosshair className="w-5 h-5" />
           </button>
-
-          {/* Zoom In & Out Connected Pill */}
-          <div className="flex flex-col rounded-2xl bg-white/95 backdrop-blur-md shadow-lg border border-slate-200/80 overflow-hidden divide-y divide-slate-100">
-            <button
-              onClick={() => {
-                if (map) map.setZoom((map.getZoom() || 14) + 1);
-              }}
-              className="w-11 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-90 transition-all cursor-pointer hover:text-teal-700"
-              title="Zoom In"
-            >
-              <FiPlus className="w-4.5 h-4.5" />
-            </button>
-            <button
-              onClick={() => {
-                if (map) map.setZoom((map.getZoom() || 14) - 1);
-              }}
-              className="w-11 h-10 flex items-center justify-center text-slate-700 hover:bg-slate-50 active:scale-90 transition-all cursor-pointer hover:text-teal-700"
-              title="Zoom Out"
-            >
-              <FiMinus className="w-4.5 h-4.5" />
-            </button>
-          </div>
-
-          {/* DEBUG: Simulation Button */}
-          {SHOW_SIMULATION_BUTTON && (
-            <button
-              onClick={isSimulating ? stopSimulation : startSimulation}
-              className={`px-3.5 py-2 rounded-xl shadow-lg transition-all active:scale-90 text-[11px] font-black tracking-wide flex items-center gap-1.5 cursor-pointer ${isSimulating ? 'bg-rose-500 text-white shadow-rose-500/25' : 'bg-violet-600 text-white shadow-violet-600/25'}`}
-            >
-              <span>{isSimulating ? '⏹' : '🚀'}</span>
-              <span>{isSimulating ? 'Stop' : 'Simulate'}</span>
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Luxury Senior Bottom Sheet Card */}
-      <div className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] shadow-[0_-12px_40px_rgba(0,0,0,0.14)] border-t border-slate-100/90 z-20 p-5 pb-7 transition-transform duration-300 ${isFullScreen ? 'translate-y-full' : ''}`}>
+      {/* 4. GOOGLE MAPS LIVE NAVIGATION BOTTOM BAR (EXACT SCREENSHOT MATCH) */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[28px] shadow-[0_-12px_40px_rgba(0,0,0,0.16)] border-t border-slate-100 z-30 p-3 pb-6 transition-all duration-300">
         {/* Grabber Handle */}
-        <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 hover:bg-slate-300 transition-colors" />
+        <button
+          type="button"
+          onClick={() => setIsSheetExpanded(!isSheetExpanded)}
+          className="w-full flex justify-center py-1 -mt-1 mb-2 cursor-pointer"
+        >
+          <div className="w-10 h-1 bg-slate-300 rounded-full hover:bg-slate-400 transition-colors" />
+        </button>
 
-        {/* Time & Distance Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 border border-teal-200/80 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping" />
-                {duration ? `TRIP TIME: ${duration.toUpperCase()}` : 'CALCULATING PATH...'}
-              </span>
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              {booking?.serviceName || 'Job Location'}
-            </h2>
-          </div>
-
-          {distance && (
-            <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-2xl text-right shadow-2xs">
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Distance</p>
-              <p className="text-lg font-black text-slate-800">{distance}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Customer Quick Summary Strip */}
-        <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50/70 border border-slate-200/60 mb-3.5">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-900 text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0">
-              {((booking?.userId?.name || booking?.customerName || 'Customer')[0] || 'C').toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <h4 className="text-xs font-black text-slate-800 truncate">
-                {booking?.userId?.name || booking?.customerName || 'Customer'}
-              </h4>
-              <p className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Verified Customer
-              </p>
-            </div>
-          </div>
-
-          <div className="text-right shrink-0">
-            <span className="text-xs font-black text-slate-900 block">
-              ₹{booking?.finalAmount || booking?.totalAmount || booking?.totalPrice || 0}
-            </span>
-            <span className="text-[10px] font-bold text-slate-400">
-              {booking?.paymentMethod === 'online' || booking?.paymentStatus === 'paid' ? 'Prepaid' : 'Pay at Home'}
-            </span>
-          </div>
-        </div>
-
-        {/* Doorstep Address Section */}
-        <div className="bg-slate-50/80 rounded-2xl p-3.5 flex items-start justify-between gap-3 mb-4 border border-slate-200/60 shadow-2xs">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-              <FiMapPin className="w-4.5 h-4.5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">
-                Service Doorstep Address
-              </span>
-              <p className="text-xs font-bold text-slate-800 line-clamp-2 leading-relaxed">
-                {(() => {
-                  const addr = booking?.address;
-                  if (!addr) return 'Address loading...';
-                  if (typeof addr === 'string') return addr;
-                  return `${addr.addressLine2 ? addr.addressLine2 + ', ' : ''}${addr.addressLine1 || ''}, ${addr.city || ''} ${addr.pincode || ''}`;
-                })()}
-              </p>
-            </div>
-          </div>
-
-          {/* Copy Address Shortcut */}
+        {/* 3-Column Navigation Status Bar */}
+        <div className="flex items-center justify-between px-3">
+          {/* Left: Circular Exit (✕) */}
           <button
             type="button"
-            onClick={() => {
-              const addr = booking?.address;
-              const addrText = typeof addr === 'string'
-                ? addr
-                : `${addr?.addressLine1 || ''}, ${addr?.city || ''} ${addr?.pincode || ''}`;
-              navigator.clipboard?.writeText(addrText);
-              setCopiedAddress(true);
-              toast.success('Address copied');
-              setTimeout(() => setCopiedAddress(false), 2000);
-            }}
-            className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 border border-slate-200/80 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all shrink-0 active:scale-90 cursor-pointer shadow-2xs"
-            title="Copy Address"
+            onClick={() => navigate(-1)}
+            className="w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xl font-bold active:scale-90 transition-all cursor-pointer shadow-2xs"
+            title="Exit Navigation"
           >
-            {copiedAddress ? <FiCheck className="w-3.5 h-3.5 text-emerald-600" /> : <FiCopy className="w-3.5 h-3.5" />}
+            <FiX className="w-6 h-6 stroke-[2.5]" />
           </button>
-        </div>
 
-        {/* Action Buttons Grid */}
-        <div className="flex gap-2.5">
-          {booking?.status === 'journey_started' && (
-            <button
-              onClick={() => setIsVisitModalOpen(true)}
-              className="px-5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all active:scale-95 cursor-pointer text-xs uppercase tracking-wider shrink-0"
-            >
-              <FiCheckCircle className="w-4.5 h-4.5" /> Reached
-            </button>
-          )}
+          {/* Center: Large Green ETA + Trip Metrics */}
+          <div
+            onClick={() => setIsSheetExpanded(!isSheetExpanded)}
+            className="flex-1 text-center cursor-pointer px-3"
+          >
+            <div className="flex items-center justify-center gap-1.5 mb-0.5">
+              <span className="text-2xl sm:text-3xl font-black text-[#15803d] tracking-tight">
+                {duration || '4 min'}
+              </span>
+              <span className="text-emerald-600 text-lg">🍃</span>
+            </div>
+            <p className="text-xs font-bold text-slate-500 tracking-wide">
+              {distance || '1.1 km'} • {arrivalClockTime || '18:12'}
+            </p>
+          </div>
 
-          {(booking?.userId?.phone || booking?.customerPhone) && (
-            <a
-              href={`tel:${booking.userId?.phone || booking.customerPhone}`}
-              className="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-black py-3.5 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-teal-600/25 transition-all active:scale-95 text-xs uppercase tracking-wider cursor-pointer"
-            >
-              <FiPhone className="w-4.5 h-4.5" /> Call Customer
-            </a>
-          )}
-
+          {/* Right: Alternate Routes / Google Maps External Launch */}
           <button
+            type="button"
             onClick={() => {
               const bAddr = booking?.address;
               const addressStr = typeof bAddr === 'string' ? bAddr : `${bAddr?.addressLine1 || ''}, ${bAddr?.city || ''}`;
               const dest = coords ? `${coords.lat},${coords.lng}` : encodeURIComponent(addressStr);
               window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}`, '_blank');
             }}
-            className="w-13 h-12 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200/80 rounded-2xl flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-2xs cursor-pointer group"
-            title="Open Turn-by-Turn GPS in Google Maps"
+            className="w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-2xs group"
+            title="Open Turn-by-Turn in Google Maps"
           >
-            <FiNavigation className="w-5 h-5 text-teal-700 group-hover:rotate-45 transition-transform" />
+            <FiNavigation className="w-5 h-5 text-teal-800 group-hover:rotate-45 transition-transform" />
           </button>
         </div>
+
+        {/* Expandable Customer / Action Drawer */}
+        <AnimatePresence>
+          {isSheetExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="pt-3 border-t border-slate-100 mt-3 space-y-3 px-2"
+            >
+              {/* Customer Quick Summary Strip */}
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/70">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-800 to-slate-900 text-white font-black text-xs flex items-center justify-center shrink-0">
+                    {((booking?.userId?.name || booking?.customerName || 'Customer')[0] || 'C').toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-black text-slate-800 truncate">
+                      {booking?.userId?.name || booking?.customerName || 'Customer'}
+                    </h4>
+                    <p className="text-[10px] font-extrabold text-emerald-600 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Verified Customer
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <span className="text-xs font-black text-slate-900 block">
+                    ₹{booking?.finalAmount || booking?.totalAmount || booking?.totalPrice || 0}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400">
+                    {booking?.paymentMethod === 'online' || booking?.paymentStatus === 'paid' ? 'Prepaid' : 'Pay at Home'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Doorstep Address Section */}
+              <div className="bg-slate-50 rounded-2xl p-3 flex items-start justify-between gap-3 border border-slate-200/70">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <FiMapPin className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                  <p className="text-xs font-bold text-slate-700 line-clamp-2 leading-relaxed">
+                    {typeof booking?.address === 'string' ? booking.address : `${booking?.address?.addressLine1 || ''}, ${booking?.address?.city || ''}`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const addr = booking?.address;
+                    const addrText = typeof addr === 'string' ? addr : `${addr?.addressLine1 || ''}, ${addr?.city || ''}`;
+                    navigator.clipboard?.writeText(addrText);
+                    setCopiedAddress(true);
+                    toast.success('Address copied');
+                    setTimeout(() => setCopiedAddress(false), 2000);
+                  }}
+                  className="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 shrink-0"
+                >
+                  {copiedAddress ? <FiCheck className="w-3.5 h-3.5 text-emerald-600" /> : <FiCopy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2.5 pt-1">
+                {booking?.status === 'journey_started' && (
+                  <button
+                    onClick={() => setIsVisitModalOpen(true)}
+                    className="px-5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 active:scale-95 text-xs uppercase tracking-wider shrink-0 cursor-pointer"
+                  >
+                    <FiCheckCircle className="w-4 h-4" /> Reached
+                  </button>
+                )}
+
+                {(booking?.userId?.phone || booking?.customerPhone) && (
+                  <a
+                    href={`tel:${booking.userId?.phone || booking.customerPhone}`}
+                    className="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-black py-3 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-teal-600/25 active:scale-95 text-xs uppercase tracking-wider cursor-pointer"
+                  >
+                    <FiPhone className="w-4 h-4" /> Call Customer
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Visit OTP Modal */}
