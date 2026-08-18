@@ -208,7 +208,7 @@ const LiveBookingCard = ({ hasBottomNav }) => {
             navigate(`/user/booking/${bookingId}`);
           }
         }}
-        className={`fixed ${hasBottomNav ? 'bottom-20 sm:bottom-24 lg:bottom-6' : 'bottom-6'} left-3.5 right-3.5 sm:left-6 sm:right-6 max-w-lg mx-auto z-40`}
+        className={`fixed ${hasBottomNav ? 'bottom-24 sm:bottom-28 lg:bottom-8' : 'bottom-6 sm:bottom-8'} left-3.5 right-3.5 sm:left-6 sm:right-6 max-w-md mx-auto z-40`}
       >
         <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_12px_36px_rgba(0,0,0,0.12)] border border-slate-200/90 overflow-hidden cursor-pointer active:scale-[0.98] transition-all group hover:border-teal-500/40">
 
