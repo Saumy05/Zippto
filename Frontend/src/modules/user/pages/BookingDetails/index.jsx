@@ -37,8 +37,10 @@ import {
   FiShare2,
   FiCompass,
   FiPlus,
-  FiMinus
+  FiMinus,
+  FiCrosshair
 } from 'react-icons/fi';
+import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
 import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
 import { cartService } from '../../../../services/cartService';
@@ -58,6 +60,28 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
+const mapLibraries = ['places', 'geometry'];
+
+const silverMapStyles = [
+  { "elementType": "geometry", "stylers": [{ "color": "#f8fafc" }] },
+  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+  { "elementType": "labels.text.fill", "stylers": [{ "color": "#64748b" }] },
+  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#ffffff" }] },
+  { "featureType": "administrative.land_parcel", "elementType": "labels.text.fill", "stylers": [{ "color": "#cbd5e1" }] },
+  { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#f1f5f9" }] },
+  { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#94a3b8" }] },
+  { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#e2e8f0" }] },
+  { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#ffffff" }] },
+  { "featureType": "road.arterial", "elementType": "labels.text.fill", "stylers": [{ "color": "#64748b" }] },
+  { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#e2e8f0" }] },
+  { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#475569" }] },
+  { "featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{ "color": "#94a3b8" }] },
+  { "featureType": "transit.line", "elementType": "geometry", "stylers": [{ "color": "#e2e8f0" }] },
+  { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#f1f5f9" }] },
+  { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#cbd5e1" }] },
+  { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#94a3b8" }] }
+];
+
 const BookingDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,6 +93,41 @@ const BookingDetails = () => {
   const [isChatOpen, setIsChatOpen] = useState(Boolean(location.pathname?.endsWith('/chat')));
   const [paying, setPaying] = useState(false);
   const [mapZoom, setMapZoom] = useState(15);
+  const [detailMap, setDetailMap] = useState(null);
+
+  const { isLoaded: isMapScriptLoaded } = useJsApiLoader({
+    id: 'google-map-booking-details',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries: mapLibraries,
+    language: localStorage.getItem('zippto_language') || 'en'
+  });
+
+  const destinationCoords = React.useMemo(() => {
+    if (!booking?.address) return null;
+    if (typeof booking.address === 'object' && booking.address.lat && booking.address.lng) {
+      const lat = parseFloat(booking.address.lat);
+      const lng = parseFloat(booking.address.lng);
+      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        return { lat, lng };
+      }
+    }
+    return null;
+  }, [booking?.address]);
+
+  const mapOptions = React.useMemo(() => ({
+    disableDefaultUI: true,
+    zoomControl: false,
+    mapTypeId: 'roadmap',
+    gestureHandling: 'greedy',
+    rotateControl: false,
+    tiltControl: false,
+    mapTypeControl: false,
+    mapTypeControlOptions: { mapTypeIds: [] },
+    streetViewControl: false,
+    fullscreenControl: false,
+    styles: silverMapStyles
+  }), []);
+
   const [copiedId, setCopiedId] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -747,16 +806,37 @@ const BookingDetails = () => {
             </div>
           )}
 
-          {/* 4. DEDICATED LIVE MAP & GPS TRACKER CARD */}
+          {/* 4. LUXURY SERVICE DESTINATION MAP CARD */}
           {booking.address && (
-            <div className="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 overflow-hidden">
-              <div className="relative h-64 sm:h-72 w-full rounded-2xl overflow-hidden bg-slate-100 group border border-slate-100">
+            <div className="bg-white rounded-3xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 overflow-hidden space-y-3">
+              {/* Card Header Row */}
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center shrink-0 shadow-2xs">
+                    <FiNavigation className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-extrabold text-slate-900 tracking-tight">Service Destination Radar</h3>
+                    <p className="text-[11px] text-slate-500 font-medium truncate max-w-[200px] sm:max-w-xs">
+                      {typeof booking.address === 'object' ? (booking.address.city || booking.address.addressLine1 || 'Doorstep Location') : booking.address}
+                    </p>
+                  </div>
+                </div>
+
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Pin
+                </span>
+              </div>
+
+              {/* Map Canvas Frame */}
+              <div className="relative h-60 sm:h-64 w-full rounded-2xl overflow-hidden bg-slate-100 group border border-slate-200/60 shadow-inner">
                 {(() => {
-                  let mapQuery = '';
                   let dirUrl = 'https://maps.google.com';
-                  if (typeof booking.address === 'object' && booking.address.lat && booking.address.lng) {
-                    mapQuery = `${booking.address.lat},${booking.address.lng}`;
-                    dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${booking.address.lat},${booking.address.lng}`;
+                  let mapQuery = '';
+                  if (destinationCoords) {
+                    dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${destinationCoords.lat},${destinationCoords.lng}`;
+                    mapQuery = `${destinationCoords.lat},${destinationCoords.lng}`;
                   } else {
                     const addrStr = typeof booking.address === 'string'
                       ? booking.address
@@ -764,61 +844,133 @@ const BookingDetails = () => {
                     mapQuery = encodeURIComponent(addrStr);
                     dirUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
                   }
+
                   return (
                     <>
-                      <iframe
-                        key={mapZoom}
-                        className="w-full h-full opacity-90 group-hover:opacity-100 transition-opacity"
-                        frameBorder="0"
-                        style={{ border: 0 }}
-                        src={`https://maps.google.com/maps?q=${mapQuery}&z=${mapZoom}&output=embed`}
-                        allowFullScreen
-                        tabIndex="-1"
-                        title="Doorstep Location"
-                      />
+                      {isMapScriptLoaded && destinationCoords ? (
+                        <GoogleMap
+                          mapContainerStyle={{ width: '100%', height: '100%' }}
+                          center={destinationCoords}
+                          zoom={mapZoom}
+                          onLoad={(mapInstance) => setDetailMap(mapInstance)}
+                          options={mapOptions}
+                        >
+                          <OverlayView
+                            position={destinationCoords}
+                            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                          >
+                            <div className="relative -translate-x-1/2 -translate-y-full flex flex-col items-center pointer-events-none">
+                              <div className="relative z-10 w-9 h-9 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white shadow-xl shadow-teal-500/40 flex items-center justify-center border-2 border-white ring-2 ring-teal-500/20">
+                                <FiMapPin className="w-4.5 h-4.5 text-white" />
+                              </div>
+                              <div className="w-2.5 h-2.5 bg-emerald-500 rotate-45 -mt-1 shadow-sm" />
+                              <div className="w-10 h-10 rounded-full bg-teal-500/30 animate-ping absolute top-0.5" />
+                            </div>
+                          </OverlayView>
+                        </GoogleMap>
+                      ) : (
+                        <iframe
+                          key={mapZoom}
+                          className="w-full h-full opacity-90 group-hover:opacity-100 transition-opacity"
+                          frameBorder="0"
+                          style={{ border: 0 }}
+                          src={`https://maps.google.com/maps?q=${mapQuery}&z=${mapZoom}&output=embed`}
+                          allowFullScreen
+                          tabIndex="-1"
+                          title="Doorstep Location"
+                        />
+                      )}
 
                       {/* Top Overlay Badges */}
                       <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
-                        <span className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-extrabold text-slate-800 shadow-sm border border-white/80 flex items-center gap-1.5 pointer-events-auto">
-                          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                          Destination Pin
+                        <span className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-extrabold text-slate-800 shadow-md border border-white/80 flex items-center gap-1.5 pointer-events-auto">
+                          <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+                          Doorstep Pin
                         </span>
 
                         <a
                           href={dirUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-white/95 hover:bg-white backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-extrabold text-teal-700 hover:text-teal-800 shadow-sm border border-white/80 flex items-center gap-1.5 pointer-events-auto transition-all active:scale-95"
+                          className="bg-white/95 hover:bg-white backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-extrabold text-teal-700 hover:text-teal-800 shadow-md border border-white/80 flex items-center gap-1.5 pointer-events-auto transition-all active:scale-95 cursor-pointer"
                           title="Open in Google Maps"
                         >
-                          <span>Maps</span>
+                          <span>Get Directions</span>
                           <FiNavigation className="w-3.5 h-3.5 rotate-45" />
                         </a>
                       </div>
 
-                      {/* Floating Zoom Controls */}
-                      <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-1.5 pointer-events-auto">
+                      {/* Connected Glassmorphic Zoom Control Pill */}
+                      <div className="absolute bottom-3 right-3 z-10 flex flex-col rounded-2xl bg-white/95 backdrop-blur-md shadow-lg border border-slate-200/90 overflow-hidden divide-y divide-slate-100 pointer-events-auto">
                         <button
                           type="button"
-                          onClick={() => setMapZoom(prev => Math.min(prev + 1, 20))}
-                          className="w-9 h-9 rounded-xl bg-white/95 hover:bg-white text-slate-800 backdrop-blur-md shadow-md border border-slate-200/90 flex items-center justify-center font-bold active:scale-90 transition-all cursor-pointer hover:text-teal-700"
+                          onClick={() => {
+                            const nextZoom = Math.min(mapZoom + 1, 20);
+                            setMapZoom(nextZoom);
+                            if (detailMap) detailMap.setZoom(nextZoom);
+                          }}
+                          className="w-9 h-9 flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-90 transition-all font-bold cursor-pointer hover:text-teal-700"
                           title="Zoom In"
                         >
-                          <FiPlus className="w-4.5 h-4.5" />
+                          <FiPlus className="w-4 h-4" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => setMapZoom(prev => Math.max(prev - 1, 4))}
-                          className="w-9 h-9 rounded-xl bg-white/95 hover:bg-white text-slate-800 backdrop-blur-md shadow-md border border-slate-200/90 flex items-center justify-center font-bold active:scale-90 transition-all cursor-pointer hover:text-teal-700"
+                          onClick={() => {
+                            const nextZoom = Math.max(mapZoom - 1, 4);
+                            setMapZoom(nextZoom);
+                            if (detailMap) detailMap.setZoom(nextZoom);
+                          }}
+                          className="w-9 h-9 flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-90 transition-all font-bold cursor-pointer hover:text-teal-700"
                           title="Zoom Out"
                         >
-                          <FiMinus className="w-4.5 h-4.5" />
+                          <FiMinus className="w-4 h-4" />
                         </button>
                       </div>
+
+                      {/* Recenter Button on Bottom Left */}
+                      {destinationCoords && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (detailMap && destinationCoords) {
+                              detailMap.panTo(destinationCoords);
+                              detailMap.setZoom(16);
+                              setMapZoom(16);
+                            }
+                          }}
+                          className="absolute bottom-3 left-3 z-10 w-9 h-9 rounded-2xl bg-white/95 hover:bg-white backdrop-blur-md text-slate-800 shadow-lg border border-slate-200/90 flex items-center justify-center active:scale-90 transition-all cursor-pointer hover:text-teal-700 pointer-events-auto"
+                          title="Recenter Map"
+                        >
+                          <FiCrosshair className="w-4.5 h-4.5" />
+                        </button>
+                      )}
                     </>
                   );
                 })()}
               </div>
+
+              {/* Live Tracking Trigger Bar */}
+              {['confirmed', 'assigned', 'journey_started', 'in_progress'].includes(statusStr) && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
+                  className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-teal-50/70 border border-slate-200/70 hover:border-teal-200/80 rounded-2xl flex items-center justify-between text-xs transition-all active:scale-[0.99] group cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-teal-500/10 text-teal-700 flex items-center justify-center">
+                      <FiNavigation className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform" />
+                    </div>
+                    <span className="font-extrabold text-slate-700 group-hover:text-teal-900">
+                      {isInTransit ? 'Track Expert’s Live Real-Time Route' : 'Open Live GPS Radar Tracker'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 font-black text-teal-700 text-[11px]">
+                    <span>Track Live</span>
+                    <FiChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </button>
+              )}
             </div>
           )}
 
