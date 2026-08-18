@@ -747,7 +747,7 @@ const BookingDetails = () => {
           {/* 4. DEDICATED LIVE MAP & GPS TRACKER CARD */}
           {booking.address && (
             <div className="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 overflow-hidden">
-              <div className="relative h-48 w-full rounded-2xl overflow-hidden bg-slate-100 group border border-slate-100">
+              <div className="relative h-64 sm:h-72 w-full rounded-2xl overflow-hidden bg-slate-100 group border border-slate-100">
                 {(() => {
                   let mapQuery = '';
                   let dirUrl = 'https://maps.google.com';
@@ -774,8 +774,8 @@ const BookingDetails = () => {
                       />
 
                       {/* Top Overlay Badges */}
-                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                        <span className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-extrabold text-slate-800 shadow-sm border border-white/80 flex items-center gap-1.5 pointer-events-auto">
+                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
+                        <span className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-extrabold text-slate-800 shadow-sm border border-white/80 flex items-center gap-1.5 pointer-events-auto">
                           <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                           Destination Pin
                         </span>
@@ -784,23 +784,28 @@ const BookingDetails = () => {
                           href={dirUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-white/95 hover:bg-white backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-extrabold text-teal-700 hover:text-teal-800 shadow-sm border border-white/80 flex items-center gap-1 pointer-events-auto transition-all active:scale-95"
+                          className="bg-white/95 hover:bg-white backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-extrabold text-teal-700 hover:text-teal-800 shadow-sm border border-white/80 flex items-center gap-1.5 pointer-events-auto transition-all active:scale-95"
                           title="Open in Google Maps"
                         >
                           <span>Maps</span>
-                          <FiNavigation className="w-3 h-3 rotate-45" />
+                          <FiNavigation className="w-3.5 h-3.5 rotate-45" />
                         </a>
                       </div>
 
-                      {/* Centered Floating Map Navigation Button */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[0.5px]">
+                      {/* Bottom Docked Action Button (Unobstructed Center View) */}
+                      <div className="absolute bottom-3 left-3 right-3 z-10">
                         <button
                           type="button"
                           onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
-                          className="px-4 py-2.5 bg-white/95 hover:bg-white text-slate-900 rounded-full font-black text-xs flex items-center gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer group"
+                          className="w-full py-3 px-4 bg-white/95 hover:bg-white backdrop-blur-md text-slate-900 rounded-2xl font-black text-xs flex items-center justify-between shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border border-slate-200/90 cursor-pointer group"
                         >
-                          <FiNavigation className="w-3.5 h-3.5 text-teal-600 group-hover:rotate-45 transition-transform" />
-                          <span>Open Live GPS Tracker</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                              <FiNavigation className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform" />
+                            </div>
+                            <span className="font-extrabold">Open Live GPS Tracker</span>
+                          </div>
+                          <FiChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-800 group-hover:translate-x-0.5 transition-all" />
                         </button>
                       </div>
                     </>
