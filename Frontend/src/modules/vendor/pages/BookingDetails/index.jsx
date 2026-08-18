@@ -17,8 +17,8 @@ import {
 } from '../../services/bookingService';
 import { CashCollectionModal, ConfirmDialog, OtpVerificationModal } from '../../components/common';
 import WorkCompletionModal from '../../components/common/WorkCompletionModal';
-// import BillingModal from '../../components/bookings/BillingModal'; // Consumed by page now
 import vendorWalletService from '../../../../services/vendorWalletService';
+import vendorBillService from '../../../../services/vendorBillService';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import { useLocationTracking } from '../../../../hooks/useLocationTracking';
@@ -459,10 +459,34 @@ export default function BookingDetails() {
 
 
 
+  if (loading && !booking) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] pb-24">
+        <Header title="Booking Details" showBack onBack={() => navigate('/vendor/jobs')} />
+        <div className="max-w-xl mx-auto px-4 py-6 space-y-4">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-36 animate-pulse" />
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-28 animate-pulse" />
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-44 animate-pulse" />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   if (!booking) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: themeColors.backgroundGradient }}>
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center mb-4">
+          <FiAlertCircle className="w-8 h-8 text-slate-400" />
+        </div>
+        <h3 className="text-base font-extrabold text-slate-900 mb-1">Booking Not Found</h3>
+        <p className="text-xs text-slate-500 mb-5 max-w-xs">The requested job details could not be retrieved.</p>
+        <button
+          onClick={() => navigate('/vendor/jobs')}
+          className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md active:scale-95 transition-all"
+        >
+          Back to Jobs
+        </button>
       </div>
     );
   }
