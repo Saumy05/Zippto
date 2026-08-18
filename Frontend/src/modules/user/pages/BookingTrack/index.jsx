@@ -391,28 +391,28 @@ const BookingTrack = () => {
   const prevLocationRef = useRef(null);
   const lastRouteOriginRef = useRef(null);
 
-  // Calculate Heading based on movement (Direction Sense)
+  // Automatically calculate heading along the active route road path
   useEffect(() => {
-    if (isLoaded && currentLocation && window.google) {
-      if (prevLocationRef.current) {
-        const start = new window.google.maps.LatLng(prevLocationRef.current);
-        const end = new window.google.maps.LatLng(currentLocation);
-        const distanceMoved = window.google.maps.geometry.spherical.computeDistanceBetween(start, end);
-
-        // Update heading only if movement is significant (> 2 meters) to prevent jitter
-        if (distanceMoved > 2) {
-          const newHeading = window.google.maps.geometry.spherical.computeHeading(start, end);
-          setHeading(newHeading);
+    if (isLoaded && window.google?.maps?.geometry?.spherical) {
+      if (routePath && routePath.length > 1) {
+        const p1 = routePath[0];
+        const p2 = routePath[1];
+        const start = new window.google.maps.LatLng(p1);
+        const end = new window.google.maps.LatLng(p2);
+        const roadBearing = window.google.maps.geometry.spherical.computeHeading(start, end);
+        if (!isNaN(roadBearing)) {
+          setHeading(roadBearing);
         }
-      } else if (coords) {
-        // Initial heading towards destination
+      } else if (currentLocation && coords) {
         const start = new window.google.maps.LatLng(currentLocation);
         const end = new window.google.maps.LatLng(coords);
-        setHeading(window.google.maps.geometry.spherical.computeHeading(start, end));
+        const destBearing = window.google.maps.geometry.spherical.computeHeading(start, end);
+        if (!isNaN(destBearing)) {
+          setHeading(destBearing);
+        }
       }
-      prevLocationRef.current = currentLocation;
     }
-  }, [currentLocation, isLoaded, coords]);
+  }, [routePath, currentLocation, coords, isLoaded]);
 
   // DISABLED: Auto heading/tilt sync causes map fluctuation
   // The heading is now displayed on the marker only, not on the map itself
