@@ -31,7 +31,7 @@ const Notifications = () => {
     { id: 'electrician', title: 'Electrician & Plumbing', image: '/cat_electrician_plumber.png' },
     { id: 'cleaning', title: 'Deep Cleaning', image: '/cat_cleaning.png' },
     { id: 'ac-repair', title: 'AC Service & Repair', image: '/ac_foam_jet_service.png' },
-    { id: 'scrap', title: 'Sell Scrap & Recyclables', image: '/drill_wall_decor.png' },
+    { id: 'appliance', title: 'Appliance Repair', image: '/drill_wall_decor.png' },
   ];
 
   const fetchNotifications = async () => {
@@ -121,7 +121,7 @@ const Notifications = () => {
     const type = (originalType || '').toLowerCase();
 
     if (['payment', 'refund', 'wallet'].some(t => type.includes(t))) return <FiDollarSign className="w-5 h-5 text-emerald-600" />;
-    if (['booking', 'job', 'work', 'visit', 'journey', 'vendor', 'scrap'].some(t => type.includes(t))) return <FiCalendar className="w-5 h-5 text-blue-600" />;
+    if (['booking', 'job', 'work', 'visit', 'journey', 'vendor'].some(t => type.includes(t))) return <FiCalendar className="w-5 h-5 text-blue-600" />;
     return <FiBell className="w-5 h-5 text-amber-500" />;
   };
 

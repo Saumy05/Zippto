@@ -172,10 +172,6 @@ app.use('/api/users', require('./routes/user-routes/coupon.routes'));
 app.use('/api/users', require('./routes/user-routes/ticket.routes'));
 app.use('/api/users/fcm-tokens', require('./routes/user-routes/fcmToken.routes'));
 
-// Scrap routes
-const scrapRoutes = require('./routes/scrap.routes');
-app.use('/api/scrap', scrapRoutes);
-
 // Vendor routes
 app.use('/api/vendors/auth', require('./routes/vendor-routes/auth.routes'));
 app.use('/api/vendors', require('./routes/vendor-routes/profile.routes'));
