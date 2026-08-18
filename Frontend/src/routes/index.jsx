@@ -7,12 +7,20 @@ import VendorRoutes from '../modules/vendor/routes';
 import AdminRoutes from '../modules/admin/routes';
 
 import LandingPage from '../modules/landing/pages/LandingPage';
+import BlogList from '../modules/landing/pages/BlogList';
+import BlogDetail from '../modules/landing/pages/BlogDetail';
+import DynamicPageView from '../modules/landing/pages/DynamicPageView';
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Landing Page */}
       <Route path="/Home" element={<LandingPage />} />
+
+      {/* Public CMS & Blog Routes */}
+      <Route path="/blog" element={<BlogList />} />
+      <Route path="/blog/:slug" element={<BlogDetail />} />
+      <Route path="/page/:slug" element={<DynamicPageView />} />
 
       {/* Redirect Root Slash to User App */}
       <Route path="/" element={<Navigate to="/user" replace />} />

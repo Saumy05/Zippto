@@ -17,6 +17,8 @@ const connectDB = async () => {
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    // Seed default CMS policies & FAQs if empty
+    require('../services/cmsService').seedDefaultsIfEmpty();
   } catch (error) {
     console.error('❌ MongoDB connection error:', error.message);
     if (process.env.NODE_ENV !== 'production') {

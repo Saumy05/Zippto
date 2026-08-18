@@ -231,7 +231,11 @@ app.use('/api/notifications', require('./routes/notification.routes'));
 // Chat routes (In-app real-time messaging)
 app.use('/api/chat', require('./routes/chat.routes'));
 
+// Admin CMS Management routes
+app.use('/api/admin/cms', require('./routes/admin-routes/cmsManagement.routes'));
+
 // Public routes (no authentication required)
+app.use('/api/public/cms', require('./routes/public-routes/cms.routes'));
 app.use('/api/public', require('./routes/public-routes/catalog.routes'));
 app.use('/api/public', require('./routes/public-routes/plan.routes'));
 app.use('/api/public', require('./routes/public-routes/config.routes'));

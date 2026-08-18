@@ -24,6 +24,7 @@ const Notifications = lazy(() => import('../pages/Notifications'));
 const Plans = lazy(() => import('../pages/Plans/Plans'));
 const Settlements = lazy(() => import('../pages/Settlements'));
 const Reviews = lazy(() => import('../pages/Reviews'));
+const CMS = lazy(() => import('../pages/CMS'));
 
 
 
@@ -64,6 +65,7 @@ const AdminRoutes = () => {
           <Route path="notifications/*" element={<Notifications />} />
           <Route path="plans" element={<Plans />} />
           <Route path="reviews" element={<Reviews />} />
+          <Route path="cms" element={<CMS />} />
           <Route path="settlements/*" element={<Settlements />} />
           <Route path="settings/*" element={<Settings />} />
         </Route>
