@@ -21,7 +21,8 @@ const GoogleMapPicker = ({ onLocationSelect, initialPosition = null }) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries
+    libraries,
+    language: localStorage.getItem('zippto_language') || 'en'
   });
 
   // Update marker when initialPosition changes

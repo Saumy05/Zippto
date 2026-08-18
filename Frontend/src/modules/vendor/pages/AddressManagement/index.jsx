@@ -23,7 +23,8 @@ const AddressManagement = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries
+    libraries,
+    language: localStorage.getItem('zippto_language') || 'en'
   });
 
   // Load saved address from backend
