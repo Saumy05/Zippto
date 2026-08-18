@@ -75,7 +75,13 @@ const getPublicBrands = async (req, res) => {
     // Build query
     const query = { status: 'active' };
     if (categoryId) query.categoryIds = categoryId;
-    if (cityId) query.cityIds = cityId;
+    if (cityId) {
+      query.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
+    }
 
     if (search) {
       const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -91,7 +97,11 @@ const getPublicBrands = async (req, res) => {
     if (categorySlug) {
       const catQuery = { slug: categorySlug, status: 'active' };
       if (cityId) {
-        catQuery.cityIds = cityId;
+        catQuery.$or = [
+          { cityIds: cityId },
+          { cityIds: { $exists: false } },
+          { cityIds: { $size: 0 } }
+        ];
       }
 
       let category = await Category.findOne(catQuery).lean();
@@ -252,9 +262,7 @@ const getPublicServices = async (req, res) => {
       } else {
         return res.status(200).json({ success: true, services: [] });
       }
-    }
-
-    if (categoryId) {
+    } else if (categoryId) {
       query.categoryId = categoryId;
     }
 

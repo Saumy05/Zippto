@@ -207,7 +207,19 @@ const ManageServices = () => {
 
         setCategories(fetchedCats);
         setSelectedServices(vendorServices);
-        setSelectedSubServices(vendorSkills);
+
+        // Auto-initialize selectedSubServices with all sub-service IDs if vendorSkills is empty
+        if (Array.isArray(vendorSkills) && vendorSkills.length > 0) {
+          setSelectedSubServices(vendorSkills);
+        } else {
+          const allInitialSubIds = [];
+          fetchedCats.forEach(cat => {
+            if (vendorServices.includes(cat.slug) || vendorServices.includes(cat.id)) {
+              (cat.subServices || []).forEach(s => allInitialSubIds.push(s.id));
+            }
+          });
+          setSelectedSubServices(Array.from(new Set(allInitialSubIds)));
+        }
       } catch (err) {
         console.error('Failed to load services data:', err);
         toast.error('Failed to load service categories');
@@ -223,7 +235,8 @@ const ManageServices = () => {
     if (!selectedServices.includes(slug)) {
       setSelectedServices(prev => [...prev, slug]);
       // Auto opt-in all sub-services for this category
-      const subList = DEFAULT_SUB_SERVICES[slug] || [];
+      const targetCat = categories.find(c => c.slug === slug || c.id === slug);
+      const subList = targetCat?.subServices || DEFAULT_SUB_SERVICES[slug] || [];
       const subIds = subList.map(s => s.id);
       setSelectedSubServices(prev => Array.from(new Set([...prev, ...subIds])));
       toast.success('Category added to your offered services!');
@@ -234,21 +247,28 @@ const ManageServices = () => {
 
   const handleRemoveCategory = (slug) => {
     setSelectedServices(prev => prev.filter(s => s !== slug));
-    const subList = DEFAULT_SUB_SERVICES[slug] || [];
+    const targetCat = categories.find(c => c.slug === slug || c.id === slug);
+    const subList = targetCat?.subServices || DEFAULT_SUB_SERVICES[slug] || [];
     const subIds = subList.map(s => s.id);
     setSelectedSubServices(prev => prev.filter(id => !subIds.includes(id)));
     toast.success('Category removed');
   };
 
-  const handleToggleSubService = (subId) => {
+  const handleToggleSubService = (subId, categorySubList = []) => {
     setSelectedSubServices(prev => {
-      const exists = prev.includes(subId);
+      let current = [...prev];
+      // If current is empty, initialize with all sub-services from the category list
+      if (current.length === 0 && categorySubList.length > 0) {
+        current = categorySubList.map(s => s.id);
+      }
+
+      const exists = current.includes(subId);
       if (exists) {
         toast.success('Sub-service opted out');
-        return prev.filter(id => id !== subId);
+        return current.filter(id => id !== subId);
       } else {
         toast.success('Sub-service opted in');
-        return [...prev, subId];
+        return [...current, subId];
       }
     });
   };
@@ -544,12 +564,12 @@ const ManageServices = () => {
                         </span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {subList.map((sub) => {
-                            const isOptedIn = selectedSubServices.includes(sub.id) || selectedSubServices.length === 0;
+                            const isOptedIn = selectedSubServices.includes(sub.id);
 
                             return (
                               <div
                                 key={sub.id}
-                                onClick={() => handleToggleSubService(sub.id)}
+                                onClick={() => handleToggleSubService(sub.id, subList)}
                                 className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                                   isOptedIn
                                     ? 'bg-white border-teal-500 shadow-2xs'
