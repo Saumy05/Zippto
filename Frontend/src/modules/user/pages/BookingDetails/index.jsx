@@ -791,23 +791,6 @@ const BookingDetails = () => {
                           <FiNavigation className="w-3.5 h-3.5 rotate-45" />
                         </a>
                       </div>
-
-                      {/* Bottom Docked Action Button (Unobstructed Center View) */}
-                      <div className="absolute bottom-3 left-3 right-3 z-10">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
-                          className="w-full py-3 px-4 bg-white/95 hover:bg-white backdrop-blur-md text-slate-900 rounded-2xl font-black text-xs flex items-center justify-between shadow-xl hover:shadow-2xl active:scale-[0.98] transition-all border border-slate-200/90 cursor-pointer group"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
-                              <FiNavigation className="w-3.5 h-3.5 group-hover:rotate-45 transition-transform" />
-                            </div>
-                            <span className="font-extrabold">Open Live GPS Tracker</span>
-                          </div>
-                          <FiChevronRight className="w-4 h-4 text-slate-400 group-hover:text-slate-800 group-hover:translate-x-0.5 transition-all" />
-                        </button>
-                      </div>
                     </>
                   );
                 })()}
