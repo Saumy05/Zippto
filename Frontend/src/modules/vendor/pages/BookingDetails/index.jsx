@@ -781,21 +781,14 @@ export default function BookingDetails() {
               View Map
             </button>
             <button
-              onClick={() => {
-                const hasCoords = booking.location.lat && booking.location.lng;
-                const dest = hasCoords
-                  ? `${booking.location.lat},${booking.location.lng}`
-                  : encodeURIComponent(booking.location.address);
-                // Open directly to trigger app intent
-                window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
-              }}
-              className="flex-1 py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-blue-200"
+              onClick={() => navigate(`/vendor/booking/${booking.id || id}/map`)}
+              className="flex-1 py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-teal-200"
               style={{
-                background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                background: 'linear-gradient(135deg, #0d9488, #0f766e)',
               }}
             >
               <FiNavigation className="w-5 h-5" />
-              Get Directions
+              Live Navigation
             </button>
           </div>
         </div>
