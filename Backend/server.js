@@ -228,6 +228,9 @@ app.use('/api/payments', require('./routes/payment-routes/payment.routes'));
 // Notification routes
 app.use('/api/notifications', require('./routes/notification.routes'));
 
+// Chat routes (In-app real-time messaging)
+app.use('/api/chat', require('./routes/chat.routes'));
+
 // Public routes (no authentication required)
 app.use('/api/public', require('./routes/public-routes/catalog.routes'));
 app.use('/api/public', require('./routes/public-routes/plan.routes'));

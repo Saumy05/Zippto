@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useLayoutEffect, useMemo, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiBriefcase, FiMapPin, FiClock, FiUser, FiFilter, FiSearch, FiLoader } from 'react-icons/fi';
+import { FiBriefcase, FiMapPin, FiClock, FiUser, FiFilter, FiSearch, FiLoader, FiMessageSquare } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
+import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 
 import { getBookings, assignWorker as assignWorkerApi } from '../../services/bookingService';
 import { ConfirmDialog } from '../../components/common';
@@ -16,6 +17,7 @@ const ActiveJobs = memo(() => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('in_progress'); // Default to showing active jobs
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeChatJob, setActiveChatJob] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
     title: '',
@@ -320,9 +322,20 @@ const ActiveJobs = memo(() => {
                       </div>
                     </div>
 
-                    {/* View Details Action Indicator */}
-                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-gray-500">
-                      <span>Tap to view full booking details & tracking</span>
+                    {/* View Details & Quick Chat Action */}
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveChatJob(job);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                        title="Chat with Customer"
+                      >
+                        <FiMessageSquare className="w-3.5 h-3.5" />
+                        <span>Chat</span>
+                      </button>
+
                       <span className="text-emerald-600 font-extrabold flex items-center gap-1">Manage →</span>
                     </div>
                   </div>
@@ -340,6 +353,15 @@ const ActiveJobs = memo(() => {
         title={confirmDialog.title}
         message={confirmDialog.message}
         type={confirmDialog.type}
+      />
+
+      {/* Real-time Booking Chat Drawer */}
+      <ChatDrawerModal
+        isOpen={Boolean(activeChatJob)}
+        onClose={() => setActiveChatJob(null)}
+        bookingId={activeChatJob?.id}
+        bookingData={activeChatJob}
+        userType="vendor"
       />
 
       <BottomNav />

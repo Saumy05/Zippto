@@ -207,6 +207,173 @@ const initializeSocket = (server) => {
       }
     });
 
+    // ==========================================
+    // IN-APP REAL-TIME BOOKING CHAT GATEWAY
+    // ==========================================
+    const chatService = require('../services/chatService');
+
+    // 1. Join Chat Room
+    socket.on('join_chat', async (data) => {
+      try {
+        const bookingId = typeof data === 'object' ? data.bookingId : data;
+        if (!bookingId) return;
+
+        // Unified participant authorization check
+        const { booking, isReadOnly, participantRole } = await chatService.assertBookingChatParticipant(
+          bookingId,
+          { id: socket.userId, role: socket.userRole }
+        );
+
+        const chatRoom = `chat_booking_${bookingId.toString()}`;
+        socket.join(chatRoom);
+        console.log(`[Socket Chat] ${socket.userRole} ${socket.userId} joined ${chatRoom} (read-only: ${isReadOnly})`);
+
+        // Ack to joining socket
+        socket.emit('chat_joined', {
+          bookingId,
+          isReadOnly,
+          participantRole
+        });
+
+        // Broadcast presence to other participants in the room
+        socket.to(chatRoom).emit('user_presence_update', {
+          bookingId,
+          userId: socket.userId,
+          role: socket.userRole,
+          isOnline: true
+        });
+      } catch (err) {
+        console.error('[Socket Chat] join_chat error:', err.message);
+        socket.emit('chat_error', { message: err.message });
+      }
+    });
+
+    // 2. Leave Chat Room
+    socket.on('leave_chat', async (data) => {
+      try {
+        const bookingId = typeof data === 'object' ? data.bookingId : data;
+        if (!bookingId) return;
+
+        const chatRoom = `chat_booking_${bookingId.toString()}`;
+        socket.leave(chatRoom);
+        console.log(`[Socket Chat] ${socket.userRole} ${socket.userId} left ${chatRoom}`);
+
+        socket.to(chatRoom).emit('user_presence_update', {
+          bookingId,
+          userId: socket.userId,
+          role: socket.userRole,
+          isOnline: false
+        });
+      } catch (err) {
+        console.error('[Socket Chat] leave_chat error:', err.message);
+      }
+    });
+
+    // 3. Send Real-Time Chat Message
+    socket.on('send_chat_message', async (data, callback) => {
+      try {
+        const { bookingId, clientMessageId, type, text, mediaUrl } = data || {};
+
+        const { message, isDuplicate, booking, isReadOnly } = await chatService.createMessage({
+          bookingId,
+          actor: { id: socket.userId, role: socket.userRole },
+          clientMessageId,
+          type,
+          text,
+          mediaUrl
+        });
+
+        const chatRoom = `chat_booking_${bookingId.toString()}`;
+
+        // Broadcast to all sockets in the chat room (including sender or sender gets ack)
+        io.to(chatRoom).emit('new_chat_message', message);
+
+        // Send offline push notification if recipient is not in chat
+        if (!isDuplicate) {
+          chatService.sendOfflinePushNotification(
+            io,
+            booking,
+            { id: socket.userId, role: socket.userRole },
+            message
+          );
+        }
+
+        if (typeof callback === 'function') {
+          callback({ success: true, data: message, isDuplicate, isReadOnly });
+        }
+      } catch (err) {
+        console.error('[Socket Chat] send_chat_message error:', err.message);
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        } else {
+          socket.emit('chat_error', { message: err.message });
+        }
+      }
+    });
+
+    // 4. Typing Start
+    socket.on('typing_start', async (data) => {
+      try {
+        const bookingId = typeof data === 'object' ? data.bookingId : data;
+        if (!bookingId) return;
+
+        await chatService.assertBookingChatParticipant(
+          bookingId,
+          { id: socket.userId, role: socket.userRole }
+        );
+
+        socket.to(`chat_booking_${bookingId.toString()}`).emit('typing_start', {
+          bookingId,
+          senderId: socket.userId,
+          senderRole: socket.userRole
+        });
+      } catch (err) {
+        // Silently ignore typing auth fails
+      }
+    });
+
+    // 5. Typing Stop
+    socket.on('typing_stop', async (data) => {
+      try {
+        const bookingId = typeof data === 'object' ? data.bookingId : data;
+        if (!bookingId) return;
+
+        socket.to(`chat_booking_${bookingId.toString()}`).emit('typing_stop', {
+          bookingId,
+          senderId: socket.userId,
+          senderRole: socket.userRole
+        });
+      } catch (err) {
+        // Silently ignore
+      }
+    });
+
+    // 6. Mark Messages Read
+    socket.on('mark_chat_read', async (data, callback) => {
+      try {
+        const { bookingId, messageIds } = data || {};
+        if (!bookingId) return;
+
+        const result = await chatService.markMessagesRead(
+          bookingId,
+          { id: socket.userId, role: socket.userRole },
+          messageIds
+        );
+
+        // Broadcast read confirmation to chat room so sender sees blue checkmarks
+        io.to(`chat_booking_${bookingId.toString()}`).emit('messages_read', result);
+
+        if (typeof callback === 'function') {
+          callback({ success: true, data: result });
+        }
+      } catch (err) {
+        console.error('[Socket Chat] mark_chat_read error:', err.message);
+        if (typeof callback === 'function') {
+          callback({ success: false, message: err.message });
+        }
+      }
+    });
+
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
       // Update online status

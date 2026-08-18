@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { FiMapPin, FiClock, FiDollarSign, FiUser, FiPhone, FiNavigation, FiArrowRight, FiEdit, FiCheckCircle, FiCreditCard, FiX, FiCheck, FiTool, FiXCircle, FiAward, FiPackage, FiAlertCircle } from 'react-icons/fi';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { FiMapPin, FiClock, FiDollarSign, FiUser, FiPhone, FiNavigation, FiArrowRight, FiEdit, FiCheckCircle, FiCreditCard, FiX, FiCheck, FiTool, FiXCircle, FiAward, FiPackage, FiAlertCircle, FiMessageSquare } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
+import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 import {
   getBookingById,
   updateBookingStatus,
@@ -25,12 +26,14 @@ import { useLocationTracking } from '../../../../hooks/useLocationTracking';
 export default function BookingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [isWorkDoneModalOpen, setIsWorkDoneModalOpen] = useState(false);
   const [isCashModalOpen, setIsCashModalOpen] = useState(false);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(Boolean(location.pathname?.endsWith('/chat')));
 
 
   const [actionLoading, setActionLoading] = useState(false);
@@ -668,13 +671,30 @@ export default function BookingDetails() {
                 <p className="text-sm text-gray-600">{booking.user?.phone || booking.customerPhone || 'Phone hidden'}</p>
               </div>
             </div>
-            <button
-              onClick={handleCallUser}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              style={{ backgroundColor: `${themeColors.button}15` }}
-            >
-              <FiPhone className="w-5 h-5" style={{ color: themeColors.button }} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsChatOpen(true)}
+                className="px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 shadow-2xs cursor-pointer"
+                style={{
+                  backgroundColor: `${themeColors.button}15`,
+                  color: themeColors.button,
+                  border: `1px solid ${themeColors.button}30`
+                }}
+                title="Chat with Customer"
+              >
+                <FiMessageSquare className="w-4 h-4" />
+                <span>Chat</span>
+              </button>
+
+              <button
+                onClick={handleCallUser}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                style={{ backgroundColor: `${themeColors.button}15` }}
+                title="Call Customer"
+              >
+                <FiPhone className="w-5 h-5" style={{ color: themeColors.button }} />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1580,7 +1600,14 @@ export default function BookingDetails() {
         type={confirmDialog.type}
       />
 
-
+      {/* Real-Time Direct Booking Chat */}
+      <ChatDrawerModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        bookingId={booking?.id || id}
+        bookingData={booking}
+        userType="vendor"
+      />
 
       <BottomNav />
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import useAppNotifications from '../../../../hooks/useAppNotifications';
 import { themeColors } from '../../../../theme';
@@ -25,7 +25,8 @@ import {
   FiChevronRight,
   FiSearch,
   FiHome,
-  FiAlertCircle
+  FiAlertCircle,
+  FiMessageSquare
 } from 'react-icons/fi';
 import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
@@ -35,6 +36,7 @@ import PaymentVerificationModal from '../../components/booking/PaymentVerificati
 import { ConfirmDialog } from '../../../../components/common';
 import ReviewCard from '../../components/booking/ReviewCard';
 import NotificationBell from '../../components/common/NotificationBell';
+import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 import api from '../../../../services/api';
 
 const toAssetUrl = (url) => {
@@ -48,11 +50,13 @@ const toAssetUrl = (url) => {
 
 const BookingDetails = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(Boolean(location.pathname?.endsWith('/chat')));
   const [paying, setPaying] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -772,15 +776,27 @@ const BookingDetails = () => {
                   </div>
                 </div>
 
-                {/* Quick Call Action */}
-                {(booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone) && (
-                  <a
-                    href={`tel:${booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone}`}
-                    className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center hover:bg-green-100 transition-colors active:scale-95 border border-green-100"
+                {/* Action Buttons: Chat & Call */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsChatOpen(true)}
+                    className="px-3 py-2 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 border border-teal-200 shadow-2xs cursor-pointer"
+                    title="Chat with Expert"
                   >
-                    <FiPhone className="w-5 h-5" />
-                  </a>
-                )}
+                    <FiMessageSquare className="w-4 h-4" />
+                    <span>Chat</span>
+                  </button>
+
+                  {(booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone) && (
+                    <a
+                      href={`tel:${booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone}`}
+                      className="w-9 h-9 bg-green-50 text-green-600 rounded-xl flex items-center justify-center hover:bg-green-100 transition-colors active:scale-95 border border-green-200"
+                      title="Call Expert"
+                    >
+                      <FiPhone className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1512,6 +1528,15 @@ const BookingDetails = () => {
           title={confirmDialog.title}
           message={confirmDialog.message}
           type={confirmDialog.type}
+        />
+
+        {/* Real-time In-App Chat Drawer */}
+        <ChatDrawerModal
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          bookingId={booking._id || booking.id || id}
+          bookingData={booking}
+          userType="user"
         />
       </div>
     </div>
