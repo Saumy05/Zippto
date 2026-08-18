@@ -12,11 +12,11 @@ import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 
 // Simple toggle for the simulation button (Controlled via .env)
-// Authentic Google Maps Driving Navigation Style (3D Buildings, White/Grey Roads, Soft Mint Greenery & Sky Blue Water)
+// High-Detail Google Maps Driving Navigation Style (Visible Building Blocks, Clear Road Network, Direction Contrast)
 const mapStyles = [
   {
     "elementType": "geometry",
-    "stylers": [{ "color": "#f1f3f4" }]
+    "stylers": [{ "color": "#f3f6f9" }]
   },
   {
     "elementType": "labels.icon",
@@ -24,66 +24,91 @@ const mapStyles = [
   },
   {
     "elementType": "labels.text.fill",
-    "stylers": [{ "color": "#5f6368" }]
+    "stylers": [{ "color": "#475569" }]
   },
   {
     "elementType": "labels.text.stroke",
     "stylers": [{ "color": "#ffffff" }, { "weight": 3 }]
   },
   {
+    "featureType": "administrative.land_parcel",
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#edf1f5" }]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "elementType": "geometry.stroke",
+    "stylers": [{ "color": "#cbd5e1" }, { "weight": 1.2 }]
+  },
+  {
     "featureType": "landscape.man_made",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#e8eaed" }]
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#eaedf2" }]
   },
   {
     "featureType": "landscape.man_made",
     "elementType": "geometry.stroke",
-    "stylers": [{ "color": "#dadce0" }]
+    "stylers": [{ "color": "#c4ced9" }, { "weight": 1.2 }]
   },
   {
     "featureType": "landscape.natural",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#f1f3f4" }]
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#f3f6f9" }]
   },
   {
     "featureType": "poi",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#e8eaed" }]
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#eaedf2" }]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry.stroke",
+    "stylers": [{ "color": "#c4ced9" }, { "weight": 1 }]
   },
   {
     "featureType": "poi.park",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#dcf5df" }]
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#dcfce7" }]
   },
   {
     "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#ffffff" }]
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#94a9be" }]
   },
   {
     "featureType": "road",
     "elementType": "geometry.stroke",
-    "stylers": [{ "color": "#cfd8dc" }, { "weight": 1.2 }]
+    "stylers": [{ "color": "#788ea3" }, { "weight": 1.5 }]
   },
   {
     "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#ffffff" }]
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#839bb2" }]
   },
   {
     "featureType": "road.highway",
     "elementType": "geometry.stroke",
-    "stylers": [{ "color": "#b0bec5" }, { "weight": 1.5 }]
+    "stylers": [{ "color": "#677e93" }, { "weight": 2 }]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#94a9be" }]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#9cb0c3" }]
   },
   {
     "featureType": "transit",
     "elementType": "geometry",
-    "stylers": [{ "color": "#e8eaed" }]
+    "stylers": [{ "color": "#e2e8f0" }]
   },
   {
     "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#c4e1f6" }]
+    "elementType": "geometry.fill",
+    "stylers": [{ "color": "#bae6fd" }]
   }
 ];
 
@@ -378,15 +403,22 @@ const BookingMap = () => {
           const newHeading = window.google.maps.geometry.spherical.computeHeading(start, end);
           setHeading(newHeading);
         }
+      } else if (directions?.routes?.[0]?.overview_path?.length > 1) {
+        // Initial heading aligned precisely with first road segment of the route
+        const path = directions.routes[0].overview_path;
+        const start = path[0];
+        const end = path[1];
+        const routeHeading = window.google.maps.geometry.spherical.computeHeading(start, end);
+        setHeading(routeHeading);
       } else if (coords) {
-        // Initial heading towards job destination
+        // Fallback heading towards destination
         const start = new window.google.maps.LatLng(currentLocation);
         const end = new window.google.maps.LatLng(coords);
         setHeading(window.google.maps.geometry.spherical.computeHeading(start, end));
       }
       prevLocationRef.current = currentLocation;
     }
-  }, [currentLocation, isLoaded, coords]);
+  }, [currentLocation, isLoaded, coords, directions]);
 
   // Sync Map Heading, Tilt & Zoom for Navigation Feel
   useEffect(() => {
@@ -441,28 +473,22 @@ const BookingMap = () => {
         }}
         className="pointer-events-none flex items-center justify-center"
       >
-        {/* Soft forward driving light cone */}
-        <div
-          className="absolute z-10 w-28 h-28 pointer-events-none flex items-center justify-center"
-          style={{
-            transform: `rotate(${heading}deg)`,
-            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        >
+        {/* Soft forward driving light cone pointing straight along the road */}
+        <div className="absolute z-10 w-28 h-28 pointer-events-none flex items-center justify-center">
           <div
-            className="w-16 h-24 -mt-12 bg-gradient-to-t from-blue-600/35 via-blue-400/15 to-transparent pointer-events-none rounded-t-full"
+            className="w-14 h-24 -mt-14 bg-gradient-to-t from-[#2563eb]/40 via-[#60a5fa]/20 to-transparent pointer-events-none rounded-t-full"
             style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)' }}
           />
         </div>
 
         {/* Outer White Beacon Ring */}
-        <div className="relative z-20 w-7 h-7 rounded-full bg-white shadow-2xl flex items-center justify-center border border-slate-200">
+        <div className="relative z-20 w-7 h-7 rounded-full bg-white shadow-2xl flex items-center justify-center border-2 border-slate-100">
           {/* Inner Royal Blue Dot */}
           <div className="w-4 h-4 rounded-full bg-[#1a73e8] shadow-inner" />
         </div>
       </div>
     </OverlayView>
-  ), [animatedLocation, heading]);
+  ), [animatedLocation]);
 
   const currentStep = useMemo(() => {
     if (!directions?.routes?.[0]?.legs?.[0]?.steps) return null;
