@@ -1,11 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck } from 'react-icons/fi';
+import { FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck, FiSearch, FiChevronDown } from 'react-icons/fi';
 import { getSettings, updateSettings, updateAdminProfile, getAdminProfile, getAllAdmins, createAdmin, deleteAdmin, updateAdminDetails, toggleAdminStatus } from '../../services/settingsService';
 import { cityService } from '../../services/cityService';
 import { DEFAULT_SUPPORTED_LANGUAGES } from '../../../../context/LanguageContext';
 import CityManagement from '../Cities';
 import { toast } from 'react-hot-toast';
+
+// Exclusively Indian regional languages and scheduled languages
+export const PRESET_INDIAN_LANGUAGES = [
+  { code: 'sa', name: 'Sanskrit', nativeName: 'संस्कृतम्', flag: '🇮🇳' },
+  { code: 'mai', name: 'Maithili', nativeName: 'मैथिली', flag: '🇮🇳' },
+  { code: 'gom', name: 'Konkani', nativeName: 'कोंकणी', flag: '🇮🇳' },
+  { code: 'sd', name: 'Sindhi', nativeName: 'سنڌي / सिन्धी', flag: '🇮🇳' },
+  { code: 'ne', name: 'Nepali', nativeName: 'नेपाली', flag: '🇳🇵' },
+  { code: 'ks', name: 'Kashmiri', nativeName: 'کٲشُر / कश्मीरी', flag: '🇮🇳' },
+  { code: 'doi', name: 'Dogri', nativeName: 'डोगरी', flag: '🇮🇳' },
+  { code: 'sat', name: 'Santali', nativeName: 'ᱥᱟᱱᱛᱟᱲᱤ', flag: '🇮🇳' },
+  { code: 'brx', name: 'Bodo', nativeName: 'बर’', flag: '🇮🇳' },
+  { code: 'mni', name: 'Manipuri (Meitei)', nativeName: 'ꯃꯤꯇꯩꯂꯣꯟ', flag: '🇮🇳' },
+  { code: 'bho', name: 'Bhojpuri', nativeName: 'भोजपुरी', flag: '🇮🇳' },
+  { code: 'awa', name: 'Awadhi', nativeName: 'अवधी', flag: '🇮🇳' },
+  { code: 'mwr', name: 'Marwari', nativeName: 'मारवाड़ी', flag: '🇮🇳' },
+  { code: 'mag', name: 'Magahi', nativeName: 'मगही', flag: '🇮🇳' },
+  { code: 'chg', name: 'Chhattisgarhi', nativeName: 'छत्तीसगढ़ी', flag: '🇮🇳' },
+  { code: 'lus', name: 'Mizo', nativeName: 'Mizo ṭawng', flag: '🇮🇳' },
+  { code: 'kha', name: 'Khasi', nativeName: 'Ka Ktien Khasi', flag: '🇮🇳' },
+  { code: 'gar', name: 'Garo', nativeName: 'A·chik', flag: '🇮🇳' }
+];
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState({
@@ -72,8 +94,9 @@ const AdminSettings = () => {
   // Language Management State
   const [languages, setLanguages] = useState(DEFAULT_SUPPORTED_LANGUAGES);
   const [showAddLanguage, setShowAddLanguage] = useState(false);
-  const [newLanguage, setNewLanguage] = useState({ code: '', name: '', nativeName: '', flag: '🌐', isEnabled: true });
   const [langLoading, setLangLoading] = useState(false);
+  const [langSearch, setLangSearch] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -334,6 +357,31 @@ const AdminSettings = () => {
     const updated = languages.map(l => l.code === code ? { ...l, isEnabled: l.isEnabled === false ? true : false } : l);
     setLanguages(updated);
     handleSaveLanguages(updated);
+  };
+
+  const handlePresetSelect = (presetCode) => {
+    if (!presetCode) return;
+    const preset = PRESET_POPULAR_LANGUAGES.find(p => p.code === presetCode);
+    if (preset) {
+      setNewLanguage({
+        code: preset.code,
+        name: preset.name,
+        nativeName: preset.nativeName,
+        flag: preset.flag || '🌐',
+        isEnabled: true
+      });
+    }
+  };
+
+  const handleQuickAddPreset = (preset) => {
+    if (languages.some(l => l.code === preset.code)) {
+      return toast.error(`${preset.name} is already added`);
+    }
+    const updated = [...languages, { ...preset, isEnabled: true }];
+    setLanguages(updated);
+    handleSaveLanguages(updated);
+    setShowAddLanguage(false);
+    toast.success(`Added ${preset.name} (${preset.nativeName}) successfully!`);
   };
 
   const handleAddLanguageSubmit = (e) => {
@@ -1159,101 +1207,173 @@ const AdminSettings = () => {
                 })}
               </div>
 
-              {/* Add Language Modal */}
+              {/* Add Language Modal (Indian Languages Only) */}
               {showAddLanguage && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
                   <motion.div
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6"
+                    className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
                   >
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                      <div>
-                        <h3 className="text-lg font-black text-gray-900">Add New Language</h3>
-                        <p className="text-xs text-gray-500">Add any regional or international language</p>
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center text-xl">
+                          🇮🇳
+                        </div>
+                        <div>
+                          <h3 className="text-base font-black text-gray-900">Add Indian Regional Language</h3>
+                          <p className="text-xs text-gray-500">Select from official scheduled languages & regional dialects</p>
+                        </div>
                       </div>
                       <button
-                        onClick={() => setShowAddLanguage(false)}
-                        className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600"
+                        onClick={() => {
+                          setShowAddLanguage(false);
+                          setIsDropdownOpen(false);
+                          setLangSearch('');
+                        }}
+                        className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 cursor-pointer"
                       >
                         <FiX className="w-5 h-5" />
                       </button>
                     </div>
 
-                    <form onSubmit={handleAddLanguageSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
-                          ISO Language Code (e.g. pa, ml, or, fr, es)
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={5}
-                          value={newLanguage.code}
-                          onChange={(e) => setNewLanguage({ ...newLanguage, code: e.target.value.toLowerCase() })}
-                          placeholder="e.g. pa"
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold uppercase focus:bg-white focus:border-sky-600 outline-none"
-                        />
-                      </div>
+                    {/* Custom Interactive Dropdown with Live Search */}
+                    <div className="relative">
+                      <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                        Select Indian Language from Dropdown
+                      </label>
+                      
+                      {/* Trigger Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-white focus:bg-white focus:border-orange-500 text-xs font-bold text-gray-800 outline-none transition-all shadow-2xs cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-base">🇮🇳</span>
+                          <span className="text-gray-700">Choose an Indian language to add...</span>
+                        </div>
+                        <FiChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-orange-500' : ''}`} />
+                      </button>
 
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
-                          English Name (e.g. Punjabi, French, Malayalam)
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={newLanguage.name}
-                          onChange={(e) => setNewLanguage({ ...newLanguage, name: e.target.value })}
-                          placeholder="e.g. Punjabi"
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:bg-white focus:border-sky-600 outline-none"
-                        />
-                      </div>
+                      {/* Custom Dropdown Menu with Live Search */}
+                      <AnimatePresence>
+                        {isDropdownOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute left-0 right-0 top-full mt-2 z-30 bg-white rounded-2xl border border-gray-200 shadow-2xl p-2.5 space-y-2 max-h-72 flex flex-col"
+                          >
+                            {/* Live Search Input */}
+                            <div className="relative flex items-center px-1">
+                              <FiSearch className="absolute left-3.5 text-gray-400 w-3.5 h-3.5" />
+                              <input
+                                type="text"
+                                value={langSearch}
+                                onChange={(e) => setLangSearch(e.target.value)}
+                                placeholder="Type to search (e.g. Sanskrit, Maithili, Bhojpuri)..."
+                                className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-gray-50 border border-gray-200 focus:border-orange-500 focus:bg-white text-xs font-medium outline-none"
+                                autoFocus
+                              />
+                            </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
-                          Native Script Name (e.g. ਪੰਜਾਬੀ, Français, മലയാളം)
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={newLanguage.nativeName}
-                          onChange={(e) => setNewLanguage({ ...newLanguage, nativeName: e.target.value })}
-                          placeholder="e.g. ਪੰਜਾਬੀ"
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:bg-white focus:border-sky-600 outline-none"
-                        />
-                      </div>
+                            {/* Scrollable Language List */}
+                            <div className="overflow-y-auto max-h-48 space-y-1 p-0.5">
+                              {PRESET_INDIAN_LANGUAGES
+                                .filter(p => {
+                                  const q = langSearch.toLowerCase().trim();
+                                  if (!q) return true;
+                                  return p.name.toLowerCase().includes(q) || p.nativeName.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
+                                })
+                                .map((p) => {
+                                  const isAlreadyAdded = languages.some(l => l.code === p.code);
+                                  return (
+                                    <button
+                                      key={p.code}
+                                      type="button"
+                                      disabled={isAlreadyAdded || langLoading}
+                                      onClick={() => {
+                                        handleQuickAddPreset(p);
+                                        setIsDropdownOpen(false);
+                                        setLangSearch('');
+                                      }}
+                                      className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all ${
+                                        isAlreadyAdded
+                                          ? 'bg-gray-50/70 text-gray-400 cursor-not-allowed opacity-60'
+                                          : 'hover:bg-orange-50 hover:text-orange-900 active:scale-[0.99] cursor-pointer text-gray-800'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <span className="text-base">{p.flag}</span>
+                                        <div className="min-w-0 flex items-center gap-2">
+                                          <span className="text-xs font-black truncate">{p.name}</span>
+                                          <span className="text-[11px] font-medium text-orange-700 bg-orange-100/60 px-2 py-0.5 rounded-md">
+                                            {p.nativeName}
+                                          </span>
+                                        </div>
+                                      </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">
-                          Flag Emoji (Optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={newLanguage.flag}
-                          onChange={(e) => setNewLanguage({ ...newLanguage, flag: e.target.value })}
-                          placeholder="🇮🇳 or 🌐"
-                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:bg-white focus:border-sky-600 outline-none"
-                        />
-                      </div>
+                                      {isAlreadyAdded ? (
+                                        <span className="text-[10px] font-bold text-gray-400 bg-gray-200/60 px-2 py-0.5 rounded-full shrink-0">
+                                          Active
+                                        </span>
+                                      ) : (
+                                        <span className="text-[11px] font-bold text-orange-600 shrink-0 flex items-center gap-1">
+                                          <FiPlus className="w-3.5 h-3.5" />
+                                          Add
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
 
-                      <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                        <button
-                          type="button"
-                          onClick={() => setShowAddLanguage(false)}
-                          className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={langLoading}
-                          className="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs flex items-center gap-2"
-                        >
-                          {langLoading ? 'Saving...' : 'Add & Enable Language'}
-                        </button>
+                    {/* Quick Add 1-Click Badges */}
+                    <div>
+                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-gray-400 mb-2">
+                        ⚡ Quick Add (1-Click)
+                      </label>
+                      <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-2xl border border-gray-100">
+                        {PRESET_INDIAN_LANGUAGES.filter(p => !languages.some(l => l.code === p.code)).length === 0 ? (
+                          <p className="text-xs text-gray-400 py-3 px-2 text-center w-full">All regional Indian languages are already active!</p>
+                        ) : (
+                          PRESET_INDIAN_LANGUAGES.filter(p => !languages.some(l => l.code === p.code)).map((preset) => (
+                            <button
+                              key={preset.code}
+                              type="button"
+                              disabled={langLoading}
+                              onClick={() => handleQuickAddPreset(preset)}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-orange-50 border border-gray-200 hover:border-orange-300 text-gray-800 hover:text-orange-700 text-xs font-bold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                            >
+                              <span>{preset.flag}</span>
+                              <span>{preset.name}</span>
+                              <span className="text-[11px] text-gray-400 font-normal">({preset.nativeName})</span>
+                              <FiPlus className="w-3.5 h-3.5 text-orange-600 ml-0.5" />
+                            </button>
+                          ))
+                        )}
                       </div>
-                    </form>
+                    </div>
+
+                    <div className="flex items-center justify-end pt-3 border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddLanguage(false);
+                          setIsDropdownOpen(false);
+                          setLangSearch('');
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer"
+                      >
+                        Close
+                      </button>
+                    </div>
                   </motion.div>
                 </div>
               )}
