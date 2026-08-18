@@ -12,27 +12,79 @@ import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 
 // Simple toggle for the simulation button (Controlled via .env)
-const SHOW_SIMULATION_BUTTON = import.meta.env.VITE_ENABLE_MAP_SIMULATION === 'true';
-
-// Zomato-like Premium Map Style (Silver/Clean)
+// Authentic Google Maps Driving Navigation Style (3D Buildings, White/Grey Roads, Soft Mint Greenery & Sky Blue Water)
 const mapStyles = [
-  { "elementType": "geometry", "stylers": [{ "color": "#f5f5f5" }] },
-  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
-  { "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
-  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#f5f5f5" }] },
-  { "featureType": "administrative.land_parcel", "elementType": "labels.text.fill", "stylers": [{ "color": "#bdbdbd" }] },
-  { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
-  { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
-  { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
-  { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#ffffff" }] },
-  { "featureType": "road.arterial", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
-  { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#dadada" }] },
-  { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
-  { "featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] },
-  { "featureType": "transit.line", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
-  { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
-  { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#c9c9c9" }] },
-  { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] }
+  {
+    "elementType": "geometry",
+    "stylers": [{ "color": "#f1f3f4" }]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "off" }]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [{ "color": "#5f6368" }]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [{ "color": "#ffffff" }, { "weight": 3 }]
+  },
+  {
+    "featureType": "landscape.man_made",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#e8eaed" }]
+  },
+  {
+    "featureType": "landscape.man_made",
+    "elementType": "geometry.stroke",
+    "stylers": [{ "color": "#dadce0" }]
+  },
+  {
+    "featureType": "landscape.natural",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#f1f3f4" }]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#e8eaed" }]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#dcf5df" }]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#ffffff" }]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.stroke",
+    "stylers": [{ "color": "#cfd8dc" }, { "weight": 1.2 }]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#ffffff" }]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry.stroke",
+    "stylers": [{ "color": "#b0bec5" }, { "weight": 1.5 }]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#e8eaed" }]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [{ "color": "#c4e1f6" }]
+  }
 ];
 
 const defaultCenter = { lat: 20.5937, lng: 78.9629 };
@@ -348,7 +400,21 @@ const BookingMap = () => {
     }
   }, [map, heading, isAutoCenter, currentLocation]);
 
-  // Memoize Map Markers to prevent flickering/blinking
+  // Turn intersection coordinate for floating street badge
+  const turnPoint = useMemo(() => {
+    if (!directions?.routes?.[0]?.legs?.[0]?.steps) return coords;
+    const steps = directions.routes[0].legs[0].steps;
+    if (steps.length > 0 && steps[0].end_location) {
+      const loc = steps[0].end_location;
+      return {
+        lat: typeof loc.lat === 'function' ? loc.lat() : loc.lat,
+        lng: typeof loc.lng === 'function' ? loc.lng() : loc.lng
+      };
+    }
+    return coords;
+  }, [directions, coords]);
+
+  // Destination Marker
   const destinationMarker = useMemo(() => coords && (
     <OverlayView
       position={coords}
@@ -361,6 +427,7 @@ const BookingMap = () => {
     </OverlayView>
   ), [coords]);
 
+  // Authentic Google Maps Navigation Vehicle (Blue Dot + White Ring + Forward Light Beam Cone)
   const riderMarker = useMemo(() => animatedLocation && (
     <OverlayView
       position={animatedLocation}
@@ -374,38 +441,25 @@ const BookingMap = () => {
         }}
         className="pointer-events-none flex items-center justify-center"
       >
-        {/* Soft forward direction beam */}
+        {/* Soft forward driving light cone */}
         <div
-          className="absolute z-10 w-24 h-24 pointer-events-none flex items-center justify-center"
+          className="absolute z-10 w-28 h-28 pointer-events-none flex items-center justify-center"
           style={{
             transform: `rotate(${heading}deg)`,
-            transition: 'transform 0.3s ease-out'
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
           <div
-            className="w-16 h-20 -mt-10 bg-gradient-to-t from-blue-600/30 via-blue-400/15 to-transparent rounded-t-full pointer-events-none"
+            className="w-16 h-24 -mt-12 bg-gradient-to-t from-blue-600/35 via-blue-400/15 to-transparent pointer-events-none rounded-t-full"
             style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)' }}
           />
         </div>
 
-        {/* Rider / Vehicle Icon */}
-        <div
-          className="relative z-20 w-14 h-14"
-          style={{
-            transform: `rotate(${heading}deg)`,
-            transition: 'transform 0.3s ease-out'
-          }}
-        >
-          <img
-            src="/MapRider.png"
-            alt="Rider"
-            className="w-full h-full object-contain drop-shadow-2xl"
-          />
+        {/* Outer White Beacon Ring */}
+        <div className="relative z-20 w-7 h-7 rounded-full bg-white shadow-2xl flex items-center justify-center border border-slate-200">
+          {/* Inner Royal Blue Dot */}
+          <div className="w-4 h-4 rounded-full bg-[#1a73e8] shadow-inner" />
         </div>
-
-        {/* Subtle pulsing GPS ring */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-blue-500/25 rounded-full animate-ping pointer-events-none"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-blue-600 rounded-full border-2 border-white shadow-md"></div>
       </div>
     </OverlayView>
   ), [animatedLocation, heading]);
@@ -599,13 +653,13 @@ const BookingMap = () => {
                   suppressPolylines: true
                 }}
               />
-              {/* Electric Google Maps Blue Polyline */}
+              {/* Electric Google Maps Blue Polyline with Dark Border Casing */}
               <PolylineF
                 path={routePath}
                 options={{
-                  strokeColor: "#1d4ed8",
-                  strokeWeight: 10,
-                  strokeOpacity: 0.35,
+                  strokeColor: "#1e1b4b",
+                  strokeWeight: 11,
+                  strokeOpacity: 0.75,
                   zIndex: 40
                 }}
               />
@@ -613,7 +667,7 @@ const BookingMap = () => {
                 path={routePath}
                 options={{
                   strokeColor: "#2563eb",
-                  strokeWeight: 7,
+                  strokeWeight: 8,
                   strokeOpacity: 1,
                   zIndex: 50
                 }}
@@ -621,16 +675,18 @@ const BookingMap = () => {
             </>
           )}
 
-          {/* Turn Label on Map */}
-          {coords && (
+          {/* Turn Label on Map with Pointer (Matching Screenshot) */}
+          {turnPoint && (
             <OverlayView
-              position={coords}
+              position={turnPoint}
               mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
             >
-              <div className="relative -translate-x-1/2 -translate-y-12 pointer-events-none">
-                <div className="bg-[#2563eb] text-white px-2.5 py-1 rounded-xl text-xs font-black shadow-xl border border-white/40 tracking-tight whitespace-nowrap">
+              <div className="relative -translate-x-1/2 -translate-y-[120%] pointer-events-none flex flex-col items-center">
+                <div className="bg-[#1a73e8] text-white px-3 py-1 rounded-xl text-xs font-black shadow-2xl border-2 border-white tracking-tight whitespace-nowrap drop-shadow-md">
                   {maneuverTarget.name}
                 </div>
+                {/* Downward Pointer Triangle */}
+                <div className="w-0 h-0 border-x-[5px] border-x-transparent border-t-[6px] border-t-white -mt-[1px]" />
               </div>
             </OverlayView>
           )}
