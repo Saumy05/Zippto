@@ -1008,8 +1008,8 @@ export default function BookingDetails() {
             )}
           </div>
 
-          {/* Vendor Earnings Footer - ONLY SHOW WHEN COMPLETED */}
-          {(booking.status === 'completed' || booking.status === 'work_done' || booking.cashCollected) ? (
+          {/* Vendor Earnings Footer - ONLY SHOW WHEN COMPLETED OR PAID */}
+          {(booking.status === 'completed' || booking.status === 'work_done' || booking.cashCollected || booking.paymentStatus === 'SUCCESS' || booking.paymentStatus === 'success' || booking.paymentStatus === 'paid') ? (
             <div className="bg-emerald-50 px-6 py-4 border-t border-emerald-100">
               <div className="space-y-2 mb-3 text-sm">
                 <div className="flex justify-between items-center text-emerald-700">
@@ -1464,13 +1464,13 @@ export default function BookingDetails() {
             <FiArrowRight className="w-5 h-5" />
           </button>
 
-          {booking.status === 'completed' ? (
+          {(booking.status === 'completed' || booking.paymentStatus === 'SUCCESS' || booking.paymentStatus === 'success' || booking.paymentStatus === 'paid') ? (
             <div className="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-5 text-center shadow-md animate-in fade-in">
               <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-2">
                 <FiCheckCircle className="w-7 h-7" />
               </div>
               <h3 className="text-base font-black text-emerald-900">Job Completed & Settled</h3>
-              <p className="text-xs text-emerald-700 mt-1">This service is complete. Payment and earnings have been finalized.</p>
+              <p className="text-xs text-emerald-700 mt-1">This service is complete. Payment of ₹{(booking.finalAmount || 0).toLocaleString()} has been verified.</p>
             </div>
           ) : (
             <>

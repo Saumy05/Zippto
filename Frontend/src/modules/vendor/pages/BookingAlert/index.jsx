@@ -78,7 +78,7 @@ const BookingAlert = () => {
       navigate('/vendor/dashboard', { replace: true });
     } catch (error) {
       console.error('Error accepting:', error);
-      toast.error('Failed to accept booking. It may have expired.');
+      toast.error(error.response?.data?.message || 'Failed to accept booking. It may have been accepted by another vendor.');
       navigate('/vendor/dashboard', { replace: true });
     }
   };
@@ -113,7 +113,7 @@ const BookingAlert = () => {
       navigate(`/vendor/booking/${id}/assign-worker`, { replace: true });
     } catch (error) {
       console.error('Error accepting:', error);
-      toast.error('Failed to accept booking.');
+      toast.error(error.response?.data?.message || 'Failed to accept booking. It may have been accepted by another vendor.');
       navigate('/vendor/dashboard', { replace: true });
     }
   };

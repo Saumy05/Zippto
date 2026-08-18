@@ -267,29 +267,29 @@ const acceptBooking = async (req, res) => {
     }
 
     // NOTIFY OTHER VENDORS to remove this job
-    // Use the stored notifiedVendors list
     const io = req.app.get('io');
-    if (io && booking.notifiedVendors && booking.notifiedVendors.length > 0) {
-      console.log(`[AcceptBooking] Notifying ${booking.notifiedVendors.length} other vendors that job ${booking._id} was taken`);
-      booking.notifiedVendors.forEach(otherVendorId => {
-        // Skip the current vendor
-        if (otherVendorId.toString() !== vendorId.toString()) {
-          const room = `vendor_${otherVendorId.toString()}`;
-          console.log(`[AcceptBooking] Emitting booking_taken to room: ${room}`);
-          io.to(room).emit('booking_taken', {
-            bookingId: booking._id.toString(), // Ensure string for frontend comparison
-            message: 'This job has been accepted by someone else.'
-          });
-        }
-      });
-    } else {
-      console.log('[AcceptBooking] No other vendors to notify or io not available');
-    }
-
-    // Emit real-time updates to USER
     if (io) {
-      const message = 'Vendor has accepted your request. Your booking is confirmed!';
+      if (booking.notifiedVendors && booking.notifiedVendors.length > 0) {
+        console.log(`[AcceptBooking] Notifying ${booking.notifiedVendors.length} other vendors that job ${booking._id} was taken`);
+        booking.notifiedVendors.forEach(otherVendorId => {
+          if (otherVendorId.toString() !== vendorId.toString()) {
+            const room = `vendor_${otherVendorId.toString()}`;
+            io.to(room).emit('booking_taken', {
+              bookingId: booking._id.toString(),
+              message: 'This job has already been accepted by another vendor.'
+            });
+          }
+        });
+      }
 
+      // Global broadcast for instant UI dismissal across all vendor screens
+      io.emit('booking_claimed', {
+        bookingId: booking._id.toString(),
+        acceptedBy: vendorId.toString()
+      });
+
+      // Emit real-time updates to USER
+      const message = 'Vendor has accepted your request. Your booking is confirmed!';
       io.to(`user_${booking.userId}`).emit('booking_accepted', {
         bookingId: booking._id,
         bookingNumber: booking.bookingNumber,
@@ -305,6 +305,15 @@ const acceptBooking = async (req, res) => {
         bookingId: booking._id,
         status: booking.status,
         message: 'Vendor has accepted your request'
+      });
+
+      // Emit real-time update to ADMIN room
+      io.to('admin_notifications').emit('booking_accepted', {
+        bookingId: booking._id.toString(),
+        bookingNumber: booking.bookingNumber,
+        vendorId: vendorId.toString(),
+        vendorName: req.user.businessName || req.user.name,
+        acceptedAt: new Date()
       });
     }
 
@@ -610,6 +619,16 @@ const assignWorker = async (req, res) => {
         bookingId: booking._id,
         status: booking.status,
         message: 'Professional assigned to your booking'
+      });
+
+      // Notify Admin in real-time
+      io.to('admin_notifications').emit('worker_assigned', {
+        bookingId: booking._id,
+        bookingNumber: booking.bookingNumber,
+        vendorId: vendorId,
+        workerId: workerId,
+        workerName: worker.name,
+        assignedAt: new Date()
       });
     }
 

@@ -187,7 +187,13 @@ const BookingAlerts = () => {
       window.dispatchEvent(new Event('vendorJobsUpdated'));
     } catch (error) {
       console.error('Accept error:', error);
-      toast.error('Failed to accept booking');
+      const msg = error.response?.data?.message || 'Failed to accept booking';
+      toast.error(msg);
+      // If taken by another vendor, remove from list immediately
+      setAlerts(prev => prev.filter(a => (a._id || a.id) !== bookingId));
+      const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+      const updatedPending = pendingJobs.filter(job => (job.id || job._id) !== bookingId);
+      localStorage.setItem('vendorPendingJobs', JSON.stringify(updatedPending));
     } finally {
       setLoadingAction({ id: null, type: null });
     }

@@ -325,6 +325,24 @@ export const SocketProvider = ({ children }) => {
         window.dispatchEvent(new Event('vendorStatsUpdated'));
       });
 
+      // Listen for global booking_claimed event
+      newSocket.on('booking_claimed', (data) => {
+        const takenBookingId = String(data.bookingId);
+        const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+        const updatedPending = pendingJobs.filter(job => String(job.id || job._id) !== takenBookingId);
+        localStorage.setItem('vendorPendingJobs', JSON.stringify(updatedPending));
+
+        const stats = JSON.parse(localStorage.getItem('vendorStats') || '{}');
+        if (stats.pendingAlerts > 0) {
+          stats.pendingAlerts = Math.max(0, (stats.pendingAlerts || 0) - 1);
+          localStorage.setItem('vendorStats', JSON.stringify(stats));
+        }
+
+        window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: takenBookingId } }));
+        window.dispatchEvent(new Event('vendorJobsUpdated'));
+        window.dispatchEvent(new Event('vendorStatsUpdated'));
+      });
+
       // Listen for removeVendorBooking - generic removal (timeout, cancellation, etc.)
       newSocket.on('removeVendorBooking', (data) => {
         const bookingId = String(data.bookingId || data.id);

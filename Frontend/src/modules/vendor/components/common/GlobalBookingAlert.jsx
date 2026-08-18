@@ -170,7 +170,14 @@ export default function GlobalBookingAlert() {
           window.dispatchEvent(new Event('vendorStatsUpdated'));
           toast.success('Job claimed successfully! Assigned to you.');
         } catch (e) {
-          toast.error('Failed to claim job');
+          const errMsg = e.response?.data?.message || 'Failed to claim job';
+          toast.error(errMsg);
+          // If already taken, remove it from alerts immediately
+          const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+          const updated = pendingJobs.filter(b => String(b.id || b._id) !== String(id));
+          localStorage.setItem('vendorPendingJobs', JSON.stringify(updated));
+          window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id } }));
+          setActiveAlertBookings(prev => prev.filter(b => String(b.id || b._id) !== String(id)));
         }
       }}
       onAssign={async (id) => {
@@ -191,7 +198,14 @@ export default function GlobalBookingAlert() {
           toast.success('Job claimed! Redirecting to assign...');
           navigate(`/vendor/booking/${id}/assign-worker`);
         } catch (e) {
-          toast.error('Failed to claim job');
+          const errMsg = e.response?.data?.message || 'Failed to claim job';
+          toast.error(errMsg);
+          // If already taken, remove it from alerts immediately
+          const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+          const updated = pendingJobs.filter(b => String(b.id || b._id) !== String(id));
+          localStorage.setItem('vendorPendingJobs', JSON.stringify(updated));
+          window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id } }));
+          setActiveAlertBookings(prev => prev.filter(b => String(b.id || b._id) !== String(id)));
         }
       }}
       onReject={async (id) => {

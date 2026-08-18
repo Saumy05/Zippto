@@ -281,16 +281,31 @@ const startJob = async (req, res) => {
       }
     });
 
-    // Explicitly emit socket event
+    // Explicitly emit socket event to User, Vendor, and Admin
     const io = req.app.get('io');
     if (io) {
       io.to(`user_${booking.userId}`).emit('booking_updated', {
         bookingId: booking._id,
         status: BOOKING_STATUS.JOURNEY_STARTED,
-        visitOtp: otp
+        visitOtp: otp,
+        message: 'Worker started journey'
       });
 
-      // Socket notification removed - createNotification already handles this
+      if (booking.vendorId) {
+        io.to(`vendor_${booking.vendorId}`).emit('booking_updated', {
+          bookingId: booking._id,
+          status: BOOKING_STATUS.JOURNEY_STARTED,
+          message: 'Worker started journey'
+        });
+      }
+
+      io.to('admin_notifications').emit('journey_started', {
+        bookingId: booking._id,
+        bookingNumber: booking.bookingNumber,
+        workerId: workerId,
+        vendorId: booking.vendorId,
+        startedAt: new Date()
+      });
     }
 
     res.status(200).json({
@@ -410,15 +425,30 @@ const verifyVisit = async (req, res) => {
       }
     });
 
-    // Emit socket event for real-time update
+    // Emit socket event for real-time update to User, Vendor, and Admin
     const io = req.app.get('io');
     if (io) {
       io.to(`user_${booking.userId}`).emit('booking_updated', {
         bookingId: booking._id,
         status: booking.status,
-        message: 'Visit verified successful'
+        message: 'Visit verified successfully'
       });
-      // Socket notification removed - createNotification already handles this
+
+      if (booking.vendorId) {
+        io.to(`vendor_${booking.vendorId}`).emit('booking_updated', {
+          bookingId: booking._id,
+          status: booking.status,
+          message: 'Worker arrived & visit verified'
+        });
+      }
+
+      io.to('admin_notifications').emit('visit_verified', {
+        bookingId: booking._id,
+        bookingNumber: booking.bookingNumber,
+        workerId: workerId,
+        vendorId: booking.vendorId,
+        verifiedAt: new Date()
+      });
     }
 
     res.status(200).json({
@@ -524,15 +554,31 @@ const completeJob = async (req, res) => {
       }
     });
 
-    // Explicitly emit socket event to ensure user gets real-time update
+    // Explicitly emit socket event to User, Vendor, and Admin
     const io = req.app.get('io');
     if (io) {
       io.to(`user_${booking.userId}`).emit('booking_updated', {
         bookingId: booking._id,
-        status: BOOKING_STATUS.WORK_DONE
+        status: BOOKING_STATUS.WORK_DONE,
+        paymentOtp: payOtp,
+        message: 'Work completed. Please verify bill & pay.'
       });
 
-      // Socket notification removed - createNotification already handles this
+      if (booking.vendorId) {
+        io.to(`vendor_${booking.vendorId}`).emit('booking_updated', {
+          bookingId: booking._id,
+          status: BOOKING_STATUS.WORK_DONE,
+          message: 'Worker finished work. Bill preparation in progress.'
+        });
+      }
+
+      io.to('admin_notifications').emit('work_done', {
+        bookingId: booking._id,
+        bookingNumber: booking.bookingNumber,
+        workerId: workerId,
+        vendorId: booking.vendorId,
+        completedAt: new Date()
+      });
     }
 
     res.status(200).json({

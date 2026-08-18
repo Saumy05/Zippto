@@ -1,5 +1,8 @@
 const Booking = require('../../models/Booking');
 const User = require('../../models/User');
+const Vendor = require('../../models/Vendor');
+const VendorBill = require('../../models/VendorBill');
+const Transaction = require('../../models/Transaction');
 const Settings = require('../../models/Settings');
 const Plan = require('../../models/Plan');
 const { validationResult } = require('express-validator');
@@ -130,35 +133,24 @@ const verifyPaymentWebhook = async (req, res) => {
     booking.razorpayPaymentId = razorpay_payment_id;
     booking.paymentId = razorpay_payment_id;
 
-    // Update booking status based on current state
-    if ([BOOKING_STATUS.PENDING, BOOKING_STATUS.SEARCHING, BOOKING_STATUS.AWAITING_PAYMENT].includes(booking.status)) {
-      booking.status = BOOKING_STATUS.CONFIRMED;
-    } else if (booking.status === BOOKING_STATUS.WORK_DONE) {
+    // ── Fetch VendorBill (to distinguish initial booking vs post-service final payment) ──
+    const bill = await VendorBill.findOne({ bookingId: booking._id });
+
+    // Update booking status: If bill exists or service was performed, transition to COMPLETED
+    if (
+      bill ||
+      booking.status === BOOKING_STATUS.AWAITING_PAYMENT ||
+      booking.status === BOOKING_STATUS.WORK_DONE ||
+      booking.status === BOOKING_STATUS.VISITED ||
+      booking.status === BOOKING_STATUS.IN_PROGRESS
+    ) {
       booking.status = BOOKING_STATUS.COMPLETED;
-      booking.completedAt = new Date();
+      booking.completedAt = booking.completedAt || new Date();
+    } else {
+      booking.status = BOOKING_STATUS.CONFIRMED;
     }
 
     await booking.save();
-
-    // ── Credit Vendor Wallet from VendorBill (single source of truth) ──
-    const Transaction = require('../../models/Transaction');
-    const Vendor = require('../../models/Vendor');
-    const VendorBill = require('../../models/VendorBill');
-
-    // User payment transaction
-    await Transaction.create({
-      userId: booking.userId,
-      bookingId: booking._id,
-      amount: booking.finalAmount,
-      type: 'payment',
-      paymentMethod: 'razorpay',
-      status: 'completed',
-      description: `Online payment for booking ${booking.bookingNumber}`,
-      referenceId: razorpay_payment_id
-    });
-
-    // Fetch VendorBill for earnings (only if bill exists = post-completion payment)
-    const bill = await VendorBill.findOne({ bookingId: booking._id });
 
     if (bill && booking.vendorId) {
       const vendorEarning = bill.vendorTotalEarning;
@@ -372,21 +364,24 @@ const processWalletPayment = async (req, res) => {
     booking.paymentId = `WALLET_${Date.now()}`;
 
     // Update booking status
-    if ([BOOKING_STATUS.PENDING, BOOKING_STATUS.SEARCHING, BOOKING_STATUS.AWAITING_PAYMENT].includes(booking.status)) {
-      booking.status = BOOKING_STATUS.CONFIRMED;
-    } else if (booking.status === BOOKING_STATUS.WORK_DONE) {
+    const bill = await VendorBill.findOne({ bookingId: booking._id });
+
+    if (
+      bill ||
+      booking.status === BOOKING_STATUS.AWAITING_PAYMENT ||
+      booking.status === BOOKING_STATUS.WORK_DONE ||
+      booking.status === BOOKING_STATUS.VISITED ||
+      booking.status === BOOKING_STATUS.IN_PROGRESS
+    ) {
       booking.status = BOOKING_STATUS.COMPLETED;
-      booking.completedAt = new Date();
+      booking.completedAt = booking.completedAt || new Date();
+    } else {
+      booking.status = BOOKING_STATUS.CONFIRMED;
     }
 
     await booking.save();
 
     // ── Credit Vendor Wallet from VendorBill (single source of truth) ──
-    const Vendor = require('../../models/Vendor');
-    const VendorBill = require('../../models/VendorBill');
-
-    const bill = await VendorBill.findOne({ bookingId: booking._id });
-
     if (bill && booking.vendorId) {
       const vendorEarning = bill.vendorTotalEarning;
 

@@ -398,12 +398,12 @@ const createBooking = async (req, res) => {
           console.log(`User ${userId} upgraded to Plus Membership until ${expiryDate}`);
         }
 
-        // Nearby vendors already found above
-        // WAVE-BASED ALERTING: Sort by distance and only notify first wave
+        // Nearby vendors offering this service category found
+        // Alert all qualified matching vendors in radius (up to 10 vendors in wave 1)
         const sortedVendors = nearbyVendors.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
-        // Wave 1: First 3 vendors
-        const WAVE_1_COUNT = 3;
+        // Wave 1: Notify all matching vendors (up to 10)
+        const WAVE_1_COUNT = Math.min(sortedVendors.length, 10);
         const wave1Vendors = sortedVendors.slice(0, WAVE_1_COUNT);
 
         // Store all potential vendors in booking for scheduler to use
@@ -417,7 +417,7 @@ const createBooking = async (req, res) => {
         await bookingForBackground.save();
 
         if (wave1Vendors.length > 0) {
-          console.log(`[CreateBooking] Wave 1: Alerting ${wave1Vendors.length} closest vendors (of ${sortedVendors.length} total)`);
+          console.log(`[CreateBooking] Wave 1: Alerting ${wave1Vendors.length} matching vendors offering ${bookingForBackground.serviceCategory || 'this service'}`);
 
           // Create BookingRequest entries for Wave 1 vendors
           const BookingRequest = require('../../models/BookingRequest');
@@ -439,18 +439,17 @@ const createBooking = async (req, res) => {
             if (err.code !== 11000) console.error('[CreateBooking] BookingRequest insert error:', err);
           }
         } else {
-          console.warn(`[CreateBooking] NO VENDORS FOUND nearby! Push notifications will not be sent.`);
-          // Update booking status if no vendors found
+          console.warn(`[CreateBooking] NO VENDORS FOUND matching service category!`);
           bookingForBackground.status = BOOKING_STATUS.NO_VENDORS;
           await bookingForBackground.save();
         }
 
-        // Send notifications to Wave 1 vendors ONLY
+        // Send notifications to all matching Wave 1 vendors
         // 1. Emit Socket.IO event FIRST (Instant & Reliable)
         const { getIO } = require('../../sockets');
         const io = getIO();
         if (io) {
-          console.log(`[CreateBooking] Emitting Socket.IO events to ${wave1Vendors.length} vendors in Wave 1...`);
+          console.log(`[CreateBooking] Emitting Socket.IO alerts to ${wave1Vendors.length} matching vendors...`);
           wave1Vendors.forEach(vendor => {
             const vendorRoom = `vendor_${vendor._id.toString()}`;
             console.log(`[Wave 1] Emitting to ${vendorRoom} (dist: ${vendor.distance?.toFixed(1) || 'N/A'}km)`);
@@ -471,8 +470,19 @@ const createBooking = async (req, res) => {
               createdAt: bookingForBackground.createdAt || new Date(),
               expiresAt: new Date(new Date(bookingForBackground.createdAt || Date.now()).getTime() + (60 * 1000)).toISOString(),
               playSound: true,
-              message: `New booking request within ${vendor.distance?.toFixed(1) || '?'}km!`
+              message: `New booking request for ${bookingForBackground.serviceCategory || serviceForBackground.title} within ${vendor.distance?.toFixed(1) || '?'}km!`
             });
+          });
+
+          // Also notify Admin real-time tracking room
+          io.to('admin_notifications').emit('new_booking_created', {
+            bookingId: bookingForBackground._id,
+            bookingNumber: bookingForBackground.bookingNumber,
+            serviceName: serviceForBackground.title,
+            customerName: userForBackground.name,
+            finalAmount: finalAmount,
+            matchingVendorsCount: wave1Vendors.length,
+            createdAt: new Date()
           });
         }
 
