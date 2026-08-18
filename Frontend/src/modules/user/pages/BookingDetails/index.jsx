@@ -96,7 +96,7 @@ const BookingDetails = () => {
   const [detailMap, setDetailMap] = useState(null);
 
   const { isLoaded: isMapScriptLoaded } = useJsApiLoader({
-    id: 'google-map-booking-details',
+    id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
     libraries: mapLibraries,
     language: localStorage.getItem('zippto_language') || 'en'
