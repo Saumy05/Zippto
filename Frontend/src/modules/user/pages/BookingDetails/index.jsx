@@ -35,7 +35,9 @@ import {
   FiShield,
   FiFileText,
   FiShare2,
-  FiCompass
+  FiCompass,
+  FiPlus,
+  FiMinus
 } from 'react-icons/fi';
 import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
@@ -66,6 +68,7 @@ const BookingDetails = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(Boolean(location.pathname?.endsWith('/chat')));
   const [paying, setPaying] = useState(false);
+  const [mapZoom, setMapZoom] = useState(15);
   const [copiedId, setCopiedId] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -764,10 +767,11 @@ const BookingDetails = () => {
                   return (
                     <>
                       <iframe
+                        key={mapZoom}
                         className="w-full h-full opacity-90 group-hover:opacity-100 transition-opacity"
                         frameBorder="0"
-                        style={{ border: 0, pointerEvents: 'none' }}
-                        src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
+                        style={{ border: 0 }}
+                        src={`https://maps.google.com/maps?q=${mapQuery}&z=${mapZoom}&output=embed`}
                         allowFullScreen
                         tabIndex="-1"
                         title="Doorstep Location"
@@ -790,6 +794,26 @@ const BookingDetails = () => {
                           <span>Maps</span>
                           <FiNavigation className="w-3.5 h-3.5 rotate-45" />
                         </a>
+                      </div>
+
+                      {/* Floating Zoom Controls */}
+                      <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-1.5 pointer-events-auto">
+                        <button
+                          type="button"
+                          onClick={() => setMapZoom(prev => Math.min(prev + 1, 20))}
+                          className="w-9 h-9 rounded-xl bg-white/95 hover:bg-white text-slate-800 backdrop-blur-md shadow-md border border-slate-200/90 flex items-center justify-center font-bold active:scale-90 transition-all cursor-pointer hover:text-teal-700"
+                          title="Zoom In"
+                        >
+                          <FiPlus className="w-4.5 h-4.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMapZoom(prev => Math.max(prev - 1, 4))}
+                          className="w-9 h-9 rounded-xl bg-white/95 hover:bg-white text-slate-800 backdrop-blur-md shadow-md border border-slate-200/90 flex items-center justify-center font-bold active:scale-90 transition-all cursor-pointer hover:text-teal-700"
+                          title="Zoom Out"
+                        >
+                          <FiMinus className="w-4.5 h-4.5" />
+                        </button>
                       </div>
                     </>
                   );

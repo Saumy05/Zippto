@@ -4,7 +4,7 @@ import { ref, onValue, off } from 'firebase/database';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, DirectionsRenderer, OverlayView, PolylineF } from '@react-google-maps/api';
-import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiUser, FiStar, FiShield, FiKey, FiCheckCircle, FiLoader, FiDollarSign, FiMaximize, FiMinimize, FiClock } from 'react-icons/fi';
+import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiUser, FiStar, FiShield, FiKey, FiCheckCircle, FiLoader, FiDollarSign, FiMaximize, FiMinimize, FiClock, FiPlus, FiMinus } from 'react-icons/fi';
 import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
 import { toast } from 'react-hot-toast';
@@ -730,11 +730,38 @@ const BookingTrack = () => {
           }}
           className={`absolute top-40 right-4 p-4 rounded-full shadow-2xl transition-all active:scale-90 z-20 ${isAutoCenter ? 'bg-teal-600 text-white animate-pulse' : 'bg-white text-gray-700'}`}
           style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.2)' }}
+          title="Recenter"
         >
           <FiCrosshair className="w-6 h-6" />
         </button>
 
-        {/* Recenter Button */}
+        {/* Zoom In & Out Controls */}
+        <div className="absolute top-56 right-4 flex flex-col gap-2 z-20">
+          <button
+            onClick={() => {
+              if (map) {
+                map.setZoom((map.getZoom() || 14) + 1);
+              }
+            }}
+            className="p-3.5 rounded-full shadow-2xl transition-all active:scale-90 bg-white text-gray-700 hover:bg-gray-50 flex items-center justify-center cursor-pointer"
+            style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.15)' }}
+            title="Zoom In"
+          >
+            <FiPlus className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => {
+              if (map) {
+                map.setZoom((map.getZoom() || 14) - 1);
+              }
+            }}
+            className="p-3.5 rounded-full shadow-2xl transition-all active:scale-90 bg-white text-gray-700 hover:bg-gray-50 flex items-center justify-center cursor-pointer"
+            style={{ boxShadow: '0 8px 30px rgba(0,0,0,0.15)' }}
+            title="Zoom Out"
+          >
+            <FiMinus className="w-5 h-5" />
+          </button>
+        </div>
 
       </div>
 
