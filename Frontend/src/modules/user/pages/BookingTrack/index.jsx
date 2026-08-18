@@ -450,9 +450,21 @@ const BookingTrack = () => {
             fullRoutePathRef.current = result.routes[0].overview_path;
             setRoutePath(result.routes[0].overview_path);
 
-            // Center on rider
-            map.setCenter(currentLocation);
-            map.setZoom(15);
+            // Fit route cleanly into view
+            try {
+              const bounds = new window.google.maps.LatLngBounds();
+              bounds.extend(currentLocation);
+              bounds.extend(coords);
+              map.fitBounds(bounds, {
+                top: 90,
+                bottom: 280,
+                left: 50,
+                right: 50
+              });
+            } catch (err) {
+              map.setCenter(currentLocation);
+              map.setZoom(15);
+            }
           }
         }
       );

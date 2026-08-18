@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, DirectionsRenderer, OverlayView, PolylineF } from '@react-google-maps/api';
-import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiClock, FiCheckCircle, FiX, FiMaximize, FiMinimize, FiWifiOff, FiAlertTriangle, FiRefreshCw, FiUser, FiCopy, FiCheck, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiClock, FiCheckCircle, FiX, FiMaximize, FiMinimize, FiWifiOff, FiAlertTriangle, FiRefreshCw, FiUser, FiCopy, FiCheck, FiPlus, FiMinus, FiCornerUpRight, FiCornerUpLeft, FiArrowUp, FiCompass } from 'react-icons/fi';
 import { FaMotorcycle } from 'react-icons/fa';
 import { getBookingById, verifySelfVisit } from '../../services/bookingService';
 import VisitVerificationModal from '../../components/common/VisitVerificationModal';
@@ -377,9 +377,21 @@ const BookingMap = () => {
             fullRoutePathRef.current = result.routes[0].overview_path;
             setRoutePath(result.routes[0].overview_path);
 
-            // Center on current location
-            map.setCenter(currentLocation);
-            map.setZoom(15);
+            // Fit complete route bounds nicely inside viewport
+            try {
+              const bounds = new window.google.maps.LatLngBounds();
+              bounds.extend(currentLocation);
+              bounds.extend(coords);
+              map.fitBounds(bounds, {
+                top: 100,
+                bottom: 300,
+                left: 50,
+                right: 50
+              });
+            } catch (err) {
+              map.setCenter(currentLocation);
+              map.setZoom(15);
+            }
           } else {
             setRouteError('Could not calculate a driving route to this location.');
           }
@@ -518,6 +530,12 @@ const BookingMap = () => {
     </OverlayView>
   ), [animatedLocation, heading]);
 
+  const currentStep = useMemo(() => {
+    if (!directions?.routes?.[0]?.legs?.[0]?.steps) return null;
+    const steps = directions.routes[0].legs[0].steps;
+    return steps[0] || null;
+  }, [directions]);
+
   const mapOptions = useMemo(() => ({
     disableDefaultUI: true,
     zoomControl: false,
@@ -540,15 +558,50 @@ const BookingMap = () => {
   return (
     <div className="h-screen flex flex-col relative bg-white overflow-hidden">
       {/* Top Floating Header */}
-      {/* Top Floating Header - Always Visible */}
-      <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
+      <div className="absolute top-4 left-4 z-30 flex items-center pointer-events-none">
         <button
           onClick={() => navigate(-1)}
-          className="pointer-events-auto bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg text-gray-700 hover:bg-white transition-all active:scale-95"
+          className="pointer-events-auto bg-white/95 hover:bg-white backdrop-blur-md p-3 rounded-2xl shadow-lg text-slate-800 border border-slate-200/80 transition-all active:scale-95 cursor-pointer"
         >
-          <FiArrowLeft className="w-6 h-6" />
+          <FiArrowLeft className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Google Maps Turn-by-Turn Navigation HUD Banner */}
+      {directions && (
+        <div className="absolute top-4 left-18 right-4 sm:left-20 sm:right-24 z-30 pointer-events-none">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="pointer-events-auto bg-gradient-to-r from-emerald-800 via-teal-800 to-teal-900 text-white rounded-2xl p-3 sm:p-3.5 shadow-2xl border border-white/20 flex items-center justify-between gap-3 max-w-md mx-auto"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shrink-0 shadow-inner">
+                {currentStep?.maneuver?.includes('right') ? (
+                  <FiCornerUpRight className="w-5 h-5 text-amber-300 stroke-[2.5]" />
+                ) : currentStep?.maneuver?.includes('left') ? (
+                  <FiCornerUpLeft className="w-5 h-5 text-amber-300 stroke-[2.5]" />
+                ) : (
+                  <FiArrowUp className="w-5 h-5 text-amber-300 stroke-[2.5]" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-black text-emerald-200 uppercase tracking-wider block">
+                  {currentStep?.distance?.text ? `In ${currentStep.distance.text}` : 'Next Maneuver'}
+                </span>
+                <p className="text-xs sm:text-sm font-extrabold text-white truncate leading-tight">
+                  {currentStep?.instructions ? currentStep.instructions.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : 'Proceed along the route'}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-right shrink-0 pl-2.5 border-l border-white/20">
+              <span className="text-[9px] font-black uppercase text-emerald-200 block">ETA</span>
+              <span className="text-xs sm:text-sm font-black text-white">{duration || '8 min'}</span>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* No Internet Overlay */}
       <AnimatePresence>
@@ -607,42 +660,6 @@ const BookingMap = () => {
         )}
       </AnimatePresence>
 
-      {/* Full Screen Mode Info Card */}
-      <AnimatePresence>
-        {isFullScreen && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="absolute top-6 left-0 right-0 z-10 flex justify-center pointer-events-none"
-          >
-            <div className="pointer-events-auto bg-white/95 backdrop-blur-xl px-6 py-2.5 rounded-full shadow-2xl flex items-center gap-6 border border-white/20 ring-1 ring-black/5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center">
-                  <FiMapPin className="w-4 h-4 text-teal-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Remaining</p>
-                  <p className="text-sm font-black text-gray-800">{distance}</p>
-                </div>
-              </div>
-
-              <div className="w-px h-8 bg-gray-100"></div>
-
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center">
-                  <FiClock className="w-4 h-4 text-orange-500" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">ETA</p>
-                  <p className="text-sm font-black text-gray-800">{duration}</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div className="flex-1 w-full h-full relative">
         <GoogleMap
           mapContainerStyle={{ width: '100%', height: '100%' }}
@@ -664,11 +681,21 @@ const BookingMap = () => {
                   suppressPolylines: true
                 }}
               />
+              {/* Google Maps Layered Route Polyline */}
               <PolylineF
                 path={routePath}
                 options={{
-                  strokeColor: "#0F766E", // Dark Teal
-                  strokeWeight: 8,
+                  strokeColor: "#064e3b",
+                  strokeWeight: 10,
+                  strokeOpacity: 0.3,
+                  zIndex: 40
+                }}
+              />
+              <PolylineF
+                path={routePath}
+                options={{
+                  strokeColor: "#0d9488",
+                  strokeWeight: 6,
                   strokeOpacity: 1,
                   zIndex: 50
                 }}
@@ -680,9 +707,6 @@ const BookingMap = () => {
           {riderMarker}
         </GoogleMap>
 
-        {/* Recenter Button */}
-
-
         {/* Floating Glassmorphic Map Action Bar */}
         <div className="absolute top-20 right-4 flex flex-col gap-2 z-50">
           {/* Full Screen Toggle Button */}
@@ -692,6 +716,35 @@ const BookingMap = () => {
             title={isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
           >
             {isFullScreen ? <FiMinimize className="w-5 h-5" /> : <FiMaximize className="w-5 h-5" />}
+          </button>
+
+          {/* 3D Navigation Mode Toggle Button */}
+          <button
+            onClick={() => {
+              const nextMode = !isNavigationMode;
+              setIsNavigationMode(nextMode);
+              if (map && currentLocation) {
+                if (nextMode) {
+                  map.panTo(currentLocation);
+                  map.setZoom(18);
+                  map.setTilt(45);
+                  map.setHeading(heading || 0);
+                } else {
+                  map.setTilt(0);
+                  map.setHeading(0);
+                  if (coords) {
+                    const bounds = new window.google.maps.LatLngBounds();
+                    bounds.extend(currentLocation);
+                    bounds.extend(coords);
+                    map.fitBounds(bounds, { top: 90, bottom: 280, left: 50, right: 50 });
+                  }
+                }
+              }
+            }}
+            className={`w-11 h-11 rounded-2xl shadow-lg border flex items-center justify-center active:scale-90 transition-all cursor-pointer ${isNavigationMode ? 'bg-indigo-600 text-white border-indigo-500 shadow-indigo-500/25' : 'bg-white/95 hover:bg-white backdrop-blur-md text-slate-700 border-slate-200/80'}`}
+            title={isNavigationMode ? 'Exit 3D Navigation' : 'Start 3D Navigation'}
+          >
+            <FiCompass className={`w-5 h-5 ${isNavigationMode ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
           </button>
 
           {/* Recenter Button */}
