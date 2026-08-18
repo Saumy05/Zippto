@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiBriefcase, FiUsers, FiShoppingBag, FiDollarSign, FiActivity } from 'react-icons/fi';
+import { FiUser, FiBriefcase, FiUsers, FiShoppingBag, FiDollarSign, FiActivity, FiGrid } from 'react-icons/fi';
 import RevenueLineChart from '../../components/dashboard/RevenueLineChart';
 import BookingsBarChart from '../../components/dashboard/BookingsBarChart';
 import BookingStatusPieChart from '../../components/dashboard/BookingStatusPieChart';
@@ -197,15 +197,15 @@ const AdminDashboard = () => {
       link: '/admin/vendors/analytics'
     },
     {
-      title: 'New Workers',
-      value: (stats.totalWorkers || 0).toLocaleString(),
+      title: 'Active Services',
+      value: (stats.totalServices || stats.servicesCount || '24+').toString(),
       change: 0,
-      icon: FiUsers,
+      icon: FiGrid,
       color: 'text-white',
       bgColor: 'bg-gradient-to-br from-rose-500 to-pink-600',
       cardBg: 'bg-gradient-to-br from-rose-50 to-pink-50',
       iconBg: 'bg-white/20',
-      link: '/admin/workers/analytics'
+      link: '/admin/user-categories'
     },
   ];
 

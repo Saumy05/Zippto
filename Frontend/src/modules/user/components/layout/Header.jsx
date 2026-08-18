@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { FiSearch, FiBell, FiMapPin, FiChevronDown, FiCreditCard, FiX } from 'react-icons/fi';
 import { useCity } from '../../../../context/CityContext';
 import { useCart } from '../../../../context/CartContext';
+import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 import CitySelectorModal from '../common/CitySelectorModal';
 
 const Header = ({ location: userLocationProp, onLocationClick }) => {
@@ -178,6 +179,8 @@ const Header = ({ location: userLocationProp, onLocationClick }) => {
               9+
             </span>
           </Link>
+
+          <LanguageToggle className="shrink-0 text-[11px] py-1 px-2 sm:px-2.5" />
 
           <Link
             to="/user/account"

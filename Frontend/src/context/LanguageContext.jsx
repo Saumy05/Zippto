@@ -48,15 +48,22 @@ export const LanguageProvider = ({ children }) => {
   // Helper to set Google Translate cookies across all hostnames and root paths
   const applyGoogleTranslateCookie = (langCode) => {
     const hostname = window.location.hostname;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+
     if (langCode === 'en') {
       document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${hostname}; path=/;`;
-      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${hostname}; path=/;`;
+      if (!isLocal) {
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${hostname}; path=/;`;
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${hostname}; path=/;`;
+      }
     } else {
       document.cookie = `googtrans=/en/${langCode}; path=/;`;
-      document.cookie = `googtrans=/en/${langCode}; domain=${hostname}; path=/;`;
       document.cookie = `googtrans=/auto/${langCode}; path=/;`;
-      document.cookie = `googtrans=/auto/${langCode}; domain=${hostname}; path=/;`;
+      if (!isLocal) {
+        document.cookie = `googtrans=/en/${langCode}; domain=${hostname}; path=/;`;
+        document.cookie = `googtrans=/auto/${langCode}; domain=${hostname}; path=/;`;
+        document.cookie = `googtrans=/en/${langCode}; domain=.${hostname}; path=/;`;
+      }
     }
   };
 
@@ -64,6 +71,7 @@ export const LanguageProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('zippto_language', currentLang);
     document.documentElement.lang = currentLang;
+    document.documentElement.dir = 'ltr';
     applyGoogleTranslateCookie(currentLang);
 
     // Dispatch global event so Google Maps or dynamic components re-render with new language
