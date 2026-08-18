@@ -514,18 +514,6 @@ const UserDashboard = () => {
               Bookings
             </NavLink>
             <NavLink
-              to="/user/scrap"
-              className={({ isActive }) =>
-                `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
-                    : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`
-              }
-            >
-              Scrap & Sell
-            </NavLink>
-            <NavLink
               to="/user/my-plan"
               className={({ isActive }) =>
                 `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${

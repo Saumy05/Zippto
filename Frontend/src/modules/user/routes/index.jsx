@@ -76,8 +76,6 @@ const AboutHomestr = lazyLoad(() => import('../pages/AboutHomster'));
 const UpdateProfile = lazyLoad(() => import('../pages/UpdateProfile'));
 const Login = lazyLoad(() => import('../pages/login'));
 const Signup = lazyLoad(() => import('../pages/signup'));
-const Scrap = lazyLoad(() => import('../pages/Scrap'));
-const AddScrap = lazyLoad(() => import('../pages/Scrap/AddScrap'));
 const Notifications = lazyLoad(() => import('../pages/Notifications'));
 const HelpSupport = lazyLoad(() => import('../pages/HelpSupport'));
 const CancellationPolicy = lazyLoad(() => import('../pages/CancellationPolicy'));
@@ -105,7 +103,6 @@ const UserRoutes = () => {
     '/user/',
     '/user/dashboard',
     '/user/my-bookings',
-    '/user/scrap',
     '/user/cart',
     '/user/account',
     '/user/my-plan',
@@ -156,8 +153,6 @@ const UserRoutes = () => {
               <Route path="/my-rating" element={<ProtectedRoute userType="user"><MyRating /></ProtectedRoute>} />
               <Route path="/about-homestr" element={<ProtectedRoute userType="user"><AboutHomestr /></ProtectedRoute>} />
               <Route path="/update-profile" element={<ProtectedRoute userType="user"><UpdateProfile /></ProtectedRoute>} />
-              <Route path="/scrap" element={<ProtectedRoute userType="user"><Scrap /></ProtectedRoute>} />
-              <Route path="/scrap/add" element={<ProtectedRoute userType="user"><AddScrap /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="user"><Notifications /></ProtectedRoute>} />
               <Route path="/help-support" element={<ProtectedRoute userType="user"><HelpSupport /></ProtectedRoute>} />
               <Route path="/cancellation-policy" element={<ProtectedRoute userType="user"><CancellationPolicy /></ProtectedRoute>} />

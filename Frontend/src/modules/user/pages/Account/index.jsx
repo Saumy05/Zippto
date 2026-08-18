@@ -365,14 +365,6 @@ const Account = () => {
             </h3>
             <div className="grid grid-cols-1 gap-2.5">
               <MenuItem
-                icon={FiShoppingBag}
-                title="Scrap Deals"
-                subtitle="Sell recyclable scrap with instant doorstep pickup & weight verification"
-                onClick={() => navigate('/user/scrap')}
-                iconBg="bg-amber-50"
-                iconColor="text-amber-600"
-              />
-              <MenuItem
                 icon={FiFileText}
                 title="My Plans & Subscriptions"
                 subtitle="Manage active Zippto protection plans and service passes"

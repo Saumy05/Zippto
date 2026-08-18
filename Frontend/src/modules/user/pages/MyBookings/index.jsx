@@ -28,7 +28,7 @@ const MyBookings = () => {
     { id: 'electrician', title: 'Electrician & Plumber', image: '/cat_electrician_plumber.png' },
     { id: 'cleaning', title: 'Deep Cleaning', image: '/cat_cleaning.png' },
     { id: 'ac-repair', title: 'AC Service & Repair', image: '/ac_foam_jet_service.png' },
-    { id: 'scrap', title: 'Sell Scrap & Recyclables', image: '/drill_wall_decor.png' },
+    { id: 'appliance', title: 'Appliance Repair', image: '/drill_wall_decor.png' },
   ];
 
   useEffect(() => {

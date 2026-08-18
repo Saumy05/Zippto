@@ -30,7 +30,6 @@ const BottomNav = React.memo(() => {
     () => [
       { id: 'home', label: 'Home', icon: FiHome, filledIcon: HiHome, path: '/user' },
       { id: 'bookings', label: 'Bookings', icon: FiCalendar, filledIcon: HiCalendar, path: '/user/my-bookings' },
-      { id: 'scrap', label: 'Scrap', icon: FiRepeat, filledIcon: HiRefresh, path: '/user/scrap' },
       { id: 'cart', label: 'Cart', icon: FiShoppingCart, filledIcon: HiShoppingCart, path: '/user/cart', isCart: true },
       { id: 'account', label: 'Account', icon: FiUser, filledIcon: HiUser, path: '/user/account' },
     ],
@@ -41,7 +40,6 @@ const BottomNav = React.memo(() => {
     const path = location.pathname;
     if (path === '/user' || path === '/user/' || path.includes('dashboard')) return 'home';
     if (path.includes('/my-bookings') || path.includes('/booking/')) return 'bookings';
-    if (path.includes('/scrap')) return 'scrap';
     if (path.includes('/cart') || path.includes('/checkout')) return 'cart';
     if (path.includes('/account') || path.includes('/settings') || path.includes('/profile')) return 'account';
     return 'home';
