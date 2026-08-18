@@ -744,81 +744,104 @@ const BookingDetails = () => {
             </div>
           )}
 
-          {/* 4. DOORSTEP LOCATION & TIME SCHEDULE */}
-          <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 overflow-hidden">
-            {/* Interactive Map Thumbnail */}
-            {booking.address && (
-              <div className="relative h-44 w-full bg-slate-100 group overflow-hidden border-b border-slate-100">
+          {/* 4. DEDICATED LIVE MAP & GPS TRACKER CARD */}
+          {booking.address && (
+            <div className="bg-white rounded-3xl p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 overflow-hidden">
+              <div className="relative h-48 w-full rounded-2xl overflow-hidden bg-slate-100 group border border-slate-100">
                 {(() => {
                   let mapQuery = '';
+                  let dirUrl = 'https://maps.google.com';
                   if (typeof booking.address === 'object' && booking.address.lat && booking.address.lng) {
                     mapQuery = `${booking.address.lat},${booking.address.lng}`;
+                    dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${booking.address.lat},${booking.address.lng}`;
                   } else {
                     const addrStr = typeof booking.address === 'string'
                       ? booking.address
                       : `${booking.address?.addressLine1 || ''}, ${booking.address?.city || ''}`;
                     mapQuery = encodeURIComponent(addrStr);
+                    dirUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
                   }
                   return (
-                    <iframe
-                      className="w-full h-full opacity-90 group-hover:opacity-100 transition-opacity"
-                      frameBorder="0"
-                      style={{ border: 0, pointerEvents: 'none' }}
-                      src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
-                      allowFullScreen
-                      tabIndex="-1"
-                      title="Doorstep Location"
-                    />
+                    <>
+                      <iframe
+                        className="w-full h-full opacity-90 group-hover:opacity-100 transition-opacity"
+                        frameBorder="0"
+                        style={{ border: 0, pointerEvents: 'none' }}
+                        src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
+                        allowFullScreen
+                        tabIndex="-1"
+                        title="Doorstep Location"
+                      />
+
+                      {/* Top Overlay Badges */}
+                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                        <span className="bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-extrabold text-slate-800 shadow-sm border border-white/80 flex items-center gap-1.5 pointer-events-auto">
+                          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                          Destination Pin
+                        </span>
+
+                        <a
+                          href={dirUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-white/95 hover:bg-white backdrop-blur-md px-2.5 py-1 rounded-xl text-[11px] font-extrabold text-teal-700 hover:text-teal-800 shadow-sm border border-white/80 flex items-center gap-1 pointer-events-auto transition-all active:scale-95"
+                          title="Open in Google Maps"
+                        >
+                          <span>Maps</span>
+                          <FiNavigation className="w-3 h-3 rotate-45" />
+                        </a>
+                      </div>
+
+                      {/* Centered Floating Map Navigation Button */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[0.5px]">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
+                          className="px-4 py-2.5 bg-white/95 hover:bg-white text-slate-900 rounded-full font-black text-xs flex items-center gap-2 shadow-xl hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer group"
+                        >
+                          <FiNavigation className="w-3.5 h-3.5 text-teal-600 group-hover:rotate-45 transition-transform" />
+                          <span>Open Live GPS Tracker</span>
+                        </button>
+                      </div>
+                    </>
                   );
                 })()}
-
-                {/* Floating Map Navigation Shortcut */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[0.5px]">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
-                    className="px-4 py-2 bg-white/95 hover:bg-white text-slate-900 rounded-full font-extrabold text-xs flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer"
-                  >
-                    <FiNavigation className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Open Live GPS Tracker</span>
-                  </button>
-                </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Address & Slot Details List */}
-            <div className="p-5 space-y-4">
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100">
-                  <FiMapPin className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-0.5">
-                    Service Doorstep Location
-                  </span>
-                  <p className="text-xs font-bold text-slate-800 leading-relaxed">
-                    {getAddressString(booking.address)}
-                  </p>
-                </div>
+          {/* 5. DEDICATED DOORSTEP ADDRESS & APPOINTMENT SCHEDULE CARD */}
+          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 space-y-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100">
+                <FiMapPin className="w-5 h-5" />
               </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-0.5">
+                  Service Doorstep Location
+                </span>
+                <p className="text-xs font-bold text-slate-800 leading-relaxed">
+                  {getAddressString(booking.address)}
+                </p>
+              </div>
+            </div>
 
-              <div className="w-full h-px bg-slate-100" />
+            <div className="w-full h-px bg-slate-100" />
 
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
-                  <FiCalendar className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-0.5">
-                    Scheduled Appointment
-                  </span>
-                  <p className="text-xs font-bold text-slate-800">
-                    {formatDate(booking.scheduledDate)}
-                  </p>
-                  <span className="inline-block mt-1 text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                    ⏱ {booking.scheduledTime || booking.timeSlot?.start || 'ASAP Slot'}
-                  </span>
-                </div>
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+                <FiCalendar className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-0.5">
+                  Scheduled Appointment
+                </span>
+                <p className="text-xs font-bold text-slate-800">
+                  {formatDate(booking.scheduledDate)}
+                </p>
+                <span className="inline-block mt-1 text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                  ⏱ {booking.scheduledTime || booking.timeSlot?.start || 'ASAP Slot'}
+                </span>
               </div>
             </div>
           </div>
