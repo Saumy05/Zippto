@@ -4,13 +4,14 @@ import { ref, onValue, off } from 'firebase/database';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, DirectionsRenderer, OverlayView, PolylineF } from '@react-google-maps/api';
-import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiUser, FiStar, FiShield, FiKey, FiCheckCircle, FiLoader, FiDollarSign, FiMaximize, FiMinimize, FiClock, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiUser, FiStar, FiShield, FiKey, FiCheckCircle, FiLoader, FiDollarSign, FiMaximize, FiMinimize, FiClock, FiPlus, FiMinus, FiMessageSquare } from 'react-icons/fi';
 import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import PaymentVerificationModal from '../../components/booking/PaymentVerificationModal';
+import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 
 
 const toAssetUrl = (url) => {
@@ -20,27 +21,6 @@ const toAssetUrl = (url) => {
   const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
-
-// Zomato-like Premium Map Style (Silver/Clean)
-const mapStyles = [
-  { "elementType": "geometry", "stylers": [{ "color": "#f5f5f5" }] },
-  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
-  { "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
-  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#f5f5f5" }] },
-  { "featureType": "administrative.land_parcel", "elementType": "labels.text.fill", "stylers": [{ "color": "#bdbdbd" }] },
-  { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
-  { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
-  { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
-  { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#ffffff" }] },
-  { "featureType": "road.arterial", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
-  { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#dadada" }] },
-  { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
-  { "featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] },
-  { "featureType": "transit.line", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
-  { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
-  { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#c9c9c9" }] },
-  { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] }
-];
 
 const defaultCenter = { lat: 20.5937, lng: 78.9629 };
 const libraries = ['places', 'geometry'];
@@ -63,6 +43,7 @@ const BookingTrack = () => {
   const [paying, setPaying] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -199,8 +180,12 @@ const BookingTrack = () => {
             const provider = response.data.workerId || response.data.assignedTo || response.data.vendorId || {};
             if (provider.location && provider.location.lat && provider.location.lng) {
               setCurrentLocation({ lat: parseFloat(provider.location.lat), lng: parseFloat(provider.location.lng) });
-            } else if (response.data.vendorId && provider.address && provider.address.lat && provider.address.lng) {
+            } else if (provider.location && Array.isArray(provider.location.coordinates) && provider.location.coordinates.length === 2) {
+              setCurrentLocation({ lat: parseFloat(provider.location.coordinates[1]), lng: parseFloat(provider.location.coordinates[0]) });
+            } else if (provider.address && provider.address.lat && provider.address.lng) {
               setCurrentLocation({ lat: parseFloat(provider.address.lat), lng: parseFloat(provider.address.lng) });
+            } else if (response.data.vendorLocation && response.data.vendorLocation.lat && response.data.vendorLocation.lng) {
+              setCurrentLocation({ lat: parseFloat(response.data.vendorLocation.lat), lng: parseFloat(response.data.vendorLocation.lng) });
             } else {
               setCurrentLocation(null);
             }
@@ -1019,15 +1004,29 @@ const BookingTrack = () => {
               </div>
             </div>
 
-            {/* Call Button */}
-            {provider.phone && (
-              <a
-                href={`tel:${provider.phone}`}
-                className="w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center active:scale-90 transition-transform shadow-sm"
+            {/* Action Buttons: Chat & Call */}
+            <div className="flex items-center gap-2.5">
+              {/* Chat Button */}
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(true)}
+                className="w-12 h-12 bg-teal-50 text-teal-700 rounded-full flex items-center justify-center active:scale-90 transition-transform shadow-sm border border-teal-100 cursor-pointer hover:bg-teal-100"
+                title="Chat with Professional"
               >
-                <FiPhone className="w-5 h-5" />
-              </a>
-            )}
+                <FiMessageSquare className="w-5 h-5" />
+              </button>
+
+              {/* Call Button */}
+              {provider.phone && (
+                <a
+                  href={`tel:${provider.phone}`}
+                  className="w-12 h-12 bg-green-100 text-green-700 rounded-full flex items-center justify-center active:scale-90 transition-transform shadow-sm hover:bg-green-200"
+                  title="Call Professional"
+                >
+                  <FiPhone className="w-5 h-5" />
+                </a>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1038,6 +1037,13 @@ const BookingTrack = () => {
         onClose={() => setShowPaymentModal(false)}
         booking={booking}
         onPayOnline={handleOnlinePayment}
+      />
+
+      <ChatDrawerModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        booking={booking}
+        userType="user"
       />
     </div>
   );
