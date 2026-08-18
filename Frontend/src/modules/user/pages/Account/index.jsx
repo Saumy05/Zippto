@@ -448,6 +448,14 @@ const Account = () => {
                 iconColor="text-sky-600"
               />
               <MenuItem
+                icon={FiFileText}
+                title="Home Care Guides & Blog"
+                subtitle="Expert appliance maintenance tips, DIY checklists & insights"
+                onClick={() => navigate('/blog')}
+                iconBg="bg-emerald-50"
+                iconColor="text-emerald-600"
+              />
+              <MenuItem
                 icon={FiInfo}
                 title="About Zippto Home Services"
                 subtitle="Company details, terms & privacy policies"

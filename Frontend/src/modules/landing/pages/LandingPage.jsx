@@ -75,7 +75,7 @@ const LandingPage = () => {
   const menuItems = [
     { label: 'Glimpse', href: '#app-glimpse' },
     { label: 'Expertise', href: '#expertise' },
-    { label: 'Why Us', href: '#expertise' },
+    { label: 'Blog & Guides', href: '/blog', isRouterLink: true },
     { label: 'Join Us', href: '#join-platform' },
   ];
 
@@ -91,14 +91,25 @@ const LandingPage = () => {
           {/* Desktop Nav - Dark Text for Light Navbar */}
           <nav className="hidden lg:flex gap-10 items-center font-bold text-[11px] text-gray-900">
             {menuItems.map((item) => (
-              <a 
-                key={item.label} 
-                href={item.href} 
-                className="hover:text-brand transition-all duration-300 relative group"
-              >
-                {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand transition-all duration-300 group-hover:w-full shadow-[0_0_10px_rgba(52,121,137,0.5)]"></span>
-              </a>
+              item.isRouterLink ? (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  className="hover:text-brand transition-all duration-300 relative group"
+                >
+                  {item.label}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand transition-all duration-300 group-hover:w-full shadow-[0_0_10px_rgba(52,121,137,0.5)]"></span>
+                </Link>
+              ) : (
+                <a 
+                  key={item.label} 
+                  href={item.href} 
+                  className="hover:text-brand transition-all duration-300 relative group"
+                >
+                  {item.label}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-brand transition-all duration-300 group-hover:w-full shadow-[0_0_10px_rgba(52,121,137,0.5)]"></span>
+                </a>
+              )
             ))}
             <Link 
               to="/user" 
@@ -523,22 +534,21 @@ const LandingPage = () => {
 
       {/* 9. Dynamic Footer */}
       <footer className="py-16 sm:py-24 bg-gray-900 text-white relative overflow-hidden text-nowrap">
-        <div className="absolute top-0 right-0 w-[40%] h-full bg-brand/5 blur-[120px] -z-10 rotate-12 translate-x-1/2"></div>
         <div className="container mx-auto px-4 sm:px-8 max-w-7xl relative z-10 text-center lg:text-left">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-20 mb-12 sm:mb-20 border-b border-white/5 pb-12 sm:pb-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 sm:gap-12 mb-12 sm:mb-20 border-b border-white/5 pb-12 sm:pb-20">
             <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col items-center lg:items-start text-nowrap">
-              <Link to="/Home" className="inline-block mb-8 sm:mb-10">
-                <img src="/zippto_logo.png" alt="Cleaning Expert Services Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-cover rounded-full shadow-sm border border-gray-100" />
+              <Link to="/Home" className="inline-block mb-6 sm:mb-8">
+                <img src="/zippto_logo.png" alt="Zippto Services Logo" className="h-8 w-8 sm:h-10 sm:w-10 object-cover rounded-full shadow-sm border border-gray-100" />
               </Link>
-              <p className="text-gray-400 font-normal leading-[1.8] text-base sm:text-lg max-w-md whitespace-normal">
-                {settings?.companyName || 'Cleaning Expert Services'} — Real-time tracking and doorstep billing across Indore. Exclusive genuine spare part ecosystem.
+              <p className="text-gray-400 font-normal leading-[1.8] text-xs sm:text-sm max-w-md whitespace-normal">
+                {settings?.companyName || 'Zippto Home Services'} — Real-time tracking, verified experts, and 30-day warranty across Indore.
               </p>
             </div>
             
             <div className="hidden sm:block text-nowrap">
-              <h4 className="text-[10px] font-normal text-brand mb-8 sm:mb-10">Technical Hub</h4>
-              <ul className="space-y-4 sm:space-y-6 text-gray-400 font-normal text-sm">
-                 {categories.slice(0, 3).map((cat, i) => (
+              <h4 className="text-[10px] font-bold text-brand mb-6 uppercase tracking-wider">Top Services</h4>
+              <ul className="space-y-3 text-gray-400 font-normal text-xs">
+                 {categories.slice(0, 4).map((cat, i) => (
                    <li key={cat.id || i}>
                      <Link 
                        to="/user" 
@@ -555,24 +565,37 @@ const LandingPage = () => {
               </ul>
             </div>
 
-            <div className="flex flex-col items-center lg:items-start text-nowrap">
-              <h4 className="text-[10px] font-normal text-brand mb-8 sm:mb-10">Contact Support</h4>
-              <ul className="space-y-4 sm:space-y-6 text-gray-400 font-normal text-sm">
-                 <li>Email: <a href={`mailto:${settings?.supportEmail || 'support@zippto.in'}`} className="hover:text-white transition-all">{settings?.supportEmail || 'support@zippto.in'}</a></li>
-                 <li>Phone: <a href={`tel:${settings?.supportPhone || '+919876543210'}`} className="hover:text-white transition-all">{settings?.supportPhone || '+91 98765 43210'}</a></li>
-                 <li className="text-[11px] opacity-50">
-                    {settings?.companyAddress ? `${settings.companyAddress}, ${settings.companyCity}` : 'Indore, Madhya Pradesh'}
-                 </li>
+            <div className="hidden sm:block text-nowrap">
+              <h4 className="text-[10px] font-bold text-brand mb-6 uppercase tracking-wider">Resources</h4>
+              <ul className="space-y-3 text-gray-400 font-normal text-xs">
+                 <li><Link to="/blog" className="hover:text-white transition-all">Blog & Guides</Link></li>
+                 <li><Link to="/blog?category=Appliance%20Care" className="hover:text-white transition-all">Appliance Care</Link></li>
+                 <li><Link to="/blog?category=Home%20Cleaning" className="hover:text-white transition-all">Cleaning Tips</Link></li>
+                 <li><Link to="/vendor/login" className="hover:text-white transition-all">Partner Portal</Link></li>
+              </ul>
+            </div>
+
+            <div className="hidden sm:block text-nowrap">
+              <h4 className="text-[10px] font-bold text-brand mb-6 uppercase tracking-wider">Policies</h4>
+              <ul className="space-y-3 text-gray-400 font-normal text-xs">
+                 <li><Link to="/page/about-us" className="hover:text-white transition-all">About Us</Link></li>
+                 <li><Link to="/page/terms-of-service" className="hover:text-white transition-all">Terms of Service</Link></li>
+                 <li><Link to="/page/privacy-policy" className="hover:text-white transition-all">Privacy Policy</Link></li>
+                 <li><Link to="/page/cancellation-policy" className="hover:text-white transition-all">Cancellation Policy</Link></li>
               </ul>
             </div>
 
             <div className="flex flex-col items-center lg:items-start text-nowrap">
-              <h4 className="text-[10px] font-bold tracking-[0.2em] text-brand mb-8 sm:mb-10">Android App</h4>
-              <div className="w-full max-w-[240px]">
-                 <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 bg-white/5 border border-white/10 px-6 sm:px-8 py-4 sm:py-5 rounded-2xl text-xs font-bold hover:bg-white hover:text-gray-900 transition-all text-center justify-center">
-                    <FaGooglePlay size={20} /> Play Store
-                 </a>
-              </div>
+              <h4 className="text-[10px] font-bold text-brand mb-6 uppercase tracking-wider">Contact</h4>
+              <ul className="space-y-3 text-gray-400 font-normal text-xs">
+                 <li>Email: <a href={`mailto:${settings?.supportEmail || 'support@zippto.in'}`} className="hover:text-white transition-all">{settings?.supportEmail || 'support@zippto.in'}</a></li>
+                 <li>Phone: <a href={`tel:${settings?.supportPhone || '+919876543210'}`} className="hover:text-white transition-all">{settings?.supportPhone || '+91 98765 43210'}</a></li>
+                 <li className="pt-2">
+                   <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-white hover:text-gray-900 transition-all">
+                     <FaGooglePlay size={14} /> Play Store
+                   </a>
+                 </li>
+              </ul>
             </div>
           </div>
 

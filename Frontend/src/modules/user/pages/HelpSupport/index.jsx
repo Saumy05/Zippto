@@ -18,6 +18,7 @@ import { HiSparkles } from 'react-icons/hi';
 import { FaWhatsapp } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import api from '../../../../services/api';
+import cmsService from '../../../../services/cmsService';
 import NotificationBell from '../../components/common/NotificationBell';
 
 const HelpSupport = () => {
@@ -25,6 +26,7 @@ const HelpSupport = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showContactForm, setShowContactForm] = useState(false);
+  const [dynamicFaqs, setDynamicFaqs] = useState([]);
   const [supportInfo, setSupportInfo] = useState({
     email: 'Nexorahr@gmail.com',
     phone: '7879363299',
@@ -32,7 +34,7 @@ const HelpSupport = () => {
   });
 
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchSettingsAndFaqs = async () => {
       try {
         const response = await api.get('/public/config');
         if (response.data?.success && response.data?.settings) {
@@ -46,8 +48,17 @@ const HelpSupport = () => {
       } catch (error) {
         console.warn('Failed to fetch support settings:', error);
       }
+
+      try {
+        const faqRes = await cmsService.getPublicFAQs();
+        if (faqRes?.success && faqRes?.data?.faqs) {
+          setDynamicFaqs(faqRes.data.faqs);
+        }
+      } catch (faqErr) {
+        console.warn('Failed to fetch dynamic FAQs:', faqErr);
+      }
     };
-    fetchSettings();
+    fetchSettingsAndFaqs();
   }, []);
 
   const [formData, setFormData] = useState({
@@ -175,7 +186,28 @@ const HelpSupport = () => {
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
 
-  const filteredQuestions = categories.flatMap(cat =>
+  const activeCategories = dynamicFaqs.length > 0 ? (
+    Object.entries(
+      dynamicFaqs.reduce((acc, faq) => {
+        const cat = faq.category || 'General';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push({ q: faq.question, a: faq.answer });
+        return acc;
+      }, {})
+    ).map(([catName, qList], idx) => {
+      const colorList = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4'];
+      const iconList = [FiBook, FiClock, FiAlertCircle, FiHelpCircle, HiSparkles];
+      return {
+        id: `dynamic-${idx}`,
+        title: catName,
+        icon: iconList[idx % iconList.length],
+        color: colorList[idx % colorList.length],
+        questions: qList
+      };
+    })
+  ) : categories;
+
+  const filteredQuestions = activeCategories.flatMap(cat =>
     cat.questions.filter(q =>
       searchQuery === '' ||
       q.q.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -306,7 +338,7 @@ const HelpSupport = () => {
               </h3>
 
               <div className="space-y-3">
-                {categories.map(category => (
+                {activeCategories.map(category => (
                   <div
                     key={category.id}
                     className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all"
