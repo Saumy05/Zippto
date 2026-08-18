@@ -182,15 +182,14 @@ const BookingTrack = () => {
         setBooking(response.data);
 
         // Geocoding and Initial Location Logic
-        // Only run this complex logic on first load or if coords/location are missing
         if (isFirstLoad || !coords) {
-          const geocoder = new window.google.maps.Geocoder();
           const bAddr = response.data.address || {};
 
           // 1. Destination
           if (bAddr.lat && bAddr.lng) {
             setCoords({ lat: parseFloat(bAddr.lat), lng: parseFloat(bAddr.lng) });
-          } else {
+          } else if (window.google?.maps?.Geocoder) {
+            const geocoder = new window.google.maps.Geocoder();
             const addressStr = typeof bAddr === 'string' ? bAddr : `${bAddr.addressLine1 || ''}, ${bAddr.city || ''}, ${bAddr.state || ''} ${bAddr.pincode || ''}`;
             if (addressStr && addressStr.replaceAll(',', '').trim() && !addressStr.toLowerCase().includes('current location')) {
               geocoder.geocode({ address: addressStr }, (results, status) => {
@@ -207,10 +206,8 @@ const BookingTrack = () => {
             if (provider.location && provider.location.lat && provider.location.lng) {
               setCurrentLocation({ lat: parseFloat(provider.location.lat), lng: parseFloat(provider.location.lng) });
             } else if (response.data.vendorId && provider.address && provider.address.lat && provider.address.lng) {
-              // Fallback to vendor address
               setCurrentLocation({ lat: parseFloat(provider.address.lat), lng: parseFloat(provider.address.lng) });
             } else {
-              // Reset if no location found to avoid wrong location display
               setCurrentLocation(null);
             }
           }
@@ -223,21 +220,19 @@ const BookingTrack = () => {
     }
   }, [id, coords]);
 
-  const { isLoaded } = useJsApiLoader({
+  const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: apiKey,
+    googleMapsApiKey: apiKey || '',
     libraries,
     language: localStorage.getItem('zippto_language') || 'en'
   });
 
-  // Initial Load and Polling
+  // Initial Load and Polling (runs regardless of map load state)
   useEffect(() => {
-    if (isLoaded) {
-      refreshBooking(true);
-      const intervalId = setInterval(() => refreshBooking(false), 10000); // Poll every 10s
-      return () => clearInterval(intervalId);
-    }
-  }, [isLoaded, refreshBooking]);
+    refreshBooking(true);
+    const intervalId = setInterval(() => refreshBooking(false), 10000);
+    return () => clearInterval(intervalId);
+  }, [refreshBooking]);
 
   const socket = useAppNotifications('user');
 
