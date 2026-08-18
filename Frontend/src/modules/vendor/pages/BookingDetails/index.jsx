@@ -15,7 +15,7 @@ import {
   verifySelfVisit,
   completeSelfJob
 } from '../../services/bookingService';
-import { CashCollectionModal, ConfirmDialog, OtpVerificationModal } from '../../components/common';
+import { CashCollectionModal, ConfirmDialog, OtpVerificationModal, VisitVerificationModal } from '../../components/common';
 import WorkCompletionModal from '../../components/common/WorkCompletionModal';
 import vendorWalletService from '../../../../services/vendorWalletService';
 import vendorBillService from '../../../../services/vendorBillService';
