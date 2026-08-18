@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate, authorize } = require('../../middleware/authMiddleware');
+const { authenticate } = require('../../middleware/authMiddleware');
+const { isAdmin } = require('../../middleware/roleMiddleware');
 const {
   getAdminBlogs,
   createAdminBlog,
@@ -15,8 +16,7 @@ const {
 } = require('../../controllers/cmsController');
 
 // All Admin CMS routes require admin authentication
-router.use(authenticate);
-router.use(authorize('admin', 'super_admin', 'ADMIN'));
+router.use(authenticate, isAdmin);
 
 // 📰 Blog Management
 router.get('/blogs', getAdminBlogs);
