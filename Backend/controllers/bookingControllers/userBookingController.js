@@ -659,10 +659,26 @@ const getBookingById = async (req, res) => {
     const VendorBill = require('../../models/VendorBill');
     const bill = await VendorBill.findOne({ bookingId: booking._id });
 
-    // Convert to object to attach bill
+    // Convert to object to attach bill and live location
     const bookingData = booking;
     if (bill) {
       bookingData.bill = bill;
+    }
+
+    // Attach latest live location from Redis for 0ms tracking latency
+    try {
+      const { getLiveLocation, getVendorLocation } = require('../../services/redisService');
+      const liveLoc = await getLiveLocation(booking._id);
+      if (liveLoc && liveLoc.lat && liveLoc.lng) {
+        bookingData.vendorLocation = liveLoc;
+      } else if (booking.vendorId?._id) {
+        const vendorLoc = await getVendorLocation(booking.vendorId._id);
+        if (vendorLoc && vendorLoc.lat && vendorLoc.lng) {
+          bookingData.vendorLocation = vendorLoc;
+        }
+      }
+    } catch (redisErr) {
+      // Silently continue if Redis is unreachable
     }
 
     res.status(200).json({

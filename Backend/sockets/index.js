@@ -87,8 +87,16 @@ const initializeSocket = (server) => {
 
       // Disconnect Recovery: Send last known location from Redis
       try {
-        const { getLiveLocation } = require('../services/redisService');
-        const cachedLocation = await getLiveLocation(bookingId);
+        const { getLiveLocation, getVendorLocation } = require('../services/redisService');
+        let cachedLocation = await getLiveLocation(bookingId);
+        if (!cachedLocation) {
+          const Booking = require('../models/Booking');
+          const b = await Booking.findById(bookingId).select('vendorId workerId');
+          if (b?.vendorId) {
+            const vLoc = await getVendorLocation(b.vendorId);
+            if (vLoc) cachedLocation = vLoc;
+          }
+        }
         if (cachedLocation) {
           socket.emit('live_location_update', cachedLocation);
           console.log(`[Socket] Sent cached location to user for booking ${bookingId}`);
