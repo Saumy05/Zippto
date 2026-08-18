@@ -187,16 +187,10 @@ const BookingTrack = () => {
 
           // 1. Destination
           if (bAddr.lat && bAddr.lng) {
-            setCoords({ lat: parseFloat(bAddr.lat), lng: parseFloat(bAddr.lng) });
-          } else if (window.google?.maps?.Geocoder) {
-            const geocoder = new window.google.maps.Geocoder();
-            const addressStr = typeof bAddr === 'string' ? bAddr : `${bAddr.addressLine1 || ''}, ${bAddr.city || ''}, ${bAddr.state || ''} ${bAddr.pincode || ''}`;
-            if (addressStr && addressStr.replaceAll(',', '').trim() && !addressStr.toLowerCase().includes('current location')) {
-              geocoder.geocode({ address: addressStr }, (results, status) => {
-                if (status === 'OK' && results[0]) {
-                  setCoords(results[0].geometry.location.toJSON());
-                }
-              });
+            const lat = parseFloat(bAddr.lat);
+            const lng = parseFloat(bAddr.lng);
+            if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+              setCoords({ lat, lng });
             }
           }
 
@@ -226,6 +220,38 @@ const BookingTrack = () => {
     libraries,
     language: localStorage.getItem('zippto_language') || 'en'
   });
+
+  // Geocoding Fallback Effect when Google Maps loads
+  useEffect(() => {
+    if (isLoaded && !coords && booking?.address && window.google?.maps?.Geocoder) {
+      const bAddr = booking.address;
+      if (bAddr.lat && bAddr.lng) {
+        const lat = parseFloat(bAddr.lat);
+        const lng = parseFloat(bAddr.lng);
+        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+          setCoords({ lat, lng });
+          return;
+        }
+      }
+
+      const geocoder = new window.google.maps.Geocoder();
+      const addressStr = typeof bAddr === 'string'
+        ? bAddr
+        : `${bAddr.addressLine1 || ''}, ${bAddr.city || ''}, ${bAddr.state || ''} ${bAddr.pincode || ''}`;
+      
+      if (addressStr && addressStr.replaceAll(',', '').trim() && !addressStr.toLowerCase().includes('current location')) {
+        geocoder.geocode({ address: addressStr }, (results, status) => {
+          if (status === 'OK' && results?.[0]?.geometry?.location) {
+            const loc = results[0].geometry.location;
+            setCoords({
+              lat: typeof loc.lat === 'function' ? loc.lat() : loc.lat,
+              lng: typeof loc.lng === 'function' ? loc.lng() : loc.lng
+            });
+          }
+        });
+      }
+    }
+  }, [isLoaded, coords, booking?.address]);
 
   // Initial Load and Polling (runs regardless of map load state)
   useEffect(() => {
@@ -540,12 +566,8 @@ const BookingTrack = () => {
     tiltControl: false,
     isFractionalZoomEnabled: true,
     mapTypeControl: false,
-    mapTypeControlOptions: {
-      mapTypeIds: []
-    },
     streetViewControl: false,
-    fullscreenControl: false,
-    styles: mapStyles
+    fullscreenControl: false
   }), []);
 
   // Memoize Map Markers to prevent flickering/blinking
@@ -561,6 +583,7 @@ const BookingTrack = () => {
     </OverlayView>
   ), [coords]);
 
+  // Google Maps Navigation Vehicle (Blue Dot + White Ring + Direction Light Cone)
   const riderMarker = useMemo(() => animatedLocation && (
     <OverlayView
       position={animatedLocation}
@@ -572,26 +595,38 @@ const BookingTrack = () => {
           transform: 'translate(-50%, -50%)',
           cursor: 'pointer'
         }}
-        className="pointer-events-none"
+        className="pointer-events-none flex items-center justify-center"
       >
+        {/* Soft forward driving light cone */}
         <div
-          className="relative z-20 w-16 h-16"
+          className="absolute z-10 w-28 h-28 pointer-events-none flex items-center justify-center"
           style={{
             transform: `rotate(${heading}deg)`,
-            transition: 'transform 0.3s ease-out'
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          <img
-            src="/MapRider.png"
-            alt="Rider"
-            className="w-full h-full object-contain drop-shadow-xl rounded-full"
+          <div
+            className="w-14 h-24 -mt-14 bg-gradient-to-t from-[#2563eb]/40 via-[#60a5fa]/20 to-transparent pointer-events-none rounded-t-full"
+            style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)' }}
           />
         </div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-teal-500/30 rounded-full animate-ping z-10 pointer-events-none"></div>
-        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-12 h-3 bg-black/20 blur-sm rounded-full z-0"></div>
+
+        {/* Outer White Beacon Ring */}
+        <div className="relative z-20 w-7 h-7 rounded-full bg-white shadow-2xl flex items-center justify-center border-2 border-slate-100">
+          {/* Inner Royal Blue Dot */}
+          <div className="w-4 h-4 rounded-full bg-[#1a73e8] shadow-inner" />
+        </div>
       </div>
     </OverlayView>
   ), [animatedLocation, heading]);
+
+  // Auto-center camera on destination if rider location is not yet available
+  useEffect(() => {
+    if (map && coords && !currentLocation && isAutoCenter) {
+      map.panTo(coords);
+      map.setZoom(16);
+    }
+  }, [map, coords, currentLocation, isAutoCenter]);
 
   if (!isLoaded || loading || !booking) return <LogoLoader />;
 
@@ -650,9 +685,15 @@ const BookingTrack = () => {
       <div className="flex-1 w-full h-full">
         <GoogleMap
           mapContainerStyle={{ width: '100%', height: '100%' }}
-          defaultCenter={defaultCenter}
-          defaultZoom={14}
-          onLoad={map => setMap(map)}
+          defaultCenter={coords || currentLocation || defaultCenter}
+          defaultZoom={16}
+          onLoad={map => {
+            setMap(map);
+            if (coords || currentLocation) {
+              map.panTo(currentLocation || coords);
+              map.setZoom(16);
+            }
+          }}
           onDragStart={() => setIsAutoCenter(false)}
           onZoomChanged={() => {
             // Only disable if it's a programmatic zoom check is complicated, 
@@ -692,7 +733,16 @@ const BookingTrack = () => {
                   <PolylineF
                     path={routePath}
                     options={{
-                      strokeColor: "#0F766E",
+                      strokeColor: "#1e1b4b",
+                      strokeWeight: 11,
+                      strokeOpacity: 0.75,
+                      zIndex: 40
+                    }}
+                  />
+                  <PolylineF
+                    path={routePath}
+                    options={{
+                      strokeColor: "#2563eb",
                       strokeWeight: 8,
                       strokeOpacity: 1,
                       zIndex: 50
