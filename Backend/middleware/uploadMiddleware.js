@@ -1,7 +1,26 @@
 const multer = require('multer');
-
+const path = require('path');
+const fs = require('fs');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
+
+// Ensure local uploads directory exists
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Local disk storage fallback
+const diskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const name = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, '_');
+    cb(null, `${name}-${Date.now()}${ext}`);
+  }
+});
 
 // Configure Cloudinary Storage with optimization
 const cloudinaryStorage = new CloudinaryStorage({
@@ -9,19 +28,24 @@ const cloudinaryStorage = new CloudinaryStorage({
   params: {
     folder: 'appzeto',
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'gif'],
-    // Apply quality-preserving optimization on upload
     transformation: [
       { quality: 'auto:good', fetch_format: 'auto' }
     ],
     public_id: (req, file) => {
-      const name = file.originalname.split('.')[0];
+      const name = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
       return `${name}-${Date.now()}`;
     }
   }
 });
 
-// Configure memory storage (backup/legacy)
-const memoryStorage = multer.memoryStorage();
+const isCloudinaryConfigured = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
+// Use Cloudinary if keys exist, otherwise fallback to local disk
+const activeStorage = isCloudinaryConfigured ? cloudinaryStorage : diskStorage;
 
 // File filter - only images
 const imageFilter = (req, file, cb) => {
@@ -50,18 +74,18 @@ const documentFilter = (req, file, cb) => {
   }
 };
 
-// Generic Image Upload (Cloudinary) - Expecting 'file' field
+// Generic Image Upload
 const uploadImage = multer({
-  storage: cloudinaryStorage,
+  storage: activeStorage,
   fileFilter: imageFilter,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5MB limit
   }
 }).single('file');
 
-// Profile photo upload (legacy/specific) - Expecting 'photo' field
+// Profile photo upload
 const uploadProfilePhoto = multer({
-  storage: cloudinaryStorage, // Updated to use Cloudinary
+  storage: activeStorage,
   fileFilter: imageFilter,
   limits: {
     fileSize: 5 * 1024 * 1024
@@ -70,7 +94,7 @@ const uploadProfilePhoto = multer({
 
 // Document upload (multiple files)
 const uploadDocuments = multer({
-  storage: memoryStorage, // Keep memory for docs for now or update if needed
+  storage: diskStorage,
   fileFilter: documentFilter,
   limits: {
     fileSize: 5 * 1024 * 1024

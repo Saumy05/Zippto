@@ -73,6 +73,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
+// Serve static uploads folder
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 //For camera clicks feature 
 // app.use(express.json({ limit: "20mb" })); // REMOVED redundant
 // app.use(express.urlencoded({ extended: true, limit: "20mb" })); // REMOVED redundant

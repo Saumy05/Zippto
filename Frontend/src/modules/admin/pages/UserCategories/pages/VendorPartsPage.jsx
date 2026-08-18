@@ -63,7 +63,8 @@ const VendorPartsPage = () => {
 
     const result = schema.safeParse(data);
     if (!result.success) {
-      toast.error(result.error.errors[0].message);
+      const errMsg = result.error?.issues?.[0]?.message || result.error?.errors?.[0]?.message || 'Validation failed';
+      toast.error(errMsg);
       return;
     }
 

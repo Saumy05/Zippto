@@ -133,8 +133,8 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
 
     if (!validationResult.success) {
       // Show first error in toast
-      const firstError = validationResult.error.errors[0];
-      toast.error(firstError.message);
+      const errMsg = validationResult.error?.issues?.[0]?.message || validationResult.error?.errors?.[0]?.message || 'Validation failed';
+      toast.error(errMsg);
       return;
     }
 

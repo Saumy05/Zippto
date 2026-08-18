@@ -220,7 +220,8 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
     });
 
     if (!validationResult.success) {
-      toast.error(validationResult.error.errors[0].message);
+      const errMsg = validationResult.error?.issues?.[0]?.message || validationResult.error?.errors?.[0]?.message || 'Validation failed';
+      toast.error(errMsg);
       isSubmitting.current = false;
       return;
     }
@@ -394,7 +395,12 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
                       <td className="py-4 px-4 text-sm font-semibold text-gray-600">{idx + 1}</td>
                       <td className="py-4 px-4">
                         {s.iconUrl ? (
-                          <img src={toAssetUrl(s.iconUrl)} alt={s.title} className="h-10 w-10 object-contain rounded-md border border-gray-200 bg-white" />
+                          <img
+                            src={toAssetUrl(s.iconUrl)}
+                            alt={s.title}
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/zippto_logo.png'; }}
+                            className="h-10 w-10 object-contain rounded-md border border-gray-200 bg-white"
+                          />
                         ) : (
                           <div className="h-10 w-10 bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center">
                             <FiImage className="text-gray-400" />
@@ -525,7 +531,12 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden">
                 {form.iconUrl ? (
-                  <img src={toAssetUrl(form.iconUrl)} alt="Preview" className="w-full h-full object-contain" />
+                  <img
+                    src={toAssetUrl(form.iconUrl)}
+                    alt="Preview"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/zippto_logo.png'; }}
+                    className="w-full h-full object-contain"
+                  />
                 ) : (
                   <FiImage className="text-gray-400 w-6 h-6" />
                 )}
