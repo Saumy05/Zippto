@@ -5,8 +5,9 @@ import AppRoutes from './routes';
 import { SocketProvider } from './context/SocketContext';
 import { CartProvider } from './context/CartContext';
 import { CityProvider } from './context/CityContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
-import { LocationPermissionChecker } from './components/common';
+import { LocationPermissionChecker, LanguageSelectorModal } from './components/common';
 
 // Global Scroll to Top component: Clean, instant scroll to top without smooth-scroll conflict jitter
 const ScrollToTop = () => {
@@ -41,41 +42,44 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <SocketProvider>
-        <CityProvider>
-          <CartProvider>
-            <div className="App">
-              <AppRoutes />
-              <LocationPermissionChecker />
-              <Toaster
-                position="top-center"
-                reverseOrder={false}
-                toastOptions={{
-                  duration: 2000,
-                  style: {
-                    background: '#333',
-                    color: '#fff',
-                    borderRadius: '10px',
-                    padding: '12px 20px',
-                  },
-                  success: {
-                    duration: 1000,
-                    style: {
-                      background: '#10B981',
-                    },
-                  },
-                  error: {
+      <LanguageProvider>
+        <SocketProvider>
+          <CityProvider>
+            <CartProvider>
+              <div className="App">
+                <AppRoutes />
+                <LocationPermissionChecker />
+                <LanguageSelectorModal />
+                <Toaster
+                  position="top-center"
+                  reverseOrder={false}
+                  toastOptions={{
                     duration: 2000,
                     style: {
-                      background: '#EF4444',
+                      background: '#333',
+                      color: '#fff',
+                      borderRadius: '10px',
+                      padding: '12px 20px',
                     },
-                  },
-                }}
-              />
-            </div>
-          </CartProvider>
-        </CityProvider>
-      </SocketProvider>
+                    success: {
+                      duration: 1000,
+                      style: {
+                        background: '#10B981',
+                      },
+                    },
+                    error: {
+                      duration: 2000,
+                      style: {
+                        background: '#EF4444',
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </CartProvider>
+          </CityProvider>
+        </SocketProvider>
+      </LanguageProvider>
     </BrowserRouter>
   );
 }

@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiEdit2, FiMapPin, FiPhone, FiMail, FiBriefcase, FiStar, FiArrowRight, FiSettings, FiChevronRight, FiCreditCard, FiLogOut, FiTrash2 } from 'react-icons/fi';
+import { FiUser, FiEdit2, FiMapPin, FiPhone, FiMail, FiBriefcase, FiStar, FiArrowRight, FiSettings, FiChevronRight, FiCreditCard, FiLogOut, FiTrash2, FiGlobe } from 'react-icons/fi';
 import { FaWallet } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import { vendorAuthService } from '../../../../services/authService';
+import { useLanguage } from '../../../../context/LanguageContext';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { openLanguageModal } = useLanguage();
 
   // Helper function to convert hex to rgba
   const hexToRgba = (hex, alpha) => {
@@ -24,6 +26,7 @@ const Profile = () => {
     { id: 1, label: 'My Offered Services & Radius', icon: FiBriefcase, path: '/vendor/manage-services' },
     { id: 2, label: 'Wallet & Payouts', icon: FaWallet, path: '/vendor/wallet' },
     { id: 5, label: 'My Ratings', icon: FiStar, path: '/vendor/my-ratings' },
+    { id: 6, label: 'App Language / भाषा', icon: FiGlobe, action: openLanguageModal },
     { id: 7, label: 'Manage Address', icon: FiMapPin, path: '/vendor/address-management' },
     { id: 8, label: 'Settings', icon: FiSettings, path: '/vendor/settings' },
     { id: 9, label: 'About Homestr', icon: null, customIcon: 'H', path: '/vendor/about-homestr' },
@@ -383,7 +386,13 @@ const Profile = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  if (item.action) {
+                    item.action();
+                  } else if (item.path) {
+                    navigate(item.path);
+                  }
+                }}
                 className="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-teal-200 hover:shadow-md transition-all active:scale-[0.98]"
               >
                 <div className="flex items-center gap-4">

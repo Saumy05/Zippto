@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import Button from '../Button';
 import NotificationWindow from './NotificationWindow';
 import { adminAuthService } from '../../../../services/authService';
+import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 
 const AdminHeader = ({ onMenuClick }) => {
   const location = useLocation();
@@ -168,8 +169,9 @@ const AdminHeader = ({ onMenuClick }) => {
           </div>
         </div>
 
-        {/* Right: Notifications & Logout */}
-        <div className="flex items-center gap-4">
+        {/* Right: Language, Notifications & Logout */}
+        <div className="flex items-center gap-3">
+          <LanguageToggle />
           {/* Notifications */}
           <div className="relative">
             <Button

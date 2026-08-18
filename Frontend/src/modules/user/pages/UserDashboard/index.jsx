@@ -22,6 +22,7 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
+import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 import { publicCatalogService } from '../../../../services/catalogService';
 
 const toAssetUrl = (url) => {
@@ -577,8 +578,9 @@ const UserDashboard = () => {
             </div>
           </div>
 
-          {/* RIGHT: Action Icons (Search, Bell Notification 9+, Profile Avatar) */}
+          {/* RIGHT: Action Icons (Search, Language, Bell Notification 9+, Profile Avatar) */}
           <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-2.5 shrink-0">
+            <LanguageToggle />
             <button
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
               className="md:hidden w-7.5 h-7.5 xs:w-8 xs:h-8 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"

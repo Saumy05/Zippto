@@ -21,15 +21,18 @@ import {
   FiCheckCircle,
   FiPlus,
   FiArrowUpRight,
-  FiInfo
+  FiInfo,
+  FiGlobe
 } from 'react-icons/fi';
 import { MdAccountBalanceWallet } from 'react-icons/md';
+import { useLanguage } from '../../../../context/LanguageContext';
 import { userAuthService } from '../../../../services/authService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import NotificationBell from '../../components/common/NotificationBell';
 
 const Account = () => {
   const navigate = useNavigate();
+  const { openLanguageModal } = useLanguage();
   const [userProfile, setUserProfile] = useState({
     name: 'Verified Customer',
     phone: '',
@@ -411,6 +414,14 @@ const Account = () => {
               Preferences & Addresses
             </h3>
             <div className="grid grid-cols-1 gap-2.5">
+              <MenuItem
+                icon={FiGlobe}
+                title="App Language / भाषा"
+                subtitle="English, हिन्दी, मराठी, ગુજરાતી, தமிழ், తెలుగు..."
+                onClick={openLanguageModal}
+                iconBg="bg-teal-50"
+                iconColor="text-teal-600"
+              />
               <MenuItem
                 icon={FiMapPin}
                 title="Manage Saved Addresses"

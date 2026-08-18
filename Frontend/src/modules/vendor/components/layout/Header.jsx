@@ -4,6 +4,7 @@ import { FiArrowLeft, FiBell, FiSearch } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Logo from '../../../../components/common/Logo';
+import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 import api from '../../../../services/api';
 
 const Header = memo(({
@@ -95,8 +96,9 @@ const Header = memo(({
           {showBack && <h1 className="text-lg font-bold text-slate-900">{title || 'Vendor'}</h1>}
         </div>
 
-        {/* Right: Search and Notifications */}
+        {/* Right: Search, Language and Notifications */}
         <div className="flex items-center gap-2.5">
+          <LanguageToggle />
           {showSearch && (
             <button
               className="p-2 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-slate-200/80 transition-colors active:scale-95"
