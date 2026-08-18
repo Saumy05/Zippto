@@ -21,6 +21,26 @@ export const adminBookingService = {
     }
   },
 
+  // Get available matching vendors for manual assignment
+  getAvailableVendors: async (bookingId, params = {}) => {
+    try {
+      const response = await api.get(`/admin/bookings/${bookingId}/available-vendors`, { params });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to fetch available vendors' };
+    }
+  },
+
+  // Manually assign vendor to booking
+  assignVendor: async (bookingId, data) => {
+    try {
+      const response = await api.post(`/admin/bookings/${bookingId}/assign-vendor`, data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to assign vendor' };
+    }
+  },
+
   // Get booking analytics
   getAnalytics: async (filters = {}) => {
     try {

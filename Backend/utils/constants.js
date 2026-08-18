@@ -50,7 +50,9 @@ const BOOKING_STATUS = {
   WORK_DONE: 'work_done',
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',
-  REJECTED: 'rejected'
+  REJECTED: 'rejected',
+  NO_VENDORS: 'no_vendors',
+  UNASSIGNED: 'unassigned'
 };
 
 // Payment Status

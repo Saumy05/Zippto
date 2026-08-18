@@ -7,7 +7,9 @@ const {
   getAllBookings,
   getBookingById,
   cancelBooking,
-  getBookingAnalytics
+  getBookingAnalytics,
+  getAvailableVendorsForBooking,
+  assignVendorToBooking
 } = require('../../controllers/bookingControllers/adminBookingController');
 
 // Validation rules
@@ -15,11 +17,17 @@ const cancelBookingValidation = [
   body('cancellationReason').optional().trim()
 ];
 
+const assignVendorValidation = [
+  body('vendorId').notEmpty().withMessage('Vendor ID is required'),
+  body('notes').optional().trim()
+];
+
 // Routes
 router.get('/bookings', authenticate, isAdmin, getAllBookings);
 router.get('/bookings/analytics', authenticate, isAdmin, getBookingAnalytics);
 router.get('/bookings/:id', authenticate, isAdmin, getBookingById);
+router.get('/bookings/:id/available-vendors', authenticate, isAdmin, getAvailableVendorsForBooking);
+router.post('/bookings/:id/assign-vendor', authenticate, isAdmin, assignVendorValidation, assignVendorToBooking);
 router.post('/bookings/:id/cancel', authenticate, isAdmin, cancelBookingValidation, cancelBooking);
 
 module.exports = router;
-

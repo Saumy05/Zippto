@@ -82,11 +82,16 @@ const createNotification = async ({
       else if (vendorId) room = `vendor_${vendorId.toString()}`;
       else if (workerId) room = `worker_${workerId.toString()}`;
       else if (adminId) room = `admin_${adminId.toString()}`;
+      else room = 'admin_notifications'; // Global Admin Broadcast
 
-      if (io && room) {
-        // Check if user is actively connected to the room
-        const roomSize = io.sockets.adapter.rooms.get(room)?.size || 0;
-        isOnline = roomSize > 0;
+      if (io) {
+        if (room === 'admin_notifications') {
+          io.to('admin_notifications').emit('new_admin_notification', notification);
+          io.to('admin_notifications').emit('notification', notification);
+        } else {
+          const roomSize = io.sockets.adapter.rooms.get(room)?.size || 0;
+          isOnline = roomSize > 0;
+        }
       }
     } catch (e) {
       console.log('Socket check failed:', e.message);
@@ -313,8 +318,15 @@ const getAdminNotifications = async (req, res) => {
     const adminId = req.user.id;
     const { isRead, page = 1, limit = 20 } = req.query;
 
-    // Build query
-    const query = { adminId };
+    // Build query to include specific adminId and global admin broadcasts
+    const adminFilter = {
+      $or: [
+        { adminId },
+        { adminId: null, userId: null, vendorId: null, workerId: null }
+      ]
+    };
+
+    const query = { ...adminFilter };
     if (isRead !== undefined) {
       query.isRead = isRead === 'true';
     }
@@ -332,7 +344,7 @@ const getAdminNotifications = async (req, res) => {
     const total = await Notification.countDocuments(query);
 
     // Get unread count
-    const unreadCount = await Notification.countDocuments({ adminId, isRead: false });
+    const unreadCount = await Notification.countDocuments({ ...adminFilter, isRead: false });
 
     res.status(200).json({
       success: true,
@@ -368,7 +380,12 @@ const markAsRead = async (req, res) => {
     if (userRole === 'USER') query.userId = userId;
     else if (userRole === 'VENDOR') query.vendorId = userId;
     else if (userRole === 'WORKER') query.workerId = userId;
-    else if (userRole === 'ADMIN') query.adminId = userId;
+    else if (userRole === 'ADMIN') {
+      query.$or = [
+        { adminId: userId },
+        { adminId: null, userId: null, vendorId: null, workerId: null }
+      ];
+    }
 
     const notification = await Notification.findOne(query);
 
@@ -410,7 +427,12 @@ const markAllAsRead = async (req, res) => {
     if (userRole === 'USER') query.userId = userId;
     else if (userRole === 'VENDOR') query.vendorId = userId;
     else if (userRole === 'WORKER') query.workerId = userId;
-    else if (userRole === 'ADMIN') query.adminId = userId;
+    else if (userRole === 'ADMIN') {
+      query.$or = [
+        { adminId: userId },
+        { adminId: null, userId: null, vendorId: null, workerId: null }
+      ];
+    }
 
     await Notification.updateMany(query, {
       isRead: true,

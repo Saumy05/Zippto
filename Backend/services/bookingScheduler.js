@@ -139,7 +139,7 @@ class BookingScheduler {
 
             // --- EXPIRY CHECK ---
             if (totalElapsed > MAX_SEARCH_TIME_MS) {
-              console.log(`[BookingScheduler] ${booking.bookingNumber}: Search timed out. Cancelling.`);
+              console.log(`[BookingScheduler] ${booking.bookingNumber}: Search timed out. Alerting Admin.`);
 
               await Booking.findByIdAndUpdate(booking._id, {
                 $set: {
@@ -148,18 +148,50 @@ class BookingScheduler {
                 }
               });
 
-              // Notify User
+              // 1. Notify Admin via Persistent DB Notification
+              await createNotification({
+                type: 'booking_timeout',
+                title: 'Booking Search Timed Out',
+                message: `Booking #${booking.bookingNumber} (${booking.serviceName || 'Service'}) timed out without vendor acceptance. Please assign manually.`,
+                relatedId: booking._id,
+                relatedType: 'booking',
+                data: {
+                  bookingId: booking._id,
+                  bookingNumber: booking.bookingNumber,
+                  customerName: booking.customerName || 'Customer',
+                  customerPhone: booking.customerPhone,
+                  serviceName: booking.serviceName,
+                  amount: booking.finalAmount,
+                  actionRequired: 'MANUAL_ASSIGN'
+                }
+              });
+
+              // 2. Real-time Alert to Admin Dashboard
               if (this.io) {
+                this.io.to('admin_notifications').emit('booking_timeout_admin', {
+                  bookingId: booking._id,
+                  bookingNumber: booking.bookingNumber,
+                  serviceName: booking.serviceName,
+                  customerName: booking.customerName,
+                  customerPhone: booking.customerPhone,
+                  amount: booking.finalAmount,
+                  reason: 'Search timed out without vendor acceptance',
+                  actionRequired: 'MANUAL_ASSIGN',
+                  playSound: true,
+                  message: `Booking #${booking.bookingNumber} timed out - Needs manual assignment!`
+                });
+
+                // Notify User
                 this.io.to(`user_${booking.userId}`).emit('booking_search_failed', {
                   bookingId: booking._id,
-                  message: 'No vendors available at the moment. Please try again later.'
+                  message: 'We are locating a specialized partner for your booking. Please stay tuned.'
                 });
               }
 
-              // Remove from all notified vendors
+              // 3. Remove from all notified vendors
               if (booking.notifiedVendors && booking.notifiedVendors.length > 0) {
                 booking.notifiedVendors.forEach(vId => {
-                  this.io.to(`vendor_${vId}`).emit('removeVendorBooking', { id: booking._id });
+                  if (this.io) this.io.to(`vendor_${vId}`).emit('removeVendorBooking', { id: booking._id });
                 });
               }
 

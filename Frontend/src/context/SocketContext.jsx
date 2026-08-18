@@ -369,7 +369,6 @@ export const SocketProvider = ({ children }) => {
     // Listen for special Worker Job Assignments
     if (userType === 'worker') {
       newSocket.on('new_job_assigned', (data) => {
-        // Play urgent alert ring
         playAlertRing();
 
         const newJob = {
@@ -404,6 +403,56 @@ export const SocketProvider = ({ children }) => {
         // Always show the global alert 
         const event = new CustomEvent('showWorkerJobAlert', { detail: newJob });
         window.dispatchEvent(event);
+      });
+    }
+
+    // Listen for Vendor Direct Manual Assignments from Admin
+    if (userType === 'vendor') {
+      newSocket.on('new_booking_assigned', (data) => {
+        playAlertRing();
+        toast.success(`🎉 New Booking #${data.bookingNumber || ''} assigned to you by Admin!`, {
+          duration: 6000,
+          icon: '✅'
+        });
+
+        window.dispatchEvent(new Event('vendorJobsUpdated'));
+        window.dispatchEvent(new Event('vendorStatsUpdated'));
+        window.dispatchEvent(new Event('vendorNotificationsUpdated'));
+      });
+    }
+
+    // Listen for Admin Alerts (Rejection, Timeout, Real-time status)
+    if (userType === 'admin') {
+      newSocket.on('booking_rejected_admin', (data) => {
+        playAlertRing();
+        toast.error(`🚨 Booking #${data.bookingNumber || ''} rejected by all vendors! Manual assignment needed.`, {
+          duration: 8000,
+          icon: '⚠️'
+        });
+
+        window.dispatchEvent(new CustomEvent('adminBookingAlert', { detail: data }));
+        window.dispatchEvent(new Event('adminBookingsUpdated'));
+        window.dispatchEvent(new Event('adminNotificationsUpdated'));
+      });
+
+      newSocket.on('booking_timeout_admin', (data) => {
+        playAlertRing();
+        toast.error(`⏳ Booking #${data.bookingNumber || ''} timed out without vendor. Please assign manually.`, {
+          duration: 8000,
+          icon: '⏰'
+        });
+
+        window.dispatchEvent(new CustomEvent('adminBookingAlert', { detail: data }));
+        window.dispatchEvent(new Event('adminBookingsUpdated'));
+        window.dispatchEvent(new Event('adminNotificationsUpdated'));
+      });
+
+      newSocket.on('new_admin_notification', (data) => {
+        window.dispatchEvent(new Event('adminNotificationsUpdated'));
+      });
+
+      newSocket.on('booking_status_updated', (data) => {
+        window.dispatchEvent(new Event('adminBookingsUpdated'));
       });
     }
 

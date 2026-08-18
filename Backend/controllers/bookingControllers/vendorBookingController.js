@@ -424,19 +424,60 @@ const rejectBooking = async (req, res) => {
 
     const remainingPotential = booking.potentialVendors.length;
 
+    // Emit socket to remove this booking request from the rejecting vendor's live screen
+    const { getIO } = require('../../sockets');
+    const io = getIO();
+    if (io) {
+      io.to(`vendor_${vendorId}`).emit('removeVendorBooking', { id: booking._id });
+    }
+
     if (pendingRequests === 0 && remainingPotential === 0) {
-      // No vendors left - mark booking as rejected/failed
-      booking.status = BOOKING_STATUS.REJECTED;
+      // No vendors left - mark booking as NO_VENDORS / UNASSIGNED
+      booking.status = BOOKING_STATUS.NO_VENDORS;
       booking.cancelledAt = new Date();
       booking.cancelledBy = 'system';
-      booking.cancellationReason = 'No vendors available';
+      booking.cancellationReason = 'All vendors rejected booking';
 
-      // Notify user that no vendors are available
+      // 1. Notify Admin via Persistent DB Notification
+      await createNotification({
+        type: 'booking_rejected',
+        title: 'All Vendors Rejected Booking',
+        message: `Booking #${booking.bookingNumber} (${booking.serviceName || 'Service'}) was rejected by all matching vendors. Please manually assign a partner.`,
+        relatedId: booking._id,
+        relatedType: 'booking',
+        data: {
+          bookingId: booking._id,
+          bookingNumber: booking.bookingNumber,
+          customerName: booking.customerName || booking.userId?.name,
+          customerPhone: booking.customerPhone || booking.userId?.phone,
+          serviceName: booking.serviceName,
+          amount: booking.finalAmount,
+          actionRequired: 'MANUAL_ASSIGN'
+        }
+      });
+
+      // 2. Emit Real-time Alert to Admin Dashboard
+      if (io) {
+        io.to('admin_notifications').emit('booking_rejected_admin', {
+          bookingId: booking._id,
+          bookingNumber: booking.bookingNumber,
+          serviceName: booking.serviceName,
+          customerName: booking.customerName,
+          customerPhone: booking.customerPhone,
+          amount: booking.finalAmount,
+          reason: 'All vendors rejected booking',
+          actionRequired: 'MANUAL_ASSIGN',
+          playSound: true,
+          message: `Booking #${booking.bookingNumber} rejected by all vendors - Needs manual assignment!`
+        });
+      }
+
+      // 3. Notify user
       await createNotification({
         userId: booking.userId,
         type: 'booking_rejected',
-        title: 'No Vendors Available',
-        message: `Sorry, no vendors are available for booking ${booking.bookingNumber}. Please try again later.`,
+        title: 'Searching For Alternate Partner',
+        message: `We are assigning a specialized partner for booking #${booking.bookingNumber}. Please stay tuned.`,
         relatedId: booking._id,
         relatedType: 'booking',
         pushData: {
@@ -446,7 +487,7 @@ const rejectBooking = async (req, res) => {
         }
       });
     }
-    // Otherwise, booking stays SEARCHING for other vendors
+    // Otherwise, booking stays SEARCHING for other potential vendors
 
     await booking.save();
 
