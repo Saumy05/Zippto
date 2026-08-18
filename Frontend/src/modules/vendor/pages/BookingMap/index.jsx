@@ -82,7 +82,8 @@ const BookingMap = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: apiKey,
-    libraries
+    libraries,
+    language: localStorage.getItem('zippto_language') || 'en'
   });
 
   const mapRef = useRef(null);

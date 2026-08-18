@@ -9,16 +9,19 @@ import {
   FiLogOut,
   FiTrash2,
   FiInfo,
-  FiLock
+  FiLock,
+  FiGlobe
 } from 'react-icons/fi';
 import { HiSparkles } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+import { useLanguage } from '../../../../context/LanguageContext';
 import { userAuthService } from '../../../../services/authService';
 import { registerFCMToken, removeFCMToken } from '../../../../services/pushNotificationService';
 import NotificationBell from '../../components/common/NotificationBell';
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { openLanguageModal } = useLanguage();
 
   // State for notification toggles
   const [notifications, setNotifications] = useState({
@@ -207,6 +210,36 @@ const Settings = () => {
               <span>
                 Order-related SMS & push updates cannot be turned off as they are critical for real-time doorstep technician tracking.
               </span>
+            </div>
+          </section>
+
+          {/* LANGUAGE & REGIONAL PREFERENCES */}
+          <section className="space-y-2.5">
+            <h3 className="text-xs font-extrabold text-slate-900 tracking-tight px-1 uppercase text-slate-400">
+              Language & Regional
+            </h3>
+
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs divide-y divide-slate-100 overflow-hidden">
+              <button
+                onClick={openLanguageModal}
+                className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50 transition-colors text-left group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-200/60 group-hover:scale-105 transition-transform">
+                    <FiGlobe className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900">App Language / भाषा</h4>
+                    <p className="text-xs text-slate-500 font-medium">English, हिन्दी, मराठी, ગુજરાતી, தமிழ், తెలుగు...</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200/60">
+                    Change
+                  </span>
+                  <FiChevronRight className="w-5 h-5 text-slate-400" />
+                </div>
+              </button>
             </div>
           </section>
 

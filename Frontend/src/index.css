@@ -316,10 +316,51 @@ html {
   border-color: #2874F0;
 }
 
-.hover\:border-primary-300:hover {
-  border-color: rgba(40, 116, 240, 0.3);
-}
-
 .focus\:ring-primary-500:focus {
   --tw-ring-color: #2874F0;
+}
+
+/* Google Translate Clean Integration - Hide Default Widgets & Banner */
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+iframe.skiptranslate,
+.goog-te-banner,
+#goog-gt-tt,
+.goog-tooltip,
+.goog-tooltip:hover,
+.goog-text-highlight,
+.VIpgJd-ZVi9od-ORHb-OEVmcd,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf-ti6hGc,
+.VIpgJd-y6EKJ-TF3B3c,
+body > div.skiptranslate,
+div.skiptranslate:not(#google_translate_element) {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0px !important;
+  width: 0px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  z-index: -9999 !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+  margin-top: 0px !important;
+  padding-top: 0px !important;
+}
+
+html {
+  top: 0px !important;
+  margin-top: 0px !important;
+  padding-top: 0px !important;
+}
+
+.goog-te-combo {
+  display: none !important;
 }

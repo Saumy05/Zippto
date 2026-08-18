@@ -291,16 +291,23 @@ const TRANSLATIONS = {
   }
 };
 
-export const SUPPORTED_LANGUAGES = [
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳' },
-  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
-  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳' },
-  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳' },
-  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳' }
+export const DEFAULT_SUPPORTED_LANGUAGES = [
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', isEnabled: true },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳', isEnabled: true },
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳', isEnabled: true },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳', isEnabled: true },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳', isEnabled: true },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳', isEnabled: true },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳', isEnabled: true },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳', isEnabled: true },
+  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳', isEnabled: true },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳', isEnabled: true },
+  { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ', flag: '🇮🇳', isEnabled: true },
+  { code: 'as', name: 'Assamese', nativeName: 'অসমীয়া', flag: '🇮🇳', isEnabled: true },
+  { code: 'ur', name: 'Urdu', nativeName: 'اردو', flag: '🇮🇳', isEnabled: true }
 ];
+
+export const SUPPORTED_LANGUAGES = DEFAULT_SUPPORTED_LANGUAGES;
 
 const LanguageContext = createContext();
 
@@ -308,22 +315,65 @@ export const LanguageProvider = ({ children }) => {
   const [currentLang, setCurrentLang] = useState(() => {
     return localStorage.getItem('zippto_language') || 'en';
   });
+  const [languagesList, setLanguagesList] = useState(DEFAULT_SUPPORTED_LANGUAGES);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Sync Google Maps script parameter and document lang
+  // Fetch dynamic languages from Admin settings
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+        const res = await fetch(`${base}/public/config`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.settings?.supportedLanguages) && data.settings.supportedLanguages.length > 0) {
+          setLanguagesList(data.settings.supportedLanguages.filter(l => l.isEnabled !== false));
+        }
+      } catch (err) {
+        // Fallback to default
+      }
+    };
+    fetchLanguages();
+  }, []);
+
+  // Helper to set Google Translate cookies across all hostnames and paths
+  const applyGoogleTranslateCookie = (langCode) => {
+    const hostname = window.location.hostname;
+    if (langCode === 'en') {
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${hostname}; path=/;`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${hostname}; path=/;`;
+    } else {
+      document.cookie = `googtrans=/en/${langCode}; path=/;`;
+      document.cookie = `googtrans=/en/${langCode}; domain=${hostname}; path=/;`;
+      document.cookie = `googtrans=/auto/${langCode}; path=/;`;
+      document.cookie = `googtrans=/auto/${langCode}; domain=${hostname}; path=/;`;
+    }
+  };
+
+  // Sync Google Maps & Google Translate Engine
   useEffect(() => {
     localStorage.setItem('zippto_language', currentLang);
     document.documentElement.lang = currentLang;
+    applyGoogleTranslateCookie(currentLang);
 
     // Dispatch global event so Google Maps or dynamic components re-render with new language
     window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang: currentLang } }));
   }, [currentLang]);
 
   const changeLanguage = useCallback((langCode) => {
-    if (TRANSLATIONS[langCode]) {
-      setCurrentLang(langCode);
-      setIsModalOpen(false);
+    setCurrentLang(langCode);
+    setIsModalOpen(false);
+    applyGoogleTranslateCookie(langCode);
+
+    // Trigger Google Translate engine if available
+    const selectEl = document.querySelector('.goog-te-combo');
+    if (selectEl) {
+      selectEl.value = langCode;
+      selectEl.dispatchEvent(new Event('change'));
     }
+
+    // Smooth reload to ensure 100% of DOM nodes and Google Maps re-render cleanly
+    window.location.reload();
   }, []);
 
   const t = useCallback((key, fallback = '') => {
@@ -341,7 +391,7 @@ export const LanguageProvider = ({ children }) => {
       isModalOpen,
       openLanguageModal: () => setIsModalOpen(true),
       closeLanguageModal: () => setIsModalOpen(false),
-      supportedLanguages: SUPPORTED_LANGUAGES
+      supportedLanguages: languagesList
     }}>
       {children}
     </LanguageContext.Provider>

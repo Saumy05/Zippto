@@ -5,11 +5,13 @@ import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import { vendorAuthService } from '../../../../services/authService';
 import { registerFCMToken, removeFCMToken } from '../../../../services/pushNotificationService';
+import { useLanguage } from '../../../../context/LanguageContext';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { currentLang, changeLanguage, supportedLanguages, openLanguageModal } = useLanguage();
   const [settings, setSettings] = useState({
     notifications: true,
     soundAlerts: true,
@@ -198,35 +200,47 @@ const Settings = () => {
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <div className="flex items-center gap-3 mb-4">
-            <FiGlobe className="w-5 h-5" style={{ color: themeColors.icon }} />
-            <h3 className="font-bold text-gray-800">Language</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <FiGlobe className="w-5 h-5" style={{ color: themeColors.icon }} />
+              <div>
+                <h3 className="font-bold text-gray-800">App Language</h3>
+                <p className="text-xs text-gray-500">Choose your preferred language</p>
+              </div>
+            </div>
+            <button
+              onClick={openLanguageModal}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100"
+            >
+              Change Language
+            </button>
           </div>
 
-          <div className="space-y-2">
-            {[
-              { code: 'en', name: 'English' },
-              { code: 'hi', name: 'हिंदी' },
-            ].map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => handleLanguageChange(lang.code)}
-                className={`w-full py-3 px-4 rounded-lg text-left transition-all ${settings.language === lang.code
-                  ? 'text-white'
-                  : 'bg-gray-50 text-gray-700'
+          <div className="grid grid-cols-2 gap-2">
+            {supportedLanguages.slice(0, 6).map((lang) => {
+              const isSelected = currentLang === lang.code;
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => changeLanguage(lang.code)}
+                  className={`py-2.5 px-3 rounded-xl text-left border transition-all text-xs font-bold flex items-center justify-between ${
+                    isSelected
+                      ? 'text-white border-transparent'
+                      : 'bg-gray-50 text-gray-700 border-gray-100 hover:bg-gray-100'
                   }`}
-                style={
-                  settings.language === lang.code
-                    ? {
-                      background: themeColors.button,
-                      boxShadow: `0 2px 8px ${themeColors.button}40`,
-                    }
-                    : {}
-                }
-              >
-                {lang.name}
-              </button>
-            ))}
+                  style={
+                    isSelected
+                      ? {
+                        backgroundColor: themeColors.button,
+                      }
+                      : {}
+                  }
+                >
+                  <span className="truncate">{lang.nativeName}</span>
+                  <span className="text-[10px] opacity-75">{lang.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

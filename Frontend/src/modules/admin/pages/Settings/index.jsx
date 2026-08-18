@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, FiEdit, FiLock, FiUnlock, FiX } from 'react-icons/fi';
+import { FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck } from 'react-icons/fi';
 import { getSettings, updateSettings, updateAdminProfile, getAdminProfile, getAllAdmins, createAdmin, deleteAdmin, updateAdminDetails, toggleAdminStatus } from '../../services/settingsService';
 import { cityService } from '../../services/cityService';
+import { DEFAULT_SUPPORTED_LANGUAGES } from '../../../../context/LanguageContext';
 import CityManagement from '../Cities';
 import { toast } from 'react-hot-toast';
 
@@ -68,9 +69,15 @@ const AdminSettings = () => {
   const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', role: 'admin', cityId: '' }); // Added cityId
   const [adminLoading, setAdminLoading] = useState(false);
 
+  // Language Management State
+  const [languages, setLanguages] = useState(DEFAULT_SUPPORTED_LANGUAGES);
+  const [showAddLanguage, setShowAddLanguage] = useState(false);
+  const [newLanguage, setNewLanguage] = useState({ code: '', name: '', nativeName: '', flag: '🌐', isEnabled: true });
+  const [langLoading, setLangLoading] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [activeView, setActiveView] = useState('main'); // 'main', 'profile', 'financial', 'system', 'admins'
+  const [activeView, setActiveView] = useState('main'); // 'main', 'profile', 'financial', 'system', 'admins', 'languages'
 
   const isSuperAdmin = profile.role === 'super_admin';
 
@@ -143,6 +150,10 @@ const AdminSettings = () => {
             supportPhone: res.settings.supportPhone || '',
             supportWhatsapp: res.settings.supportWhatsapp || ''
           });
+          // Load dynamic languages
+          if (Array.isArray(res.settings.supportedLanguages) && res.settings.supportedLanguages.length > 0) {
+            setLanguages(res.settings.supportedLanguages);
+          }
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -302,6 +313,43 @@ const AdminSettings = () => {
     } finally {
       setSupportLoading(false);
     }
+  };
+
+  // Language management handlers
+  const handleSaveLanguages = async (updatedLangs) => {
+    setLangLoading(true);
+    try {
+      const targetList = updatedLangs || languages;
+      await updateSettings({ supportedLanguages: targetList });
+      setLanguages(targetList);
+      toast.success('Language settings updated successfully');
+    } catch (error) {
+      toast.error('Failed to update language settings');
+    } finally {
+      setLangLoading(false);
+    }
+  };
+
+  const handleToggleLanguage = (code) => {
+    const updated = languages.map(l => l.code === code ? { ...l, isEnabled: l.isEnabled === false ? true : false } : l);
+    setLanguages(updated);
+    handleSaveLanguages(updated);
+  };
+
+  const handleAddLanguageSubmit = (e) => {
+    e.preventDefault();
+    if (!newLanguage.code || !newLanguage.name || !newLanguage.nativeName) {
+      return toast.error('Language code, English Name, and Native Name are required');
+    }
+    const cleanCode = newLanguage.code.trim().toLowerCase();
+    if (languages.some(l => l.code === cleanCode)) {
+      return toast.error('Language code already exists');
+    }
+    const updated = [...languages, { ...newLanguage, code: cleanCode, isEnabled: true }];
+    setLanguages(updated);
+    setShowAddLanguage(false);
+    setNewLanguage({ code: '', name: '', nativeName: '', flag: '🌐', isEnabled: true });
+    handleSaveLanguages(updated);
   };
 
   const handleProfileUpdate = async (e) => {
@@ -467,6 +515,16 @@ const AdminSettings = () => {
           <p className="text-sm text-gray-500">Manage operational cities and default location</p>
         </div>
       )}
+
+      {/* Language Management Card - Super Admin & Admin */}
+      <div onClick={() => setActiveView('languages')}
+        className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
+        <div className="w-12 h-12 bg-sky-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-sky-100 transition-colors">
+          <FiGlobe className="w-6 h-6 text-sky-600" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-800 mb-2">Languages & Localization</h3>
+        <p className="text-sm text-gray-500">Enable/disable regional languages & add new languages</p>
+      </div>
 
       {/* Admin Management Card - Super Admin Only */}
       {isSuperAdmin && (
@@ -1021,6 +1079,184 @@ const AdminSettings = () => {
                   </table>
                 </div>
               </div>
+            </motion.div>
+          )
+        }
+
+        {/* Language Management View */}
+        {
+          activeView === 'languages' && (
+            <motion.div key="languages" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
+              className="space-y-6">
+              
+              {/* Header Bar */}
+              <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <FiGlobe className="text-sky-600 w-6 h-6" /> Multi-Language & Regional Localization
+                  </h2>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                    Manage active platform languages for Customer & Vendor applications. Changes reflect immediately.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowAddLanguage(true)}
+                    className="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs transition-all active:scale-95"
+                  >
+                    <FiPlus className="w-4 h-4" /> Add New Language
+                  </button>
+                </div>
+              </div>
+
+              {/* Languages Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {languages.map((lang) => {
+                  const isEnabled = lang.isEnabled !== false;
+                  return (
+                    <div
+                      key={lang.code}
+                      className={`bg-white rounded-2xl p-5 border-2 transition-all flex items-center justify-between shadow-2xs ${
+                        isEnabled ? 'border-gray-100 hover:border-sky-200' : 'border-gray-100 bg-gray-50/50 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl shrink-0">
+                          {lang.flag || '🌐'}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-base font-extrabold text-gray-900 truncate">
+                              {lang.nativeName}
+                            </h4>
+                            <span className="px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-black rounded uppercase">
+                              {lang.code}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium truncate mt-0.5">
+                            {lang.name}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Toggle Switch */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLanguage(lang.code)}
+                        className={`w-12 h-6.5 rounded-full p-0.5 transition-colors relative cursor-pointer ${
+                          isEnabled ? 'bg-sky-600' : 'bg-gray-300'
+                        }`}
+                        title={isEnabled ? 'Click to Disable' : 'Click to Enable'}
+                      >
+                        <div
+                          className={`w-5.5 h-5.5 rounded-full bg-white shadow-xs transition-transform transform ${
+                            isEnabled ? 'translate-x-5.5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add Language Modal */}
+              {showAddLanguage && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6"
+                  >
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                      <div>
+                        <h3 className="text-lg font-black text-gray-900">Add New Language</h3>
+                        <p className="text-xs text-gray-500">Add any regional or international language</p>
+                      </div>
+                      <button
+                        onClick={() => setShowAddLanguage(false)}
+                        className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600"
+                      >
+                        <FiX className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleAddLanguageSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                          ISO Language Code (e.g. pa, ml, or, fr, es)
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={5}
+                          value={newLanguage.code}
+                          onChange={(e) => setNewLanguage({ ...newLanguage, code: e.target.value.toLowerCase() })}
+                          placeholder="e.g. pa"
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold uppercase focus:bg-white focus:border-sky-600 outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                          English Name (e.g. Punjabi, French, Malayalam)
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newLanguage.name}
+                          onChange={(e) => setNewLanguage({ ...newLanguage, name: e.target.value })}
+                          placeholder="e.g. Punjabi"
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:bg-white focus:border-sky-600 outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                          Native Script Name (e.g. ਪੰਜਾਬੀ, Français, മലയാളം)
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newLanguage.nativeName}
+                          onChange={(e) => setNewLanguage({ ...newLanguage, nativeName: e.target.value })}
+                          placeholder="e.g. ਪੰਜਾਬੀ"
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:bg-white focus:border-sky-600 outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">
+                          Flag Emoji (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={newLanguage.flag}
+                          onChange={(e) => setNewLanguage({ ...newLanguage, flag: e.target.value })}
+                          placeholder="🇮🇳 or 🌐"
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:bg-white focus:border-sky-600 outline-none"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddLanguage(false)}
+                          className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={langLoading}
+                          className="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-xs flex items-center gap-2"
+                        >
+                          {langLoading ? 'Saving...' : 'Add & Enable Language'}
+                        </button>
+                      </div>
+                    </form>
+                  </motion.div>
+                </div>
+              )}
             </motion.div>
           )
         }

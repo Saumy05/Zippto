@@ -11,6 +11,48 @@
   <meta name="description" content="Zippto Home Services - The all-in-one home service platform for electrical repairs, deep cleaning, AC service, and doorstep maintenance." />
   <title>Zippto Home Services | Fast & Reliable Doorstep Solutions</title>
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    /* Complete Google Translate Top Banner & Frame Removal */
+    .goog-te-banner-frame,
+    .goog-te-banner-frame.skiptranslate,
+    iframe.goog-te-banner-frame,
+    iframe.skiptranslate,
+    .goog-te-banner,
+    #goog-gt-tt,
+    .goog-tooltip,
+    .goog-tooltip:hover,
+    .goog-text-highlight,
+    .VIpgJd-ZVi9od-ORHb-OEVmcd,
+    .VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+    .VIpgJd-ZVi9od-aZ2wEe-wOHMyf-ti6hGc,
+    .VIpgJd-y6EKJ-TF3B3c,
+    body > div.skiptranslate,
+    div.skiptranslate:not(#google_translate_element) {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0px !important;
+      width: 0px !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      position: absolute !important;
+      top: -9999px !important;
+      left: -9999px !important;
+      z-index: -9999 !important;
+    }
+
+    body {
+      top: 0px !important;
+      position: static !important;
+      margin-top: 0px !important;
+      padding-top: 0px !important;
+    }
+
+    html {
+      top: 0px !important;
+      margin-top: 0px !important;
+      padding-top: 0px !important;
+    }
+  </style>
 </head>
 
 <body
@@ -18,6 +60,28 @@
   <div id="root"
     style="background-color: #F8FAFC; min-height: 100dvh;">
   </div>
+  <!-- Dynamic Google Translate Engine (Hidden Bridge) -->
+  <div id="google_translate_element" style="display:none; visibility:hidden; width:0; height:0; overflow:hidden; position:absolute; left:-9999px;"></div>
+  <script type="text/javascript">
+    window.googleTranslateElementInit = function() {
+      if (window.google && window.google.translate) {
+        new window.google.translate.TranslateElement({
+          pageLanguage: 'en',
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+    };
+
+    // Body top margin observer to prevent Google Translate displacement
+    const gtObserver = new MutationObserver(function() {
+      if (document.body && document.body.style.top && document.body.style.top !== '0px') {
+        document.body.style.top = '0px';
+        document.body.style.position = 'static';
+      }
+    });
+    gtObserver.observe(document.documentElement, { attributes: true, childList: true, subtree: true });
+  </script>
+  <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 

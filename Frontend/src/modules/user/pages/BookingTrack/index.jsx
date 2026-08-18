@@ -226,7 +226,8 @@ const BookingTrack = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: apiKey,
-    libraries
+    libraries,
+    language: localStorage.getItem('zippto_language') || 'en'
   });
 
   // Initial Load and Polling

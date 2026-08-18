@@ -57,6 +57,30 @@ const settingsSchema = new mongoose.Schema({
     default: 49,
     min: 0
   },
+  supportedLanguages: {
+    type: [{
+      code: { type: String, required: true },
+      name: { type: String, required: true },
+      nativeName: { type: String, required: true },
+      flag: { type: String, default: '🇮🇳' },
+      isEnabled: { type: Boolean, default: true }
+    }],
+    default: [
+      { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', isEnabled: true },
+      { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳', isEnabled: true },
+      { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳', isEnabled: true },
+      { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳', isEnabled: true },
+      { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇮🇳', isEnabled: true },
+      { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳', isEnabled: true },
+      { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', flag: '🇮🇳', isEnabled: true },
+      { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', flag: '🇮🇳', isEnabled: true },
+      { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳', isEnabled: true },
+      { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', flag: '🇮🇳', isEnabled: true },
+      { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ', flag: '🇮🇳', isEnabled: true },
+      { code: 'as', name: 'Assamese', nativeName: 'অসমীয়া', flag: '🇮🇳', isEnabled: true },
+      { code: 'ur', name: 'Urdu', nativeName: 'اردو', flag: '🇮🇳', isEnabled: true }
+    ]
+  },
   maxSearchTime: {
     type: Number,
     default: 5, // 5 minutes default

@@ -4,9 +4,13 @@ import { FiX, FiCheck, FiGlobe } from 'react-icons/fi';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../context/LanguageContext';
 
 export const LanguageSelectorModal = () => {
-  const { isModalOpen, closeLanguageModal, currentLang, changeLanguage } = useLanguage();
+  const { isModalOpen, closeLanguageModal, currentLang, changeLanguage, supportedLanguages } = useLanguage();
 
   if (!isModalOpen) return null;
+
+  const languagesList = Array.isArray(supportedLanguages) && supportedLanguages.length > 0
+    ? supportedLanguages
+    : SUPPORTED_LANGUAGES;
 
   return (
     <AnimatePresence>
@@ -26,7 +30,7 @@ export const LanguageSelectorModal = () => {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative z-10 w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl overflow-hidden"
+          className="notranslate relative z-10 w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-gray-100">
@@ -49,7 +53,7 @@ export const LanguageSelectorModal = () => {
 
           {/* Languages Grid */}
           <div className="grid grid-cols-2 gap-2.5 py-5 max-h-[60vh] overflow-y-auto custom-scrollbar">
-            {SUPPORTED_LANGUAGES.map((lang) => {
+            {languagesList.map((lang) => {
               const isSelected = currentLang === lang.code;
 
               return (
@@ -82,7 +86,7 @@ export const LanguageSelectorModal = () => {
 
           {/* Note */}
           <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
-            <span>Powered by Google Multi-Lang & Maps</span>
+            <span>Powered by Dynamic Google Engine</span>
             <span className="font-bold text-teal-700">Instant Sync</span>
           </div>
         </motion.div>
@@ -93,16 +97,16 @@ export const LanguageSelectorModal = () => {
 
 export const LanguageToggle = ({ className = '' }) => {
   const { currentLang, openLanguageModal, supportedLanguages } = useLanguage();
-  const activeObj = supportedLanguages.find(l => l.code === currentLang) || supportedLanguages[0];
+  const activeObj = (supportedLanguages && supportedLanguages.find(l => l.code === currentLang)) || { nativeName: 'English', code: 'en' };
 
   return (
     <button
       onClick={openLanguageModal}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white border border-gray-200/80 shadow-xs hover:shadow-sm text-xs font-black text-gray-800 active:scale-95 transition-all cursor-pointer backdrop-blur-sm ${className}`}
+      className={`notranslate inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white border border-gray-200/80 shadow-xs hover:shadow-sm text-xs font-black text-gray-800 active:scale-95 transition-all cursor-pointer backdrop-blur-sm ${className}`}
       title="Change Language"
     >
       <FiGlobe className="w-3.5 h-3.5 text-teal-600" />
-      <span>{activeObj.nativeName}</span>
+      <span>{activeObj.nativeName || 'English'}</span>
     </button>
   );
 };

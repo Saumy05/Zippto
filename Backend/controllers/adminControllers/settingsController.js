@@ -50,7 +50,9 @@ exports.updateSettings = async (req, res, next) => {
       // Booking Timing
       maxSearchTime, waveDuration, searchRadius,
       // Payment Control
-      isOnlinePaymentEnabled
+      isOnlinePaymentEnabled,
+      // Languages
+      supportedLanguages
     } = req.body;
 
     let settings = await Settings.findOne({ type: 'global' });
@@ -72,7 +74,8 @@ exports.updateSettings = async (req, res, next) => {
         razorpayWebhookSecret,
         cloudinaryCloudName,
         cloudinaryApiKey,
-        cloudinaryApiSecret
+        cloudinaryApiSecret,
+        supportedLanguages
       });
     } else {
       // Update fields if provided
@@ -90,8 +93,6 @@ exports.updateSettings = async (req, res, next) => {
       if (razorpayWebhookSecret !== undefined) settings.razorpayWebhookSecret = razorpayWebhookSecret;
       if (cloudinaryCloudName !== undefined) settings.cloudinaryCloudName = cloudinaryCloudName;
       if (cloudinaryApiKey !== undefined) settings.cloudinaryApiKey = cloudinaryApiKey;
-      if (cloudinaryApiSecret !== undefined) settings.cloudinaryApiSecret = cloudinaryApiSecret;
-
       if (cloudinaryApiSecret !== undefined) settings.cloudinaryApiSecret = cloudinaryApiSecret;
 
       // Billing update
@@ -117,6 +118,7 @@ exports.updateSettings = async (req, res, next) => {
       if (waveDuration !== undefined) settings.waveDuration = waveDuration;
       if (searchRadius !== undefined) settings.searchRadius = searchRadius;
       if (isOnlinePaymentEnabled !== undefined) settings.isOnlinePaymentEnabled = isOnlinePaymentEnabled;
+      if (supportedLanguages !== undefined) settings.supportedLanguages = supportedLanguages;
 
       await settings.save();
     }
@@ -155,7 +157,7 @@ exports.updateSettings = async (req, res, next) => {
 // Get Public Settings (Visited Charges, GST)
 exports.getPublicSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage supportEmail supportPhone supportWhatsapp cancellationPenalty companyName companyAddress companyCity companyState companyPincode companyPhone companyEmail isOnlinePaymentEnabled');
+    let settings = await Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage supportEmail supportPhone supportWhatsapp cancellationPenalty companyName companyAddress companyCity companyState companyPincode companyPhone companyEmail isOnlinePaymentEnabled supportedLanguages');
 
     // Default if not found (fallback values)
     if (!settings) {
