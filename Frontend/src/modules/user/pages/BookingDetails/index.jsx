@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import useAppNotifications from '../../../../hooks/useAppNotifications';
 import { themeColors } from '../../../../theme';
 import { MdQrCode } from 'react-icons/md';
+import { FaWhatsapp } from 'react-icons/fa';
+import { HiSparkles, HiBadgeCheck } from 'react-icons/hi';
 import {
   FiArrowLeft,
   FiMapPin,
@@ -14,7 +17,6 @@ import {
   FiCalendar,
   FiDollarSign,
   FiPackage,
-  FiEdit2,
   FiPhone,
   FiMail,
   FiKey,
@@ -26,7 +28,14 @@ import {
   FiSearch,
   FiHome,
   FiAlertCircle,
-  FiMessageSquare
+  FiMessageSquare,
+  FiNavigation,
+  FiCopy,
+  FiCheck,
+  FiShield,
+  FiFileText,
+  FiShare2,
+  FiCompass
 } from 'react-icons/fi';
 import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
@@ -47,7 +56,6 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
-
 const BookingDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,6 +66,7 @@ const BookingDetails = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(Boolean(location.pathname?.endsWith('/chat')));
   const [paying, setPaying] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
     title: '',
@@ -66,8 +75,8 @@ const BookingDetails = () => {
   });
 
   const [supportInfo, setSupportInfo] = useState({
-    email: 'support@homestr.com',
-    phone: ''
+    email: 'help@zippto.in',
+    phone: '+917879363299'
   });
 
   const socket = useAppNotifications();
@@ -80,16 +89,12 @@ const BookingDetails = () => {
         if (response.data?.success && response.data?.settings) {
           const { supportEmail, supportPhone } = response.data.settings;
           setSupportInfo({
-            email: supportEmail || 'help@homestr.in',
-            phone: supportPhone || '+919999999999'
+            email: supportEmail || 'help@zippto.in',
+            phone: supportPhone || '+917879363299'
           });
         }
       } catch (error) {
         console.error('Failed to fetch support settings:', error);
-        setSupportInfo({
-          email: 'help@homestr.in',
-          phone: '+919999999999'
-        });
       }
     };
     fetchSettings();
@@ -98,11 +103,9 @@ const BookingDetails = () => {
   // Function to load booking
   const loadBooking = async () => {
     try {
-      // Don't set loading true on refresh to avoid flicker
       const response = await bookingService.getById(id);
       if (response.success) {
         const data = { ...response.data };
-        // Calculate notional display values for plan_benefit
         if (data.paymentMethod === 'plan_benefit') {
           if (!data.tax) data.tax = (data.basePrice || 0) * 0.18;
           if (!data.visitingCharges && !data.visitationFee) data.visitingCharges = 49;
@@ -113,8 +116,7 @@ const BookingDetails = () => {
         navigate('/user/my-bookings');
       }
     } catch (error) {
-      // Failed to load booking details
-      // toast.error('Failed to load booking details'); 
+      console.warn('Failed to load booking:', error);
     } finally {
       setLoading(false);
     }
@@ -134,27 +136,19 @@ const BookingDetails = () => {
       const isRated = !!booking.rating;
       const isDismissed = localStorage.getItem(`rating_dismissed_${id}`);
 
-      // Only show rating modal if work is done AND payment is verified
       if (isCompleted && isPaid && !isRated && !isDismissed) {
         setShowRatingModal(true);
       }
     }
   }, [booking, id]);
 
-  // Track if we've shown the payment modal this session to prevent re-opening on data refresh
-
-
   // Handle Payment Modal Visibility - Auto-open on new payment request from vendor
   useEffect(() => {
     if (!booking) return;
     
     const isPaymentDone = booking.paymentStatus === 'success' || booking.cashCollected === true;
-
-    // Track the latest OTP to detect a fresh payment request from the vendor
     const lastSeenOtp = sessionStorage.getItem(`last_seen_otp_${booking._id}`);
     const hasNewOtpRequest = booking.customerConfirmationOTP && booking.customerConfirmationOTP !== lastSeenOtp;
-    
-    // We also show if it was never shown and we have a pending payment request
     const hasShown = sessionStorage.getItem(`payment_modal_shown_${booking._id}`);
 
     if (!isPaymentDone && (hasNewOtpRequest || (!hasShown && (booking.customerConfirmationOTP || booking.qrPaymentInitiated || booking.billGenerated || booking.status === 'awaiting_payment')))) {
@@ -164,11 +158,8 @@ const BookingDetails = () => {
         sessionStorage.setItem(`last_seen_otp_${booking._id}`, booking.customerConfirmationOTP);
       }
     } else if (booking.qrPaymentInitiated === false && booking.customerConfirmationOTP && !isPaymentDone) {
-      // Re-trigger if it switches from QR to Cash
       setShowPaymentModal(true);
-    }
-    // Close if payment becomes done
-    else if (isPaymentDone) {
+    } else if (isPaymentDone) {
       setShowPaymentModal(false);
     }
   }, [booking]);
@@ -176,17 +167,11 @@ const BookingDetails = () => {
   // Socket Listener for Real-time Updates
   useEffect(() => {
     if (socket && id) {
-      // Handler for booking updates
       const handleUpdate = (data) => {
-        // Check if update relates to this booking
         if (data.bookingId === id || data.relatedId === id || data.data?.bookingId === id) {
-
-          // Instant UI update for critical fields (status, OTPs, amounts)
           setBooking(prev => {
             if (!prev) return prev;
             const newData = { ...prev, ...(data.data || data) };
-
-            // Calculate notional display values for plan_benefit
             if (newData.paymentMethod === 'plan_benefit') {
               if (!newData.tax) newData.tax = (newData.basePrice || 0) * 0.18;
               if (!newData.visitingCharges && !newData.visitationFee) newData.visitingCharges = 49;
@@ -199,7 +184,6 @@ const BookingDetails = () => {
             toast.success('Bill ready! You can now pay online.', { icon: '💳' });
           }
 
-          // Fetch full data to ensure consistency
           loadBooking();
 
           if (data.message) {
@@ -220,73 +204,15 @@ const BookingDetails = () => {
     }
   }, [socket, id]);
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'confirmed':
-        return <FiCheckCircle className="w-5 h-5 text-green-500" />;
-      case 'in_progress':
-      case 'journey_started':
-        return <FiLoader className="w-5 h-5 text-blue-500 animate-spin" />;
-      case 'visited':
-        return <FiMapPin className="w-5 h-5 text-teal-600" />;
-      case 'completed':
-        return <FiCheckCircle className="w-5 h-5 text-green-600" />;
-      case 'cancelled':
-        return <FiXCircle className="w-5 h-5 text-red-500" />;
-      case 'awaiting_payment':
-      case 'work_done':
-        return <FiClock className="w-5 h-5 text-orange-500" />;
-      case 'requested':
-      case 'searching':
-        return <FiSearch className="w-5 h-5 text-amber-500 animate-pulse" />;
-      default:
-        return <FiClock className="w-5 h-5 text-gray-500" />;
-    }
+  const handleCopyId = () => {
+    const bookingCode = booking.bookingNumber || booking._id?.slice(-8).toUpperCase();
+    navigator.clipboard.writeText(bookingCode);
+    setCopiedId(true);
+    toast.success('Booking ID copied to clipboard!');
+    setTimeout(() => setCopiedId(false), 2000);
   };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-50 text-green-700 border-green-200';
-      case 'in_progress':
-      case 'journey_started':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'visited':
-        return 'bg-teal-50 text-teal-700 border-teal-200';
-      case 'completed':
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-      case 'cancelled':
-        return 'bg-red-50 text-red-700 border-red-200';
-      case 'awaiting_payment':
-      case 'work_done':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 'requested':
-      case 'searching':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'confirmed': return 'Confirmed';
-      case 'journey_started': return 'Agent En Route';
-      case 'visited': return 'Agent Arrived';
-      case 'in_progress': return 'In Progress';
-      case 'work_done': return 'Work Done'; // Payment Pending
-      case 'completed': return 'Completed';
-      case 'cancelled': return 'Cancelled';
-      case 'requested':
-      case 'searching': return 'Finding Expert';
-      default: return status?.replace('_', ' ') || 'Pending';
-    }
-  };
-
-  // ... (keep handle methods same) ...
 
   const handleCancelBooking = async () => {
-    // Check if journey has started to determine if a fee applies
     const journeyStarted = ['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase());
     const cancellationFee = booking.visitingCharges || 49;
 
@@ -333,7 +259,6 @@ const BookingDetails = () => {
 
       const orderData = orderResponse.data;
 
-      // Handle Sandbox / Mock payment in development when live keys are not configured
       if (orderData.isMock || !orderData.key || typeof window.Razorpay === 'undefined') {
         toast.loading('Verifying secure payment...');
         const verifyResponse = await paymentService.verifyPayment({
@@ -421,7 +346,6 @@ const BookingDetails = () => {
     }
   };
 
-
   const handleRateSubmit = async (ratingData) => {
     try {
       const response = await bookingService.addReview(booking._id || booking.id, ratingData);
@@ -437,7 +361,6 @@ const BookingDetails = () => {
     }
   };
 
-
   const getAddressString = (address) => {
     if (typeof address === 'string') return address;
     if (address && typeof address === 'object') {
@@ -446,27 +369,32 @@ const BookingDetails = () => {
     return 'N/A';
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 pb-32">
-        {/* Skeleton Header */}
-        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100">
-          <div className="px-4 py-3">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse"></div>
-              <div className="flex-1 space-y-2">
-                <div className="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
-              </div>
-            </div>
+      <div className="min-h-screen bg-[#F8FAFC] pb-32">
+        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200/80 px-4 py-3.5">
+          <div className="max-w-xl mx-auto flex items-center justify-between">
+            <div className="w-9 h-9 rounded-xl bg-slate-200 animate-pulse" />
+            <div className="h-5 w-32 bg-slate-200 rounded animate-pulse" />
+            <div className="w-9 h-9 rounded-xl bg-slate-200 animate-pulse" />
           </div>
         </header>
-        {/* Skeleton Body */}
-        <main className="max-w-xl mx-auto px-4 py-6 space-y-6">
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-24 animate-pulse"></div>
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-32 animate-pulse"></div>
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-48 animate-pulse"></div>
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-64 animate-pulse"></div>
+        <main className="max-w-xl mx-auto px-4 py-6 space-y-4">
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-36 animate-pulse" />
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-28 animate-pulse" />
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-44 animate-pulse" />
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-56 animate-pulse" />
         </main>
       </div>
     );
@@ -474,30 +402,16 @@ const BookingDetails = () => {
 
   if (!booking) {
     return (
-      <div className="min-h-screen flex items-center justify-center relative bg-white">
-        {/* Refined Brand Mesh Gradient Background */}
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          <div className="absolute inset-0"
-            style={{
-              background: `
-                radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-                radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-                radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-                radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-                radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-                #FFFFFF
-              `
-            }}
-          />
-        </div>
-        <div className="text-center relative z-10 px-6">
-          <div className="w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-6">
-            <FiSearch className="w-10 h-10 text-gray-300" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-6">
+        <div className="text-center max-w-sm">
+          <div className="w-20 h-20 bg-white rounded-3xl shadow-xl flex items-center justify-center mx-auto mb-5 border border-slate-100">
+            <FiSearch className="w-9 h-9 text-slate-400" />
           </div>
-          <p className="text-gray-500 font-bold">Booking not found</p>
+          <h2 className="text-lg font-black text-slate-900 mb-1">Booking Not Found</h2>
+          <p className="text-xs text-slate-500 mb-6 font-medium">The requested booking could not be loaded or was removed.</p>
           <button
             onClick={() => navigate('/user/my-bookings')}
-            className="mt-6 px-8 py-3 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all"
+            className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all"
           >
             Go to My Bookings
           </button>
@@ -506,27 +420,10 @@ const BookingDetails = () => {
     );
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
-  // --- Payment Breakdown Calculations ---
-  // Default values from booking (fallback)
+  // --- Calculations for Detailed Bill ---
   const isPlanBenefit = booking.paymentMethod === 'plan_benefit';
   const bill = booking.bill;
-
-  // Base Logic (Services)
-  // Use bill.originalServiceBase if available, else booking.basePrice
   const originalBase = bill ? (bill.originalServiceBase || 0) : (parseFloat(booking.basePrice) || 0);
-
-  // Extra Services & Parts from vendor bill (if available)
   const allBillServices = bill?.services || [];
   const services = allBillServices.filter(s => !s.isOriginal);
   const originalServiceFromBill = allBillServices.find(s => s.isOriginal);
@@ -536,12 +433,9 @@ const BookingDetails = () => {
   let extraServiceBase = 0;
   let extraServiceGST = 0;
   services.forEach(s => {
-    // s.price is UNIT BASE PRICE. s.total is INCLUSIVE.
     const qty = parseFloat(s.quantity) || 1;
-    const base = (parseFloat(s.price) || 0) * qty;
-    const gst = parseFloat(s.gstAmount) || 0;
-    extraServiceBase += base;
-    extraServiceGST += gst;
+    extraServiceBase += (parseFloat(s.price) || 0) * qty;
+    extraServiceGST += parseFloat(s.gstAmount) || 0;
   });
 
   let partsBase = 0;
@@ -557,243 +451,260 @@ const BookingDetails = () => {
     partsGST += (parseFloat(c.gstAmount) || 0);
   });
 
-  // Use bill.originalGST if available
   const originalGST = bill ? (bill.originalGST || 0) : (originalBase * 0.18);
   const totalGST = originalGST + extraServiceGST + partsGST;
-
-  // Final Total
   const hasBill = !!bill;
   const finalTotal = bill?.grandTotal || (booking.finalAmount || booking.totalAmount || 0);
 
-  // --------------------------------------
+  // Status Stepper Data
+  const statusStr = (booking.status || '').toLowerCase();
+  const isCancelled = ['cancelled', 'rejected'].includes(statusStr);
+  const isCompleted = ['work_done', 'completed'].includes(statusStr);
+  const isInTransit = ['journey_started', 'started'].includes(statusStr);
+  const isAtLocation = ['visited', 'in_progress'].includes(statusStr);
+  const isAssigned = ['assigned', 'confirmed'].includes(statusStr) || isInTransit || isAtLocation || isCompleted;
+
+  let currentStepIndex = 1;
+  if (isCompleted) currentStepIndex = 4;
+  else if (isAtLocation || isInTransit) currentStepIndex = 3;
+  else if (isAssigned) currentStepIndex = 2;
+  else currentStepIndex = 1;
+
+  const steps = [
+    { label: 'Booked', icon: FiCheckCircle, desc: 'Slot Reserved' },
+    { label: 'Assigned', icon: FiUser, desc: 'Partner Matched' },
+    { label: isInTransit ? 'En Route' : 'At Doorstep', icon: isInTransit ? FiNavigation : FiMapPin, desc: isInTransit ? 'Live GPS' : 'Inspection' },
+    { label: 'Done', icon: FiShield, desc: 'Verified & Closed' }
+  ];
+
+  const bookingCode = booking.bookingNumber || booking._id?.slice(-8).toUpperCase();
+  const assignedPartner = booking.workerId || booking.assignedTo || booking.vendorId;
 
   return (
-    <div className="min-h-screen pb-32 relative bg-white">
-      {/* Refined Brand Mesh Gradient Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-              #FFFFFF
-            `
-          }}
-        />
-        {/* Elegant Dot Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
+    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-32">
+      {/* Background Ambient Glows */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="absolute bottom-1/3 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20" />
       </div>
 
       <div className="relative z-10">
-        {/* Modern Glassmorphism Header */}
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/40 border-b border-black/[0.03] px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/user/my-bookings')}
-              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02]"
-            >
-              <FiArrowLeft className="w-5 h-5 text-gray-800" />
-            </button>
-            <div className="flex-1">
-              <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Booking Details</h1>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-                ID: <span className="font-mono">{booking.bookingNumber || booking._id?.slice(-8).toUpperCase()}</span>
-              </p>
+        {/* Sticky Glassmorphic Top Header */}
+        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 shadow-2xs">
+          <div className="max-w-xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/user/my-bookings')}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+                aria-label="Go back"
+              >
+                <FiArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
+                    Booking Details
+                  </h1>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 font-semibold mt-0.5 group transition-colors"
+                >
+                  <span>ID: <strong className="font-mono text-slate-700">#{bookingCode}</strong></span>
+                  {copiedId ? (
+                    <FiCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <FiCopy className="w-3 h-3 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <NotificationBell />
+
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+            </div>
           </div>
         </header>
 
-        <main className="max-w-xl mx-auto px-4 py-6 space-y-6">
+        <main className="max-w-xl mx-auto px-4 pt-4 pb-6 space-y-4">
 
-
-          {/* Visual Progress Stepper */}
-          {['cancelled', 'rejected'].includes(booking.status?.toLowerCase()) ? (
-            <div className="bg-red-50 rounded-2xl p-4 border border-red-100 flex items-center gap-3 text-red-700">
-              <FiXCircle className="w-5 h-5 shrink-0" />
-              <p className="font-medium text-sm">This booking has been {booking.status.toLowerCase()}.</p>
+          {/* 1. UNIFIED LIVE STATUS HERO CARD & PROGRESS TRACKER */}
+          {isCancelled ? (
+            <div className="bg-white rounded-3xl p-5 border border-rose-200 shadow-sm flex items-center gap-3.5 bg-rose-50/50">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <FiXCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-rose-900">Booking Cancelled</h3>
+                <p className="text-xs text-rose-600 font-medium mt-0.5">This service order has been cancelled.</p>
+              </div>
             </div>
           ) : (
-            <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
-              <div className="flex justify-between relative z-10">
-                {/* Step 1: Booked */}
-                <div className="flex flex-col items-center gap-2 w-1/4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['pending', 'requested', 'searching', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                    <FiCheckCircle className="w-4 h-4" />
-                  </div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Booked</p>
-                </div>
-
-                {/* Step 2: Assigned */}
-                <div className="flex flex-col items-center gap-2 w-1/4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                    2
-                  </div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Assigned</p>
-                </div>
-
-                {/* Step 3: In Progress */}
-                <div className="flex flex-col items-center gap-2 w-1/4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                    3
-                  </div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Started</p>
-                </div>
-
-                {/* Step 4: Done */}
-                <div className="flex flex-col items-center gap-2 w-1/4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['work_done', 'completed'].includes(booking.status?.toLowerCase())
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
-                    }`}>
-                    4
-                  </div>
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center">Done</p>
-                </div>
-              </div>
-              {/* Connect lines */}
-              <div className="absolute top-[4.5rem] left-[15%] right-[15%] h-0.5 bg-gray-100 -z-0">
-                <div className="h-full bg-teal-500 transition-all duration-1000" style={{
-                  width:
-                    ['work_done', 'completed'].includes(booking.status?.toLowerCase()) ? '100%' :
-                      ['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? '66%' :
-                        ['assigned'].includes(booking.status?.toLowerCase()) ? '33%' : '0%'
-                }}></div>
-              </div>
-            </div>
-          )}
-
-          {/* Status Badge */}
-          <div className="flex items-center justify-center">
-            <div className={`px-4 py-2 rounded-full flex items-center gap-2 shadow-sm border ${getStatusColor(booking.status)}`}>
-              {getStatusIcon(booking.status)}
-              <span className="text-xs font-black uppercase tracking-wider">{getStatusLabel(booking.status)}</span>
-            </div>
-          </div>
-
-          {/* Broadcast/Searching State Card */}
-          {!booking.workerId && !booking.assignedTo && ['requested', 'searching'].includes(booking.status?.toLowerCase()) && (
-            <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-amber-100 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -translate-y-16 translate-x-16 blur-3xl opacity-50 group-hover:opacity-80 transition-opacity"></div>
-
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100 shadow-sm">
-                    <FiSearch className="w-6 h-6 text-amber-500 animate-pulse" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900 leading-tight">Finding Your Expert</h3>
-                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Broadcast in Progress</p>
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-600 mb-4 leading-relaxed font-medium">
-                  We've sent your request to all verified experts in your area. You'll be notified automatically as soon as someone accepts.
-                </p>
-
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl p-3 border border-gray-100">
-                    <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span>
-                    <span>Waiting for response from 12+ nearby partners...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Service Partner Card */}
-          {(booking.workerId || booking.assignedTo || booking.vendorId) && ['confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done'].includes(booking.status?.toLowerCase()) && (
-            <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
-              <div className="flex justify-between items-start mb-4">
-                {['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? (
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-3 w-3 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </span>
-                    <p className="text-xs font-bold text-green-600 tracking-wider">LIVE TRACKING ACTIVE</p>
-                  </div>
-                ) : (
-                  <p className="text-xs font-bold text-gray-400 tracking-wider uppercase">Your Professional</p>
-                )}
-
-                <button
-                  onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
-                >
-                  Map View <FiChevronRight />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-tr from-gray-100 to-gray-50 shrink-0">
-                  <div className="w-full h-full rounded-full overflow-hidden relative bg-white">
-                    {(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto) ? (
-                      <>
-                        <img
-                          src={toAssetUrl(booking.workerId?.profileImage || booking.workerId?.profilePhoto || booking.assignedTo?.profileImage || booking.assignedTo?.profilePhoto || booking.vendorId?.profileImage || booking.vendorId?.profilePhoto)}
-                          alt="Professional"
-                          className="w-full h-full object-cover"
-                          onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.fallback-icon').style.display = 'block'; }}
-                        />
-                        <FiUser className="w-8 h-8 text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 fallback-icon hidden" />
-                      </>
+            <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 relative overflow-hidden">
+              {/* Header Status Row */}
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-500 text-white flex items-center justify-center shadow-md shadow-teal-500/20 shrink-0">
+                    {isInTransit ? (
+                      <FiNavigation className="w-5 h-5 animate-pulse" />
+                    ) : isAtLocation ? (
+                      <FiTool className="w-5 h-5" />
+                    ) : isCompleted ? (
+                      <FiCheckCircle className="w-5 h-5" />
                     ) : (
-                      <FiUser className="w-8 h-8 text-gray-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      <FiCompass className="w-5 h-5 animate-spin" style={{ animationDuration: '6s' }} />
                     )}
                   </div>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 text-lg truncate">
-                    {booking.workerId?.name || booking.assignedTo?.name || booking.vendorId?.name || 'Service Partner'}
-                  </h3>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-md border border-yellow-100">
-                      <FiStar className="w-3 h-3 text-yellow-500 fill-current" />
-                      <span className="text-xs font-bold text-yellow-700">
-                        {(booking.workerId?.rating || booking.assignedTo?.rating || booking.vendorId?.rating || 0) > 0
-                          ? (booking.workerId?.rating || booking.assignedTo?.rating || booking.vendorId?.rating).toFixed(1)
-                          : 'New'}
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                        {booking.status?.replace('_', ' ').toUpperCase() || 'CONFIRMED'}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-400 font-medium">• Verified</span>
+                    <h2 className="text-sm font-extrabold text-slate-900 mt-0.5">
+                      {isCompleted
+                        ? 'Service Completed Successfully'
+                        : isInTransit
+                        ? 'Expert is on the Way to Your Doorstep'
+                        : isAtLocation
+                        ? 'Expert Arrived & Working'
+                        : assignedPartner
+                        ? 'Service Confirmed & Partner Assigned'
+                        : 'Finding Nearest Verified Partner...'}
+                    </h2>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modern 4-Step Interactive Stepper */}
+              <div className="relative pt-2">
+                {/* Connecting Background Rail */}
+                <div className="absolute top-6 left-6 right-6 h-1 bg-slate-100 rounded-full z-0">
+                  <div 
+                    className="h-full bg-gradient-to-r from-teal-500 via-emerald-400 to-teal-500 rounded-full transition-all duration-700 shadow-xs"
+                    style={{ width: `${((currentStepIndex - 1) / 3) * 100}%` }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-4 relative z-10">
+                  {steps.map((step, idx) => {
+                    const stepNum = idx + 1;
+                    const isPassed = stepNum <= currentStepIndex;
+                    const isCurrent = stepNum === currentStepIndex;
+                    const StepIcon = step.icon;
+
+                    return (
+                      <div key={step.label} className="flex flex-col items-center text-center">
+                        <div
+                          className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                            isCurrent
+                              ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30 ring-4 ring-teal-50 scale-110'
+                              : isPassed
+                              ? 'bg-emerald-500 text-white shadow-sm'
+                              : 'bg-white text-slate-300 border-2 border-slate-200'
+                          }`}
+                        >
+                          {isPassed && !isCurrent ? (
+                            <FiCheck className="w-4 h-4 stroke-[3]" />
+                          ) : (
+                            <StepIcon className="w-4 h-4" />
+                          )}
+                        </div>
+                        <span className={`text-[11px] font-extrabold mt-2 leading-tight ${isCurrent ? 'text-slate-900' : isPassed ? 'text-slate-700' : 'text-slate-400'}`}>
+                          {step.label}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-semibold hidden sm:block">
+                          {step.desc}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 2. VERIFIED SERVICE PARTNER / EXPERT CARD */}
+          {assignedPartner && ['confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done'].includes(statusStr) && (
+            <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80">
+              <div className="flex items-center justify-between mb-3.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                  Assigned Professional
+                </span>
+                {['journey_started', 'visited', 'in_progress'].includes(statusStr) && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
+                    className="text-xs font-extrabold text-teal-600 hover:text-teal-700 flex items-center gap-1 bg-teal-50 px-2.5 py-1 rounded-xl border border-teal-100 transition-all cursor-pointer active:scale-95"
+                  >
+                    <span>Live GPS Map</span>
+                    <FiChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3.5">
+                {/* Avatar with Online Glow */}
+                <div className="relative shrink-0">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-slate-100 to-slate-200 p-0.5 shadow-sm border border-slate-200 overflow-hidden">
+                    {(assignedPartner?.profileImage || assignedPartner?.profilePhoto) ? (
+                      <img
+                        src={toAssetUrl(assignedPartner?.profileImage || assignedPartner?.profilePhoto)}
+                        alt="Partner"
+                        className="w-full h-full object-cover rounded-[14px]"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-[14px] bg-slate-900 text-white flex items-center justify-center font-black text-lg">
+                        {(assignedPartner?.name || 'Z').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white" title="Verified Online" />
+                </div>
+
+                {/* Name & Credentials */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="font-extrabold text-slate-900 text-base truncate">
+                      {assignedPartner?.name || 'Verified Service Partner'}
+                    </h3>
+                    <HiBadgeCheck className="w-4.5 h-4.5 text-blue-500 shrink-0" title="Zippto Verified Pro" />
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-xs font-black px-2 py-0.5 rounded-lg border border-amber-200/60">
+                      <FiStar className="w-3 h-3 text-amber-500 fill-current" />
+                      {(assignedPartner?.rating || 0) > 0 ? Number(assignedPartner?.rating).toFixed(1) : '4.9'}
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-semibold truncate">
+                      • Doorstep Specialist
+                    </span>
                   </div>
                 </div>
 
-                {/* Action Buttons: Chat & Call */}
-                <div className="flex items-center gap-2">
+                {/* Quick Contact Action Cluster */}
+                <div className="flex items-center gap-2 shrink-0">
                   <button
+                    type="button"
                     onClick={() => setIsChatOpen(true)}
-                    className="px-3 py-2 bg-teal-50 text-teal-700 hover:bg-teal-100 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 border border-teal-200 shadow-2xs cursor-pointer"
+                    className="px-3.5 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-2xl flex items-center gap-1.5 text-xs font-extrabold border border-teal-200/80 transition-all active:scale-95 shadow-2xs cursor-pointer"
                     title="Chat with Expert"
                   >
-                    <FiMessageSquare className="w-4 h-4" />
+                    <FiMessageSquare className="w-4 h-4 text-teal-600" />
                     <span>Chat</span>
                   </button>
 
-                  {(booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone) && (
+                  {assignedPartner?.phone && (
                     <a
-                      href={`tel:${booking.workerId?.phone || booking.assignedTo?.phone || booking.vendorId?.phone}`}
-                      className="w-9 h-9 bg-green-50 text-green-600 rounded-xl flex items-center justify-center hover:bg-green-100 transition-colors active:scale-95 border border-green-200"
+                      href={`tel:${assignedPartner.phone}`}
+                      className="w-10 h-10 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200/80 flex items-center justify-center transition-all active:scale-95 shadow-2xs"
                       title="Call Expert"
                     >
-                      <FiPhone className="w-4 h-4" />
+                      <FiPhone className="w-4.5 h-4.5" />
                     </a>
                   )}
                 </div>
@@ -801,707 +712,285 @@ const BookingDetails = () => {
             </div>
           )}
 
-          {/* Arrival OTP Card - Show during early stages until verified */}
-          {(booking.arrivalOTP || booking.visitOtp) && ['confirmed', 'assigned', 'journey_started'].includes(booking.status?.toLowerCase()) && (
-            <div className="relative overflow-hidden rounded-3xl shadow-lg border border-blue-100 mb-6 active:scale-[0.99] transition-all">
-              {/* Animated gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 opacity-95"></div>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]"></div>
-
-              <div className="relative z-10 p-6 flex flex-col items-center">
-                <div className="flex items-center gap-3 w-full mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                    <FiMapPin className="w-6 h-6 text-white" />
+          {/* 3. DOORSTEP ARRIVAL VERIFICATION OTP CARD (If Active) */}
+          {(booking.arrivalOTP || booking.visitOtp) && ['confirmed', 'assigned', 'journey_started'].includes(statusStr) && (
+            <div className="bg-gradient-to-br from-[#0B132B] to-slate-900 rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                    <FiKey className="w-4.5 h-4.5 text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white tracking-tight">Verification OTP</h3>
-                    <p className="text-xs text-blue-100 font-medium">Share when professional reaches</p>
+                    <h3 className="text-sm font-extrabold text-white">Start Work Verification PIN</h3>
+                    <p className="text-[11px] text-slate-300 font-medium">Share with technician upon arrival</p>
                   </div>
                 </div>
-
-                {/* OTP Display */}
-                <div className="flex justify-center gap-3 mb-5">
-                  {String(booking.arrivalOTP || booking.visitOtp).split('').map((digit, idx) => (
-                    <div
-                      key={idx}
-                      className="w-14 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/40 shadow-xl"
-                    >
-                      <span className="text-3xl font-black text-white drop-shadow-md">{digit}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="w-full bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20">
-                  <div className="flex items-center justify-center gap-2 text-white text-sm">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
-                    <p className="font-medium">Waiting for professional to reach your location</p>
-                  </div>
-                </div>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               </div>
-            </div>
-          )}
 
-          {/* Professional Arrived Notification - Only after OTP verified */}
-          {booking?.status?.toLowerCase() === 'visited' && (
-            <div className="relative overflow-hidden rounded-3xl shadow-lg mb-6 active:scale-[0.98] transition-all">
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-700 opacity-95"></div>
-              <div className="relative z-10 p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shrink-0">
-                  <FiCheckCircle className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">Professional Arrived</h3>
-                  <p className="text-sm text-teal-50 font-medium">Expert is at your location and starting the work.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Waiting for Vendor to initiate Payment */}
-          {!booking.customerConfirmationOTP && ['work_done'].includes(booking.status?.toLowerCase()) && !booking.cashCollected && (
-            <div className="bg-white rounded-3xl p-6 shadow-lg border border-teal-100 mb-6 flex items-center gap-4 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-50 rounded-full -translate-y-12 translate-x-12 blur-2xl"></div>
-              <div className="w-12 h-12 rounded-2xl bg-teal-50 flex items-center justify-center shrink-0 border border-teal-100">
-                <FiLoader className="w-6 h-6 text-teal-600 animate-spin" />
-              </div>
-              <div className="relative z-10">
-                <h3 className="font-bold text-gray-900">Finalizing Bill</h3>
-                <p className="text-sm text-gray-500">Professional is finalizing payment details. Please wait a moment...</p>
-              </div>
-            </div>
-          )}
-
-          {/* Plan Covered Card - Show for plan_benefit bookings (before OTP is sent) */}
-          {(booking.paymentStatus === 'plan_covered' || (booking.paymentMethod === 'plan_benefit' && booking.paymentStatus !== 'success')) &&
-            ['visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase()) &&
-            !booking.customerConfirmationOTP && (
-              <div className="relative overflow-hidden rounded-3xl shadow-lg border border-emerald-100 mb-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-600 to-green-700 opacity-95"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]"></div>
-
-                <div className="relative z-10 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                      <FiCheckCircle className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-white tracking-tight">
-                        {booking.status?.toLowerCase() === 'work_done' ? 'Finalizing Bill' : 'Plan Benefit Active'}
-                      </h3>
-                      <p className="text-xs font-medium text-emerald-100">
-                        {booking.status?.toLowerCase() === 'work_done' ? 'Vendor preparing final bill' : 'Base service covered by your plan'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-                    <div className="flex items-center gap-3 mb-2">
-                      <FiCheckCircle className="w-5 h-5 text-emerald-200" />
-                      <span className="font-bold text-white">Base Service Covered</span>
-                    </div>
-                    <p className="text-sm text-emerald-100 leading-relaxed">
-                      Your base service fee is covered by your membership plan. {booking.status?.toLowerCase() === 'work_done' ? 'The vendor is preparing the final bill for any additional charges.' : 'You may only need to pay for extra parts or services.'}
-                    </p>
-                  </div>
-
-                  {booking.status?.toLowerCase() === 'work_done' && (
-                    <div className="mt-4 flex items-center justify-center gap-2 text-white/80">
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                      <span className="text-xs font-medium">Waiting for vendor to finalize...</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-          {/* Payment Card - Show when work is done AND bill is finalized (OTP exists) or paid */}
-          {(booking.customerConfirmationOTP || booking.paymentStatus === 'success') && ['work_done'].includes(booking.status?.toLowerCase()) && !booking.cashCollected && (
-            <div
-              onClick={() => setShowPaymentModal(true)}
-              className={`relative overflow-hidden rounded-3xl shadow-lg border cursor-pointer active:scale-[0.98] transition-all ${booking.paymentStatus === 'success' ? 'border-green-100' : 'border-orange-100'
-                }`}>
-              {/* Animated gradient background */}
-              <div className={`absolute inset-0 opacity-95 ${booking.paymentStatus === 'success'
-                ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700'
-                : 'bg-gradient-to-br from-orange-500 via-orange-600 to-red-600'
-                }`}></div>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(255,255,255,0.15)_0%,transparent_50%)]"></div>
-
-              <div className="relative z-10 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                    {booking.paymentStatus === 'success' ? (
-                      <FiCheckCircle className="w-6 h-6 text-white" />
-                    ) : (
-                      <FiDollarSign className="w-6 h-6 text-white" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white tracking-tight">
-                      {booking.paymentStatus === 'success' ? 'Payment Received' : 'Final Payment'}
-                    </h3>
-                    <p className={`text-xs font-medium ${booking.paymentStatus === 'success' ? 'text-green-50' : 'text-orange-100'}`}>
-                      {booking.paymentStatus === 'success' ? 'Transaction verified successfully' : 'Final amount after service completion'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Action Button for Online Payment - Only show if not paid */}
-                {booking.paymentStatus !== 'success' && (
-                  <>
-                    <button
-                      onClick={handleOnlinePayment}
-                      className="w-full py-4 mb-4 bg-white text-orange-600 rounded-2xl font-black text-sm shadow-xl hover:bg-orange-50 active:scale-95 transition-all flex items-center justify-center gap-2 group"
-                    >
-                      <FiDollarSign className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                      Pay Online Now
-                      <FiChevronRight className="w-4 h-4" />
-                    </button>
-
-                    <div className="flex flex-col items-center mb-6">
-                      <p className="text-[10px] font-bold text-orange-100 uppercase tracking-[0.2em] mb-3 opacity-90">Verification Code</p>
-                      <div className="flex justify-center gap-2">
-                        {String(booking.customerConfirmationOTP || booking.paymentOtp || '0000').split('').map((digit, idx) => (
-                          <div
-                            key={idx}
-                            className="w-12 h-14 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-lg"
-                          >
-                            <span className="text-2xl font-black text-white">{digit}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-[10px] text-orange-50 mt-3 font-medium bg-black/10 px-3 py-1 rounded-full backdrop-blur-sm">
-                        Share this code with the professional ONLY after your satisfaction
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                <div className={`backdrop-blur-sm rounded-xl p-4 border ${booking.paymentStatus === 'success' ? 'bg-white/10 border-white/10' : 'bg-white/15 border-white/20'
-                  }`}>
-                  <div className="flex items-center gap-3 text-white">
-                    {booking.paymentStatus === 'success' ? (
-                      <FiCheckCircle className="w-5 h-5 text-green-200" />
-                    ) : (
-                      <FiClock className="w-5 h-5 text-orange-200" />
-                    )}
-                    <div className="text-sm">
-                      {booking.paymentStatus === 'success'
-                        ? (
-                          booking.paymentMethod === 'plan_benefit'
-                            ? <p className="font-medium">Covered by your Membership Plan</p>
-                            : <p className="font-medium">Booking completed successfully. Thank you for choosing us!</p>
-                        )
-                        : <p className="font-medium">Total Amount: <span className="text-lg font-black ml-1">₹{(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}</span></p>
-                      }
-                      {booking.paymentStatus !== 'success' && <p className="text-[10px] text-orange-100 mt-0.5 opacity-80">Pay online above or prepare cash for the professional.</p>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Location & Time Section */}
-          <section className="space-y-4">
-            {/* Map Preview - Improved overlay for better usability */}
-            {booking.address && (
-              <>
-                <div className="group relative rounded-3xl overflow-hidden shadow-sm border border-gray-200 bg-gray-100 h-48">
-                  {(() => {
-                    let mapQuery = '';
-                    if (typeof booking.address === 'object' && booking.address.lat && booking.address.lng) {
-                      mapQuery = `${booking.address.lat},${booking.address.lng}`;
-                    } else {
-                      const addrStr = typeof booking.address === 'string'
-                        ? booking.address
-                        : `${booking.address?.addressLine1 || ''}, ${booking.address?.city || ''}`;
-                      mapQuery = encodeURIComponent(addrStr);
-                    }
-                    return (
-                      <iframe
-                        className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
-                        frameBorder="0"
-                        style={{ border: 0, pointerEvents: 'none' }}
-                        src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
-                        allowFullScreen
-                        tabIndex="-1"
-                        title="Location"
-                      />
-                    )
-                  })()}
-
-                  {/* Floating Info */}
-                  <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
-                    <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm border border-white/50 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
-                      <span className="text-xs font-bold text-gray-700">Destination</span>
-                    </div>
-                  </div>
-
-                  {/* Track Button Overlay - Only clickable when journey started */}
-                  {['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-transparent pointer-events-none">
-                      <div
-                        className="pointer-events-auto bg-white text-gray-900 px-5 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all border border-gray-100 cursor-pointer"
-                        onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
-                      >
-                        <FiMapPin className="w-4 h-4 text-red-500" /> View Live Location
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Dedicated Track Button - Only visible when journey started */}
-                {['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) && (
-                  <button
-                    onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
-                    className="w-full py-4 bg-gradient-to-r from-gray-900 to-gray-800 text-white rounded-2xl font-bold shadow-lg shadow-gray-200 active:scale-95 transition-all flex items-center justify-center gap-3 hover:shadow-xl"
+              {/* Large Digital OTP Tiles */}
+              <div className="flex justify-center gap-2.5 my-2">
+                {String(booking.arrivalOTP || booking.visitOtp).split('').map((digit, idx) => (
+                  <div
+                    key={idx}
+                    className="w-12 h-14 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border-2 border-white/30 shadow-inner"
                   >
-                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                      <FiMapPin className="w-4 h-4 text-white" />
-                    </div>
-                    Track Service Agent
-                  </button>
-                )}
-              </>
-            )}
+                    <span className="text-2xl font-black text-amber-300">{digit}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-            <div className="bg-white rounded-3xl p-5 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100">
-              <div className="flex items-start gap-4 mb-4">
-                <div className="w-10 h-10 rounded-2xl bg-teal-50 flex items-center justify-center shrink-0">
-                  <FiMapPin className="w-5 h-5 text-teal-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Service Address</p>
-                  <p className="text-sm font-medium text-gray-900 leading-relaxed">{getAddressString(booking.address)}</p>
+          {/* 4. DOORSTEP LOCATION & TIME SCHEDULE */}
+          <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 overflow-hidden">
+            {/* Interactive Map Thumbnail */}
+            {booking.address && (
+              <div className="relative h-44 w-full bg-slate-100 group overflow-hidden border-b border-slate-100">
+                {(() => {
+                  let mapQuery = '';
+                  if (typeof booking.address === 'object' && booking.address.lat && booking.address.lng) {
+                    mapQuery = `${booking.address.lat},${booking.address.lng}`;
+                  } else {
+                    const addrStr = typeof booking.address === 'string'
+                      ? booking.address
+                      : `${booking.address?.addressLine1 || ''}, ${booking.address?.city || ''}`;
+                    mapQuery = encodeURIComponent(addrStr);
+                  }
+                  return (
+                    <iframe
+                      className="w-full h-full opacity-90 group-hover:opacity-100 transition-opacity"
+                      frameBorder="0"
+                      style={{ border: 0, pointerEvents: 'none' }}
+                      src={`https://maps.google.com/maps?q=${mapQuery}&z=15&output=embed`}
+                      allowFullScreen
+                      tabIndex="-1"
+                      title="Doorstep Location"
+                    />
+                  );
+                })()}
+
+                {/* Floating Map Navigation Shortcut */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-[0.5px]">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/user/booking/${booking._id || booking.id}/track`)}
+                    className="px-4 py-2 bg-white/95 hover:bg-white text-slate-900 rounded-full font-extrabold text-xs flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all border border-slate-200/80 cursor-pointer"
+                  >
+                    <FiNavigation className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Open Live GPS Tracker</span>
+                  </button>
                 </div>
               </div>
-              <div className="w-full h-px bg-gray-50 mb-4"></div>
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
-                  <FiCalendar className="w-5 h-5 text-indigo-600" />
+            )}
+
+            {/* Address & Slot Details List */}
+            <div className="p-5 space-y-4">
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100">
+                  <FiMapPin className="w-5 h-5" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wide mb-1">Slot</p>
-                  <p className="text-sm font-medium text-gray-900">
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    Service Doorstep Location
+                  </span>
+                  <p className="text-xs font-bold text-slate-800 leading-relaxed">
+                    {getAddressString(booking.address)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-full h-px bg-slate-100" />
+
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+                  <FiCalendar className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-0.5">
+                    Scheduled Appointment
+                  </span>
+                  <p className="text-xs font-bold text-slate-800">
                     {formatDate(booking.scheduledDate)}
                   </p>
-                  <p className="text-sm text-gray-500">{booking.scheduledTime || booking.timeSlot?.start || 'N/A'}</p>
+                  <span className="inline-block mt-1 text-[11px] font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                    ⏱ {booking.scheduledTime || booking.timeSlot?.start || 'ASAP Slot'}
+                  </span>
                 </div>
               </div>
             </div>
-          </section>
+          </div>
 
-          {/* Service Details */}
-          <section className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50">
-              <h3 className="font-bold text-gray-900">Order Summary</h3>
+          {/* 5. ITEMIZED ORDER & BILL BREAKDOWN */}
+          <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <FiPackage className="w-4 h-4 text-teal-600" />
+                <h3 className="font-extrabold text-slate-900 text-sm">Order Summary</h3>
+              </div>
+              <span className="text-xs font-black text-slate-900">
+                ₹{(finalTotal || 0).toLocaleString('en-IN')}
+              </span>
             </div>
 
             <div className="p-5 space-y-4">
-              {/* 1. Service Category */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0 border border-teal-100 overflow-hidden">
-                  {booking.categoryIcon ? (
-                    <img src={booking.categoryIcon} alt="" className="w-6 h-6 object-contain" />
-                  ) : (
-                    <FiPackage className="w-5 h-5 text-teal-400" />
-                  )}
+              {/* Category & Brand Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-dashed border-slate-200">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center shrink-0 overflow-hidden">
+                    {booking.categoryIcon ? (
+                      <img src={booking.categoryIcon} alt="" className="w-6 h-6 object-contain" />
+                    ) : (
+                      <FiPackage className="w-5 h-5 text-teal-600" />
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Category</span>
+                    <h4 className="text-xs font-bold text-slate-900">{booking.serviceCategory || booking.serviceName || 'Service'}</h4>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Service Category</p>
-                  <p className="text-sm font-bold text-gray-800">{booking.serviceCategory || booking.serviceName || 'Service'}</p>
-                </div>
+
+                {booking.brandName && (
+                  <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-xl">
+                    {booking.brandName}
+                  </span>
+                )}
               </div>
 
-              {/* 2. Brand */}
-              {(() => {
-                const brandName = booking.brandName || booking.bookedItems?.[0]?.brandName;
-                const brandIcon = booking.brandIcon || booking.bookedItems?.[0]?.brandIcon;
-                if (!brandName) return null;
-                return (
-                  <div className="flex items-center gap-3 pt-3 border-t border-dashed border-gray-100">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden">
-                      {brandIcon ? (
-                        <img src={brandIcon} alt={brandName} className="w-7 h-7 object-contain" />
-                      ) : (
-                        <span className="text-lg font-black text-slate-400">{brandName.charAt(0)}</span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Brand</p>
-                      <p className="text-sm font-bold text-gray-800">{brandName}</p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* 3. Service Cards */}
+              {/* Booked Items List */}
               {booking.bookedItems && booking.bookedItems.length > 0 && (
-                <div className="pt-3 border-t border-dashed border-gray-100 space-y-2">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Services Booked</p>
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                    Booked Services ({booking.bookedItems.length})
+                  </span>
                   {booking.bookedItems.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-start bg-gray-50 rounded-xl p-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">×{item.quantity}</span>
-                          <span className="text-sm font-semibold text-gray-900 truncate">{item.card?.title || 'Service'}</span>
+                    <div key={idx} className="flex justify-between items-center bg-slate-50/80 rounded-2xl p-3 border border-slate-100">
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <span className="text-xs font-black text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100">
+                          {item.quantity || 1}x
+                        </span>
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-slate-900 truncate">{item.card?.title || item.title || 'Service Item'}</p>
+                          {item.card?.duration && <p className="text-[10px] text-slate-400 font-semibold">⏱ {item.card.duration}</p>}
                         </div>
-                        {item.card?.subtitle && <p className="text-xs text-gray-400 mt-0.5 ml-8 line-clamp-1">{item.card.subtitle}</p>}
-                        {item.card?.duration && <p className="text-xs text-gray-400 mt-0.5 ml-8">⏱ {item.card.duration}</p>}
                       </div>
-                      <span className="text-sm font-bold text-gray-900 ml-3 shrink-0">₹{((item.card?.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}</span>
+                      <span className="text-xs font-black text-slate-900 shrink-0 font-mono">
+                        ₹{((item.card?.price || item.price || 0) * (item.quantity || 1)).toLocaleString('en-IN')}
+                      </span>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          </section>
 
-          {/* Payment Summary - Only show if payment is completed/collected OR if a payment request is active (Work Done) */}
-          {(['work_done', 'completed'].includes(booking.status?.toLowerCase()) || booking.paymentStatus === 'success' || booking.cashCollected) && (
-            <section className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 overflow-hidden">
-            <div className="p-5">
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
-                <div className={`p-2 rounded-lg ${booking.paymentMethod === 'plan_benefit' ? 'bg-amber-100' : 'bg-green-50'}`}>
-                  {booking.paymentMethod === 'plan_benefit' ? (
-                    <FiAward className="w-5 h-5 text-amber-600" />
+              {/* Extra Billed Services & Parts (If Any) */}
+              {hasBill && (services.length > 0 || parts.length > 0 || customItems.length > 0) && (
+                <div className="pt-3 border-t border-dashed border-slate-200 space-y-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-600 block">
+                    Extra On-Site Parts & Services Added
+                  </span>
+                  {services.map((s, i) => (
+                    <div key={i} className="flex justify-between text-xs font-semibold text-slate-700">
+                      <span>{s.name} <span className="text-slate-400">x{s.quantity}</span></span>
+                      <span className="font-mono">₹{((parseFloat(s.price) || 0) * (parseFloat(s.quantity) || 1)).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {parts.map((p, i) => (
+                    <div key={i} className="flex justify-between text-xs font-semibold text-slate-700">
+                      <span>{p.name} <span className="text-slate-400">x{p.quantity}</span></span>
+                      <span className="font-mono">₹{((parseFloat(p.price) || 0) * (parseFloat(p.quantity) || 1)).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Price Calculation Summary */}
+              <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600 font-medium">
+                  <span>Base Fare</span>
+                  {isPlanBenefit ? (
+                    <span className="text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.2 rounded">FREE (Plan Benefit)</span>
                   ) : (
-                    <FiDollarSign className="w-5 h-5 text-green-600" />
+                    <span className="font-mono">₹{originalBase.toFixed(2)}</span>
                   )}
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-900">
-                    {booking.paymentMethod === 'plan_benefit' ? 'Membership Benefit' : 'Payment Summary'}
-                  </h3>
+
+                <div className="flex justify-between text-slate-600 font-medium">
+                  <span>Taxes & GST (18%)</span>
+                  <span className="font-mono">₹{totalGST.toFixed(2)}</span>
                 </div>
-              </div>
 
-              <div className="space-y-3 text-sm">
-                {hasBill ? (
-                  // NEW DETAILED BREAKDOWN
-                  <div className="space-y-4">
-                    {/* Services Section */}
-                    <div>
-                      <h4 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
-                        <FiCheckCircle className="w-3.5 h-3.5" /> Services
-                      </h4>
-                      <div className="space-y-2 pl-1">
-                        {/* Original Base */}
-                        <div className="flex justify-between items-center text-gray-600">
-                          <span>Original Booking : {originalServiceFromBill?.name || booking.serviceName || 'Service'}</span>
-                          {isPlanBenefit ? (
-                            <div className="flex items-center gap-2">
-                              <span className="line-through text-gray-400 text-xs">₹{originalBase.toLocaleString('en-IN')}</span>
-                              <span className="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">FREE</span>
-                            </div>
-                          ) : (
-                            <span className="font-medium text-gray-900">₹{originalBase.toLocaleString('en-IN')}</span>
-                          )}
-                        </div>
-
-                        {/* Extra Services */}
-                        {services.map((s, i) => (
-                          <div key={i} className="flex justify-between items-center text-gray-600">
-                            <span>{s.name} <span className="text-gray-400 text-xs">x{s.quantity}</span></span>
-                            <span className="font-mono text-xs">₹{((parseFloat(s.price) || 0) * (parseFloat(s.quantity) || 1)).toFixed(2)}</span>
-                          </div>
-                        ))}
-
-                        {/* Service GST */}
-                        <div className="flex justify-between text-xs text-gray-500 border-t border-dashed border-gray-100 pt-1 mt-1">
-                          <span>GST (18%)</span>
-                          <span className="font-mono">₹{(originalGST + extraServiceGST).toFixed(2)}</span>
-                        </div>
-
-                        {/* Service Subtotal */}
-                        <div className="flex justify-between font-bold text-gray-800 pt-1">
-                          <span>Total Service</span>
-                          <span>₹{(originalBase + extraServiceBase + originalGST + extraServiceGST).toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Parts Section */}
-                    {(parts.length > 0 || customItems.length > 0) && (
-                      <div>
-                        <h4 className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wide mb-2 mt-4">
-                          <FiPackage className="w-3.5 h-3.5 text-orange-500" /> Parts & Material
-                        </h4>
-                        <div className="space-y-2 pl-1">
-                          {parts.map((p, i) => (
-                            <div key={`p-${i}`} className="flex justify-between items-center text-gray-600">
-                              <span>{p.name} <span className="text-gray-400 text-xs">x{p.quantity}</span></span>
-                              <span className="font-mono text-xs">₹{(p.price * p.quantity).toFixed(2)}</span>
-                            </div>
-                          ))}
-                          {customItems.map((c, i) => (
-                            <div key={`c-${i}`} className="flex justify-between items-center text-gray-600">
-                              <div>
-                                <span>{c.name} <span className="text-gray-400 text-xs">x{c.quantity}</span></span>
-                                {c.hsnCode && <span className="block text-[9px] text-gray-400">HSN: {c.hsnCode}</span>}
-                              </div>
-                              <span className="font-mono text-xs">₹{(c.price * c.quantity).toFixed(2)}</span>
-                            </div>
-                          ))}
-
-                          {/* Parts GST */}
-                          <div className="flex justify-between text-xs text-gray-500 border-t border-dashed border-gray-100 pt-1 mt-1">
-                            <span>GST (18%)</span>
-                            <span className="font-mono">₹{partsGST.toFixed(2)}</span>
-                          </div>
-
-                          {/* Parts Subtotal */}
-                          <div className="flex justify-between font-bold text-gray-800 pt-1">
-                            <span>Total Parts</span>
-                            <span>₹{(partsBase + partsGST).toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Visiting Charges */}
-                    {(booking.visitingCharges > 0 || bill?.visitingCharges > 0) && (
-                      <div className="mt-4 pt-2 border-t border-gray-100">
-                        <div className="flex justify-between text-xs font-bold text-gray-600">
-                          <span className="flex items-center gap-2 uppercase tracking-wide">
-                            <FiClock className="w-3.5 h-3.5 text-blue-400" /> Visiting Charges
-                          </span>
-                          <span className="font-mono">₹{(bill?.visitingCharges || booking.visitingCharges || 0).toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Transport Charges */}
-                    {bill?.transportCharges > 0 && (
-                      <div className="mt-2 pt-2 border-t border-gray-100">
-                        <div className="flex justify-between text-xs font-bold text-gray-600">
-                          <span className="flex items-center gap-2 uppercase tracking-wide">
-                            <FiPackage className="w-3.5 h-3.5 text-blue-400" /> Transport Charges
-                          </span>
-                          <span className="font-mono">₹{(bill.transportCharges).toFixed(2)}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {(booking.paymentMethod || booking.paymentStatus === 'success') && (
-                      <div className="mt-2 pt-2 border-t border-gray-100">
-                        <div className="flex justify-between text-xs font-bold text-gray-600">
-                          <span className="flex items-center gap-2 uppercase tracking-wide">
-                            {booking.paymentMethod === 'cash collected' ? <FiDollarSign className="text-emerald-500" /> : <MdQrCode className="text-blue-500" />}
-                            Payment Method
-                          </span>
-                          <span className={`${booking.paymentMethod === 'cash collected' ? 'text-emerald-600' : 'text-blue-600'} uppercase`}>
-                            {booking.paymentMethod === 'cash collected' ? 'Cash Collected' : 
-                             booking.paymentMethod === 'Qr online' ? 'QR Online' : 
-                             booking.paymentMethod === 'online' ? 'Online Paid' : 
-                             booking.paymentMethod === 'plan_benefit' ? 'Plan Benefit' : 
-                             booking.paymentMethod || 'Online'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="pt-4 mt-2 border-t-2 border-gray-100 flex justify-between items-center">
-                      <span className="font-bold text-gray-900 text-lg">Grand Total</span>
-                      <span className="font-black text-teal-700 text-2xl">
-                        ₹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
+                {booking.discount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-bold">
+                    <span>Discount Applied</span>
+                    <span>-₹{booking.discount.toFixed(2)}</span>
                   </div>
-                ) : (
-                  // OLD SIMPLE BREAKDOWN (Fallback)
-                  <>
-                    {/* Base Items */}
-                    <div className="flex justify-between items-center text-gray-600">
-                      <span>Base Price</span>
-                      {booking.paymentMethod === 'plan_benefit' ? (
-                        <div className="flex items-center gap-2">
-                          <span className="line-through text-gray-400 text-xs">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
-                          <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                        </div>
-                      ) : (
-                        <span className="font-medium text-gray-900">₹{(booking.basePrice || 0).toLocaleString('en-IN')}</span>
-                      )}
-                    </div>
-
-                    {(booking.tax > 0 || booking.paymentMethod === 'plan_benefit') && (
-                      <div className="flex justify-between items-center text-gray-600">
-                        <span>GST (18%)</span>
-                        {booking.paymentMethod === 'plan_benefit' ? (
-                          <div className="flex items-center gap-2">
-                            <span className="line-through text-gray-400 text-xs">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
-                            <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                          </div>
-                        ) : (
-                          <span className="font-medium text-gray-900">₹{(booking.tax || 0).toLocaleString('en-IN')}</span>
-                        )}
-                      </div>
-                    )}
-
-                    {(booking.visitingCharges > 0 || booking.visitationFee > 0 || booking.paymentMethod === 'plan_benefit') && (
-                      <div className="flex justify-between items-center text-gray-600">
-                        <span>Convenience Fee</span>
-                        {booking.paymentMethod === 'plan_benefit' ? (
-                          <div className="flex items-center gap-2">
-                            <span className="line-through text-gray-400 text-xs">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
-                            <span className="text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">FREE ✓</span>
-                          </div>
-                        ) : (
-                          <span className="font-medium text-gray-900">₹{(booking.visitingCharges || booking.visitationFee || 0).toLocaleString('en-IN')}</span>
-                        )}
-                      </div>
-                    )}
-
-                    {booking.paymentMethod !== 'plan_benefit' && booking.discount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-green-600">Discount</span>
-                        <span className="font-medium text-green-600">-₹{booking.discount.toLocaleString('en-IN')}</span>
-                      </div>
-                    )}
-
-                    {/* Extra Charges Section */}
-                    {booking.extraCharges && booking.extraCharges.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Extra Charges</p>
-                        <div className="bg-gray-50 rounded-lg p-3 space-y-2 border border-gray-100">
-                          {booking.extraCharges.map((item, idx) => (
-                            <div key={idx} className="flex justify-between text-gray-700 text-sm">
-                              <span className="flex items-center gap-2">
-                                <span className="text-xs font-bold bg-white border px-1.5 rounded text-gray-500">x{item.quantity || 1}</span>
-                                <span>{item.name}</span>
-                              </span>
-                              <span className="font-medium">+₹{(item.total || item.price || 0).toLocaleString('en-IN')}</span>
-                            </div>
-                          ))}
-                          <div className="flex justify-between font-bold text-blue-600 pt-2 mt-2 border-t border-gray-200">
-                            <span>Total Extras</span>
-                            <span>+₹{(booking.extraChargesTotal || 0).toLocaleString('en-IN')}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="pt-4 mt-2 border-t border-gray-100 flex justify-between items-center">
-                      <span className="font-bold text-gray-900 text-lg">Total Payable</span>
-                      <span className="font-black text-gray-900 text-xl">
-                        ₹{(booking.paymentMethod === 'plan_benefit'
-                          ? (booking.userPayableAmount || booking.extraChargesTotal || 0)
-                          : (booking.finalAmount || booking.totalAmount || 0)
-                        ).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  </>
                 )}
+
+                <div className="pt-3 border-t border-slate-200 flex justify-between items-center">
+                  <span className="text-sm font-extrabold text-slate-900">Total Payable</span>
+                  <span className="text-xl font-black text-teal-700 font-mono">
+                    ₹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Payment Status Footer */}
-            <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Payment Status</span>
-              <span className={`px-2.5 py-1 rounded-md text-xs font-bold capitalize ${['success', 'collected_by_vendor', 'paid'].includes(booking.paymentStatus?.toLowerCase()) ? 'bg-green-100 text-green-700' :
-                booking.paymentStatus === 'pending' || booking.paymentStatus === 'plan_covered' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                }`}>
-                {['success', 'collected_by_vendor', 'paid', 'paid_online'].includes(booking.paymentStatus?.toLowerCase()) ? 'Paid' :
-                  booking.paymentStatus === 'plan_covered' ? 'Processing Bill' :
-                    booking.paymentStatus?.replace(/_/g, ' ') || 'Pending'}
+            {/* Payment Method Bar */}
+            <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payment Status</span>
+              <span className={`px-2.5 py-1 rounded-xl text-xs font-extrabold uppercase ${
+                ['success', 'collected_by_vendor', 'paid'].includes((booking.paymentStatus || '').toLowerCase())
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-amber-100 text-amber-800'
+              }`}>
+                {['success', 'collected_by_vendor', 'paid'].includes((booking.paymentStatus || '').toLowerCase())
+                  ? '✓ Paid'
+                  : booking.paymentMethod === 'plan_benefit'
+                  ? 'Plan Covered'
+                  : 'Pending'}
               </span>
             </div>
-            </section>
-          )}
+          </div>
 
-          {/* Action Card for Awaiting Payment */}
-          {booking.status === 'awaiting_payment' && (
-            <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 p-6 space-y-4">
-              <div className="text-center mb-4">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <FiDollarSign className="w-8 h-8 text-orange-600" />
-                </div>
-                <h3 className="text-lg font-bold text-black">Payment Required</h3>
-                <p className="text-sm text-gray-500">The professional has completed the work. Please choose a payment method to verify and close your booking.</p>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                <button
-                  onClick={handleOnlinePayment}
-                  className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
-                  style={{ background: themeColors.button }}
-                >
-                  <FiDollarSign className="w-5 h-5" />
-                  Pay Online (Razorpay/UPI)
-                </button>
-
-                <button
-                  onClick={handlePayAtHome}
-                  className="w-full py-4 rounded-xl font-bold text-gray-700 bg-gray-100 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                >
-                  <FiHome className="w-5 h-5" />
-                  Pay at Home (After Service)
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Support */}
-            {/* Support */}
-            <button
-              onClick={() => {
-                const phone = supportInfo.phone || '+919999999999';
-                if (phone) {
-                  // Use native anchor click for better WebView compatibility
-                  const link = document.createElement('a');
-                  link.href = `tel:${phone.replace(/[^\d+]/g, '')}`;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                } else {
-                  toast.error('Support phone number not available');
-                }
-              }}
-              className="col-span-1 flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95"
+          {/* 6. ACTION & SUPPORT CLUSTER */}
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <a
+              href={`tel:${supportInfo.phone}`}
+              className="flex items-center justify-center gap-2 py-3.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs rounded-2xl transition-all active:scale-95 shadow-2xs"
             >
-              <FiPhone className="w-6 h-6 text-gray-700" />
-              <span className="text-sm font-bold text-gray-700">Call Support</span>
-            </button>
-            <button
-              onClick={() => {
-                const email = supportInfo.email || 'help@homestr.in';
-                const link = document.createElement('a');
-                link.href = `mailto:${email}`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }}
-              className="col-span-1 flex flex-col items-center justify-center gap-2 p-4 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-colors active:scale-95"
-            >
-              <FiMail className="w-6 h-6 text-gray-700" />
-              <span className="text-sm font-bold text-gray-700">Email Help</span>
-            </button>
+              <FiPhone className="w-4 h-4 text-teal-600" />
+              <span>Call Helpline</span>
+            </a>
 
-            {/* Cancel */}
-            {!['cancelled', 'completed', 'work_done'].includes(booking.status?.toLowerCase()) && (
+            <a
+              href={`mailto:${supportInfo.email}`}
+              className="flex items-center justify-center gap-2 py-3.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs rounded-2xl transition-all active:scale-95 shadow-2xs"
+            >
+              <FiMail className="w-4 h-4 text-blue-600" />
+              <span>Email Support</span>
+            </a>
+
+            {!isCancelled && !isCompleted && (
               <button
+                type="button"
                 onClick={handleCancelBooking}
-                className="col-span-2 py-4 rounded-2xl text-red-600 font-bold text-sm bg-red-50 border border-red-100 hover:bg-red-100 transition-colors active:scale-95"
+                className="col-span-2 py-3.5 px-4 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-extrabold text-xs uppercase tracking-wider rounded-2xl transition-all active:scale-95 cursor-pointer"
               >
                 Cancel Booking
               </button>
             )}
           </div>
 
-          {/* Rate & Review (Conditional) */}
-          {/* Rate & Review (Conditional) */}
+          {/* Customer Reviews Section */}
           <ReviewCard
             booking={booking}
             onWriteReview={() => setShowRatingModal(true)}
           />
-
         </main>
 
-        {/* Rating Modal */}
+        {/* Global Rating Modal */}
         <RatingModal
           isOpen={showRatingModal}
           onClose={() => {
@@ -1510,7 +999,7 @@ const BookingDetails = () => {
           }}
           onSubmit={handleRateSubmit}
           bookingName={booking.serviceName || booking.serviceCategory || 'Service'}
-          workerName={booking.workerId?.name || (booking.assignedTo?.name === 'You (Self)' ? 'Service Provider' : (booking.assignedTo?.name || 'Worker'))}
+          workerName={booking.workerId?.name || (booking.assignedTo?.name === 'You (Self)' ? 'Service Provider' : (booking.assignedTo?.name || 'Expert'))}
         />
 
         {/* Payment Verification Modal */}
@@ -1521,6 +1010,7 @@ const BookingDetails = () => {
           onPayOnline={handleOnlinePayment}
         />
 
+        {/* Cancellation Confirmation Dialog */}
         <ConfirmDialog
           isOpen={confirmDialog.isOpen}
           onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
@@ -1544,4 +1034,3 @@ const BookingDetails = () => {
 };
 
 export default BookingDetails;
-
