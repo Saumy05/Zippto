@@ -16,7 +16,6 @@ const toAssetUrl = (url) => {
     const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
     return `${base}/${url.replace(/^\/+/, '')}`;
   }
-  // Frontend public static assets
   return url;
 };
 
@@ -79,7 +78,7 @@ const ManageServices = () => {
   const [selectedServices, setSelectedServices] = useState([]);
   const [selectedSubServices, setSelectedSubServices] = useState([]);
   const [expandedCategoryId, setExpandedCategoryId] = useState(null);
-  const [workDistance, setWorkDistance] = useState(10); // Working distance in KM
+  const [workDistance, setWorkDistance] = useState(10);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -206,7 +205,20 @@ const ManageServices = () => {
         }
 
         setCategories(fetchedCats);
-        setSelectedServices(vendorServices);
+
+        // Normalize raw vendorServices to match canonical category slugs
+        const normalizedInitialServices = Array.from(new Set(
+          vendorServices.map(s => {
+            const match = fetchedCats.find(c =>
+              c.slug.toLowerCase() === String(s).toLowerCase() ||
+              c.title.toLowerCase() === String(s).toLowerCase() ||
+              (c.id && String(c.id).toLowerCase() === String(s).toLowerCase())
+            );
+            return match ? match.slug : String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+          }).filter(Boolean)
+        ));
+
+        setSelectedServices(normalizedInitialServices);
 
         // Auto-initialize selectedSubServices with all sub-service IDs if vendorSkills is empty
         if (Array.isArray(vendorSkills) && vendorSkills.length > 0) {
@@ -214,7 +226,7 @@ const ManageServices = () => {
         } else {
           const allInitialSubIds = [];
           fetchedCats.forEach(cat => {
-            if (vendorServices.includes(cat.slug) || vendorServices.includes(cat.id)) {
+            if (normalizedInitialServices.includes(cat.slug) || normalizedInitialServices.includes(cat.id)) {
               (cat.subServices || []).forEach(s => allInitialSubIds.push(s.id));
             }
           });
@@ -231,43 +243,58 @@ const ManageServices = () => {
     fetchData();
   }, []);
 
-  const handleSelectCategory = (slug) => {
-    if (!selectedServices.includes(slug)) {
-      setSelectedServices(prev => [...prev, slug]);
+  const isCategorySelected = (cat) => {
+    const cSlug = (cat.slug || cat.id || '').toLowerCase().trim();
+    const cTitle = (cat.title || '').toLowerCase().trim();
+    return selectedServices.some(s => {
+      const item = String(s).toLowerCase().trim();
+      return item === cSlug || item === cTitle;
+    });
+  };
+
+  const handleSelectCategory = (cat) => {
+    const catSlug = (cat.slug || cat.id).toLowerCase().trim();
+    
+    if (!isCategorySelected(cat)) {
+      setSelectedServices(prev => Array.from(new Set([...prev, catSlug])));
       // Auto opt-in all sub-services for this category
-      const targetCat = categories.find(c => c.slug === slug || c.id === slug);
-      const subList = targetCat?.subServices || DEFAULT_SUB_SERVICES[slug] || [];
+      const subList = cat.subServices || DEFAULT_SUB_SERVICES[catSlug] || [];
       const subIds = subList.map(s => s.id);
       setSelectedSubServices(prev => Array.from(new Set([...prev, ...subIds])));
-      toast.success('Category added to your offered services!');
+      toast.success(`${cat.title} added!`);
     }
     setIsDropdownOpen(false);
     setSearchQuery('');
   };
 
-  const handleRemoveCategory = (slug) => {
-    setSelectedServices(prev => prev.filter(s => s !== slug));
-    const targetCat = categories.find(c => c.slug === slug || c.id === slug);
-    const subList = targetCat?.subServices || DEFAULT_SUB_SERVICES[slug] || [];
+  const handleRemoveCategory = (cat) => {
+    const catSlug = (cat.slug || cat.id || '').toLowerCase().trim();
+    const catTitle = (cat.title || '').toLowerCase().trim();
+
+    setSelectedServices(prev => prev.filter(s => {
+      const item = String(s).toLowerCase().trim();
+      return item !== catSlug && item !== catTitle;
+    }));
+
+    const subList = cat.subServices || DEFAULT_SUB_SERVICES[catSlug] || [];
     const subIds = subList.map(s => s.id);
     setSelectedSubServices(prev => prev.filter(id => !subIds.includes(id)));
-    toast.success('Category removed');
+    toast.success(`${cat.title} removed`);
   };
 
   const handleToggleSubService = (subId, categorySubList = []) => {
     setSelectedSubServices(prev => {
       let current = [...prev];
-      // If current is empty, initialize with all sub-services from the category list
       if (current.length === 0 && categorySubList.length > 0) {
         current = categorySubList.map(s => s.id);
       }
 
       const exists = current.includes(subId);
       if (exists) {
-        toast.success('Sub-service opted out');
+        toast.success('Sub-service disabled');
         return current.filter(id => id !== subId);
       } else {
-        toast.success('Sub-service opted in');
+        toast.success('Sub-service enabled');
         return [...current, subId];
       }
     });
@@ -276,23 +303,27 @@ const ManageServices = () => {
   const handleSave = async () => {
     try {
       setIsSaving(true);
+      const cleanServices = Array.from(new Set(selectedServices.map(s => String(s).trim()).filter(Boolean)));
+      const cleanSkills = Array.from(new Set(selectedSubServices.map(s => String(s).trim()).filter(Boolean)));
+
       const res = await vendorAuthService.updateProfile({
-        serviceCategory: selectedServices,
-        skills: selectedSubServices,
+        serviceCategory: cleanServices,
+        skills: cleanSkills,
         serviceRange: workDistance
       });
 
       if (res.success) {
         toast.success('Offered services & work distance updated!');
         const stored = JSON.parse(localStorage.getItem('vendorData') || '{}');
-        stored.service = selectedServices;
-        stored.skills = selectedSubServices;
+        stored.service = cleanServices;
+        stored.categories = cleanServices;
+        stored.skills = cleanSkills;
         stored.serviceRange = workDistance;
         if (!stored.settings) stored.settings = {};
         stored.settings.serviceRange = workDistance;
         localStorage.setItem('vendorData', JSON.stringify(stored));
         window.dispatchEvent(new Event('vendorProfileUpdated'));
-        setTimeout(() => navigate('/vendor/profile'), 800);
+        setTimeout(() => navigate('/vendor/profile'), 700);
       } else {
         toast.error(res.message || 'Failed to update services');
       }
@@ -306,15 +337,12 @@ const ManageServices = () => {
 
   // Filter available categories for dropdown (exclude already selected)
   const availableCategories = categories.filter(cat => 
-    !selectedServices.includes(cat.slug) && 
-    !selectedServices.includes(cat.title) &&
+    !isCategorySelected(cat) &&
     cat.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Active selected category objects
-  const activeCategoryObjects = categories.filter(cat => 
-    selectedServices.includes(cat.slug) || selectedServices.includes(cat.title)
-  );
+  const activeCategoryObjects = categories.filter(cat => isCategorySelected(cat));
 
   if (isLoading) return <LogoLoader />;
 
@@ -383,7 +411,7 @@ const ManageServices = () => {
                   key={preset}
                   type="button"
                   onClick={() => setWorkDistance(preset)}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     workDistance === preset
                       ? 'bg-indigo-600 text-white shadow-sm scale-105'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -415,7 +443,7 @@ const ManageServices = () => {
             <button
               type="button"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full bg-white border border-gray-200 hover:border-teal-500 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              className="w-full bg-white border border-gray-200 hover:border-teal-500 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-teal-500/20 cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
@@ -423,7 +451,7 @@ const ManageServices = () => {
                 </div>
                 <span className="text-sm font-semibold text-gray-600">
                   {availableCategories.length > 0
-                    ? 'Select category from dropdown...'
+                    ? 'Select category to add...'
                     : 'All categories selected'}
                 </span>
               </div>
@@ -458,7 +486,7 @@ const ManageServices = () => {
                     availableCategories.map((cat) => (
                       <div
                         key={cat.id}
-                        onClick={() => handleSelectCategory(cat.slug)}
+                        onClick={() => handleSelectCategory(cat)}
                         className="flex items-center justify-between p-3.5 hover:bg-teal-50/60 cursor-pointer transition-colors group"
                       >
                         <div className="flex items-center gap-3">
@@ -537,7 +565,7 @@ const ManageServices = () => {
                           <button
                             type="button"
                             onClick={() => setExpandedCategoryId(isExpanded ? null : cat.id)}
-                            className="px-2.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-bold flex items-center gap-1 transition-colors"
+                            className="px-2.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
                           >
                             <span>{subList.length} Sub-services</span>
                             {isExpanded ? <FiChevronUp className="w-3.5 h-3.5" /> : <FiChevronDown className="w-3.5 h-3.5" />}
@@ -547,8 +575,8 @@ const ManageServices = () => {
                         {/* Remove Category Button */}
                         <button
                           type="button"
-                          onClick={() => handleRemoveCategory(cat.slug)}
-                          className="p-2 rounded-xl bg-gray-50 hover:bg-rose-50 text-gray-400 hover:text-rose-600 transition-colors"
+                          onClick={() => handleRemoveCategory(cat)}
+                          className="p-2 rounded-xl bg-gray-50 hover:bg-rose-50 text-gray-400 hover:text-rose-600 transition-colors cursor-pointer"
                           title="Remove Category"
                         >
                           <FiTrash2 className="w-4 h-4" />
@@ -621,7 +649,7 @@ const ManageServices = () => {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full py-3.5 px-6 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-98"
+            className="w-full py-3.5 px-6 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-98 cursor-pointer"
             style={{ backgroundColor: themeColors.button }}
           >
             {isSaving ? (

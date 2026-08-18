@@ -142,14 +142,12 @@ const updateProfile = async (req, res) => {
 
     // Handle multiple service categories
     if (serviceCategory !== undefined) {
-      if (Array.isArray(serviceCategory)) {
-        vendor.service = serviceCategory;
-        vendor.categories = serviceCategory; // Sync categories field too
-      } else if (typeof serviceCategory === 'string') {
-        // If string, likely single value or comma separated
-        vendor.service = [serviceCategory];
-        vendor.categories = [serviceCategory];
-      }
+      const rawList = Array.isArray(serviceCategory) ? serviceCategory : (serviceCategory ? [serviceCategory] : []);
+      const cleanServices = Array.from(new Set(
+        rawList.map(s => String(s).trim()).filter(Boolean)
+      ));
+      vendor.service = cleanServices;
+      vendor.categories = cleanServices; // Sync categories field too
     }
 
     // Handle service range
@@ -160,7 +158,8 @@ const updateProfile = async (req, res) => {
 
     // Handle skills
     if (skills !== undefined) {
-      vendor.skills = Array.isArray(skills) ? skills : [];
+      const rawSkills = Array.isArray(skills) ? skills : (skills ? [skills] : []);
+      vendor.skills = Array.from(new Set(rawSkills.map(s => String(s).trim()).filter(Boolean)));
     }
     // If aadharDocument exists and is not empty, update it
     if (aadharDocument || aadharNumber) {

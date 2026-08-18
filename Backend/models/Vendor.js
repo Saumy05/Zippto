@@ -50,28 +50,28 @@ const vendorSchema = new mongoose.Schema({
   aadhar: {
     number: {
       type: String,
-      required: [true, 'Please provide Aadhar number'],
-      trim: true
+      trim: true,
+      default: ''
     },
     document: {
       type: String, // Cloudinary URL (Front Side)
-      required: [true, 'Please upload Aadhar Front document']
+      default: ''
     },
     backDocument: {
       type: String, // Cloudinary URL (Back Side)
-      required: [true, 'Please upload Aadhar Back document']
+      default: ''
     }
   },
   pan: {
     number: {
       type: String,
-      required: [true, 'Please provide PAN number'],
       trim: true,
-      uppercase: true
+      uppercase: true,
+      default: ''
     },
     document: {
       type: String, // Cloudinary URL
-      required: [true, 'Please upload PAN document']
+      default: ''
     }
   },
   otherDocuments: [{
