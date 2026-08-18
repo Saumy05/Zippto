@@ -336,11 +336,15 @@ const BookingMap = () => {
     }
   }, [currentLocation, isLoaded, coords]);
 
-  // Sync Map Heading & Tilt for Navigation Feel
+  // Sync Map Heading, Tilt & Zoom for Navigation Feel
   useEffect(() => {
-    if (map && currentLocation && heading && isAutoCenter) {
-      map.setHeading(heading);
-      map.setTilt(45); // 45 degree tilt for 3D feel
+    if (map && currentLocation && isAutoCenter) {
+      map.panTo(currentLocation);
+      map.setZoom(19); // Close-up 3D navigation zoom
+      map.setTilt(55); // 3D driving perspective
+      if (heading !== null && heading !== undefined) {
+        map.setHeading(heading);
+      }
     }
   }, [map, heading, isAutoCenter, currentLocation]);
 
@@ -368,10 +372,25 @@ const BookingMap = () => {
           transform: 'translate(-50%, -50%)',
           cursor: 'pointer'
         }}
-        className="pointer-events-none"
+        className="pointer-events-none flex items-center justify-center"
       >
+        {/* Soft forward direction beam */}
         <div
-          className="relative z-20 w-16 h-16"
+          className="absolute z-10 w-24 h-24 pointer-events-none flex items-center justify-center"
+          style={{
+            transform: `rotate(${heading}deg)`,
+            transition: 'transform 0.3s ease-out'
+          }}
+        >
+          <div
+            className="w-16 h-20 -mt-10 bg-gradient-to-t from-blue-600/30 via-blue-400/15 to-transparent rounded-t-full pointer-events-none"
+            style={{ clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)' }}
+          />
+        </div>
+
+        {/* Rider / Vehicle Icon */}
+        <div
+          className="relative z-20 w-14 h-14"
           style={{
             transform: `rotate(${heading}deg)`,
             transition: 'transform 0.3s ease-out'
@@ -380,11 +399,13 @@ const BookingMap = () => {
           <img
             src="/MapRider.png"
             alt="Rider"
-            className="w-full h-full object-contain drop-shadow-xl rounded-full"
+            className="w-full h-full object-contain drop-shadow-2xl"
           />
         </div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-teal-500/30 rounded-full animate-ping z-10 pointer-events-none"></div>
-        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-12 h-3 bg-black/20 blur-sm rounded-full z-0"></div>
+
+        {/* Subtle pulsing GPS ring */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-blue-500/25 rounded-full animate-ping pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-blue-600 rounded-full border-2 border-white shadow-md"></div>
       </div>
     </OverlayView>
   ), [animatedLocation, heading]);
@@ -458,24 +479,24 @@ const BookingMap = () => {
       {/* 1. TOP GOOGLE MAPS NAVIGATION HUD (EXACT SCREENSHOT MATCH) */}
       <div className="absolute top-3 left-3 right-3 z-30 pointer-events-none flex flex-col items-start">
         {/* Main Turn Maneuver Bar */}
-        <div className="w-full bg-[#005f56] text-white rounded-2xl shadow-[0_10px_35px_rgba(0,0,0,0.35)] p-4 flex items-center gap-4 pointer-events-auto border border-teal-600/30">
+        <div className="w-full bg-[#005f56] text-white rounded-2xl shadow-[0_12px_36px_rgba(0,0,0,0.35)] p-3.5 sm:p-4 flex items-center gap-3.5 pointer-events-auto border border-teal-600/30">
           {/* Maneuver Arrow Icon */}
-          <div className="w-11 h-11 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center shrink-0">
             {maneuverTarget.type === 'right' ? (
-              <FiCornerUpRight className="w-9 h-9 text-white stroke-[3]" />
+              <FiCornerUpRight className="w-8 h-8 sm:w-9 sm:h-9 text-white stroke-[3]" />
             ) : maneuverTarget.type === 'left' ? (
-              <FiCornerUpLeft className="w-9 h-9 text-white stroke-[3]" />
+              <FiCornerUpLeft className="w-8 h-8 sm:w-9 sm:h-9 text-white stroke-[3]" />
             ) : (
-              <FiArrowUp className="w-9 h-9 text-white stroke-[3]" />
+              <FiArrowUp className="w-8 h-8 sm:w-9 sm:h-9 text-white stroke-[3]" />
             )}
           </div>
 
           {/* Maneuver Text (towards Road Name) */}
-          <div className="flex-1 min-w-0">
-            <span className="text-xs font-semibold text-[#80cbc4] tracking-wide mr-1.5 lowercase">
+          <div className="flex-1 min-w-0 pr-1">
+            <span className="text-xs font-bold text-[#80cbc4] tracking-wide mr-1.5 lowercase">
               {maneuverTarget.prefix}
             </span>
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate leading-tight inline">
+            <h2 className="text-base sm:text-xl font-black text-white tracking-tight truncate leading-snug inline">
               {maneuverTarget.name}
             </h2>
           </div>
@@ -483,7 +504,7 @@ const BookingMap = () => {
 
         {/* Subsequent Next Step "Then ↰" */}
         {nextStep && (
-          <div className="bg-[#004d40] text-teal-100 px-4 py-1 rounded-b-xl text-xs font-extrabold flex items-center gap-2 shadow-md ml-3 border-t border-teal-700/50 pointer-events-auto">
+          <div className="bg-[#004d40] text-teal-100 px-3.5 py-1 rounded-b-xl text-xs font-extrabold flex items-center gap-2 shadow-md ml-3 border-t border-teal-700/50 pointer-events-auto">
             <span className="italic font-serif font-bold text-teal-200">Then</span>
             {nextStep.maneuver?.includes('right') ? (
               <FiCornerUpRight className="w-3.5 h-3.5 text-white stroke-[2.5]" />
@@ -556,13 +577,14 @@ const BookingMap = () => {
         <GoogleMap
           mapContainerStyle={{ width: '100%', height: '100%' }}
           defaultCenter={defaultCenter}
-          defaultZoom={18}
+          defaultZoom={19}
           onLoad={map => {
             setMap(map);
             map.setTilt(55);
             if (currentLocation) {
               map.setCenter(currentLocation);
-              map.setZoom(18);
+              map.setZoom(19);
+              if (heading) map.setHeading(heading);
             }
           }}
           onDragStart={() => setIsAutoCenter(false)}
@@ -617,7 +639,7 @@ const BookingMap = () => {
           {riderMarker}
         </GoogleMap>
 
-        {/* 2. RIGHT FLOATING GOOGLE MAPS ACTION BUTTONS (SCREENSHOT MATCH) */}
+        {/* 2. RIGHT FLOATING COMPASS CONTROL */}
         <div className="absolute top-28 right-3.5 flex flex-col items-center gap-3 z-30 pointer-events-auto">
           {/* Compass Needle Button */}
           <button
@@ -626,12 +648,12 @@ const BookingMap = () => {
               if (map && currentLocation) {
                 map.setHeading(0);
                 map.setTilt(55);
-                map.setZoom(18);
+                map.setZoom(19);
                 map.panTo(currentLocation);
                 setHeading(0);
               }
             }}
-            className="w-12 h-12 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
+            className="w-12 h-12 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center justify-center active:scale-90 transition-all cursor-pointer hover:bg-slate-50"
             title="Reset North Compass"
           >
             <div
@@ -644,53 +666,9 @@ const BookingMap = () => {
               </svg>
             </div>
           </button>
-
-          {/* Search / Route Overview Button */}
-          <button
-            type="button"
-            onClick={() => {
-              if (map && coords && currentLocation) {
-                const bounds = new window.google.maps.LatLngBounds();
-                bounds.extend(currentLocation);
-                bounds.extend(coords);
-                map.fitBounds(bounds, { top: 90, bottom: 200, left: 50, right: 50 });
-                map.setTilt(0);
-              }
-            }}
-            className="w-12 h-12 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center justify-center text-slate-700 active:scale-90 transition-all cursor-pointer hover:bg-slate-50"
-            title="Search / Full Route Overview"
-          >
-            <FiSearch className="w-5 h-5 stroke-[2.5]" />
-          </button>
-
-          {/* Mute Voice Guidance Audio Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setIsMuted(!isMuted);
-              toast.success(isMuted ? 'Voice guidance on' : 'Voice guidance muted');
-            }}
-            className="w-12 h-12 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border border-slate-100 flex items-center justify-center text-slate-700 active:scale-90 transition-all cursor-pointer hover:bg-slate-50"
-            title={isMuted ? 'Unmute voice' : 'Mute voice'}
-          >
-            {isMuted ? <FiVolumeX className="w-5 h-5 stroke-[2.5]" /> : <FiVolume2 className="w-5 h-5 stroke-[2.5]" />}
-          </button>
-
-          {/* Incident Report Button */}
-          <button
-            type="button"
-            onClick={() => toast.success('Traffic condition reported')}
-            className="bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] px-3.5 py-2.5 rounded-full border border-slate-100 flex items-center gap-1.5 text-slate-800 font-black text-xs active:scale-95 transition-all cursor-pointer hover:bg-slate-50"
-            title="Report Incident"
-          >
-            <div className="w-5 h-5 rounded-md bg-amber-500 text-white flex items-center justify-center text-[11px] font-black shadow-xs">
-              +
-            </div>
-            <span>Report</span>
-          </button>
         </div>
 
-        {/* 3. BOTTOM-LEFT FLOATING SPEEDOMETER & RECENTER (SCREENSHOT MATCH) */}
+        {/* 3. BOTTOM-LEFT FLOATING SPEEDOMETER & RECENTER */}
         <div className="absolute bottom-28 left-3.5 z-30 flex items-center gap-2 pointer-events-auto">
           {/* Real GPS Speedometer */}
           <div className="w-14 h-14 rounded-full bg-white shadow-[0_6px_20px_rgba(0,0,0,0.15)] border-2 border-slate-200 flex flex-col items-center justify-center">
@@ -705,7 +683,7 @@ const BookingMap = () => {
               setIsAutoCenter(true);
               if (map && currentLocation) {
                 map.panTo(currentLocation);
-                map.setZoom(18);
+                map.setZoom(19);
                 map.setTilt(55);
                 map.setHeading(heading || 0);
               }
