@@ -544,12 +544,8 @@ const BookingMap = () => {
     tiltControl: false,
     isFractionalZoomEnabled: true,
     mapTypeControl: false,
-    mapTypeControlOptions: {
-      mapTypeIds: []
-    },
     streetViewControl: false,
-    fullscreenControl: false,
-    styles: mapStyles
+    fullscreenControl: false
   }), []);
 
   if (!isLoaded || loading) return <div className="h-screen bg-gray-100 flex items-center justify-center"><div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div></div>;
