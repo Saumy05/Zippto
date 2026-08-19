@@ -7,31 +7,42 @@ const admin = require('firebase-admin');
 const path = require('path');
 
 // Initialize Firebase Admin SDK
+const fs = require('fs');
+
 // Initialize Firebase Admin SDK
 let serviceAccount;
 
 try {
   if (process.env.FIREBASE_CONFIG) {
     // Production: Use environment variable JSON content
-    serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+    serviceAccount = typeof process.env.FIREBASE_CONFIG === 'string' 
+      ? JSON.parse(process.env.FIREBASE_CONFIG) 
+      : process.env.FIREBASE_CONFIG;
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     // Alternative Env Var
     serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
   } else {
-    // Local: Use file path
+    // Local: Use file path if exists
     const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || './config/firebase-service-account.json';
-    serviceAccount = require(path.resolve(__dirname, '..', serviceAccountPath));
+    const resolvedPath = path.resolve(__dirname, '..', serviceAccountPath);
+    if (fs.existsSync(resolvedPath)) {
+      serviceAccount = require(resolvedPath);
+    }
   }
 } catch (error) {
-  console.error('❌ Failed to load Firebase credentials:', error.message);
+  console.warn('⚠️ Firebase credentials could not be loaded:', error.message);
 }
 
 // Initialize only if not already initialized
 if (!admin.apps.length && serviceAccount) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-  console.log('✅ Firebase Admin SDK initialized');
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log('✅ Firebase Admin SDK initialized successfully');
+  } catch (initErr) {
+    console.warn('⚠️ Firebase Admin initialization warning:', initErr.message);
+  }
 }
 
 /**

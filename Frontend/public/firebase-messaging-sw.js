@@ -140,6 +140,27 @@ messaging.onBackgroundMessage((payload) => {
       ];
       break;
 
+    case 'referral_reward':
+    case 'referral_bonus':
+      notificationTitle = data.title || notification.title || '🎉 Referral Bonus Received!';
+      notificationBody = data.body || notification.body || '₹50 has been added to your Zippto wallet.';
+      requireInteraction = true;
+      vibrate = [300, 150, 300];
+      actions = [
+        { action: 'view_wallet', title: '💰 View Wallet' }
+      ];
+      break;
+
+    case 'bill_generated':
+      notificationTitle = data.title || notification.title || '🧾 Service Bill Generated';
+      notificationBody = data.body || notification.body || 'Your professional has generated the service bill. Tap to review.';
+      requireInteraction = true;
+      vibrate = [300, 100, 300];
+      actions = [
+        { action: 'pay_online', title: '💳 Pay Now' }
+      ];
+      break;
+
     case 'booking_completed':
       notificationTitle = data.title || notification.title || '🎉 Booking Completed!';
       notificationBody = data.body || notification.body || 'Service has been completed successfully.';
@@ -232,6 +253,18 @@ self.addEventListener('notificationclick', (event) => {
       // View details
       if (data.bookingId) {
         urlToOpen = data.link || `/user/booking/${data.bookingId}`;
+      }
+      break;
+
+    case 'view_wallet':
+      urlToOpen = '/user/wallet';
+      break;
+
+    case 'pay_online':
+      if (data.bookingId) {
+        urlToOpen = `/user/booking/${data.bookingId}`;
+      } else {
+        urlToOpen = '/user/bookings';
       }
       break;
 
