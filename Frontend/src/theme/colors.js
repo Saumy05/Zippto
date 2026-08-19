@@ -51,11 +51,21 @@ const workerTheme = {
   brand: brand
 };
 
+// Admin Theme Colors
+const adminTheme = {
+  backgroundGradient: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
+  gradient: brand.gradient,
+  headerGradient: '#0F172A',
+  button: '#2563EB',
+  icon: '#2563EB',
+  brand: brand
+};
+
 // Default theme (for backward compatibility)
 const themeColors = userTheme;
 
 // Export all themes
-export { userTheme, vendorTheme, workerTheme, brand };
+export { userTheme, vendorTheme, workerTheme, adminTheme, brand };
 export default themeColors;
 
 

@@ -25,8 +25,7 @@ const Plans = lazy(() => import('../pages/Plans/Plans'));
 const Settlements = lazy(() => import('../pages/Settlements'));
 const Reviews = lazy(() => import('../pages/Reviews'));
 const CMS = lazy(() => import('../pages/CMS'));
-
-
+const CustomizationSettings = lazy(() => import('../pages/CustomizationSettings'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -68,6 +67,8 @@ const AdminRoutes = () => {
           <Route path="cms" element={<CMS />} />
           <Route path="settlements/*" element={<Settlements />} />
           <Route path="settings/*" element={<Settings />} />
+          <Route path="customization-settings" element={<CustomizationSettings />} />
+          <Route path="customization" element={<CustomizationSettings />} />
         </Route>
       </Routes>
     </Suspense>

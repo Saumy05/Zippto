@@ -4,7 +4,8 @@ import {
   FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, 
   FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, 
   FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck, FiSearch, FiChevronDown, 
-  FiGift, FiToggleRight, FiToggleLeft, FiBell, FiBriefcase, FiCreditCard, FiCpu, FiCheckCircle, FiXCircle 
+  FiGift, FiToggleRight, FiToggleLeft, FiBell, FiBriefcase, FiCreditCard, FiCpu, FiCheckCircle, FiXCircle,
+  FiArrowLeft, FiSliders
 } from 'react-icons/fi';
 import { getSettings, updateSettings, updateAdminProfile, getAdminProfile, getAllAdmins, createAdmin, deleteAdmin, updateAdminDetails, toggleAdminStatus } from '../../services/settingsService';
 import { cityService } from '../../services/cityService';
@@ -55,15 +56,11 @@ const AdminSettings = () => {
     isOnlinePaymentEnabled: true
   });
 
-  // Centralized Feature Toggles State
+  // Centralized Feature Toggles State (Essential Platform Toggles)
   const [featureToggles, setFeatureToggles] = useState({
     isReferralEnabled: true,
-    isOnlinePaymentEnabled: true,
-    isCashPaymentEnabled: true,
-    workerAutoAssignment: true,
     isPushNotificationEnabled: true,
-    isChatEnabled: true,
-    isB2BEnabled: true
+    isChatEnabled: true
   });
 
   // Referral Program State
@@ -177,15 +174,11 @@ const AdminSettings = () => {
             searchRadius: res.settings.searchRadius || 10,
             isOnlinePaymentEnabled: res.settings.isOnlinePaymentEnabled !== undefined ? res.settings.isOnlinePaymentEnabled : true
           });
-          // Load feature toggles
+          // Load feature toggles (3 Essential Platform Toggles)
           setFeatureToggles({
             isReferralEnabled: res.settings.isReferralEnabled !== false,
-            isOnlinePaymentEnabled: res.settings.isOnlinePaymentEnabled !== false,
-            isCashPaymentEnabled: res.settings.isCashPaymentEnabled !== false,
-            workerAutoAssignment: res.settings.workerAutoAssignment !== false,
             isPushNotificationEnabled: res.settings.isPushNotificationEnabled !== false,
-            isChatEnabled: res.settings.isChatEnabled !== false,
-            isB2BEnabled: res.settings.isB2BEnabled !== false
+            isChatEnabled: res.settings.isChatEnabled !== false
           });
 
           // Load referral settings
@@ -447,10 +440,14 @@ const AdminSettings = () => {
     }
   };
 
-  const handleToggleLanguage = (code) => {
-    const updated = languages.map(l => l.code === code ? { ...l, isEnabled: l.isEnabled === false ? true : false } : l);
+  const handleDeleteLanguage = (code, name) => {
+    if (code === 'en') {
+      return toast.error('English is the default primary language and cannot be deleted.');
+    }
+    const updated = languages.filter(l => l.code !== code);
     setLanguages(updated);
     handleSaveLanguages(updated);
+    toast.success(`Removed ${name || code} from platform languages`);
   };
 
   const handlePresetSelect = (presetCode) => {
@@ -703,7 +700,7 @@ const AdminSettings = () => {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
 
       {/* Header / Breadcrumb */}
-      {activeView !== 'main' && (
+      {activeView !== 'main' && activeView !== 'customization' && activeView !== 'toggles' && (
         <button onClick={() => setActiveView('main')}
           className="flex items-center gap-2 text-gray-500 hover:text-gray-800 mb-4 transition-colors">
           <span className="text-lg">←</span> Back to Settings
@@ -787,275 +784,150 @@ const AdminSettings = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="space-y-6 max-w-5xl mx-auto"
+            className="space-y-6 max-w-6xl mx-auto"
           >
-            {/* Header Switchboard Hero Banner */}
-            <div className="bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute -top-16 -right-16 w-48 h-48 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
-              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold mb-3 border border-rose-500/30">
-                    <FiToggleRight className="w-4 h-4" />
-                    <span>Platform Customization Hub</span>
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Customization Settings</h1>
-                  <p className="mt-2 text-sm text-slate-300 max-w-xl">
-                    Centrally customize and turn key platform features and modules ON or OFF in real-time. Toggling features off immediately hides user interfaces and pauses backend rewards without server downtime.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 self-start sm:self-auto">
-                  <div className="text-center px-3 border-r border-white/15">
-                    <span className="text-2xl font-black text-white block">
-                      {Object.values(featureToggles).filter(Boolean).length}
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Active</span>
-                  </div>
-                  <div className="text-center px-3">
-                    <span className="text-2xl font-black text-slate-300 block">
-                      {Object.values(featureToggles).filter(v => !v).length}
-                    </span>
-                    <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Paused</span>
-                  </div>
-                </div>
+            {/* Sleek Breadcrumb Back Button */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setActiveView('main')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-all shadow-2xs active:scale-95 cursor-pointer"
+              >
+                <FiArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Settings</span>
+              </button>
+              <div className="text-xs text-gray-500 font-medium hidden sm:block">
+                Settings &gt; Customization Switchboard
               </div>
             </div>
 
-            {/* Feature Switches Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 1. Referral & Invite & Earn Program */}
-              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isReferralEnabled ? 'border-amber-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`p-3 rounded-xl ${featureToggles.isReferralEnabled ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400'}`}>
-                      <FiGift className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">Referral & Invite Program</h3>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isReferralEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {featureToggles.isReferralEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleFeatureToggle('isReferralEnabled', 'Referral & Invite Program')}
-                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isReferralEnabled ? 'bg-amber-500' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isReferralEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
+            {/* Main White Card Container */}
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200/90 shadow-2xs space-y-4">
+              {/* Section Heading Inside Card */}
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center gap-1.5 text-gray-800 font-bold text-xs sm:text-sm">
+                  <FiSliders className="w-3.5 h-3.5 text-gray-600" />
+                  <span>Manage All Toggles Here</span>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed mb-4">
-                  Allows customers to share their unique code (ZIP-XXXXX) and earn wallet bonuses when their friends complete bookings.
-                </p>
+                <div className="text-[10px] font-bold px-2.5 py-0.5 bg-gray-100 text-gray-700 rounded-full border border-gray-200/60">
+                  {Object.values(featureToggles).filter(Boolean).length} / 3 Enabled
+                </div>
+              </div>
 
-                {/* Sub Controls when active */}
-                {featureToggles.isReferralEnabled && (
-                  <form onSubmit={handleReferralSave} className="pt-4 border-t border-amber-100 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] font-bold text-gray-600 mb-1">Referrer Reward</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
+              {/* 3-Column Compact Platform Toggle Grid (Referral, Push Notifications, In-App Chat) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {/* 1. Referral & Invite Program */}
+                <div className="bg-[#F9FAFB] hover:bg-white rounded-xl p-3.5 border border-gray-200/80 hover:border-gray-300 transition-all shadow-2xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-xs sm:text-[13px] font-bold text-gray-900 leading-tight">Referral & Invite Program</h3>
+                      <button
+                        type="button"
+                        onClick={() => handleFeatureToggle('isReferralEnabled', 'Referral & Invite Program')}
+                        className={`relative w-9 h-5 rounded-full transition-colors duration-300 shrink-0 cursor-pointer ${
+                          featureToggles.isReferralEnabled ? 'bg-[#10B981]' : 'bg-[#D1D5DB]'
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                            featureToggles.isReferralEnabled ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-gray-500 leading-snug mt-1.5 font-normal">
+                      Global toggle to enable/disable automated referral rewards and bonus engine.
+                    </p>
+                  </div>
+
+                  {featureToggles.isReferralEnabled && (
+                    <form onSubmit={handleReferralSave} className="mt-2.5 pt-2 border-t border-gray-200/70 space-y-1.5">
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <div>
+                          <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Referrer (₹)</label>
                           <input
                             type="number"
                             name="referralRewardAmount"
+                            min="0"
                             value={referralSettings.referralRewardAmount}
                             onChange={handleReferralChange}
-                            min="0"
-                            className="w-full pl-7 pr-3 py-2 text-xs font-bold bg-amber-50/50 border border-amber-200 rounded-lg outline-none focus:border-amber-500"
+                            className="w-full px-2 py-1 text-xs font-bold bg-white border border-gray-200 rounded-md outline-none focus:border-emerald-500"
                           />
                         </div>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-bold text-gray-600 mb-1">Referee Welcome Bonus</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
+                        <div>
+                          <label className="block text-[9px] font-bold text-gray-500 uppercase mb-0.5">Referee (₹)</label>
                           <input
                             type="number"
                             name="refereeRewardAmount"
+                            min="0"
                             value={referralSettings.refereeRewardAmount}
                             onChange={handleReferralChange}
-                            min="0"
-                            className="w-full pl-7 pr-3 py-2 text-xs font-bold bg-amber-50/50 border border-amber-200 rounded-lg outline-none focus:border-amber-500"
+                            className="w-full px-2 py-1 text-xs font-bold bg-white border border-gray-200 rounded-md outline-none focus:border-emerald-500"
                           />
                         </div>
                       </div>
-                    </div>
-                    <div className="flex justify-end">
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={referralLoading}
+                          className="px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                        >
+                          {referralLoading ? <div className="w-2.5 h-2.5 border border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-2.5 h-2.5" />}
+                          Save ₹
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+
+                {/* 2. Push Notification */}
+                <div className="bg-[#F9FAFB] hover:bg-white rounded-xl p-3.5 border border-gray-200/80 hover:border-gray-300 transition-all shadow-2xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-xs sm:text-[13px] font-bold text-gray-900 leading-tight">Push Notification Broadcast</h3>
                       <button
-                        type="submit"
-                        disabled={referralLoading}
-                        className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-60 cursor-pointer shadow-xs"
+                        type="button"
+                        onClick={() => handleFeatureToggle('isPushNotificationEnabled', 'Push Notification')}
+                        className={`relative w-9 h-5 rounded-full transition-colors duration-300 shrink-0 cursor-pointer ${
+                          featureToggles.isPushNotificationEnabled ? 'bg-[#10B981]' : 'bg-[#D1D5DB]'
+                        }`}
                       >
-                        {referralLoading ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-3.5 h-3.5" />}
-                        Save Rewards
+                        <div
+                          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                            featureToggles.isPushNotificationEnabled ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
                       </button>
                     </div>
-                  </form>
-                )}
-              </div>
-
-              {/* 2. Online Digital Payments */}
-              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isOnlinePaymentEnabled ? 'border-indigo-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`p-3 rounded-xl ${featureToggles.isOnlinePaymentEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
-                      <FiCreditCard className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">Online Payments (Gateway)</h3>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isOnlinePaymentEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {featureToggles.isOnlinePaymentEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
-                      </span>
-                    </div>
+                    <p className="text-[11px] text-gray-500 leading-snug mt-1.5 font-normal">
+                      Controls real-time Firebase device push notification alerts for booking updates.
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleFeatureToggle('isOnlinePaymentEnabled', 'Online Payments')}
-                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isOnlinePaymentEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isOnlinePaymentEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Accept UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards, NetBanking, and Wallets via Razorpay gateway at checkout.
-                </p>
-              </div>
 
-              {/* 3. Cash on Delivery (COD) */}
-              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isCashPaymentEnabled ? 'border-green-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`p-3 rounded-xl ${featureToggles.isCashPaymentEnabled ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                      <FiDollarSign className="w-6 h-6" />
+                {/* 3. In-App Chat Messaging */}
+                <div className="bg-[#F9FAFB] hover:bg-white rounded-xl p-3.5 border border-gray-200/80 hover:border-gray-300 transition-all shadow-2xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-xs sm:text-[13px] font-bold text-gray-900 leading-tight">In-App Chat Messaging</h3>
+                      <button
+                        type="button"
+                        onClick={() => handleFeatureToggle('isChatEnabled', 'In-App Chat Messaging')}
+                        className={`relative w-9 h-5 rounded-full transition-colors duration-300 shrink-0 cursor-pointer ${
+                          featureToggles.isChatEnabled ? 'bg-[#10B981]' : 'bg-[#D1D5DB]'
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                            featureToggles.isChatEnabled ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
                     </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">Cash on Delivery (Direct Cash)</h3>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isCashPaymentEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {featureToggles.isCashPaymentEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
-                      </span>
-                    </div>
+                    <p className="text-[11px] text-gray-500 leading-snug mt-1.5 font-normal">
+                      Controls live customer-technician in-app chat modal during active jobs.
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleFeatureToggle('isCashPaymentEnabled', 'Cash on Delivery')}
-                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isCashPaymentEnabled ? 'bg-green-600' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isCashPaymentEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Allow customers to pay physical cash directly to the service professional upon completion. Turning off enforces 100% digital payment.
-                </p>
-              </div>
-
-              {/* 4. Worker Auto-Assignment Engine */}
-              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.workerAutoAssignment ? 'border-blue-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`p-3 rounded-xl ${featureToggles.workerAutoAssignment ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
-                      <FiCpu className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">Worker Auto-Assignment Engine</h3>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.workerAutoAssignment ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {featureToggles.workerAutoAssignment ? 'Active (Live)' : 'Paused (Turned Off)'}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleFeatureToggle('workerAutoAssignment', 'Worker Auto-Assignment')}
-                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.workerAutoAssignment ? 'bg-blue-600' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.workerAutoAssignment ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Automatically broadcasts rejected or timed-out bookings to the next nearest service worker without requiring manual admin intervention.
-                </p>
-              </div>
-
-              {/* 5. Production Push Notifications (FCM) */}
-              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isPushNotificationEnabled ? 'border-purple-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`p-3 rounded-xl ${featureToggles.isPushNotificationEnabled ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400'}`}>
-                      <FiBell className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">Push Notifications Broadcast</h3>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isPushNotificationEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {featureToggles.isPushNotificationEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleFeatureToggle('isPushNotificationEnabled', 'Push Notifications')}
-                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isPushNotificationEnabled ? 'bg-purple-600' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isPushNotificationEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Dispatches background mobile and desktop push notifications via Firebase Cloud Messaging for order status, tracking, and rewards.
-                </p>
-              </div>
-
-              {/* 6. Live In-App Chat */}
-              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isChatEnabled ? 'border-teal-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`p-3 rounded-xl ${featureToggles.isChatEnabled ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-400'}`}>
-                      <FiMessageCircle className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">In-App Chat Messaging</h3>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isChatEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {featureToggles.isChatEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleFeatureToggle('isChatEnabled', 'In-App Chat')}
-                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isChatEnabled ? 'bg-teal-600' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isChatEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Enables real-time socket chat modal between customers and service technicians during active job tracking.
-                </p>
-              </div>
-
-              {/* 7. B2B Corporate Requirements Portal */}
-              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isB2BEnabled ? 'border-sky-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3.5">
-                    <div className={`p-3 rounded-xl ${featureToggles.isB2BEnabled ? 'bg-sky-100 text-sky-600' : 'bg-gray-100 text-gray-400'}`}>
-                      <FiBriefcase className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">B2B Corporate Enquiries</h3>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isB2BEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {featureToggles.isB2BEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleFeatureToggle('isB2BEnabled', 'B2B Corporate Enquiries')}
-                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isB2BEnabled ? 'bg-sky-600' : 'bg-gray-300'}`}
-                  >
-                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isB2BEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Accepts bulk commercial requirements, office maintenance contracts, and facility management lead submissions.
-                </p>
               </div>
             </div>
           </motion.div>
@@ -1077,16 +949,6 @@ const AdminSettings = () => {
 
                 <form onSubmit={handleFinancialSave} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Visit Charges (₹)</label>
-                      <input type="number" name="visitedCharges" value={financialSettings.visitedCharges} onChange={handleFinancialChange}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Vendor Cash Limit (₹)</label>
-                      <input type="number" name="vendorCashLimit" value={financialSettings.vendorCashLimit} onChange={handleFinancialChange}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                    </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Service GST (%)</label>
                       <input type="number" name="serviceGstPercentage" value={financialSettings.serviceGstPercentage} onChange={handleFinancialChange}
@@ -1542,24 +1404,22 @@ const AdminSettings = () => {
                 </div>
               </div>
 
-              {/* Languages Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Languages Grid - Direct Add/Delete Model */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {languages.map((lang) => {
-                  const isEnabled = lang.isEnabled !== false;
+                  const isPrimary = lang.code === 'en';
                   return (
                     <div
                       key={lang.code}
-                      className={`bg-white rounded-2xl p-5 border-2 transition-all flex items-center justify-between shadow-2xs ${
-                        isEnabled ? 'border-gray-100 hover:border-sky-200' : 'border-gray-100 bg-gray-50/50 opacity-60'
-                      }`}
+                      className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all flex items-center justify-between shadow-2xs"
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl shrink-0">
+                        <div className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-xl shrink-0">
                           {lang.flag || '🌐'}
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="text-base font-extrabold text-gray-900 truncate">
+                            <h4 className="text-sm sm:text-base font-extrabold text-gray-900 truncate">
                               {lang.nativeName}
                             </h4>
                             <span className="px-1.5 py-0.2 bg-gray-100 text-gray-600 text-[10px] font-black rounded uppercase">
@@ -1572,21 +1432,21 @@ const AdminSettings = () => {
                         </div>
                       </div>
 
-                      {/* Toggle Switch */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleLanguage(lang.code)}
-                        className={`w-12 h-6.5 rounded-full p-0.5 transition-colors relative cursor-pointer ${
-                          isEnabled ? 'bg-sky-600' : 'bg-gray-300'
-                        }`}
-                        title={isEnabled ? 'Click to Disable' : 'Click to Enable'}
-                      >
-                        <div
-                          className={`w-5.5 h-5.5 rounded-full bg-white shadow-xs transition-transform transform ${
-                            isEnabled ? 'translate-x-5.5' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
+                      {/* Action: Primary Badge or Delete Button */}
+                      {isPrimary ? (
+                        <span className="px-2.5 py-1 bg-sky-50 text-sky-700 text-[11px] font-bold rounded-lg border border-sky-100 shrink-0">
+                          Primary
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLanguage(lang.code, lang.name)}
+                          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all border border-gray-100 hover:border-red-100 shrink-0 cursor-pointer group shadow-2xs"
+                          title={`Delete ${lang.name}`}
+                        >
+                          <FiTrash2 className="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors" />
+                        </button>
+                      )}
                     </div>
                   );
                 })}

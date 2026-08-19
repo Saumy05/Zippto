@@ -264,36 +264,31 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline }) => 
                   {!configLoading && isOnlinePaymentEnabled ? (
                     <button
                       onClick={onPayOnline}
-                      className="w-full py-3.5 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                      className="w-full py-3.5 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer hover:bg-black"
                     >
-                      Pay Online Securely
+                      Pay Online Securely (UPI / Cards / NetBanking)
                     </button>
                   ) : (
                     !configLoading && (
                       <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex items-start gap-2">
                         <FiAlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
                         <p className="text-[10px] font-bold text-amber-800 uppercase tracking-tight">
-                           Online payment temporarily unavailable. Please pay by cash.
+                           Online gateway temporarily unavailable. Please retry or use wallet.
                         </p>
                       </div>
                     )
                   )}
 
-                  <div className="relative py-2 text-center">
-                    <span className="bg-white px-2 text-[10px] font-bold text-slate-400 relative z-10 uppercase tracking-wider">OR</span>
-                    <div className="absolute top-1/2 left-0 right-0 h-px bg-slate-100 z-0"></div>
-                  </div>
-
-                  {/* Cash Code */}
+                  {/* Service Completion OTP */}
                   {(booking.customerConfirmationOTP || booking.paymentOtp) && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
-                      <p className="text-xs font-bold text-slate-700 mb-2">Paying Cash? Share Code</p>
-                      <div className="bg-white border-2 border-dashed border-slate-300 rounded-lg py-2 px-4 inline-block mb-1">
-                        <span className="text-2xl font-black font-mono text-slate-900 tracking-[0.2em]">
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center mt-3">
+                      <p className="text-xs font-bold text-slate-700 mb-2">Job Completion Verification Code</p>
+                      <div className="bg-white border-2 border-dashed border-emerald-300 rounded-lg py-2 px-4 inline-block mb-1">
+                        <span className="text-2xl font-black font-mono text-emerald-700 tracking-[0.2em]">
                           {booking.customerConfirmationOTP || booking.paymentOtp || '....'}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-1">Share with professional to confirm cash payment</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Share with professional to verify job completion</p>
                     </div>
                   )}
                 </>

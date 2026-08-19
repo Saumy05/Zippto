@@ -1163,32 +1163,16 @@ const BillingPage = () => {
                 {(paymentMode && booking.status === 'completed') && (
                   <div>
                     <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
-                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paymentMode === 'cash' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                        {paymentMode === 'cash' ? <FiDollarSign /> : <MdQrCode />}
+                      <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-blue-50 text-blue-600">
+                        <MdQrCode />
                       </span>
                       Payment Method
                     </h4>
                     <div className="flex justify-between text-sm pl-2 font-black text-gray-900 uppercase tracking-tight">
                       <span>Status</span>
-                      <span className={paymentMode === 'cash' ? 'text-emerald-600' : 'text-blue-600'}>
-                        {paymentMode === 'cash' ? 'Cash Collected' : 'Qr Online'}
+                      <span className="text-emerald-600">
+                        Paid Online (UPI / Card)
                       </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Wallet Limit Warning */}
-                {willExceedCashLimit && (
-                  <div className="mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                      <FiClock className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-amber-800">Wallet Limit Warning</p>
-                      <p className="text-[10px] text-amber-600 leading-normal mt-0.5">
-                        Collecting this cash bill will exceed your net limit (₹{(walletInfo?.cashLimit || 10000).toLocaleString()}). 
-                        Your account will be temporarily blocked from new jobs until settled.
-                      </p>
                     </div>
                   </div>
                 )}
@@ -1291,39 +1275,15 @@ const BillingPage = () => {
                 Back
               </button>
 
-              {/* Payment Options Grid for Step 5 */}
-              <div className="flex-[2] grid grid-cols-2 gap-2">
-                {/* Cash/OTP Option - Show if either cash mode or QR generated OTP */}
-                {(isOtpSent && paymentMode === 'cash') ? (
-                  <button
-                    onClick={() => setShowOtpModal(true)}
-                    disabled={otpLoading || qrLoading}
-                    className="py-3 bg-gray-900 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all text-[10px]"
-                  >
-                    <FiKey className="w-4 h-4" />
-                    <span>Enter OTP</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleSendOTP}
-                    disabled={otpLoading || qrLoading}
-                    className="py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50 text-[10px]"
-                  >
-                    <FiDollarSign className="w-4 h-4" />
-                    <span>Pay in Cash</span>
-                  </button>
-                )}
-
-                {/* Online Option */}
-                <button
-                  onClick={handleOnlinePayment}
-                  disabled={otpLoading || qrLoading}
-                  className="py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 active:scale-95 transition-all disabled:opacity-50 text-[10px]"
-                >
-                  <MdQrCode className="w-4 h-4" />
-                  <span>{qrLoading ? '...' : 'Online (QR)'}</span>
-                </button>
-              </div>
+              {/* Online Payment CTA for Step 5 */}
+              <button
+                onClick={handleOnlinePayment}
+                disabled={otpLoading || qrLoading}
+                className="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 text-sm cursor-pointer"
+              >
+                <MdQrCode className="w-5 h-5" />
+                <span>{qrLoading ? 'Generating QR...' : 'Collect Online via UPI QR'}</span>
+              </button>
             </>
           )
         )}

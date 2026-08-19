@@ -86,7 +86,7 @@ const HelpSupport = () => {
         },
         {
           q: 'What payment options are supported?',
-          a: 'We accept UPI (GPay, PhonePe, Paytm), Credit/Debit cards, Net Banking, Zippto Wallet, and Cash after service completion.'
+          a: 'We accept 100% secure digital payments including UPI (Google Pay, PhonePe, Paytm), Credit/Debit cards, Net Banking, and Zippto Wallet.'
         },
       ]
     },

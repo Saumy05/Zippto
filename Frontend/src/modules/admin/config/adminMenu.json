@@ -75,7 +75,7 @@
     ]
   },
   {
-    "title": "User Catalog",
+    "title": "Service Catalog",
     "route": "/admin/user-categories",
     "allowedRoles": [
       "super_admin",
@@ -87,24 +87,6 @@
       "Manage Brands",
       "Manage Services"
     ]
-  },
-  {
-    "title": "Vendor Services",
-    "route": "/admin/user-categories/vendor-services",
-    "allowedRoles": [
-      "super_admin",
-      "admin"
-    ],
-    "children": []
-  },
-  {
-    "title": "Vendor Parts",
-    "route": "/admin/user-categories/vendor-parts",
-    "allowedRoles": [
-      "super_admin",
-      "admin"
-    ],
-    "children": []
   },
   {
     "title": "Reports",
