@@ -6,7 +6,7 @@ const referralService = require('../../services/referralService');
  */
 const getReferralInfo = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?._id || req.user?.id;
     const data = await referralService.getReferralDashboard(userId);
     res.status(200).json({
       success: true,
@@ -27,7 +27,7 @@ const getReferralInfo = async (req, res) => {
  */
 const applyReferral = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?._id || req.user?.id;
     const { referralCode } = req.body;
 
     const result = await referralService.applyReferralCode(userId, referralCode);
