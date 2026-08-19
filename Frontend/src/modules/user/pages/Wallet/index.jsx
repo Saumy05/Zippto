@@ -16,7 +16,6 @@ import {
   FiDollarSign,
   FiInfo
 } from 'react-icons/fi';
-import { HiSparkles } from 'react-icons/hi';
 import { MdAccountBalance, MdOutlineQrCodeScanner } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { walletService } from '../../../../services/walletService';
@@ -229,36 +228,6 @@ const Wallet = () => {
         </header>
 
         <div className="max-w-2xl mx-auto px-4 pt-5 space-y-4">
-
-          {/* ── Referral Banner ── */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1C2541] to-[#0B132B] p-5 shadow-md">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-28 h-28 bg-amber-300/5 rounded-full blur-xl -ml-8 -mb-8 pointer-events-none" />
-
-            <div className="relative z-10 flex items-center justify-between gap-4">
-              <div className="space-y-1.5">
-                <span className="text-[9px] font-extrabold tracking-[0.15em] text-amber-400 uppercase">
-                  Referral Rewards
-                </span>
-                <h2 className="text-base font-black text-white leading-snug">
-                  Invite Friends & Earn <span className="text-amber-400">₹100</span>
-                </h2>
-                <p className="text-[11px] text-slate-400 font-medium">
-                  Earn wallet cash directly on every friend’s completed booking.
-                </p>
-                <button
-                  onClick={() => navigate('/user/rewards')}
-                  className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-[#0B132B] font-extrabold text-[10px] uppercase tracking-wider transition-all active:scale-95 shadow-md cursor-pointer"
-                >
-                  <HiSparkles className="w-3 h-3" />
-                  View Referral Program
-                </button>
-              </div>
-              <div className="w-16 h-16 rounded-2xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0 text-3xl shadow-lg">
-                🎁
-              </div>
-            </div>
-          </div>
 
           {/* ── Main Hero Balance Card ── */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1C2541] to-slate-900 p-5 sm:p-6 shadow-md border border-slate-700/50">
