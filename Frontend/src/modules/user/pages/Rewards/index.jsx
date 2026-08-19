@@ -147,6 +147,19 @@ const Rewards = () => {
       </div>
 
       <main className="max-w-xl mx-auto px-4 pt-4 space-y-4">
+        {/* Paused Program Notice */}
+        {referralData && referralData.isReferralEnabled === false && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+            <FiAlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-xs font-bold text-amber-900">Referral Program is Temporarily Paused</h3>
+              <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
+                New invites and referral applications are currently paused by administration. All previously earned wallet balances remain 100% active and usable on your bookings.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Hero Banner Card */}
         <div 
           className="rounded-3xl p-6 text-white relative overflow-hidden shadow-xl"

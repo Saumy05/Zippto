@@ -120,6 +120,11 @@ exports.updateSettings = async (req, res, next) => {
       if (isOnlinePaymentEnabled !== undefined) settings.isOnlinePaymentEnabled = isOnlinePaymentEnabled;
       if (supportedLanguages !== undefined) settings.supportedLanguages = supportedLanguages;
 
+      // Referral Program update
+      if (req.body.isReferralEnabled !== undefined) settings.isReferralEnabled = req.body.isReferralEnabled;
+      if (req.body.referralRewardAmount !== undefined) settings.referralRewardAmount = req.body.referralRewardAmount;
+      if (req.body.refereeRewardAmount !== undefined) settings.refereeRewardAmount = req.body.refereeRewardAmount;
+
       await settings.save();
     }
 

@@ -196,6 +196,22 @@ const settingsSchema = new mongoose.Schema({
   isOnlinePaymentEnabled: {
     type: Boolean,
     default: true
+  },
+
+  // Referral & Invite & Earn Configuration
+  isReferralEnabled: {
+    type: Boolean,
+    default: true
+  },
+  referralRewardAmount: {
+    type: Number,
+    default: 50,
+    min: 0
+  },
+  refereeRewardAmount: {
+    type: Number,
+    default: 50,
+    min: 0
   }
 }, { timestamps: true });
 

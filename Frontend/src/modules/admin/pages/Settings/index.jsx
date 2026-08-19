@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck, FiSearch, FiChevronDown } from 'react-icons/fi';
+import { FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck, FiSearch, FiChevronDown, FiGift } from 'react-icons/fi';
 import { getSettings, updateSettings, updateAdminProfile, getAdminProfile, getAllAdmins, createAdmin, deleteAdmin, updateAdminDetails, toggleAdminStatus } from '../../services/settingsService';
 import { cityService } from '../../services/cityService';
 import { DEFAULT_SUPPORTED_LANGUAGES } from '../../../../context/LanguageContext';
@@ -49,6 +49,14 @@ const AdminSettings = () => {
     searchRadius: 10,
     isOnlinePaymentEnabled: true
   });
+
+  // Referral Program State
+  const [referralSettings, setReferralSettings] = useState({
+    isReferralEnabled: true,
+    referralRewardAmount: 50,
+    refereeRewardAmount: 50
+  });
+  const [referralLoading, setReferralLoading] = useState(false);
 
   // Billing Configuration State
   const [billingSettings, setBillingSettings] = useState({
@@ -153,6 +161,14 @@ const AdminSettings = () => {
             searchRadius: res.settings.searchRadius || 10,
             isOnlinePaymentEnabled: res.settings.isOnlinePaymentEnabled !== undefined ? res.settings.isOnlinePaymentEnabled : true
           });
+          // Load referral settings
+          if (res.settings.isReferralEnabled !== undefined) {
+            setReferralSettings({
+              isReferralEnabled: res.settings.isReferralEnabled,
+              referralRewardAmount: res.settings.referralRewardAmount !== undefined ? res.settings.referralRewardAmount : 50,
+              refereeRewardAmount: res.settings.refereeRewardAmount !== undefined ? res.settings.refereeRewardAmount : 50
+            });
+          }
           // Load billing settings
           setBillingSettings({
             companyName: res.settings.companyName || 'TodayMyDream',
@@ -335,6 +351,36 @@ const AdminSettings = () => {
       toast.error('Failed to update support settings');
     } finally {
       setSupportLoading(false);
+    }
+  };
+
+  // Referral management handlers
+  const handleReferralChange = (e) => {
+    const { name, value } = e.target;
+    setReferralSettings(prev => ({ ...prev, [name]: Number(value) }));
+  };
+
+  const handleReferralToggle = async () => {
+    const newValue = !referralSettings.isReferralEnabled;
+    setReferralSettings(prev => ({ ...prev, isReferralEnabled: newValue }));
+    try {
+      await updateSettings({ isReferralEnabled: newValue });
+      toast.success(newValue ? 'Referral program enabled' : 'Referral program paused');
+    } catch (err) {
+      toast.error('Failed to toggle referral program');
+    }
+  };
+
+  const handleReferralSave = async (e) => {
+    e.preventDefault();
+    setReferralLoading(true);
+    try {
+      await updateSettings(referralSettings);
+      toast.success('Referral settings updated successfully');
+    } catch (error) {
+      toast.error('Failed to update referral settings');
+    } finally {
+      setReferralLoading(false);
     }
   };
 
@@ -916,6 +962,79 @@ const AdminSettings = () => {
                   </div>
 
                 </div>
+              </div>
+
+              {/* Referral & Invite Program Management Card */}
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <FiGift className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-800">Referral & Invite Program</h2>
+                      <p className="text-xs text-gray-500">Manage viral referral rules and wallet bonuses</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${referralSettings.isReferralEnabled ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'}`}>
+                    {referralSettings.isReferralEnabled ? 'Active' : 'Paused'}
+                  </span>
+                </div>
+
+                <form onSubmit={handleReferralSave} className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+                    <div className="flex-1 mr-4">
+                      <p className="font-semibold text-gray-800">Referral Program Status</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Toggle off to immediately pause code generation, invites, and wallet payouts</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleReferralToggle}
+                      className={`relative w-12 h-7 rounded-full transition-all duration-300 cursor-pointer ${referralSettings.isReferralEnabled ? 'bg-amber-500' : 'bg-gray-200'}`}
+                    >
+                      <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${referralSettings.isReferralEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Referrer Reward (₹)</label>
+                      <input
+                        type="number"
+                        name="referralRewardAmount"
+                        value={referralSettings.referralRewardAmount}
+                        onChange={handleReferralChange}
+                        min="0"
+                        className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-amber-500 transition-all font-bold text-gray-800"
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">Given to user who shares their code</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">Referee Welcome Bonus (₹)</label>
+                      <input
+                        type="number"
+                        name="refereeRewardAmount"
+                        value={referralSettings.refereeRewardAmount}
+                        onChange={handleReferralChange}
+                        min="0"
+                        className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-amber-500 transition-all font-bold text-gray-800"
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">Given to invited friend on 1st job</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      disabled={referralLoading}
+                      className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-amber-200 transition-all cursor-pointer"
+                    >
+                      {referralLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
+                      Save Referral Rules
+                    </button>
+                  </div>
+                </form>
               </div>
 
               {/* Support Settings */}
