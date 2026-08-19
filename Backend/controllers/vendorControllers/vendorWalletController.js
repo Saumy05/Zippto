@@ -15,7 +15,7 @@ const { uploadPaymentScreenshot } = require('../../utils/cloudinaryUpload');
 const getWallet = async (req, res) => {
   try {
     const vendorId = req.user.id;
-    const vendor = await Vendor.findById(vendorId).select('wallet name businessName');
+    const vendor = await Vendor.findById(vendorId).select('wallet name businessName bankDetails');
 
     if (!vendor) {
       return res.status(404).json({
@@ -76,13 +76,14 @@ const getWallet = async (req, res) => {
       data: {
         dues,
         earnings,
-        amountDue: dues, // Clarification for frontend but 'dues' is self-explanatory
-        balance: earnings - dues, // Net position for reference (optional)
+        amountDue: dues,
+        balance: earnings - dues,
         totalWithdrawn,
         totalCashCollected,
         totalSettled,
         pendingSettlements,
         cashLimit: vendor.wallet?.cashLimit || 10000,
+        bankDetails: vendor.bankDetails || null,
         vendor: {
           name: vendor.name,
           businessName: vendor.businessName
@@ -297,6 +298,28 @@ const recordCashCollection = async (req, res) => {
     booking.paymentMethod = 'cash';
     await booking.save();
 
+    // 🔔 Notify Customer that Cash Payment has been verified
+    try {
+      const { createNotification } = require('../notificationControllers/notificationController');
+      if (booking.userId) {
+        await createNotification({
+          userId: booking.userId,
+          type: 'payment_received',
+          title: '💵 Payment Received (Cash)',
+          message: `Cash payment of ₹${grandTotal.toLocaleString()} for booking #${booking.bookingNumber} has been received by ${vendor.businessName || vendor.name}. Thank you!`,
+          relatedId: booking._id,
+          relatedType: 'booking',
+          data: {
+            bookingId: booking._id,
+            bookingNumber: booking.bookingNumber,
+            amount: grandTotal
+          }
+        });
+      }
+    } catch (custNotifyErr) {
+      console.error('[CashCollection] Failed to notify customer:', custNotifyErr);
+    }
+
     const newDues = currentDues;
     const newEarnings = currentEarnings;
     const newBalance = newEarnings - newDues;
@@ -455,8 +478,22 @@ const requestWithdrawal = async (req, res) => {
       });
     }
 
+    // Save verified bank details on vendor model for future autofill
+    if (bankDetails) {
+      vendor.bankDetails = {
+        accountHolderName: bankDetails.accountHolderName || vendor.bankDetails?.accountHolderName || '',
+        bankName: bankDetails.bankName || vendor.bankDetails?.bankName || '',
+        accountNumber: bankDetails.accountNumber || vendor.bankDetails?.accountNumber || '',
+        ifscCode: bankDetails.ifscCode ? bankDetails.ifscCode.toUpperCase() : (vendor.bankDetails?.ifscCode || ''),
+        upiId: bankDetails.upiId || vendor.bankDetails?.upiId || '',
+        isVerified: true
+      };
+      await vendor.save();
+    }
+
     const withdrawal = await Withdrawal.create({
       vendorId,
+      userType: 'vendor',
       amount,
       bankDetails,
       adminNotes: notes,

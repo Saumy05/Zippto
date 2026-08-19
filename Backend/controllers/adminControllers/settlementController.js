@@ -566,15 +566,48 @@ module.exports = {
       const { transactionReference, notes } = req.body;
       const adminId = req.user.id;
 
-      // Fetch global settings for rates
+      const withdrawal = await Withdrawal.findById(withdrawalId);
+      if (!withdrawal) return res.status(404).json({ success: false, message: 'Withdrawal not found' });
+      if (withdrawal.status !== 'pending') return res.status(400).json({ success: false, message: 'Withdrawal is not pending' });
+
+      // Case A: User Withdrawal
+      if (withdrawal.userId) {
+        withdrawal.status = 'approved';
+        withdrawal.processedBy = adminId;
+        withdrawal.processedDate = new Date();
+        withdrawal.transactionReference = transactionReference || 'BANK-TRANSFER';
+        withdrawal.adminNotes = notes;
+        withdrawal.netAmount = withdrawal.amount;
+        await withdrawal.save();
+
+        // Update corresponding ledger transaction
+        await Transaction.findOneAndUpdate(
+          { referenceId: withdrawal._id.toString(), type: 'withdrawal' },
+          {
+            status: 'completed',
+            referenceId: transactionReference || withdrawal._id.toString(),
+            'metadata.transactionReference': transactionReference,
+            'metadata.adminNotes': notes
+          }
+        );
+
+        return res.status(200).json({
+          success: true,
+          message: 'User withdrawal approved and processed successfully',
+          data: {
+            withdrawalId: withdrawal._id,
+            amount: withdrawal.amount,
+            status: 'approved',
+            transactionReference
+          }
+        });
+      }
+
+      // Case B: Vendor Withdrawal
       const Settings = require('../../models/Settings');
       const settings = await Settings.findOne({ type: 'global' });
       const tdsRate = settings?.tdsPercentage || 1;
       const platformFeeRate = settings?.platformFeePercentage || 1;
-
-      const withdrawal = await Withdrawal.findById(withdrawalId);
-      if (!withdrawal) return res.status(404).json({ success: false, message: 'Withdrawal not found' });
-      if (withdrawal.status !== 'pending') return res.status(400).json({ success: false, message: 'Not pending' });
 
       const vendor = await Vendor.findById(withdrawal.vendorId);
       if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -611,7 +644,6 @@ module.exports = {
       await withdrawal.save();
 
       // Record withdrawal payout in earning tracker
-      // We pass the amount that legitimately left platform bounds to Vendor (including TDS tracking separately later if needed)
       recordWithdrawal(new Date(), grossAmount);
 
       // Send Withdrawal Approved Email
@@ -690,7 +722,6 @@ module.exports = {
     }
   },
 
-
   rejectWithdrawal: async (req, res) => {
     try {
       const { withdrawalId } = req.params;
@@ -699,17 +730,40 @@ module.exports = {
 
       const withdrawal = await Withdrawal.findById(withdrawalId);
       if (!withdrawal) return res.status(404).json({ success: false, message: 'Withdrawal not found' });
+      if (withdrawal.status !== 'pending') return res.status(400).json({ success: false, message: 'Withdrawal is not pending' });
 
       withdrawal.status = 'rejected';
       withdrawal.processedBy = adminId;
-      withdrawal.processedAt = new Date();
-      withdrawal.rejectionReason = reason;
+      withdrawal.processedDate = new Date();
+      withdrawal.rejectionReason = reason || 'Rejected by administrator';
       await withdrawal.save();
 
+      // If User Withdrawal: Atomically restore the locked wallet balance
+      if (withdrawal.userId) {
+        await User.findByIdAndUpdate(withdrawal.userId, {
+          $inc: { 'wallet.balance': withdrawal.amount }
+        });
 
+        await Transaction.findOneAndUpdate(
+          { referenceId: withdrawal._id.toString(), type: 'withdrawal' },
+          {
+            status: 'cancelled',
+            description: `Withdrawal Request Rejected: ${reason || 'Admin rejected'} (Funds Restored)`
+          }
+        );
+      }
 
-      res.status(200).json({ success: true, message: 'Withdrawal rejected' });
+      res.status(200).json({
+        success: true,
+        message: 'Withdrawal rejected successfully. Funds restored to user wallet.',
+        data: {
+          withdrawalId: withdrawal._id,
+          status: 'rejected',
+          reason
+        }
+      });
     } catch (error) {
+      console.error('Reject withdrawal error:', error);
       res.status(500).json({ success: false, message: error.message });
     }
   }

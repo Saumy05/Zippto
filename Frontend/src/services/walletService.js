@@ -6,29 +6,34 @@ import api from './api';
  */
 
 export const walletService = {
-  // Get wallet balance
+  // Get wallet balance and financial overview
   getBalance: async () => {
     const response = await api.get('/user/wallet/balance');
     return response.data;
   },
 
-  // Add money to wallet (create Razorpay order)
-  addMoney: async (amount) => {
-    const response = await api.post('/user/wallet/add-money', { amount });
+  // Request wallet withdrawal to Bank or UPI
+  requestWithdrawal: async (data) => {
+    const response = await api.post('/user/wallet/withdraw', data);
     return response.data;
   },
 
-  // Verify wallet top-up payment
-  verifyTopup: async (paymentData) => {
-    const response = await api.post('/user/wallet/verify-topup', paymentData);
+  // Get user's withdrawal requests history
+  getWithdrawals: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+
+    const response = await api.get(`/user/wallet/withdrawals${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
     return response.data;
   },
 
-  // Get wallet transaction history
+  // Get wallet transaction history with filters
   getTransactions: async (params = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page);
     if (params.limit) queryParams.append('limit', params.limit);
+    if (params.type) queryParams.append('type', params.type);
 
     const response = await api.get(`/user/wallet/transactions${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
     return response.data;
@@ -36,4 +41,3 @@ export const walletService = {
 };
 
 export default walletService;
-

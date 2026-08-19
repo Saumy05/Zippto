@@ -147,6 +147,14 @@ const vendorSchema = new mongoose.Schema({
       default: null
     }
   },
+  bankDetails: {
+    accountHolderName: { type: String, default: '' },
+    bankName: { type: String, default: '' },
+    accountNumber: { type: String, default: '' },
+    ifscCode: { type: String, default: '' },
+    upiId: { type: String, default: '' },
+    isVerified: { type: Boolean, default: false }
+  },
   isActive: {
     type: Boolean,
     default: true

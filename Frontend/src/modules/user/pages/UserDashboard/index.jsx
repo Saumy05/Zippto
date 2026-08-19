@@ -295,20 +295,45 @@ const UserDashboard = () => {
     }
   ]);
 
-  // Fetch live categories dynamically from MongoDB API
+  // Fetch live categories & brands dynamically from MongoDB API
   useEffect(() => {
     const fetchLiveCategories = async () => {
       try {
         const catRes = await publicCatalogService.getCategories();
         if (catRes.success && Array.isArray(catRes.categories) && catRes.categories.length > 0) {
+          // Fetch all active brands in parallel to dynamically build subcategories for every category
+          const brandRes = await publicCatalogService.getBrands().catch(() => ({ brands: [] }));
+          const allBrands = brandRes.brands || [];
+
           const liveCats = catRes.categories
             .filter(c => !c.title.toLowerCase().includes('test'))
             .map(c => {
               const config = DEFAULT_CATEGORY_CONFIG[c.slug] || DEFAULT_CATEGORY_CONFIG[c.id] || {};
               const iconPath = c.icon || c.homeIconUrl || config.icon || '/cat_images/electrician.jpg';
-              const subCats = config.subCategories || [
-                { id: c.slug, name: `${c.title} Services`, icon: '⚡' }
-              ];
+
+              // Match brands belonging to this category from MongoDB
+              const matchingBrands = allBrands.filter(b =>
+                (Array.isArray(b.categoryIds) && (b.categoryIds.includes(c.id) || b.categoryIds.includes(c._id))) ||
+                b.categoryId === c.id ||
+                b.categoryId === c._id ||
+                (b.categorySlug && b.categorySlug === c.slug)
+              );
+
+              let subCats = [];
+              if (matchingBrands.length > 0) {
+                subCats = matchingBrands.map(b => ({
+                  id: b.slug || b.id,
+                  name: b.title,
+                  image: toAssetUrl(b.icon || b.imageUrl || b.logo)
+                }));
+              } else if (config.subCategories && config.subCategories.length > 0) {
+                subCats = config.subCategories;
+              } else {
+                subCats = [
+                  { id: `${c.slug || 'cat'}-consult`, name: `Book ${c.title} Consultation`, icon: '📋' },
+                  { id: `${c.slug || 'cat'}-standard`, name: `Standard ${c.title} Service`, icon: '⭐' }
+                ];
+              }
 
               return {
                 id: c.slug || c.id,
@@ -786,7 +811,7 @@ const UserDashboard = () => {
     }
   };
 
-  // Helper to dynamically resolve full service detail template for ANY category
+  // Helper to dynamically resolve full service detail template for ANY category (preset or custom created by admin)
   const resolveCategoryDetail = (category, subCategory) => {
     const catSlug = (category.slug || category.id || category.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
     
@@ -802,14 +827,51 @@ const UserDashboard = () => {
       else if (catSlug.includes('paint')) key = 'painting-service';
       else if (catSlug.includes('construct') || catSlug.includes('renovat')) key = 'construction-renovation';
       else if (catSlug.includes('solar')) key = 'solar-service';
-      else key = 'electrician';
     }
 
-    const template = CATEGORY_CATALOG_REGISTRY[key] || CATEGORY_CATALOG_REGISTRY.electrician;
+    if (key && CATEGORY_CATALOG_REGISTRY[key]) {
+      const template = CATEGORY_CATALOG_REGISTRY[key];
+      return {
+        ...template,
+        title: category.title || template.title,
+        bannerTitle: `${(category.title || template.title).toUpperCase()} SERVICES`
+      };
+    }
+
+    // Dynamic Generator for Brand-New Categories Created by Admin in Database
+    const subList = Array.isArray(category.subCategories) && category.subCategories.length > 0
+      ? category.subCategories
+      : [
+          { id: `${catSlug}-consultation`, name: `${category.title} Consultation`, icon: '📋' },
+          { id: `${catSlug}-standard`, name: `Standard ${category.title} Package`, icon: '⭐' }
+        ];
+
     return {
-      ...template,
-      title: category.title || template.title,
-      bannerTitle: `${(category.title || template.title).toUpperCase()} SERVICES`
+      title: category.title,
+      bannerTitle: `${category.title.toUpperCase()} SERVICES`,
+      rating: '4.8',
+      reviews: '100+ reviews',
+      desc: `Book certified, background-verified ${category.title} professionals with upfront pricing, doorstep inspection, and complete service warranty.`,
+      subGrid: subList.map(sc => ({
+        id: (sc.id || sc.slug || sc.name).toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        name: sc.name || sc.title,
+        image: toAssetUrl(sc.image || category.image || '/cat_electrician_plumber.png')
+      })),
+      detailedSections: subList.map(sc => ({
+        id: (sc.id || sc.slug || sc.name).toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        sectionTitle: sc.name || sc.title,
+        items: [
+          {
+            id: `${catSlug}-${(sc.id || 'service').toLowerCase().replace(/[^a-z0-9]/g, '-')}-item`,
+            title: `${sc.name || sc.title} Doorstep Service`,
+            price: '₹199',
+            rating: '4.8',
+            reviews: '50+ reviews',
+            desc: `Complete professional ${sc.name || sc.title} service with certified tools, safety compliance, and labor guarantee.`,
+            image: toAssetUrl(sc.image || category.image || '/cat_electrician_plumber.png')
+          }
+        ]
+      }))
     };
   };
 

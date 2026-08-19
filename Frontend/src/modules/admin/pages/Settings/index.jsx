@@ -992,33 +992,49 @@ const AdminSettings = () => {
                       <p className="text-[10px] text-gray-400 mt-1">GST rate applied to parts &amp; materials</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Service Payout (%)</label>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label className="text-xs font-semibold text-gray-700 uppercase">Service Payout (%)</label>
+                        <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">
+                          Platform Commission: {100 - (financialSettings.servicePayoutPercentage || 90)}%
+                        </span>
+                      </div>
                       <input type="number" name="servicePayoutPercentage" value={financialSettings.servicePayoutPercentage} onChange={handleFinancialChange}
                         min="0" max="100"
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                      <p className="text-[10px] text-gray-400 mt-1">Vendor keeps this % of service charges</p>
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-semibold" />
+                      <p className="text-[10px] text-gray-400 mt-1">Vendor keeps {financialSettings.servicePayoutPercentage || 90}% of service base price</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Parts Payout (%)</label>
                       <input type="number" name="partsPayoutPercentage" value={financialSettings.partsPayoutPercentage} onChange={handleFinancialChange}
                         min="0" max="100"
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                      <p className="text-[10px] text-gray-400 mt-1">Vendor keeps this % of parts charges</p>
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-semibold" />
+                      <p className="text-[10px] text-gray-400 mt-1">Vendor keeps {financialSettings.partsPayoutPercentage || 100}% of parts charges</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase mb-1.5">Vendor Cash Collection Limit (₹)</label>
+                      <input type="number" name="vendorCashLimit" value={financialSettings.vendorCashLimit} onChange={handleFinancialChange}
+                        min="500" step="500"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-bold text-slate-900" />
+                      <p className="text-[10px] text-gray-400 mt-1">Max unpaid cash dues allowed before auto-locking vendor accounts (default ₹10,000)</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">TDS Percentage (%)</label>
                       <input type="number" name="tdsPercentage" value={financialSettings.tdsPercentage} onChange={handleFinancialChange}
+                        min="0" max="100"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
+                      <p className="text-[10px] text-gray-400 mt-1">TDS deducted on vendor withdrawal payouts (Govt. mandated)</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Platform Fee (%)</label>
                       <input type="number" name="platformFeePercentage" value={financialSettings.platformFeePercentage} onChange={handleFinancialChange}
+                        min="0" max="100"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                      <p className="text-[10px] text-gray-400 mt-1">Fee charged on vendor withdrawals</p>
+                      <p className="text-[10px] text-gray-400 mt-1">Processing charge on vendor payouts</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Cancellation Penalty (₹)</label>
                       <input type="number" name="cancellationPenalty" value={financialSettings.cancellationPenalty} onChange={handleFinancialChange}
+                        min="0"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                     </div>
                     <div className="pt-4 border-t border-gray-100 md:col-span-2">

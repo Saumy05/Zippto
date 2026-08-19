@@ -1,10 +1,20 @@
 const mongoose = require('mongoose');
 
 const withdrawalSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   vendorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',
-    required: true
+    default: null
+  },
+  userType: {
+    type: String,
+    enum: ['user', 'vendor'],
+    default: 'vendor'
   },
   amount: {
     type: Number,
@@ -46,7 +56,7 @@ const withdrawalSchema = new mongoose.Schema({
   // TDS Details (calculated at approval)
   tdsRate: {
     type: Number,
-    default: 2 // Default 2% TDS
+    default: 0
   },
   tdsAmount: {
     type: Number,
@@ -61,11 +71,15 @@ const withdrawalSchema = new mongoose.Schema({
     default: 0
   },
   netAmount: {
-    type: Number, // Amount actually transferred to vendor (amount - tdsAmount - platformFeeAmount)
+    type: Number,
     default: 0
   }
 }, {
   timestamps: true
 });
+
+withdrawalSchema.index({ userId: 1, createdAt: -1 });
+withdrawalSchema.index({ vendorId: 1, createdAt: -1 });
+withdrawalSchema.index({ status: 1 });
 
 module.exports = mongoose.model('Withdrawal', withdrawalSchema);
