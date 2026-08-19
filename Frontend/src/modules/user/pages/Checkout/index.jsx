@@ -1050,14 +1050,18 @@ const Checkout = () => {
   // Assuming "Free under plan" means NO Payment.
   const finalVisitedFee = itemTotal === 0 ? 0 : visitedFee;
 
-  const totalAmount = itemTotal + taxesAndFee + finalVisitedFee;
+  const rawTotalAmount = itemTotal + taxesAndFee + finalVisitedFee;
+  const appliedWalletDiscount = (useWallet && walletBalance > 0 && rawTotalAmount > 0)
+    ? Math.min(walletBalance, rawTotalAmount)
+    : 0;
+  const totalAmount = Math.max(0, rawTotalAmount - appliedWalletDiscount);
   const amountToPay = totalAmount;
 
   // Helper for Free Plan Full Breakdown Display
   // If the booking is free, we still want to show what the Tax/Fee WOULD have been
-  const displayTax = totalAmount === 0 ? Math.round((totalOriginalPrice * gstPercentage) / 100) : taxesAndFee;
-  const displayFee = totalAmount === 0 ? visitedFee : finalVisitedFee;
-  const displaySavings = totalAmount === 0 ? (totalOriginalPrice + displayTax + displayFee) : savings;
+  const displayTax = rawTotalAmount === 0 ? Math.round((totalOriginalPrice * gstPercentage) / 100) : taxesAndFee;
+  const displayFee = rawTotalAmount === 0 ? visitedFee : finalVisitedFee;
+  const displaySavings = rawTotalAmount === 0 ? (totalOriginalPrice + displayTax + displayFee) : savings;
 
   // Date and time slot helper functions
   const getDates = () => {
@@ -1372,6 +1376,29 @@ const Checkout = () => {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-500">Convenience Fee</span>
                 <span className="text-sm font-medium text-slate-700">₹{displayFee.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+
+            {/* Zippto Wallet Balance Application Card */}
+            {walletBalance > 0 && rawTotalAmount > 0 && (
+              <div className="bg-gradient-to-r from-amber-50 to-amber-100/60 border border-amber-200/80 rounded-xl p-3.5 my-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="useWalletBalance"
+                    checked={useWallet}
+                    onChange={(e) => setUseWallet(e.target.checked)}
+                    className="w-4 h-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500 cursor-pointer"
+                  />
+                  <label htmlFor="useWalletBalance" className="text-xs font-semibold text-slate-800 cursor-pointer">
+                    Use Zippto Wallet (<span className="text-amber-700 font-bold">₹{walletBalance.toLocaleString('en-IN')}</span> available)
+                  </label>
+                </div>
+                {useWallet && (
+                  <span className="text-xs font-black text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded-md">
+                    -₹{appliedWalletDiscount.toLocaleString('en-IN')}
+                  </span>
+                )}
               </div>
             )}
 

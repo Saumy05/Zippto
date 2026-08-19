@@ -836,6 +836,14 @@ const getWithdrawals = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Get withdrawals error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch withdrawals'
+    });
+  }
+};
+
 /**
  * Offset / Settle Dues directly from available Earnings
  * POST /api/vendor/wallet/offset-dues

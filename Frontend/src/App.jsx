@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, useLocation } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, useToasterStore, toast } from 'react-hot-toast';
 import AppRoutes from './routes';
 import { SocketProvider } from './context/SocketContext';
 import { CartProvider } from './context/CartContext';
@@ -8,6 +8,20 @@ import { CityProvider } from './context/CityContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
 import { LocationPermissionChecker, LanguageSelectorModal } from './components/common';
+
+// Global component to strictly limit active toasts to maximum 1 at any time
+const SingleToastEnforcer = () => {
+  const { toasts } = useToasterStore();
+
+  useEffect(() => {
+    toasts
+      .filter((t) => t.visible)
+      .slice(1) // Keep only the newest toast (index 0) and dismiss any previous toasts
+      .forEach((t) => toast.dismiss(t.id));
+  }, [toasts]);
+
+  return null;
+};
 
 // Global Scroll to Top component: Clean, instant scroll to top without smooth-scroll conflict jitter
 const ScrollToTop = () => {
@@ -50,6 +64,7 @@ function App() {
                 <AppRoutes />
                 <LocationPermissionChecker />
                 <LanguageSelectorModal />
+                <SingleToastEnforcer />
                 <Toaster
                   position="top-center"
                   reverseOrder={false}

@@ -18,6 +18,7 @@ const SettlementManagement = () => {
   const [vendors, setVendors] = useState([]);
   const [history, setHistory] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
+  const [withdrawalFilter, setWithdrawalFilter] = useState('all'); // 'all' | 'vendor' | 'user'
   const [actionLoading, setActionLoading] = useState(false);
   const [settings, setSettings] = useState(null);
 
@@ -696,23 +697,74 @@ const SettlementManagement = () => {
     )
   );
 
-  const renderWithdrawalsList = () => (
-    withdrawals.length === 0 ? (
-      <div className="text-center py-10">
-        <FiCheck className="w-12 h-12 mx-auto mb-3 text-gray-200" />
-        <p className="text-gray-500 text-sm font-medium">No pending withdrawal requests. All settled!</p>
-      </div>
-    ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {withdrawals.map(request => {
-          const isUser = !!request.userId;
-          const name = isUser ? (request.userId?.name || 'Customer') : (request.vendorId?.name || 'Vendor');
-          const subtitle = isUser
-            ? `Customer • ${request.userId?.email || request.userId?.phone || ''}`
-            : `${request.vendorId?.businessName || 'Vendor'} • ${request.vendorId?.phone || ''}`;
-          const availableBalance = isUser
-            ? (request.userId?.wallet?.balance || 0)
-            : (request.vendorId?.wallet?.earnings || 0);
+  const renderWithdrawalsList = () => {
+    const filteredWithdrawals = withdrawals.filter(w => {
+      if (withdrawalFilter === 'vendor') return !w.userId;
+      if (withdrawalFilter === 'user') return !!w.userId;
+      return true;
+    });
+
+    const vendorCount = withdrawals.filter(w => !w.userId).length;
+    const userCount = withdrawals.filter(w => !!w.userId).length;
+
+    return (
+      <div className="space-y-4">
+        {/* User / Vendor Segmented Filter Pills */}
+        <div className="flex flex-wrap items-center gap-2 bg-gray-100/80 p-1.5 rounded-xl w-fit">
+          <button
+            onClick={() => setWithdrawalFilter('all')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              withdrawalFilter === 'all'
+                ? 'bg-white text-gray-900 shadow-xs'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            All Withdrawals ({withdrawals.length})
+          </button>
+          <button
+            onClick={() => setWithdrawalFilter('vendor')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              withdrawalFilter === 'vendor'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-emerald-700 hover:bg-emerald-50'
+            }`}
+          >
+            <span>🔧 Vendor Payouts</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${withdrawalFilter === 'vendor' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800'}`}>
+              {vendorCount}
+            </span>
+          </button>
+          <button
+            onClick={() => setWithdrawalFilter('user')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              withdrawalFilter === 'user'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-blue-700 hover:bg-blue-50'
+            }`}
+          >
+            <span>👤 Customer Withdrawals</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${withdrawalFilter === 'user' ? 'bg-blue-700 text-white' : 'bg-blue-100 text-blue-800'}`}>
+              {userCount}
+            </span>
+          </button>
+        </div>
+
+        {filteredWithdrawals.length === 0 ? (
+          <div className="text-center py-10 bg-white rounded-xl border border-gray-100">
+            <FiCheck className="w-12 h-12 mx-auto mb-3 text-gray-200" />
+            <p className="text-gray-500 text-sm font-medium">No pending withdrawal requests in this category.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredWithdrawals.map(request => {
+              const isUser = !!request.userId;
+              const name = isUser ? (request.userId?.name || 'Customer') : (request.vendorId?.name || 'Vendor');
+              const subtitle = isUser
+                ? `Customer • ${request.userId?.email || request.userId?.phone || ''}`
+                : `${request.vendorId?.businessName || 'Vendor'} • ${request.vendorId?.phone || ''}`;
+              const availableBalance = isUser
+                ? (request.userId?.wallet?.balance || 0)
+                : (request.vendorId?.wallet?.earnings || 0);
 
           return (
             <div key={request._id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:border-green-200 transition-all group">
@@ -812,8 +864,10 @@ const SettlementManagement = () => {
           );
         })}
       </div>
-    )
-  );
+    )}
+  </div>
+);
+};
 
   return (
     <div className="space-y-6">
