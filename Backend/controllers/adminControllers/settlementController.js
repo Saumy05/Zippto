@@ -534,16 +534,25 @@ module.exports = {
   // Withdrawal functions
   getWithdrawalRequests: async (req, res) => {
     try {
-      const { page = 1, limit = 20 } = req.query;
+      const { page = 1, limit = 20, status = 'pending', userType } = req.query;
       const skip = (parseInt(page) - 1) * parseInt(limit);
 
-      const withdrawals = await Withdrawal.find({ status: 'pending' })
+      const query = {};
+      if (status && status !== 'all') {
+        query.status = status;
+      }
+      if (userType && userType !== 'all') {
+        query.userType = userType;
+      }
+
+      const withdrawals = await Withdrawal.find(query)
         .populate('vendorId', 'name businessName phone wallet.earnings')
-        .sort({ createdAt: 1 })
+        .populate('userId', 'name email phone wallet.balance')
+        .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit));
 
-      const total = await Withdrawal.countDocuments({ status: 'pending' });
+      const total = await Withdrawal.countDocuments(query);
 
       res.status(200).json({
         success: true,

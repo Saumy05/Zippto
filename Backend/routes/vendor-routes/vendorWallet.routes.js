@@ -11,7 +11,8 @@ const {
   getSettlements,
   getWalletSummary,
   requestWithdrawal,
-  getWithdrawals
+  getWithdrawals,
+  offsetDuesFromEarnings
 } = require('../../controllers/vendorControllers/vendorWalletController');
 
 // Validation rules
@@ -37,6 +38,9 @@ router.get('/wallet/transactions', authenticate, isVendor, getTransactions);
 
 // Record cash collection (creates negative entry - vendor owes admin)
 router.post('/wallet/cash-collection', authenticate, isVendor, cashCollectionValidation, recordCashCollection);
+
+// Offset dues from available earnings
+router.post('/wallet/offset-dues', authenticate, isVendor, offsetDuesFromEarnings);
 
 // Request settlement (vendor pays admin)
 router.post('/wallet/settlement', authenticate, isVendor, settlementValidation, requestSettlement);

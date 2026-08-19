@@ -836,11 +836,75 @@ const getWithdrawals = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get withdrawals error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch withdrawals'
+/**
+ * Offset / Settle Dues directly from available Earnings
+ * POST /api/vendor/wallet/offset-dues
+ */
+const offsetDuesFromEarnings = async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+    const vendor = await Vendor.findById(vendorId);
+
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: 'Vendor not found' });
+    }
+
+    const currentDues = vendor.wallet?.dues || 0;
+    const currentEarnings = vendor.wallet?.earnings || 0;
+
+    if (currentDues <= 0) {
+      return res.status(400).json({ success: false, message: 'No dues pending for settlement' });
+    }
+
+    if (currentEarnings <= 0) {
+      return res.status(400).json({ success: false, message: 'No available earnings to offset dues' });
+    }
+
+    const offsetAmount = Math.min(currentDues, currentEarnings);
+
+    // Atomically decrement dues and earnings
+    vendor.wallet.dues = Math.max(0, currentDues - offsetAmount);
+    vendor.wallet.earnings = Math.max(0, currentEarnings - offsetAmount);
+    vendor.wallet.totalSettled = (vendor.wallet.totalSettled || 0) + offsetAmount;
+
+    // Check if vendor can be automatically unblocked
+    if (vendor.wallet.isBlocked && vendor.wallet.dues <= (vendor.wallet.cashLimit || 10000)) {
+      vendor.wallet.isBlocked = false;
+      vendor.wallet.blockReason = null;
+      vendor.wallet.blockedAt = null;
+    }
+
+    await vendor.save();
+
+    // Create immutable Transaction Ledger record
+    await Transaction.create({
+      vendorId: vendor._id,
+      type: 'settlement',
+      amount: offsetAmount,
+      status: 'completed',
+      paymentMethod: 'wallet',
+      description: `Dues ₹${offsetAmount.toLocaleString()} cleared from available online earnings`,
+      metadata: {
+        type: 'earnings_offset',
+        offsetAmount,
+        remainingDues: vendor.wallet.dues,
+        remainingEarnings: vendor.wallet.earnings
+      }
     });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully cleared ₹${offsetAmount.toLocaleString()} dues from your available earnings!`,
+      data: {
+        offsetAmount,
+        dues: vendor.wallet.dues,
+        earnings: vendor.wallet.earnings,
+        isBlocked: vendor.wallet.isBlocked
+      }
+    });
+  } catch (error) {
+    console.error('Offset dues error:', error);
+    res.status(500).json({ success: false, message: 'Failed to offset dues from earnings' });
   }
 };
 
@@ -853,5 +917,6 @@ module.exports = {
   getWalletSummary,
   payWorker,
   requestWithdrawal,
-  getWithdrawals
+  getWithdrawals,
+  offsetDuesFromEarnings
 };

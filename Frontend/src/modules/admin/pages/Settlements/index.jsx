@@ -704,66 +704,113 @@ const SettlementManagement = () => {
       </div>
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {withdrawals.map(request => (
-          <div key={request._id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:border-green-200 transition-all group">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold text-lg">
-                  {request.vendorId?.name?.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">{request.vendorId?.name}</h3>
-                  <p className="text-xs text-gray-500">{request.vendorId?.businessName}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-3xl font-bold text-green-600">₹{request.amount?.toLocaleString()}</p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mt-1">Requested Amount</p>
-              </div>
-            </div>
+        {withdrawals.map(request => {
+          const isUser = !!request.userId;
+          const name = isUser ? (request.userId?.name || 'Customer') : (request.vendorId?.name || 'Vendor');
+          const subtitle = isUser
+            ? `Customer • ${request.userId?.email || request.userId?.phone || ''}`
+            : `${request.vendorId?.businessName || 'Vendor'} • ${request.vendorId?.phone || ''}`;
+          const availableBalance = isUser
+            ? (request.userId?.wallet?.balance || 0)
+            : (request.vendorId?.wallet?.earnings || 0);
 
-            <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Available Earnings</span>
-                <span className="font-bold text-gray-700">₹{request.vendorId?.wallet?.earnings?.toLocaleString() || 0}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Requested Date</span>
-                <span className="font-medium text-gray-700">{formatDate(request.requestDate)}</span>
-              </div>
-              {request.bankDetails && (
-                <div className="pt-2 border-t border-gray-200 mt-2">
-                  <p className="text-xs font-bold text-gray-400 uppercase mb-1">Bank Details</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                    {Object.entries(request.bankDetails).map(([key, val]) => (
-                      <div key={key}>
-                        <span className="text-gray-500 capitalize">{key}:</span> <span className="text-gray-800 font-medium">{val}</span>
-                      </div>
-                    ))}
+          return (
+            <div key={request._id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:border-green-200 transition-all group">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
+                    isUser ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'
+                  }`}>
+                    {name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-gray-900">{name}</h3>
+                      <span className={`px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full ${
+                        isUser ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'
+                      }`}>
+                        {isUser ? 'Customer' : 'Vendor'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">{subtitle}</p>
                   </div>
                 </div>
+                <div className="text-right">
+                  <p className="text-3xl font-bold text-green-600">₹{request.amount?.toLocaleString()}</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mt-1">Requested Payout</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">{isUser ? 'Current Wallet Balance' : 'Available Earnings'}</span>
+                  <span className="font-bold text-gray-700">₹{availableBalance.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500">Requested Date</span>
+                  <span className="font-medium text-gray-700">{formatDate(request.requestDate || request.createdAt)}</span>
+                </div>
+                {request.bankDetails && (
+                  <div className="pt-2 border-t border-gray-200 mt-2">
+                    <p className="text-xs font-bold text-gray-400 uppercase mb-1">
+                      {request.bankDetails.upiId ? 'UPI Details' : 'Bank Account Details'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      {request.bankDetails.upiId && (
+                        <div className="col-span-2">
+                          <span className="text-gray-500 font-medium">UPI ID:</span>{' '}
+                          <span className="text-gray-900 font-bold font-mono">{request.bankDetails.upiId}</span>
+                        </div>
+                      )}
+                      {request.bankDetails.accountHolderName && (
+                        <div>
+                          <span className="text-gray-500">Holder:</span>{' '}
+                          <span className="text-gray-800 font-medium">{request.bankDetails.accountHolderName}</span>
+                        </div>
+                      )}
+                      {request.bankDetails.bankName && (
+                        <div>
+                          <span className="text-gray-500">Bank:</span>{' '}
+                          <span className="text-gray-800 font-medium">{request.bankDetails.bankName}</span>
+                        </div>
+                      )}
+                      {request.bankDetails.accountNumber && (
+                        <div>
+                          <span className="text-gray-500">A/C:</span>{' '}
+                          <span className="text-gray-800 font-mono font-medium">{request.bankDetails.accountNumber}</span>
+                        </div>
+                      )}
+                      {request.bankDetails.ifscCode && (
+                        <div>
+                          <span className="text-gray-500">IFSC:</span>{' '}
+                          <span className="text-gray-800 font-mono font-medium uppercase">{request.bankDetails.ifscCode}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => openApproveWithdrawal(request)}
+                  className="flex-1 py-2.5 bg-green-600 text-white rounded-lg font-bold text-sm shadow-sm hover:bg-green-700 hover:shadow transform active:scale-95 transition-all cursor-pointer"
+                >
+                  Approve &amp; Pay
+                </button>
+                <button
+                  onClick={() => openRejectWithdrawal(request)}
+                  className="flex-1 py-2.5 bg-white border border-red-200 text-red-600 rounded-lg font-bold text-sm hover:bg-red-50 active:scale-95 transition-all cursor-pointer"
+                >
+                  Reject &amp; Refund
+                </button>
+              </div>
+              {request.adminNotes && (
+                <p className="mt-3 text-xs text-gray-500 italic text-center">"{request.adminNotes}"</p>
               )}
             </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => openApproveWithdrawal(request)}
-                className="flex-1 py-2.5 bg-green-600 text-white rounded-lg font-bold text-sm shadow-sm hover:bg-green-700 hover:shadow transform active:scale-95 transition-all"
-              >
-                Approve & Pay
-              </button>
-              <button
-                onClick={() => openRejectWithdrawal(request)}
-                className="flex-1 py-2.5 bg-white border border-red-200 text-red-600 rounded-lg font-bold text-sm hover:bg-red-50 active:scale-95 transition-all"
-              >
-                Reject
-              </button>
-            </div>
-            {request.adminNotes && (
-              <p className="mt-3 text-xs text-gray-500 italic text-center">"{request.adminNotes}"</p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     )
   );
