@@ -39,6 +39,9 @@ const assertBookingChatParticipant = async (bookingId, actor) => {
     throw error;
   }
 
+  const actorId = (actor.id || actor.userId || actor._id || '').toString();
+  const actorRole = (actor.role || actor.userRole || '').toUpperCase();
+
   const booking = await Booking.findById(bookingId)
     .populate('userId', 'name phone profilePicture')
     .populate('vendorId', 'name businessName phone profilePhoto')
@@ -69,6 +72,13 @@ const assertBookingChatParticipant = async (bookingId, actor) => {
   if (actorRole === 'ADMIN' || actorRole === 'SUPER_ADMIN') {
     isAuthorized = true;
     senderName = actor.name || 'Support Admin';
+    const normalizedStatus = (booking.status || '').toLowerCase();
+    return {
+      booking,
+      isReadOnly: !WRITABLE_STATUSES.includes(normalizedStatus),
+      participantRole: 'ADMIN',
+      senderName
+    };
   } else if (actorRole === 'USER') {
     const bookingUserId = (booking.userId?._id || booking.userId || '').toString();
     if (bookingUserId === actorId) {

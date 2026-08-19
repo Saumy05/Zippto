@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiCheckCircle, FiTruck, FiPackage, FiClipboard, FiClock } from 'react-icons/fi';
+import { FiSearch, FiCheckCircle, FiTruck, FiPackage, FiClipboard, FiClock, FiMessageSquare } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { adminBookingService } from '../../../../services/adminBookingService';
 import { toast } from 'react-hot-toast';
+import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 
 const Tracking = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const Tracking = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [chatModalOpen, setChatModalOpen] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -223,10 +225,17 @@ const Tracking = () => {
                 })}
               </div>
 
-              <div className="pt-6 border-t border-gray-100 mt-auto">
+              <div className="pt-6 border-t border-gray-100 mt-auto space-y-2">
+                <button
+                  onClick={() => setChatModalOpen(true)}
+                  className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 rounded-lg border border-indigo-200 transition-colors text-xs flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                >
+                  <FiMessageSquare className="w-4 h-4" />
+                  <span>Audit Live Chat Logs</span>
+                </button>
                 <button
                   onClick={() => navigate(`/admin/bookings/${selectedOrder._id}`)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-colors text-sm"
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-lg transition-colors text-xs cursor-pointer shadow-xs"
                 >
                   View Full Details
                 </button>
@@ -240,6 +249,17 @@ const Tracking = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Admin Real-Time Chat Oversight Drawer / Modal */}
+      {selectedOrder && (
+        <ChatDrawerModal
+          isOpen={chatModalOpen}
+          onClose={() => setChatModalOpen(false)}
+          bookingId={selectedOrder._id}
+          bookingData={selectedOrder}
+          userType="admin"
+        />
+      )}
     </motion.div>
   );
 };

@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiSearch, FiCalendar, FiDownload, FiUserCheck,
   FiClock, FiCheckCircle, FiBox, FiTruck, FiXCircle, FiRefreshCw, FiShoppingBag,
-  FiX, FiAlertTriangle, FiPhone, FiStar, FiMapPin, FiUser
+  FiX, FiAlertTriangle, FiPhone, FiStar, FiMapPin, FiUser, FiMessageSquare
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { adminBookingService } from '../../../../services/adminBookingService';
 import { getDashboardStats } from '../../../../services/adminDashboardService';
+import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 
 const BookingStatsCard = ({ title, count, icon: Icon, colorClass, bgClass }) => (
   <div className={`p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between ${bgClass}`}>
@@ -53,6 +54,10 @@ const Bookings = () => {
   const [loadingVendors, setLoadingVendors] = useState(false);
   const [vendorSearch, setVendorSearch] = useState('');
   const [assigningVendorId, setAssigningVendorId] = useState(null);
+
+  // Live Chat Oversight Modal State
+  const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [selectedBookingForChat, setSelectedBookingForChat] = useState(null);
 
   // Debounce search
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -366,6 +371,18 @@ const Bookings = () => {
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => {
+                              setSelectedBookingForChat(booking);
+                              setChatModalOpen(true);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[11px] font-bold flex items-center gap-1 border border-indigo-100/80 transition-all cursor-pointer shadow-2xs"
+                            title="Audit Live Chat & Messages"
+                          >
+                            <FiMessageSquare className="w-3.5 h-3.5" />
+                            <span>Chat Logs</span>
+                          </button>
+
                           {needsAssignment && (
                             <button
                               onClick={() => handleOpenAssignModal(booking)}
@@ -550,6 +567,18 @@ const Bookings = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Admin Real-Time Chat Oversight Drawer / Modal */}
+      <ChatDrawerModal
+        isOpen={chatModalOpen}
+        onClose={() => {
+          setChatModalOpen(false);
+          setSelectedBookingForChat(null);
+        }}
+        bookingId={selectedBookingForChat?._id}
+        bookingData={selectedBookingForChat}
+        userType="admin"
+      />
     </motion.div>
   );
 };

@@ -27,6 +27,12 @@ const QUICK_REPLIES = {
     "I have reached your doorstep.",
     "Please share the exact landmark.",
     "I'm on my way."
+  ],
+  ADMIN: [
+    "Hello! Support Admin here. How can I assist you with this booking?",
+    "We have reviewed the dispute details and are processing the resolution.",
+    "Please share any additional details or photos here.",
+    "Our team has intervened to assist with this order."
   ]
 };
 
@@ -35,7 +41,7 @@ export default function ChatDrawerModal({
   onClose,
   bookingId,
   bookingData = null,
-  userType = 'user' // 'user' | 'vendor' | 'worker'
+  userType = 'user' // 'user' | 'vendor' | 'worker' | 'admin'
 }) {
   const socket = useSocket();
   const [messages, setMessages] = useState([]);
@@ -61,7 +67,14 @@ export default function ChatDrawerModal({
   // Get current user ID and Role
   const getCurrentUser = useCallback(() => {
     try {
-      if (userType === 'vendor') {
+      if (userType === 'admin') {
+        const aData = JSON.parse(localStorage.getItem('adminUser') || localStorage.getItem('adminData') || '{}');
+        return {
+          id: (aData._id || aData.id || '').toString(),
+          role: 'ADMIN',
+          name: aData.name || 'Support Admin'
+        };
+      } else if (userType === 'vendor') {
         const vData = JSON.parse(localStorage.getItem('vendorData') || '{}');
         return {
           id: (vData._id || vData.id || '').toString(),
