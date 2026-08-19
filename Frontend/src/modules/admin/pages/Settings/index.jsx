@@ -606,91 +606,119 @@ const AdminSettings = () => {
     setServiceMode(config.mode || 'multi');
   }, []);
 
-  // Render Function for Main Settings Menu
+  // Render Function for Main Settings Menu (Compact Sleek Cards)
   const renderMainMenu = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
       {/* Profile Settings Card */}
-      <div onClick={() => setActiveView('profile')}
-        className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-        <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
-          <FiUser className="w-6 h-6 text-blue-600" />
+      <div
+        onClick={() => setActiveView('profile')}
+        className="bg-white p-4 rounded-xl shadow-2xs border border-gray-100 hover:border-blue-200 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
+      >
+        <div>
+          <div className="w-8.5 h-8.5 bg-blue-50 group-hover:bg-blue-100 rounded-lg flex items-center justify-center mb-2.5 transition-colors">
+            <FiUser className="w-4 h-4 text-blue-600" />
+          </div>
+          <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">Profile Settings</h3>
+          <p className="text-xs text-gray-500 leading-snug mt-1">Manage your personal account details and password</p>
         </div>
-        <h3 className="text-lg font-bold text-gray-800 mb-2">Profile Settings</h3>
-        <p className="text-sm text-gray-500">Manage your personal account details and password</p>
       </div>
 
       {/* Financial Settings Card - Super Admin Only */}
       {isSuperAdmin && (
-        <div onClick={() => setActiveView('financial')}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-          <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-100 transition-colors">
-            <FiDollarSign className="w-6 h-6 text-green-600" />
+        <div
+          onClick={() => setActiveView('financial')}
+          className="bg-white p-4 rounded-xl shadow-2xs border border-gray-100 hover:border-emerald-200 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
+        >
+          <div>
+            <div className="w-8.5 h-8.5 bg-emerald-50 group-hover:bg-emerald-100 rounded-lg flex items-center justify-center mb-2.5 transition-colors">
+              <FiDollarSign className="w-4 h-4 text-emerald-600" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">Financial Info</h3>
+            <p className="text-xs text-gray-500 leading-snug mt-1">Configure charges, commissions, and billing details</p>
           </div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Financial Info</h3>
-          <p className="text-sm text-gray-500">Configure charges, commissions, and billing details</p>
         </div>
       )}
 
       {/* Customization Settings Card - Super Admin Only */}
       {isSuperAdmin && (
-        <div onClick={() => setActiveView('customization')}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-          <div className="w-12 h-12 bg-rose-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-rose-100 transition-colors">
-            <FiToggleRight className="w-6 h-6 text-rose-600" />
+        <div
+          onClick={() => setActiveView('customization')}
+          className="bg-white p-4 rounded-xl shadow-2xs border border-gray-100 hover:border-rose-200 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="w-8.5 h-8.5 bg-rose-50 group-hover:bg-rose-100 rounded-lg flex items-center justify-center transition-colors">
+                <FiToggleRight className="w-4 h-4 text-rose-600" />
+              </div>
+              <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-rose-50 text-rose-600 border border-rose-100/80 rounded-md">
+                {Object.values(featureToggles).filter(Boolean).length} Active
+              </span>
+            </div>
+            <h3 className="text-sm font-bold text-gray-900 group-hover:text-rose-600 transition-colors">Customization Settings</h3>
+            <p className="text-xs text-gray-500 leading-snug mt-1">Centrally toggle off or customize platform modules & features</p>
           </div>
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-bold text-gray-800">Customization Settings</h3>
-            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-rose-100 text-rose-700 rounded-full">
-              {Object.values(featureToggles).filter(Boolean).length} Active
-            </span>
-          </div>
-          <p className="text-sm text-gray-500">Centrally toggle off or customize platform modules & features</p>
         </div>
       )}
 
       {/* Support Settings Card - Super Admin Only */}
       {isSuperAdmin && (
-        <div onClick={() => setActiveView('system')}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
-            <FiHeadphones className="w-6 h-6 text-blue-600" />
+        <div
+          onClick={() => setActiveView('system')}
+          className="bg-white p-4 rounded-xl shadow-2xs border border-gray-100 hover:border-indigo-200 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
+        >
+          <div>
+            <div className="w-8.5 h-8.5 bg-indigo-50 group-hover:bg-indigo-100 rounded-lg flex items-center justify-center mb-2.5 transition-colors">
+              <FiHeadphones className="w-4 h-4 text-indigo-600" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">Contact & Support</h3>
+            <p className="text-xs text-gray-500 leading-snug mt-1">Manage customer support email, phone, and WhatsApp contact</p>
           </div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Contact & Support</h3>
-          <p className="text-sm text-gray-500">Manage customer support email, phone, and WhatsApp contact</p>
         </div>
       )}
 
       {/* City Management Card - Super Admin Only */}
       {isSuperAdmin && (
-        <div onClick={() => setActiveView('cities')}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-          <div className="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-teal-100 transition-colors">
-            <FiMapPin className="w-6 h-6 text-teal-600" />
+        <div
+          onClick={() => setActiveView('cities')}
+          className="bg-white p-4 rounded-xl shadow-2xs border border-gray-100 hover:border-teal-200 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
+        >
+          <div>
+            <div className="w-8.5 h-8.5 bg-teal-50 group-hover:bg-teal-100 rounded-lg flex items-center justify-center mb-2.5 transition-colors">
+              <FiMapPin className="w-4 h-4 text-teal-600" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-900 group-hover:text-teal-600 transition-colors">City Management</h3>
+            <p className="text-xs text-gray-500 leading-snug mt-1">Manage operational cities and default location</p>
           </div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">City Management</h3>
-          <p className="text-sm text-gray-500">Manage operational cities and default location</p>
         </div>
       )}
 
       {/* Language Management Card - Super Admin & Admin */}
-      <div onClick={() => setActiveView('languages')}
-        className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-        <div className="w-12 h-12 bg-sky-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-sky-100 transition-colors">
-          <FiGlobe className="w-6 h-6 text-sky-600" />
+      <div
+        onClick={() => setActiveView('languages')}
+        className="bg-white p-4 rounded-xl shadow-2xs border border-gray-100 hover:border-sky-200 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
+      >
+        <div>
+          <div className="w-8.5 h-8.5 bg-sky-50 group-hover:bg-sky-100 rounded-lg flex items-center justify-center mb-2.5 transition-colors">
+            <FiGlobe className="w-4 h-4 text-sky-600" />
+          </div>
+          <h3 className="text-sm font-bold text-gray-900 group-hover:text-sky-600 transition-colors">Languages & Localization</h3>
+          <p className="text-xs text-gray-500 leading-snug mt-1">Enable/disable regional languages & add new languages</p>
         </div>
-        <h3 className="text-lg font-bold text-gray-800 mb-2">Languages & Localization</h3>
-        <p className="text-sm text-gray-500">Enable/disable regional languages & add new languages</p>
       </div>
 
       {/* Admin Management Card - Super Admin Only */}
       {isSuperAdmin && (
-        <div onClick={() => setActiveView('admins')}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-          <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-amber-100 transition-colors">
-            <FiUsers className="w-6 h-6 text-amber-600" />
+        <div
+          onClick={() => setActiveView('admins')}
+          className="bg-white p-4 rounded-xl shadow-2xs border border-gray-100 hover:border-amber-200 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
+        >
+          <div>
+            <div className="w-8.5 h-8.5 bg-amber-50 group-hover:bg-amber-100 rounded-lg flex items-center justify-center mb-2.5 transition-colors">
+              <FiUsers className="w-4 h-4 text-amber-600" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-900 group-hover:text-amber-600 transition-colors">Manage Admins</h3>
+            <p className="text-xs text-gray-500 leading-snug mt-1">Add, remove, and view all system administrators</p>
           </div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Manage Admins</h3>
-          <p className="text-sm text-gray-500">Add, remove, and view all system administrators</p>
         </div>
       )}
     </div>
