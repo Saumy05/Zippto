@@ -93,6 +93,19 @@ const Cart = () => {
   };
 
   const handleCategoryCheckout = (category) => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      toast('Please sign in to proceed with booking', { icon: '🔒' });
+      navigate('/user/login', {
+        state: {
+          from: {
+            pathname: '/user/checkout',
+            state: { category: category }
+          }
+        }
+      });
+      return;
+    }
     navigate('/user/checkout', { state: { category: category } });
   };
 

@@ -126,20 +126,22 @@ const UserRoutes = () => {
         <Suspense fallback={<LoadingFallback />}>
           <PageTransition>
             <Routes>
-              {/* Public routes */}
+              {/* Public routes (no auth required) */}
               <Route path="/login" element={<PublicRoute userType="user"><Login /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute userType="user"><Signup /></PublicRoute>} />
+              <Route path="/" element={<UserDashboard />} />
+              <Route path="/dashboard" element={<UserDashboard />} />
+              <Route path="/home-legacy" element={<Home />} />
+              <Route path="/native" element={<Native />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/help-support" element={<HelpSupport />} />
+              <Route path="/cancellation-policy" element={<CancellationPolicy />} />
+              <Route path="/about-homestr" element={<AboutHomestr />} />
 
-              {/* Protected routes (auth required) */}
-              <Route path="/" element={<ProtectedRoute userType="user"><UserDashboard /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute userType="user"><UserDashboard /></ProtectedRoute>} />
-              <Route path="/home-legacy" element={<ProtectedRoute userType="user"><Home /></ProtectedRoute>} />
-              <Route path="/native" element={<ProtectedRoute userType="user"><Native /></ProtectedRoute>} />
-
+              {/* Protected routes (auth required for booking & user management) */}
+              <Route path="/checkout" element={<ProtectedRoute userType="user"><Checkout /></ProtectedRoute>} />
               <Route path="/rewards" element={<ProtectedRoute userType="user"><Rewards /></ProtectedRoute>} />
               <Route path="/account" element={<ProtectedRoute userType="user"><Account /></ProtectedRoute>} />
-              <Route path="/cart" element={<ProtectedRoute userType="user"><Cart /></ProtectedRoute>} />
-              <Route path="/checkout" element={<ProtectedRoute userType="user"><Checkout /></ProtectedRoute>} />
               <Route path="/my-bookings" element={<ProtectedRoute userType="user"><MyBookings /></ProtectedRoute>} />
               <Route path="/booking/:id" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
               <Route path="/booking/:id/chat" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
@@ -152,11 +154,8 @@ const UserRoutes = () => {
               <Route path="/my-plan" element={<ProtectedRoute userType="user"><MyPlan /></ProtectedRoute>} />
               <Route path="/my-plan/:id" element={<ProtectedRoute userType="user"><PlanDetails /></ProtectedRoute>} />
               <Route path="/my-rating" element={<ProtectedRoute userType="user"><MyRating /></ProtectedRoute>} />
-              <Route path="/about-homestr" element={<ProtectedRoute userType="user"><AboutHomestr /></ProtectedRoute>} />
               <Route path="/update-profile" element={<ProtectedRoute userType="user"><UpdateProfile /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="user"><Notifications /></ProtectedRoute>} />
-              <Route path="/help-support" element={<ProtectedRoute userType="user"><HelpSupport /></ProtectedRoute>} />
-              <Route path="/cancellation-policy" element={<ProtectedRoute userType="user"><CancellationPolicy /></ProtectedRoute>} />
             </Routes>
           </PageTransition>
         </Suspense>

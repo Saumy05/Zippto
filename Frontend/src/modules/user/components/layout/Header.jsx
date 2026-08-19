@@ -14,17 +14,20 @@ const Header = ({ location: userLocationProp, onLocationClick }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Logged-in user info retrieval
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   const storedUser = React.useMemo(() => {
     try {
-      const uStr = localStorage.getItem('user');
+      const uStr = localStorage.getItem('userData') || localStorage.getItem('user');
       return uStr ? JSON.parse(uStr) : null;
     } catch (e) {
       return null;
     }
-  }, []);
+  }, [token]);
 
-  const userName = storedUser?.name || storedUser?.fullName || 'Alex Morgan';
+  const isLoggedIn = Boolean(token && storedUser);
+  const userName = storedUser?.name || storedUser?.fullName || '';
   const displayCity = userLocationProp || currentCity?.name || storedUser?.city || 'Gondia, Maharashtra';
+  const walletBalance = storedUser?.wallet?.balance ?? storedUser?.walletBalance ?? 0;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
@@ -139,8 +142,10 @@ const Header = ({ location: userLocationProp, onLocationClick }) => {
           </div>
         </div>
 
-        {/* 4. RIGHT ACTION ICONS: Search, Bell Notification (9+), Profile Avatar (Always visible on all screens!) */}
+        {/* 5. RIGHT ACTION ICONS: Language, Search, Login Button OR Profile Avatar */}
         <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-2.5 shrink-0">
+          <LanguageToggle className="shrink-0 text-[11px] py-1 px-2 sm:px-2.5" />
+
           <button
             onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
             className="md:hidden w-7.5 h-7.5 xs:w-8 xs:h-8 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
@@ -149,33 +154,41 @@ const Header = ({ location: userLocationProp, onLocationClick }) => {
             <FiSearch className="w-3.5 h-3.5" />
           </button>
 
-          <Link
-            to="/user/wallet"
-            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200/80 text-xs font-bold text-slate-800 transition-colors"
-          >
-            <FiCreditCard className="w-3.5 h-3.5 text-slate-600" />
-            <span>₹1,250</span>
-          </Link>
+          {isLoggedIn ? (
+            <>
+              <Link
+                to="/user/wallet"
+                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200/80 text-xs font-bold text-slate-800 transition-colors"
+              >
+                <FiCreditCard className="w-3.5 h-3.5 text-slate-600" />
+                <span>₹{walletBalance.toLocaleString('en-IN')}</span>
+              </Link>
 
-          <Link
-            to="/user/notifications"
-            className="relative w-7.5 h-7.5 xs:w-8 xs:h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors shrink-0"
-            aria-label="Notifications"
-          >
-            <FiBell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[7.5px] xs:text-[8px] px-1 py-0.2 rounded-full ring-2 ring-white shadow-2xs">
-              9+
-            </span>
-          </Link>
+              <Link
+                to="/user/notifications"
+                className="relative w-7.5 h-7.5 xs:w-8 xs:h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors shrink-0"
+                aria-label="Notifications"
+              >
+                <FiBell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </Link>
 
-          <LanguageToggle className="shrink-0 text-[11px] py-1 px-2 sm:px-2.5" />
-
-          <Link
-            to="/user/account"
-            className="w-7.5 h-7.5 xs:w-8 xs:h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-[#0B132B] text-white flex items-center justify-center text-xs font-black shrink-0 ring-2 ring-slate-100 hover:ring-slate-300 transition-all"
-          >
-            {userName.charAt(0).toUpperCase()}
-          </Link>
+              <Link
+                to="/user/account"
+                className="w-7.5 h-7.5 xs:w-8 xs:h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-[#0B132B] text-white flex items-center justify-center text-xs font-black shrink-0 ring-2 ring-slate-100 hover:ring-slate-300 transition-all"
+                title={userName || 'Account'}
+              >
+                {userName ? userName.charAt(0).toUpperCase() : 'U'}
+              </Link>
+            </>
+          ) : (
+            <Link
+              to="/user/login"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-[#0B132B] text-white hover:bg-slate-800 text-xs font-bold transition-all shadow-xs active:scale-95"
+            >
+              <FiUser className="w-3.5 h-3.5 text-amber-400" />
+              <span>Login</span>
+            </Link>
+          )}
         </div>
       </div>
 

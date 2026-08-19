@@ -132,6 +132,13 @@ const LiveBookingCard = ({ hasBottomNav }) => {
 
   const fetchActiveBooking = async () => {
     try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setActiveBooking(null);
+        setLoading(false);
+        return;
+      }
+
       const res = await userBookingService.getUserBookings({ limit: 5 });
       if (res?.success && Array.isArray(res.data) && res.data.length > 0) {
         const ongoing = res.data.find(b => {

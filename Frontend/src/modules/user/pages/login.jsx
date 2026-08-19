@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiPhone, FiArrowRight, FiCheckCircle, FiChevronLeft } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../theme';
@@ -16,6 +16,7 @@ const phoneSchema = z.object({
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -42,7 +43,18 @@ const Login = () => {
   useEffect(() => {
     // Redirect if already logged in
     if (localStorage.getItem('accessToken')) {
-      navigate('/user', { replace: true });
+      const fromTarget = location.state?.from;
+      if (fromTarget) {
+        if (typeof fromTarget === 'string') {
+          navigate(fromTarget, { replace: true });
+        } else if (fromTarget.pathname) {
+          navigate(fromTarget.pathname, { state: fromTarget.state, replace: true });
+        } else {
+          navigate('/user', { replace: true });
+        }
+      } else {
+        navigate('/user', { replace: true });
+      }
       return;
     }
 
@@ -51,7 +63,7 @@ const Login = () => {
     } else if (step === 'otp' && otpInputRefs.current[0]) {
       setTimeout(() => otpInputRefs.current[0].focus(), 100);
     }
-  }, [step, navigate]);
+  }, [step, navigate, location]);
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
@@ -149,17 +161,31 @@ const Login = () => {
       });
 
       if (response.success) {
+        window.dispatchEvent(new Event('userLoggedIn'));
+
         if (response.isNewUser) {
           toast.success('Phone verified! Please complete your registration.');
           navigate('/user/signup', {
             state: {
               phone: phoneNumber,
-              verificationToken: response.verificationToken
+              verificationToken: response.verificationToken,
+              from: location.state?.from
             }
           });
         } else {
           toast.success('Welcome back!');
-          navigate('/user', { replace: true });
+          const fromTarget = location.state?.from;
+          if (fromTarget) {
+            if (typeof fromTarget === 'string') {
+              navigate(fromTarget, { replace: true });
+            } else if (fromTarget.pathname) {
+              navigate(fromTarget.pathname, { state: fromTarget.state, replace: true });
+            } else {
+              navigate('/user', { replace: true });
+            }
+          } else {
+            navigate('/user', { replace: true });
+          }
         }
       } else {
         setIsLoading(false);

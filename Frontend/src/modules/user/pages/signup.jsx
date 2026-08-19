@@ -97,14 +97,28 @@ const Signup = () => {
             await registerFCMToken('user', true);
           } catch (e) { console.error(e); }
 
+          window.dispatchEvent(new Event('userLoggedIn'));
+
           toast.success(
             <div className="flex flex-col">
-              <span className="font-bold">Welcome to Homestr!</span>
+              <span className="font-bold">Welcome to Zippto!</span>
               <span className="text-xs">Your account has been created successfully.</span>
             </div>,
             { icon: <FiCheckCircle className="text-green-500" /> }
           );
-          navigate('/user');
+
+          const fromTarget = location.state?.from;
+          if (fromTarget) {
+            if (typeof fromTarget === 'string') {
+              navigate(fromTarget, { replace: true });
+            } else if (fromTarget.pathname) {
+              navigate(fromTarget.pathname, { state: fromTarget.state, replace: true });
+            } else {
+              navigate('/user', { replace: true });
+            }
+          } else {
+            navigate('/user', { replace: true });
+          }
         } else {
           toast.error(response.message || 'Registration failed');
         }
@@ -188,14 +202,28 @@ const Signup = () => {
           console.error('FCM Registration failed on signup:', fcmError);
         }
 
+        window.dispatchEvent(new Event('userLoggedIn'));
+
         toast.success(
           <div className="flex flex-col">
-            <span className="font-bold">Welcome to Homestr!</span>
+            <span className="font-bold">Welcome to Zippto!</span>
             <span className="text-xs">Account created successfully.</span>
           </div>,
           { icon: <FiCheckCircle className="text-green-500" /> }
         );
-        navigate('/user');
+
+        const fromTarget = location.state?.from;
+        if (fromTarget) {
+          if (typeof fromTarget === 'string') {
+            navigate(fromTarget, { replace: true });
+          } else if (fromTarget.pathname) {
+            navigate(fromTarget.pathname, { state: fromTarget.state, replace: true });
+          } else {
+            navigate('/user', { replace: true });
+          }
+        } else {
+          navigate('/user', { replace: true });
+        }
       } else {
         setIsLoading(false);
         toast.error(response.message || 'Registration failed');
