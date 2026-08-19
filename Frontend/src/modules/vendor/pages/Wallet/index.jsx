@@ -74,6 +74,23 @@ const Wallet = () => {
     return txn.type === filter;
   });
 
+  const handleOffsetDues = async () => {
+    try {
+      setLoading(true);
+      const res = await vendorWalletService.offsetDuesFromEarnings();
+      if (res.success) {
+        toast.success(res.message);
+        loadWalletData();
+      } else {
+        toast.error(res.message || 'Failed to offset dues');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to offset dues from earnings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getTransactionIcon = (type) => {
     switch (type) {
       case 'cash_collected':
@@ -173,12 +190,22 @@ const Wallet = () => {
             </div>
 
             {wallet.dues > 0 ? (
-              <button
-                onClick={() => navigate('/vendor/wallet/settle')}
-                className="w-full bg-white text-red-700 py-3 rounded-xl font-bold text-sm hover:bg-red-50 active:scale-95 transition-all shadow-sm"
-              >
-                Pay Now
-              </button>
+              <div className="space-y-2">
+                {wallet.earnings > 0 && (
+                  <button
+                    onClick={handleOffsetDues}
+                    className="w-full bg-amber-400 text-slate-900 py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider hover:bg-amber-300 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <span>⚡ Settle ₹{Math.min(wallet.dues, wallet.earnings).toLocaleString()} from Earnings</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => navigate('/vendor/wallet/settle')}
+                  className="w-full bg-white text-red-700 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-red-50 active:scale-95 transition-all shadow-sm cursor-pointer"
+                >
+                  Pay via UPI / Card / Bank
+                </button>
+              </div>
             ) : (
               <div className="w-full bg-white/10 text-white py-3 rounded-xl font-medium text-sm text-center border border-white/20">
                 No Dues Pending

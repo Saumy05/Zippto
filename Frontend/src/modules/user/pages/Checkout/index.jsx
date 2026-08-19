@@ -15,6 +15,7 @@ import { configService } from '../../../../services/configService';
 import { getPlans } from '../../services/planService';
 import { userAuthService } from '../../../../services/authService';
 import { useCart } from '../../../../context/CartContext';
+import walletService from '../../../../services/walletService';
 import LiveBookingCard from '../../components/booking/LiveBookingCard';
 
 const toAssetUrl = (url) => {
@@ -44,6 +45,10 @@ const Checkout = () => {
   // Custom Contact State (for this booking only)
   const [contactDetails, setContactDetails] = useState({ name: '', phone: '' });
   const [showContactModal, setShowContactModal] = useState(false);
+
+  // Wallet Application State
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
 
   // New state for vendor search flow
   const [currentStep, setCurrentStep] = useState('details'); // 'details' | 'searching' | 'waiting' | 'accepted' | 'payment'
@@ -174,6 +179,16 @@ const Checkout = () => {
             }
             setCartItems(items);
           }
+        }
+
+        // Fetch User Wallet Balance
+        try {
+          const walletRes = await walletService.getBalance();
+          if (walletRes.success && walletRes.data) {
+            setWalletBalance(walletRes.data.balance || 0);
+          }
+        } catch (wErr) {
+          // Non-blocking wallet fetch
         }
       } catch (error) {
         console.error('Failed to load checkout data', error);

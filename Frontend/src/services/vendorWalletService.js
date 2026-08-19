@@ -123,6 +123,14 @@ const vendorWalletService = {
   requestWithdrawal: async (data) => {
     const response = await api.post('/vendors/wallet/withdrawal', data);
     return response.data;
+  },
+
+  /**
+   * 1-Click Offset Dues directly from available online earnings
+   */
+  offsetDuesFromEarnings: async () => {
+    const response = await api.post('/vendors/wallet/offset-dues');
+    return response.data;
   }
 };
 
