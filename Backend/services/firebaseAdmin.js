@@ -56,9 +56,11 @@ if (!admin.apps.length && serviceAccount) {
  * @param {boolean} payload.highPriority - Send as high priority (default: true)
  * @returns {Promise<Object>} - Response with success/failure counts
  */
+const Settings = require('../models/Settings');
+
 /**
- * Send push notification to multiple tokens
- * @param {string[]} tokens - Array of FCM tokens
+ * Send push notification to specific device tokens (Data-Only for maximum reliability)
+ * @param {Array<string>} tokens - Array of FCM registration tokens
  * @param {Object} payload - Notification payload
  * @param {string} payload.title - Notification title
  * @param {string} payload.body - Notification body
@@ -69,6 +71,17 @@ if (!admin.apps.length && serviceAccount) {
  */
 async function sendPushNotification(tokens, payload) {
   try {
+    // Dynamic Global Toggle Check
+    try {
+      const globalSettings = await Settings.findOne({ type: 'global' }).select('isPushNotificationEnabled').lean();
+      if (globalSettings && globalSettings.isPushNotificationEnabled === false) {
+        console.log('[FCM] Push notifications are globally disabled by Admin in Settings');
+        return { successCount: 0, failureCount: 0, disabled: true };
+      }
+    } catch (settingErr) {
+      // Fallback: proceed if settings check fails
+    }
+
     if (!tokens || tokens.length === 0) {
       console.log('No FCM tokens provided');
       return { successCount: 0, failureCount: 0 };

@@ -6,6 +6,7 @@ const Vendor = require('../models/Vendor');
 const Worker = require('../models/Worker');
 const Service = require('../models/Service');
 const UserService = require('../models/UserService');
+const Settings = require('../models/Settings');
 const { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } = require('./firebaseAdmin');
 
 // Allowed status mapping
@@ -50,8 +51,17 @@ const assertBookingChatParticipant = async (bookingId, actor) => {
     throw error;
   }
 
-  const actorId = (actor.id || actor.userId || '').toString();
-  const actorRole = (actor.role || actor.userRole || '').toUpperCase();
+  // Dynamic Global In-App Chat Toggle Check
+  try {
+    const globalSettings = await Settings.findOne({ type: 'global' }).select('isChatEnabled').lean();
+    if (globalSettings && globalSettings.isChatEnabled === false && !['ADMIN', 'SUPER_ADMIN'].includes(actorRole)) {
+      const error = new Error('In-App Chat Messaging is currently paused by platform administration.');
+      error.status = 403;
+      throw error;
+    }
+  } catch (settingErr) {
+    if (settingErr.status === 403) throw settingErr;
+  }
 
   let isAuthorized = false;
   let senderName = actor.name || 'Participant';

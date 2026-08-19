@@ -129,6 +129,8 @@ exports.updateSettings = async (req, res, next) => {
       if (req.body.isReferralEnabled !== undefined) settings.isReferralEnabled = req.body.isReferralEnabled;
       if (req.body.referralRewardAmount !== undefined) settings.referralRewardAmount = req.body.referralRewardAmount;
       if (req.body.refereeRewardAmount !== undefined) settings.refereeRewardAmount = req.body.refereeRewardAmount;
+      // Multi-Language Persistence
+      if (supportedLanguages !== undefined) settings.supportedLanguages = supportedLanguages;
 
       await settings.save();
     }
@@ -164,14 +166,14 @@ exports.updateSettings = async (req, res, next) => {
     });
   }
 };
-// Get Public Settings (Visited Charges, GST)
+// Get Public Settings (Visited Charges, GST, Dynamic Languages, Feature Flags)
 exports.getPublicSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage supportEmail supportPhone supportWhatsapp cancellationPenalty companyName companyAddress companyCity companyState companyPincode companyPhone companyEmail isOnlinePaymentEnabled supportedLanguages');
+    let settings = await Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage supportEmail supportPhone supportWhatsapp cancellationPenalty companyName companyAddress companyCity companyState companyPincode companyPhone companyEmail isOnlinePaymentEnabled isReferralEnabled referralRewardAmount refereeRewardAmount isPushNotificationEnabled isChatEnabled supportedLanguages');
 
     // Default if not found (fallback values)
     if (!settings) {
-      settings = { visitedCharges: 29, serviceGstPercentage: 18, partsGstPercentage: 18 };
+      settings = { visitedCharges: 0, serviceGstPercentage: 18, partsGstPercentage: 18, isReferralEnabled: true, isPushNotificationEnabled: true, isChatEnabled: true };
     }
 
     res.status(200).json({
