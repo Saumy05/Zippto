@@ -117,8 +117,13 @@ exports.updateSettings = async (req, res, next) => {
       if (maxSearchTime !== undefined) settings.maxSearchTime = maxSearchTime;
       if (waveDuration !== undefined) settings.waveDuration = waveDuration;
       if (searchRadius !== undefined) settings.searchRadius = searchRadius;
-      if (isOnlinePaymentEnabled !== undefined) settings.isOnlinePaymentEnabled = isOnlinePaymentEnabled;
-      if (supportedLanguages !== undefined) settings.supportedLanguages = supportedLanguages;
+      // System Feature Flags & Toggles
+      if (req.body.isOnlinePaymentEnabled !== undefined) settings.isOnlinePaymentEnabled = req.body.isOnlinePaymentEnabled;
+      if (req.body.isCashPaymentEnabled !== undefined) settings.isCashPaymentEnabled = req.body.isCashPaymentEnabled;
+      if (req.body.workerAutoAssignment !== undefined) settings.workerAutoAssignment = req.body.workerAutoAssignment;
+      if (req.body.isPushNotificationEnabled !== undefined) settings.isPushNotificationEnabled = req.body.isPushNotificationEnabled;
+      if (req.body.isChatEnabled !== undefined) settings.isChatEnabled = req.body.isChatEnabled;
+      if (req.body.isB2BEnabled !== undefined) settings.isB2BEnabled = req.body.isB2BEnabled;
 
       // Referral Program update
       if (req.body.isReferralEnabled !== undefined) settings.isReferralEnabled = req.body.isReferralEnabled;

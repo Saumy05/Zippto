@@ -193,7 +193,28 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  // Feature Flags & System Toggles
   isOnlinePaymentEnabled: {
+    type: Boolean,
+    default: true
+  },
+  isCashPaymentEnabled: {
+    type: Boolean,
+    default: true
+  },
+  workerAutoAssignment: {
+    type: Boolean,
+    default: true
+  },
+  isPushNotificationEnabled: {
+    type: Boolean,
+    default: true
+  },
+  isChatEnabled: {
+    type: Boolean,
+    default: true
+  },
+  isB2BEnabled: {
     type: Boolean,
     default: true
   },

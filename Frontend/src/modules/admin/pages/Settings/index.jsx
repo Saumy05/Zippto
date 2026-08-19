@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck, FiSearch, FiChevronDown, FiGift } from 'react-icons/fi';
+import { 
+  FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, 
+  FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, 
+  FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck, FiSearch, FiChevronDown, 
+  FiGift, FiToggleRight, FiToggleLeft, FiBell, FiBriefcase, FiCreditCard, FiCpu, FiCheckCircle, FiXCircle 
+} from 'react-icons/fi';
 import { getSettings, updateSettings, updateAdminProfile, getAdminProfile, getAllAdmins, createAdmin, deleteAdmin, updateAdminDetails, toggleAdminStatus } from '../../services/settingsService';
 import { cityService } from '../../services/cityService';
 import { DEFAULT_SUPPORTED_LANGUAGES } from '../../../../context/LanguageContext';
@@ -48,6 +53,17 @@ const AdminSettings = () => {
     waveDuration: 60,
     searchRadius: 10,
     isOnlinePaymentEnabled: true
+  });
+
+  // Centralized Feature Toggles State
+  const [featureToggles, setFeatureToggles] = useState({
+    isReferralEnabled: true,
+    isOnlinePaymentEnabled: true,
+    isCashPaymentEnabled: true,
+    workerAutoAssignment: true,
+    isPushNotificationEnabled: true,
+    isChatEnabled: true,
+    isB2BEnabled: true
   });
 
   // Referral Program State
@@ -161,6 +177,17 @@ const AdminSettings = () => {
             searchRadius: res.settings.searchRadius || 10,
             isOnlinePaymentEnabled: res.settings.isOnlinePaymentEnabled !== undefined ? res.settings.isOnlinePaymentEnabled : true
           });
+          // Load feature toggles
+          setFeatureToggles({
+            isReferralEnabled: res.settings.isReferralEnabled !== false,
+            isOnlinePaymentEnabled: res.settings.isOnlinePaymentEnabled !== false,
+            isCashPaymentEnabled: res.settings.isCashPaymentEnabled !== false,
+            workerAutoAssignment: res.settings.workerAutoAssignment !== false,
+            isPushNotificationEnabled: res.settings.isPushNotificationEnabled !== false,
+            isChatEnabled: res.settings.isChatEnabled !== false,
+            isB2BEnabled: res.settings.isB2BEnabled !== false
+          });
+
           // Load referral settings
           if (res.settings.isReferralEnabled !== undefined) {
             setReferralSettings({
@@ -384,6 +411,27 @@ const AdminSettings = () => {
     }
   };
 
+  // Centralized Feature Toggle Handler
+  const handleFeatureToggle = async (key, label) => {
+    const newValue = !featureToggles[key];
+    setFeatureToggles(prev => ({ ...prev, [key]: newValue }));
+    if (key === 'isReferralEnabled') {
+      setReferralSettings(prev => ({ ...prev, isReferralEnabled: newValue }));
+    }
+    if (key === 'isOnlinePaymentEnabled') {
+      setFinancialSettings(prev => ({ ...prev, isOnlinePaymentEnabled: newValue }));
+    }
+    if (key === 'workerAutoAssignment') {
+      setSettings(prev => ({ ...prev, workerAutoAssignment: newValue }));
+    }
+    try {
+      await updateSettings({ [key]: newValue });
+      toast.success(`${label} ${newValue ? 'Enabled' : 'Disabled'}`);
+    } catch (err) {
+      toast.error(`Failed to update ${label}`);
+    }
+  };
+
   // Language management handlers
   const handleSaveLanguages = async (updatedLangs) => {
     setLangLoading(true);
@@ -586,6 +634,23 @@ const AdminSettings = () => {
         </div>
       )}
 
+      {/* Toggle Management Card - Super Admin Only */}
+      {isSuperAdmin && (
+        <div onClick={() => setActiveView('toggles')}
+          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
+          <div className="w-12 h-12 bg-rose-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-rose-100 transition-colors">
+            <FiToggleRight className="w-6 h-6 text-rose-600" />
+          </div>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-bold text-gray-800">Toggle Management</h3>
+            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-rose-100 text-rose-700 rounded-full">
+              {Object.values(featureToggles).filter(Boolean).length} Active
+            </span>
+          </div>
+          <p className="text-sm text-gray-500">Centrally toggle off or activate platform features & modules</p>
+        </div>
+      )}
+
       {/* System Settings Card - Super Admin Only */}
       {isSuperAdmin && (
         <div onClick={() => setActiveView('system')}
@@ -711,12 +776,293 @@ const AdminSettings = () => {
                 </div>
               </form>
             </div>
-          </motion.div >
+          </motion.div>
+        )}
+
+        {/* Dedicated Feature Toggle Management Switchboard */}
+        {activeView === 'toggles' && (
+          <motion.div
+            key="toggles"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6 max-w-5xl mx-auto"
+          >
+            {/* Header Switchboard Hero Banner */}
+            <div className="bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute -top-16 -right-16 w-48 h-48 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold mb-3 border border-rose-500/30">
+                    <FiToggleRight className="w-4 h-4" />
+                    <span>Global Switchboard</span>
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Feature Toggle Management</h1>
+                  <p className="mt-2 text-sm text-slate-300 max-w-xl">
+                    Centrally turn key platform features and modules ON or OFF in real-time. Toggling features off immediately hides user interfaces and pauses backend rewards without server downtime.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 self-start sm:self-auto">
+                  <div className="text-center px-3 border-r border-white/15">
+                    <span className="text-2xl font-black text-white block">
+                      {Object.values(featureToggles).filter(Boolean).length}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Active</span>
+                  </div>
+                  <div className="text-center px-3">
+                    <span className="text-2xl font-black text-slate-300 block">
+                      {Object.values(featureToggles).filter(v => !v).length}
+                    </span>
+                    <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Paused</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Feature Switches Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 1. Referral & Invite & Earn Program */}
+              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isReferralEnabled ? 'border-amber-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`p-3 rounded-xl ${featureToggles.isReferralEnabled ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-400'}`}>
+                      <FiGift className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">Referral & Invite Program</h3>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isReferralEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {featureToggles.isReferralEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleFeatureToggle('isReferralEnabled', 'Referral & Invite Program')}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isReferralEnabled ? 'bg-amber-500' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isReferralEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mb-4">
+                  Allows customers to share their unique code (ZIP-XXXXX) and earn wallet bonuses when their friends complete bookings.
+                </p>
+
+                {/* Sub Controls when active */}
+                {featureToggles.isReferralEnabled && (
+                  <form onSubmit={handleReferralSave} className="pt-4 border-t border-amber-100 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-600 mb-1">Referrer Reward</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
+                          <input
+                            type="number"
+                            name="referralRewardAmount"
+                            value={referralSettings.referralRewardAmount}
+                            onChange={handleReferralChange}
+                            min="0"
+                            className="w-full pl-7 pr-3 py-2 text-xs font-bold bg-amber-50/50 border border-amber-200 rounded-lg outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-600 mb-1">Referee Welcome Bonus</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">₹</span>
+                          <input
+                            type="number"
+                            name="refereeRewardAmount"
+                            value={referralSettings.refereeRewardAmount}
+                            onChange={handleReferralChange}
+                            min="0"
+                            className="w-full pl-7 pr-3 py-2 text-xs font-bold bg-amber-50/50 border border-amber-200 rounded-lg outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={referralLoading}
+                        className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-60 cursor-pointer shadow-xs"
+                      >
+                        {referralLoading ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-3.5 h-3.5" />}
+                        Save Rewards
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+
+              {/* 2. Online Digital Payments */}
+              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isOnlinePaymentEnabled ? 'border-indigo-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`p-3 rounded-xl ${featureToggles.isOnlinePaymentEnabled ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
+                      <FiCreditCard className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">Online Payments (Gateway)</h3>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isOnlinePaymentEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {featureToggles.isOnlinePaymentEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleFeatureToggle('isOnlinePaymentEnabled', 'Online Payments')}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isOnlinePaymentEnabled ? 'bg-indigo-600' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isOnlinePaymentEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Accept UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards, NetBanking, and Wallets via Razorpay gateway at checkout.
+                </p>
+              </div>
+
+              {/* 3. Cash on Delivery (COD) */}
+              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isCashPaymentEnabled ? 'border-green-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`p-3 rounded-xl ${featureToggles.isCashPaymentEnabled ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                      <FiDollarSign className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">Cash on Delivery (Direct Cash)</h3>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isCashPaymentEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {featureToggles.isCashPaymentEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleFeatureToggle('isCashPaymentEnabled', 'Cash on Delivery')}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isCashPaymentEnabled ? 'bg-green-600' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isCashPaymentEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Allow customers to pay physical cash directly to the service professional upon completion. Turning off enforces 100% digital payment.
+                </p>
+              </div>
+
+              {/* 4. Worker Auto-Assignment Engine */}
+              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.workerAutoAssignment ? 'border-blue-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`p-3 rounded-xl ${featureToggles.workerAutoAssignment ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                      <FiCpu className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">Worker Auto-Assignment Engine</h3>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.workerAutoAssignment ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {featureToggles.workerAutoAssignment ? 'Active (Live)' : 'Paused (Turned Off)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleFeatureToggle('workerAutoAssignment', 'Worker Auto-Assignment')}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.workerAutoAssignment ? 'bg-blue-600' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.workerAutoAssignment ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Automatically broadcasts rejected or timed-out bookings to the next nearest service worker without requiring manual admin intervention.
+                </p>
+              </div>
+
+              {/* 5. Production Push Notifications (FCM) */}
+              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isPushNotificationEnabled ? 'border-purple-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`p-3 rounded-xl ${featureToggles.isPushNotificationEnabled ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400'}`}>
+                      <FiBell className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">Push Notifications Broadcast</h3>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isPushNotificationEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {featureToggles.isPushNotificationEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleFeatureToggle('isPushNotificationEnabled', 'Push Notifications')}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isPushNotificationEnabled ? 'bg-purple-600' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isPushNotificationEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Dispatches background mobile and desktop push notifications via Firebase Cloud Messaging for order status, tracking, and rewards.
+                </p>
+              </div>
+
+              {/* 6. Live In-App Chat */}
+              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isChatEnabled ? 'border-teal-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`p-3 rounded-xl ${featureToggles.isChatEnabled ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-400'}`}>
+                      <FiMessageCircle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">In-App Chat Messaging</h3>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isChatEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {featureToggles.isChatEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleFeatureToggle('isChatEnabled', 'In-App Chat')}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isChatEnabled ? 'bg-teal-600' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isChatEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Enables real-time socket chat modal between customers and service technicians during active job tracking.
+                </p>
+              </div>
+
+              {/* 7. B2B Corporate Requirements Portal */}
+              <div className={`bg-white rounded-2xl p-6 border transition-all duration-300 ${featureToggles.isB2BEnabled ? 'border-sky-200 shadow-sm' : 'border-gray-200 opacity-90'}`}>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`p-3 rounded-xl ${featureToggles.isB2BEnabled ? 'bg-sky-100 text-sky-600' : 'bg-gray-100 text-gray-400'}`}>
+                      <FiBriefcase className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">B2B Corporate Enquiries</h3>
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${featureToggles.isB2BEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {featureToggles.isB2BEnabled ? 'Active (Live)' : 'Paused (Turned Off)'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleFeatureToggle('isB2BEnabled', 'B2B Corporate Enquiries')}
+                    className={`relative w-14 h-8 rounded-full transition-all duration-300 cursor-pointer ${featureToggles.isB2BEnabled ? 'bg-sky-600' : 'bg-gray-300'}`}
+                  >
+                    <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${featureToggles.isB2BEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Accepts bulk commercial requirements, office maintenance contracts, and facility management lead submissions.
+                </p>
+              </div>
+            </div>
+          </motion.div>
         )}
 
         {/* Financial View */}
-        {
-          activeView === 'financial' && (
+        {activeView === 'financial' && (
             <motion.div key="financial" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
               className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
