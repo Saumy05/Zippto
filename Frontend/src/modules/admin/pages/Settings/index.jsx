@@ -634,32 +634,32 @@ const AdminSettings = () => {
         </div>
       )}
 
-      {/* Toggle Management Card - Super Admin Only */}
+      {/* Customization Settings Card - Super Admin Only */}
       {isSuperAdmin && (
-        <div onClick={() => setActiveView('toggles')}
+        <div onClick={() => setActiveView('customization')}
           className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
           <div className="w-12 h-12 bg-rose-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-rose-100 transition-colors">
             <FiToggleRight className="w-6 h-6 text-rose-600" />
           </div>
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-bold text-gray-800">Toggle Management</h3>
+            <h3 className="text-lg font-bold text-gray-800">Customization Settings</h3>
             <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-rose-100 text-rose-700 rounded-full">
               {Object.values(featureToggles).filter(Boolean).length} Active
             </span>
           </div>
-          <p className="text-sm text-gray-500">Centrally toggle off or activate platform features & modules</p>
+          <p className="text-sm text-gray-500">Centrally toggle off or customize platform modules & features</p>
         </div>
       )}
 
-      {/* System Settings Card - Super Admin Only */}
+      {/* Support Settings Card - Super Admin Only */}
       {isSuperAdmin && (
         <div onClick={() => setActiveView('system')}
           className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-          <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-100 transition-colors">
-            <FiSettings className="w-6 h-6 text-purple-600" />
+          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
+            <FiHeadphones className="w-6 h-6 text-blue-600" />
           </div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">System & Support</h3>
-          <p className="text-sm text-gray-500">Manage auto-assignment and help contact info</p>
+          <h3 className="text-lg font-bold text-gray-800 mb-2">Contact & Support</h3>
+          <p className="text-sm text-gray-500">Manage customer support email, phone, and WhatsApp contact</p>
         </div>
       )}
 
@@ -779,10 +779,10 @@ const AdminSettings = () => {
           </motion.div>
         )}
 
-        {/* Dedicated Feature Toggle Management Switchboard */}
-        {activeView === 'toggles' && (
+        {/* Dedicated Customization Settings Switchboard */}
+        {(activeView === 'customization' || activeView === 'toggles') && (
           <motion.div
-            key="toggles"
+            key="customization"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -796,11 +796,11 @@ const AdminSettings = () => {
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold mb-3 border border-rose-500/30">
                     <FiToggleRight className="w-4 h-4" />
-                    <span>Global Switchboard</span>
+                    <span>Platform Customization Hub</span>
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Feature Toggle Management</h1>
+                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Customization Settings</h1>
                   <p className="mt-2 text-sm text-slate-300 max-w-xl">
-                    Centrally turn key platform features and modules ON or OFF in real-time. Toggling features off immediately hides user interfaces and pauses backend rewards without server downtime.
+                    Centrally customize and turn key platform features and modules ON or OFF in real-time. Toggling features off immediately hides user interfaces and pauses backend rewards without server downtime.
                   </p>
                 </div>
 
@@ -1265,170 +1265,90 @@ const AdminSettings = () => {
           )
         }
 
-        {/* System & Support View */}
-        {
-          activeView === 'system' && (
-            <motion.div key="system" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-              {/* System Settings */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <FiSettings className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-800">System Preferences</h2>
+        {/* Contact & Support View */}
+        {activeView === 'system' && (
+          <motion.div
+            key="system"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-blue-100 rounded-xl">
+                  <FiHeadphones className="w-6 h-6 text-blue-600" />
                 </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Auto-Assign Workers</p>
-                      <p className="text-xs text-gray-500 mt-1">Automatically find new worker if booking is rejected</p>
-                    </div>
-                    <button onClick={() => handleToggle('workerAutoAssignment')}
-                      className={`relative w-12 h-7 rounded-full transition-all duration-300 ${settings.workerAutoAssignment ? 'bg-blue-600' : 'bg-gray-200'}`}>
-                      <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${settings.workerAutoAssignment ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">Online Payments</p>
-                      <p className="text-xs text-gray-500 mt-1">Enable digital payment methods for users</p>
-                    </div>
-                    <button onClick={() => {
-                        const newValue = !financialSettings.isOnlinePaymentEnabled;
-                        setFinancialSettings(prev => ({ ...prev, isOnlinePaymentEnabled: newValue }));
-                        updateSettings({ isOnlinePaymentEnabled: newValue });
-                      }}
-                      className={`relative w-12 h-7 rounded-full transition-all duration-300 ${financialSettings.isOnlinePaymentEnabled ? 'bg-green-600' : 'bg-gray-200'}`}>
-                      <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${financialSettings.isOnlinePaymentEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Contact & Support Details</h2>
+                  <p className="text-xs text-gray-500">Contact numbers and email displayed to users and vendors for assistance</p>
                 </div>
               </div>
 
-              {/* Referral & Invite Program Management Card */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <FiGift className="w-5 h-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-800">Referral & Invite Program</h2>
-                      <p className="text-xs text-gray-500">Manage viral referral rules and wallet bonuses</p>
-                    </div>
+              <form onSubmit={handleSupportSave} className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Support Email</label>
+                  <div className="relative">
+                    <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="email"
+                      name="supportEmail"
+                      value={supportSettings.supportEmail}
+                      onChange={handleSupportChange}
+                      placeholder="support@zippto.com"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition-all text-sm font-medium text-gray-800"
+                    />
                   </div>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${referralSettings.isReferralEnabled ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-rose-100 text-rose-700 border border-rose-200'}`}>
-                    {referralSettings.isReferralEnabled ? 'Active' : 'Paused'}
-                  </span>
+                  <p className="text-[11px] text-gray-400 mt-1">Direct support inquiries and ticket responses will route here</p>
                 </div>
 
-                <form onSubmit={handleReferralSave} className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-amber-50/50 rounded-xl border border-amber-100">
-                    <div className="flex-1 mr-4">
-                      <p className="font-semibold text-gray-800">Referral Program Status</p>
-                      <p className="text-xs text-gray-500 mt-0.5">Toggle off to immediately pause code generation, invites, and wallet payouts</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleReferralToggle}
-                      className={`relative w-12 h-7 rounded-full transition-all duration-300 cursor-pointer ${referralSettings.isReferralEnabled ? 'bg-amber-500' : 'bg-gray-200'}`}
-                    >
-                      <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${referralSettings.isReferralEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Support Helpline Phone</label>
+                  <div className="relative">
+                    <FiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="tel"
+                      name="supportPhone"
+                      value={supportSettings.supportPhone}
+                      onChange={handleSupportChange}
+                      placeholder="+91 98765 43210"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition-all text-sm font-medium text-gray-800"
+                    />
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Referrer Reward (₹)</label>
-                      <input
-                        type="number"
-                        name="referralRewardAmount"
-                        value={referralSettings.referralRewardAmount}
-                        onChange={handleReferralChange}
-                        min="0"
-                        className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-amber-500 transition-all font-bold text-gray-800"
-                      />
-                      <p className="text-[10px] text-gray-400 mt-1">Given to user who shares their code</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Referee Welcome Bonus (₹)</label>
-                      <input
-                        type="number"
-                        name="refereeRewardAmount"
-                        value={referralSettings.refereeRewardAmount}
-                        onChange={handleReferralChange}
-                        min="0"
-                        className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-amber-500 transition-all font-bold text-gray-800"
-                      />
-                      <p className="text-[10px] text-gray-400 mt-1">Given to invited friend on 1st job</p>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-2">
-                    <button
-                      type="submit"
-                      disabled={referralLoading}
-                      className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-amber-200 transition-all cursor-pointer"
-                    >
-                      {referralLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
-                      Save Referral Rules
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              {/* Support Settings */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FiHeadphones className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-800">Contact & Support</h2>
+                  <p className="text-[11px] text-gray-400 mt-1">Official phone number shown on invoices and the mobile app help drawer</p>
                 </div>
 
-                <form onSubmit={handleSupportSave} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Support Email</label>
-                    <div className="relative">
-                      <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input type="email" name="supportEmail" value={supportSettings.supportEmail} onChange={handleSupportChange}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
-                    </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">WhatsApp Support Hotline</label>
+                  <div className="relative">
+                    <FiMessageCircle className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="tel"
+                      name="supportWhatsapp"
+                      value={supportSettings.supportWhatsapp}
+                      onChange={handleSupportChange}
+                      placeholder="+91 98765 43210"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition-all text-sm font-medium text-gray-800"
+                    />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Support Phone</label>
-                    <div className="relative">
-                      <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input type="tel" name="supportPhone" value={supportSettings.supportPhone} onChange={handleSupportChange}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">WhatsApp Support</label>
-                    <div className="relative">
-                      <FiMessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <input type="tel" name="supportWhatsapp" value={supportSettings.supportWhatsapp} onChange={handleSupportChange}
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
-                    </div>
-                  </div>
-                  <div className="flex justify-end pt-2">
-                    <button type="submit" disabled={supportLoading}
-                      className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-200">
-                      {supportLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
-                      Save Details
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
-          )
-        }
+                  <p className="text-[11px] text-gray-400 mt-1">Enables 1-click WhatsApp customer care in the user profile</p>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t border-gray-100">
+                  <button
+                    type="submit"
+                    disabled={supportLoading}
+                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-200 transition-all cursor-pointer"
+                  >
+                    {supportLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
+                    Save Support Details
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        )}
 
         {/* City Management View */}
         {
