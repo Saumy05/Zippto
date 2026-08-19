@@ -332,6 +332,7 @@ const UserDashboard = () => {
   }, []);
 
   // Detailed Services List for Sub-Category Detail View
+  // Detailed Services List for Sub-Category Detail View
   const electricianDetailData = {
     title: 'Electrician',
     rating: '4.5',
@@ -350,6 +351,7 @@ const UserDashboard = () => {
     ],
     detailedSections: [
       {
+        id: 'consultation',
         sectionTitle: 'Book a consultation',
         items: [
           {
@@ -364,6 +366,7 @@ const UserDashboard = () => {
         ],
       },
       {
+        id: 'inverter',
         sectionTitle: 'Inverter And Stabiliser',
         items: [
           {
@@ -371,7 +374,7 @@ const UserDashboard = () => {
             title: 'Inverter installation',
             rating: '4.8',
             reviews: '120 reviews',
-            price: 'Starting from ₹0',
+            price: '₹249',
             desc: 'Professional single inverter battery installation, replacement, and connection for seamless power backup.',
             image: '/native_water_purifier.png',
           },
@@ -380,13 +383,14 @@ const UserDashboard = () => {
             title: 'Inverter and stabilizer repair',
             rating: '4.8',
             reviews: '120 reviews',
-            price: 'Starting from ₹0',
+            price: '₹199',
             desc: 'Professional installation, repair, and replacement of inverters and stabilizers for optimal protection.',
             image: '/native_water_purifier.png',
           },
         ],
       },
       {
+        id: 'appliances',
         sectionTitle: 'Appliances',
         items: [
           {
@@ -394,9 +398,117 @@ const UserDashboard = () => {
             title: 'Home theatre installation',
             rating: '4.8',
             reviews: '120 reviews',
-            price: '₹0',
+            price: '₹399',
             desc: 'Professional home theatre installation with speaker setup, wiring, subwoofer tuning, and system check.',
             image: '/ac_foam_jet_service.png',
+          },
+          {
+            id: 'tv-wall-mounting',
+            title: 'TV Wall Mounting & Setup',
+            rating: '4.9',
+            reviews: '280 reviews',
+            price: '₹299',
+            desc: 'Precision laser-level TV wall mount fitting with concealed wiring setup.',
+            image: '/ac_repair_wall.png',
+          },
+        ],
+      },
+      {
+        id: 'mcb',
+        sectionTitle: 'MCB / Fuse Box',
+        items: [
+          {
+            id: 'mcb-replacement',
+            title: 'MCB Switch Replacement',
+            rating: '4.8',
+            reviews: '95 reviews',
+            price: '₹149',
+            desc: 'Replacement of faulty single/double pole miniature circuit breaker (MCB) with load test.',
+            image: '/switchboard_repair.png',
+          },
+          {
+            id: 'fuse-troubleshoot',
+            title: 'Main Fuse Troubleshooting',
+            rating: '4.7',
+            reviews: '110 reviews',
+            price: '₹199',
+            desc: 'Diagnosis of sudden power trips, short circuits, and phase load imbalance.',
+            image: '/switchboard_repair.png',
+          },
+        ],
+      },
+      {
+        id: 'doorbell',
+        sectionTitle: 'Doorbell & Security',
+        items: [
+          {
+            id: 'doorbell-install',
+            title: 'Smart / Standard Doorbell Installation',
+            rating: '4.8',
+            reviews: '75 reviews',
+            price: '₹129',
+            desc: 'Fitting electric or smart video doorbells with transformer and chime configuration.',
+            image: '/drill_wall_decor.png',
+          },
+        ],
+      },
+      {
+        id: 'wiring',
+        sectionTitle: 'Wiring & Cable Management',
+        items: [
+          {
+            id: 'internal-wiring',
+            title: 'Internal Concealed Wiring (Per Point)',
+            rating: '4.9',
+            reviews: '310 reviews',
+            price: '₹199',
+            desc: 'Heavy-gauge flame-retardant wiring installation with casing and conduit piping.',
+            image: '/switchboard_repair.png',
+          },
+        ],
+      },
+      {
+        id: 'light',
+        sectionTitle: 'Light & Fixture Installation',
+        items: [
+          {
+            id: 'fancy-light-install',
+            title: 'Decorative / Chandelier Light Fitting',
+            rating: '4.8',
+            reviews: '140 reviews',
+            price: '₹199',
+            desc: 'Secure ceiling anchor fixing for fancy pendant lights, chandeliers, and LED battens.',
+            image: '/ac_repair_wall.png',
+          },
+        ],
+      },
+      {
+        id: 'fan',
+        sectionTitle: 'Fan Installation & Repair',
+        items: [
+          {
+            id: 'ceiling-fan-install',
+            title: 'Ceiling Fan Installation & Balancing',
+            rating: '4.9',
+            reviews: '420 reviews',
+            price: '₹149',
+            desc: 'Downrod assembly, blade balancing, regulator wiring, and wobble elimination.',
+            image: '/ac_repair_wall.png',
+          },
+        ],
+      },
+      {
+        id: 'switch-socket',
+        sectionTitle: 'Switch & Socket Replacement',
+        items: [
+          {
+            id: 'switch-socket-replace-item',
+            title: 'Modular Switch & 16A Socket Replacement',
+            rating: '4.8',
+            reviews: '560 reviews',
+            price: '₹79',
+            desc: 'Replacement of burnt or broken switches, plugs, and heavy appliance sockets.',
+            image: '/switchboard_repair.png',
           },
         ],
       },
@@ -686,15 +798,37 @@ const UserDashboard = () => {
               <div
                 key={sg.id}
                 onClick={() => {
-                  const targetEl = document.getElementById(`section-${sg.id}`);
-                  if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth' });
+                  const cleanKey = (sg.id || sg.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+                  let targetEl = document.getElementById(`section-${cleanKey}`);
+                  if (!targetEl) {
+                    const cleanName = sg.name.toLowerCase().trim();
+                    targetEl = Array.from(document.querySelectorAll('[id^="section-"]')).find(el =>
+                      el.id.toLowerCase().includes(cleanKey.slice(0, 4)) ||
+                      el.textContent.toLowerCase().includes(cleanName)
+                    );
+                  }
+                  if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    targetEl.classList.add('bg-amber-50/70', 'p-2.5', 'rounded-2xl', 'transition-all', 'duration-300');
+                    setTimeout(() => {
+                      targetEl.classList.remove('bg-amber-50/70', 'p-2.5', 'rounded-2xl');
+                    }, 1400);
+                  }
                 }}
-                className="flex flex-col items-center text-center cursor-pointer group"
+                className="flex flex-col items-center text-center cursor-pointer group active:scale-95 transition-transform"
               >
                 <div className="w-full aspect-square rounded-2xl bg-white border border-slate-200/90 shadow-2xs overflow-hidden flex items-center justify-center p-2 group-hover:border-slate-400 group-hover:shadow-md transition-all">
-                  <img src={sg.image} alt={sg.name} className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform" />
+                  <img
+                    src={sg.image}
+                    alt={sg.name}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/cat_electrician_plumber.png';
+                    }}
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
+                  />
                 </div>
-                <span className="mt-1.5 text-[10.5px] sm:text-xs font-bold text-slate-800 leading-snug line-clamp-2">
+                <span className="mt-1.5 text-[10.5px] sm:text-xs font-bold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
                   {sg.name}
                 </span>
               </div>
@@ -702,11 +836,14 @@ const UserDashboard = () => {
           </div>
 
           <div className="space-y-5 pt-2">
-            {activeDetailView.detailedSections.map((sec, idx) => (
-              <div key={idx} className="space-y-2.5">
-                <h3 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-1.5">
-                  {sec.sectionTitle}
-                </h3>
+            {activeDetailView.detailedSections.map((sec, idx) => {
+              const secAnchorId = `section-${(sec.id || sec.sectionTitle || `sec-${idx}`).toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+              return (
+                <div key={idx} id={secAnchorId} className="space-y-2.5 scroll-mt-24">
+                  <h3 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-1.5 flex items-center justify-between">
+                    <span>{sec.sectionTitle}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">({sec.items.length} services)</span>
+                  </h3>
 
                 <div className="space-y-2.5">
                   {sec.items.map((item) => {
@@ -766,7 +903,8 @@ const UserDashboard = () => {
                   })}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </main>
       ) : (
@@ -1439,10 +1577,14 @@ const UserDashboard = () => {
                         <img
                           src={sub.image}
                           alt={sub.name}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/cat_electrician_plumber.png';
+                          }}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        sub.icon
+                        <span className="text-3xl">{sub.icon || '⚡'}</span>
                       )}
                     </div>
                     <span className="text-xs font-semibold text-slate-800 text-center mt-2.5 leading-tight line-clamp-2 px-1">
