@@ -69,6 +69,8 @@ const notificationSchema = new mongoose.Schema({
       'payout_requested',
       'payout_processed',
       'vendor_withdrawal_request',
+      'referral_reward',
+      'referral_bonus',
       'general'
     ],
     index: true

@@ -215,6 +215,14 @@ const verifyPaymentWebhook = async (req, res) => {
     if (booking.status === BOOKING_STATUS.COMPLETED) {
       vendorTitle = 'Payment Received (Online)';
       vendorMsg = `User paid ₹${booking.finalAmount} online for booking ${booking.bookingNumber}. Job Completed!`;
+
+      // Trigger Referral Reward on 1st completed booking
+      try {
+        const { processFirstBookingReferralReward } = require('../../services/referralService');
+        processFirstBookingReferralReward(booking._id).catch(refErr => console.error('[Referral Hook] Online Payment Error:', refErr));
+      } catch (hookErr) {
+        console.warn('[Referral Hook] Warning:', hookErr.message);
+      }
     }
 
     if (booking.vendorId) {

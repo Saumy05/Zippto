@@ -454,6 +454,14 @@ exports.confirmCashCollection = async (req, res) => {
       });
     }
 
+    // Process Referral Reward on First Booking Completion
+    try {
+      const { processFirstBookingReferralReward } = require('../../services/referralService');
+      processFirstBookingReferralReward(booking._id).catch(refErr => console.error('[Referral Hook] Error:', refErr));
+    } catch (hookErr) {
+      console.warn('[Referral Hook] Warning:', hookErr.message);
+    }
+
     // Push Notification
     const { createNotification } = require('../notificationControllers/notificationController');
     await createNotification({

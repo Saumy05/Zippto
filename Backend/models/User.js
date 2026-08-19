@@ -114,6 +114,39 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
 
+  // Referral & Invite Engine
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true,
+    uppercase: true,
+    trim: true,
+    index: true
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  firstBookingCompleted: {
+    type: Boolean,
+    default: false
+  },
+  referralRewardClaimed: {
+    type: Boolean,
+    default: false
+  },
+  referralRewards: {
+    totalEarned: {
+      type: Number,
+      default: 0
+    },
+    successfulReferralsCount: {
+      type: Number,
+      default: 0
+    }
+  },
+
   // FCM Push Notification Tokens
   fcmTokens: {
     type: [String],

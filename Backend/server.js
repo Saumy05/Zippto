@@ -173,6 +173,7 @@ app.use('/api/users/bookings', require('./routes/user-routes/booking.routes'));
 app.use('/api/users', require('./routes/user-routes/cart.routes'));
 app.use('/api/users', require('./routes/user-routes/coupon.routes'));
 app.use('/api/users', require('./routes/user-routes/ticket.routes'));
+app.use('/api/users/referral', require('./routes/user-routes/referral.routes'));
 app.use('/api/users/fcm-tokens', require('./routes/user-routes/fcmToken.routes'));
 
 // Vendor routes

@@ -196,7 +196,7 @@ const register = async (req, res) => {
       });
     }
 
-    const { name, email, verificationToken } = req.body;
+    const { name, email, verificationToken, referralCode } = req.body;
     let phone = req.body.phone;
 
     // Verify token if provided (New Flow)
@@ -229,14 +229,27 @@ const register = async (req, res) => {
       });
     }
 
+    const { generateUniqueReferralCode, applyReferralCode } = require('../../services/referralService');
+    const userReferralCode = await generateUniqueReferralCode(name);
+
     // Create user
     const user = await User.create({
       name,
       email: email || null,
       phone,
+      referralCode: userReferralCode,
       isPhoneVerified: true,
       isEmailVerified: email ? false : true
     });
+
+    // Apply friend's referral code if provided
+    if (referralCode) {
+      try {
+        await applyReferralCode(user._id, referralCode);
+      } catch (refErr) {
+        console.warn(`[Referral] Failed to apply code ${referralCode} for user ${user._id}:`, refErr.message);
+      }
+    }
 
     // Send Welcome Email
     if (email) {
@@ -261,6 +274,7 @@ const register = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        referralCode: user.referralCode,
         isPhoneVerified: user.isPhoneVerified,
         isEmailVerified: user.isEmailVerified
       },
