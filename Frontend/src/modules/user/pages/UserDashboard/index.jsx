@@ -331,188 +331,486 @@ const UserDashboard = () => {
     fetchLiveCategories();
   }, []);
 
-  // Detailed Services List for Sub-Category Detail View
-  // Detailed Services List for Sub-Category Detail View
-  const electricianDetailData = {
-    title: 'Electrician',
-    rating: '4.5',
-    reviews: '1.2k reviews',
-    desc: 'Our electrician caters to everyone, providing a fun and comfortable atmosphere with premium, certified home expert styling and custom packages tailored for you.',
-    subGrid: [
-      { id: 'consultation', name: 'Book a consultation', image: '/cat_electrician_plumber.png' },
-      { id: 'inverter', name: 'Inverter And Stabiliser', image: '/native_water_purifier.png' },
-      { id: 'appliances', name: 'Appliances', image: '/ac_foam_jet_service.png' },
-      { id: 'mcb', name: 'MCB/fuse', image: '/switchboard_repair.png' },
-      { id: 'doorbell', name: 'Doorbell & security', image: '/drill_wall_decor.png' },
-      { id: 'wiring', name: 'Wiring', image: '/switchboard_repair.png' },
-      { id: 'light', name: 'Light', image: '/ac_repair_wall.png' },
-      { id: 'fan', name: 'Fan', image: '/ac_repair_wall.png' },
-      { id: 'switch-socket', name: 'Switch & socket', image: '/switchboard_repair.png' },
-    ],
-    detailedSections: [
-      {
-        id: 'consultation',
-        sectionTitle: 'Book a consultation',
-        items: [
-          {
-            id: 'book-consultant',
-            title: 'Book consultant',
-            rating: '4.8',
-            reviews: '120 reviews',
-            price: '₹0',
-            desc: 'Book an electrical consultant for expert inspection, troubleshooting, safety advice, and exact cost estimation.',
-            image: '/cat_electrician_plumber.png',
-          },
-        ],
-      },
-      {
-        id: 'inverter',
-        sectionTitle: 'Inverter And Stabiliser',
-        items: [
-          {
-            id: 'inverter-install',
-            title: 'Inverter installation',
-            rating: '4.8',
-            reviews: '120 reviews',
-            price: '₹249',
-            desc: 'Professional single inverter battery installation, replacement, and connection for seamless power backup.',
-            image: '/native_water_purifier.png',
-          },
-          {
-            id: 'inverter-stabilizer',
-            title: 'Inverter and stabilizer repair',
-            rating: '4.8',
-            reviews: '120 reviews',
-            price: '₹199',
-            desc: 'Professional installation, repair, and replacement of inverters and stabilizers for optimal protection.',
-            image: '/native_water_purifier.png',
-          },
-        ],
-      },
-      {
-        id: 'appliances',
-        sectionTitle: 'Appliances',
-        items: [
-          {
-            id: 'home-theatre-install',
-            title: 'Home theatre installation',
-            rating: '4.8',
-            reviews: '120 reviews',
-            price: '₹399',
-            desc: 'Professional home theatre installation with speaker setup, wiring, subwoofer tuning, and system check.',
-            image: '/ac_foam_jet_service.png',
-          },
-          {
-            id: 'tv-wall-mounting',
-            title: 'TV Wall Mounting & Setup',
-            rating: '4.9',
-            reviews: '280 reviews',
-            price: '₹299',
-            desc: 'Precision laser-level TV wall mount fitting with concealed wiring setup.',
-            image: '/ac_repair_wall.png',
-          },
-        ],
-      },
-      {
-        id: 'mcb',
-        sectionTitle: 'MCB / Fuse Box',
-        items: [
-          {
-            id: 'mcb-replacement',
-            title: 'MCB Switch Replacement',
-            rating: '4.8',
-            reviews: '95 reviews',
-            price: '₹149',
-            desc: 'Replacement of faulty single/double pole miniature circuit breaker (MCB) with load test.',
-            image: '/switchboard_repair.png',
-          },
-          {
-            id: 'fuse-troubleshoot',
-            title: 'Main Fuse Troubleshooting',
-            rating: '4.7',
-            reviews: '110 reviews',
-            price: '₹199',
-            desc: 'Diagnosis of sudden power trips, short circuits, and phase load imbalance.',
-            image: '/switchboard_repair.png',
-          },
-        ],
-      },
-      {
-        id: 'doorbell',
-        sectionTitle: 'Doorbell & Security',
-        items: [
-          {
-            id: 'doorbell-install',
-            title: 'Smart / Standard Doorbell Installation',
-            rating: '4.8',
-            reviews: '75 reviews',
-            price: '₹129',
-            desc: 'Fitting electric or smart video doorbells with transformer and chime configuration.',
-            image: '/drill_wall_decor.png',
-          },
-        ],
-      },
-      {
-        id: 'wiring',
-        sectionTitle: 'Wiring & Cable Management',
-        items: [
-          {
-            id: 'internal-wiring',
-            title: 'Internal Concealed Wiring (Per Point)',
-            rating: '4.9',
-            reviews: '310 reviews',
-            price: '₹199',
-            desc: 'Heavy-gauge flame-retardant wiring installation with casing and conduit piping.',
-            image: '/switchboard_repair.png',
-          },
-        ],
-      },
-      {
-        id: 'light',
-        sectionTitle: 'Light & Fixture Installation',
-        items: [
-          {
-            id: 'fancy-light-install',
-            title: 'Decorative / Chandelier Light Fitting',
-            rating: '4.8',
-            reviews: '140 reviews',
-            price: '₹199',
-            desc: 'Secure ceiling anchor fixing for fancy pendant lights, chandeliers, and LED battens.',
-            image: '/ac_repair_wall.png',
-          },
-        ],
-      },
-      {
-        id: 'fan',
-        sectionTitle: 'Fan Installation & Repair',
-        items: [
-          {
-            id: 'ceiling-fan-install',
-            title: 'Ceiling Fan Installation & Balancing',
-            rating: '4.9',
-            reviews: '420 reviews',
-            price: '₹149',
-            desc: 'Downrod assembly, blade balancing, regulator wiring, and wobble elimination.',
-            image: '/ac_repair_wall.png',
-          },
-        ],
-      },
-      {
-        id: 'switch-socket',
-        sectionTitle: 'Switch & Socket Replacement',
-        items: [
-          {
-            id: 'switch-socket-replace-item',
-            title: 'Modular Switch & 16A Socket Replacement',
-            rating: '4.8',
-            reviews: '560 reviews',
-            price: '₹79',
-            desc: 'Replacement of burnt or broken switches, plugs, and heavy appliance sockets.',
-            image: '/switchboard_repair.png',
-          },
-        ],
-      },
-    ],
+  // Complete Dynamic Services Registry for All Platform Categories
+  const CATEGORY_CATALOG_REGISTRY = {
+    electrician: {
+      bannerTitle: 'ELECTRICAL SERVICES',
+      title: 'Electrician',
+      rating: '4.8',
+      reviews: '12k+ reviews',
+      desc: 'Certified electrical technicians for fault diagnosis, wiring, lighting, fans, MCBs, and home appliance power solutions.',
+      subGrid: [
+        { id: 'consultation', name: 'Book a consultation', image: '/cat_electrician_plumber.png' },
+        { id: 'inverter', name: 'Inverter And Stabiliser', image: '/native_water_purifier.png' },
+        { id: 'appliances', name: 'Appliances', image: '/ac_foam_jet_service.png' },
+        { id: 'mcb', name: 'MCB/fuse', image: '/switchboard_repair.png' },
+        { id: 'doorbell', name: 'Doorbell & security', image: '/drill_wall_decor.png' },
+        { id: 'wiring', name: 'Wiring', image: '/switchboard_repair.png' },
+        { id: 'light', name: 'Light', image: '/ac_repair_wall.png' },
+        { id: 'fan', name: 'Fan', image: '/ac_repair_wall.png' },
+        { id: 'switch-socket', name: 'Switch & socket', image: '/switchboard_repair.png' },
+      ],
+      detailedSections: [
+        {
+          id: 'consultation',
+          sectionTitle: 'Book a consultation',
+          items: [
+            { id: 'book-consultant', title: 'Book electrical consultant', rating: '4.8', reviews: '120 reviews', price: '₹0', desc: 'Expert inspection, troubleshooting, safety advice, and exact cost estimation.', image: '/cat_electrician_plumber.png' }
+          ]
+        },
+        {
+          id: 'inverter',
+          sectionTitle: 'Inverter And Stabiliser',
+          items: [
+            { id: 'inverter-install', title: 'Inverter installation', rating: '4.8', reviews: '120 reviews', price: '₹249', desc: 'Professional single inverter battery installation, replacement, and power connection.', image: '/native_water_purifier.png' },
+            { id: 'inverter-stabilizer', title: 'Inverter & stabilizer repair', rating: '4.8', reviews: '120 reviews', price: '₹199', desc: 'Diagnosis and component repair for heavy-load voltage stabilizers.', image: '/native_water_purifier.png' }
+          ]
+        },
+        {
+          id: 'appliances',
+          sectionTitle: 'Appliances',
+          items: [
+            { id: 'home-theatre-install', title: 'Home theatre installation', rating: '4.8', reviews: '120 reviews', price: '₹399', desc: 'Surround sound setup, subwoofer tuning, and clean audio routing.', image: '/ac_foam_jet_service.png' },
+            { id: 'tv-wall-mounting', title: 'TV Wall Mounting & Setup', rating: '4.9', reviews: '280 reviews', price: '₹299', desc: 'Laser-level TV wall mount fitting with concealed cable casing.', image: '/ac_repair_wall.png' }
+          ]
+        },
+        {
+          id: 'mcb',
+          sectionTitle: 'MCB / Fuse Box',
+          items: [
+            { id: 'mcb-replacement', title: 'MCB Switch Replacement', rating: '4.8', reviews: '95 reviews', price: '₹149', desc: 'Replacement of single/double pole miniature circuit breaker with surge test.', image: '/switchboard_repair.png' },
+            { id: 'fuse-troubleshoot', title: 'Main Fuse Troubleshooting', rating: '4.7', reviews: '110 reviews', price: '₹199', desc: 'Diagnosis of sudden trips, short circuits, and phase load balancing.', image: '/switchboard_repair.png' }
+          ]
+        },
+        {
+          id: 'doorbell',
+          sectionTitle: 'Doorbell & Security',
+          items: [
+            { id: 'doorbell-install', title: 'Smart / Standard Doorbell Installation', rating: '4.8', reviews: '75 reviews', price: '₹129', desc: 'Fitting electric or smart video doorbells with transformer & chime setup.', image: '/drill_wall_decor.png' }
+          ]
+        },
+        {
+          id: 'wiring',
+          sectionTitle: 'Wiring & Cable Management',
+          items: [
+            { id: 'internal-wiring', title: 'Internal Concealed Wiring (Per Point)', rating: '4.9', reviews: '310 reviews', price: '₹199', desc: 'Flame-retardant wiring installation with PVC casing and pipe conduit.', image: '/switchboard_repair.png' }
+          ]
+        },
+        {
+          id: 'light',
+          sectionTitle: 'Light & Fixture Installation',
+          items: [
+            { id: 'fancy-light-install', title: 'Decorative / Chandelier Light Fitting', rating: '4.8', reviews: '140 reviews', price: '₹199', desc: 'Ceiling anchor fixing for fancy pendant lights, chandeliers, and LED battens.', image: '/ac_repair_wall.png' }
+          ]
+        },
+        {
+          id: 'fan',
+          sectionTitle: 'Fan Installation & Repair',
+          items: [
+            { id: 'ceiling-fan-install', title: 'Ceiling Fan Installation & Balancing', rating: '4.9', reviews: '420 reviews', price: '₹149', desc: 'Downrod assembly, blade balancing, regulator wiring, and wobble elimination.', image: '/ac_repair_wall.png' }
+          ]
+        },
+        {
+          id: 'switch-socket',
+          sectionTitle: 'Switch & Socket Replacement',
+          items: [
+            { id: 'switch-socket-replace-item', title: 'Modular Switch & 16A Socket Replacement', rating: '4.8', reviews: '560 reviews', price: '₹79', desc: 'Replacement of burnt or broken switches, plugs, and heavy appliance sockets.', image: '/switchboard_repair.png' }
+          ]
+        }
+      ]
+    },
+    plumber: {
+      bannerTitle: 'PLUMBING & SANITARY SERVICES',
+      title: 'Plumber',
+      rating: '4.7',
+      reviews: '9.8k+ reviews',
+      desc: 'Expert plumbing specialists for tap leakage, high pressure drainage unclogging, pipe fittings, and complete bathroom sanitary repairs at transparent prices.',
+      subGrid: [
+        { id: 'tap-mixer', name: 'Tap & Mixer Repair', image: '/tap_plumbing_repair.png' },
+        { id: 'drainage', name: 'Drainage & Blockage', image: '/intense_bathroom_cleaning.png' },
+        { id: 'flush-toilet', name: 'Flush Tank & Toilet', image: '/intense_bathroom_cleaning.png' },
+        { id: 'pipe-fitting', name: 'Pipe & Tank Fitting', image: '/tap_plumbing_repair.png' },
+        { id: 'basin-sink', name: 'Basin & Kitchen Sink', image: '/tap_plumbing_repair.png' },
+        { id: 'water-pump', name: 'Water Pump & Motor', image: '/native_water_purifier.png' }
+      ],
+      detailedSections: [
+        {
+          id: 'tap-mixer',
+          sectionTitle: 'Tap & Mixer Leakage Repair',
+          items: [
+            { id: 'plumb-tap-replace', title: 'Tap & Spout Replacement', price: '₹79', rating: '4.8', reviews: '1.4k', desc: 'Fix leaking or broken bib taps, pillar cocks, and spout filters.', image: '/tap_plumbing_repair.png' },
+            { id: 'plumb-mixer-cartridge', title: 'Wall Mixer Cartridge Repair', price: '₹149', rating: '4.9', reviews: '920', desc: 'Repair low water pressure and internal ceramic disc cartridges.', image: '/tap_plumbing_repair.png' },
+            { id: 'plumb-angle-valve', title: 'Angle Valve & Jet Spray Fit', price: '₹99', rating: '4.7', reviews: '640', desc: 'Installation of high-pressure bidet jet sprays and angle stop valves.', image: '/tap_plumbing_repair.png' }
+          ]
+        },
+        {
+          id: 'drainage',
+          sectionTitle: 'Blockage & Drainage Clearing',
+          items: [
+            { id: 'plumb-sink-unclog', title: 'Kitchen Sink Drain Unclogging', price: '₹199', rating: '4.8', reviews: '2.1k', desc: 'Clearing food sludge, grease buildup, and bottle trap sanitization.', image: '/intense_bathroom_cleaning.png' },
+            { id: 'plumb-bath-drain', title: 'Bathroom Floor Trap Clearing', price: '₹249', rating: '4.7', reviews: '1.8k', desc: 'Removal of hair clogs, soap residue, and gully trap unclogging.', image: '/intense_bathroom_cleaning.png' },
+            { id: 'plumb-jet-clear', title: 'High-Pressure Pipe Jet Clean', price: '₹499', rating: '4.9', reviews: '760', desc: 'Motorized mechanical snake rodding for heavy main line blocks.', image: '/intense_bathroom_cleaning.png' }
+          ]
+        },
+        {
+          id: 'flush-toilet',
+          sectionTitle: 'Flush Tank & Toilet Repair',
+          items: [
+            { id: 'plumb-flush-syphon', title: 'Flush Tank Syphon & Float Valve', price: '₹179', rating: '4.8', reviews: '1.1k', desc: 'Fix continuous water running, faulty push button, and overflow float valve.', image: '/intense_bathroom_cleaning.png' },
+            { id: 'plumb-commode-leak', title: 'Western Commode Sealing & Repair', price: '₹249', rating: '4.7', reviews: '830', desc: 'Gasket replacement, wax ring sealing, and floor joint leak prevention.', image: '/intense_bathroom_cleaning.png' }
+          ]
+        },
+        {
+          id: 'pipe-fitting',
+          sectionTitle: 'Pipe & Tank Fitting',
+          items: [
+            { id: 'plumb-concealed-pipe', title: 'Concealed Pipeline Leakage Repair', price: '₹299', rating: '4.9', reviews: '950', desc: 'Acoustic detection and CPVC/UPVC pipe joint patching with pressure test.', image: '/tap_plumbing_repair.png' },
+            { id: 'plumb-tank-valve', title: 'Overhead Tank Ball Valve Install', price: '₹199', rating: '4.8', reviews: '420', desc: 'Automatic brass ball valve fitting to prevent overhead water overflow.', image: '/native_water_purifier.png' }
+          ]
+        },
+        {
+          id: 'basin-sink',
+          sectionTitle: 'Basin & Kitchen Sink',
+          items: [
+            { id: 'plumb-basin-install', title: 'Wash Basin Installation & Coupling', price: '₹249', rating: '4.8', reviews: '530', desc: 'Laser level mounting of wash basins with waste coupling & trap.', image: '/tap_plumbing_repair.png' }
+          ]
+        },
+        {
+          id: 'water-pump',
+          sectionTitle: 'Water Pump & Motor',
+          items: [
+            { id: 'plumb-motor-connect', title: 'Water Motor Pump Connection & Wiring', price: '₹349', rating: '4.8', reviews: '310', desc: 'Inlet/outlet plumbing union joints and capacitor check for booster pumps.', image: '/native_water_purifier.png' }
+          ]
+        }
+      ]
+    },
+    carpenter: {
+      bannerTitle: 'CARPENTRY & WOODWORK SERVICES',
+      title: 'Carpenter',
+      rating: '4.8',
+      reviews: '8.4k+ reviews',
+      desc: 'Expert woodworking, flat-pack furniture assembly, door locks, hinges, and custom wall mounting with laser precision.',
+      subGrid: [
+        { id: 'door-lock', name: 'Door Lock & Handles', image: '/drill_wall_decor.png' },
+        { id: 'furniture-assemble', name: 'Furniture Assembly', image: '/drill_wall_decor.png' },
+        { id: 'sofa-repair', name: 'Sofa & Chair Repair', image: '/drill_wall_decor.png' },
+        { id: 'wardrobe-hinge', name: 'Cupboard & Hinge Fix', image: '/switchboard_repair.png' },
+        { id: 'custom-drilling', name: 'Wall Hanging & Drill', image: '/drill_wall_decor.png' }
+      ],
+      detailedSections: [
+        {
+          id: 'door-lock',
+          sectionTitle: 'Door Lock & Handles',
+          items: [
+            { id: 'carp-mortise-lock', title: 'Mortise Main Door Lock Fitting', price: '₹199', rating: '4.9', reviews: '1.2k', desc: 'Precision mortise chiseled installation for security locks & smart latches.', image: '/drill_wall_decor.png' },
+            { id: 'carp-cylinder-replace', title: 'Lock Cylinder Replacement', price: '₹149', rating: '4.8', reviews: '840', desc: 'Replacement of brass key cylinder with 3 duplicate keys testing.', image: '/drill_wall_decor.png' }
+          ]
+        },
+        {
+          id: 'furniture-assemble',
+          sectionTitle: 'Furniture Assembly',
+          items: [
+            { id: 'carp-bed-assembly', title: 'Bed Assembly (Single/Double/Hydraulic)', price: '₹349', rating: '4.8', reviews: '950', desc: 'Flat-pack bed frame assembly with headboard and hydraulic lift fitting.', image: '/drill_wall_decor.png' },
+            { id: 'carp-table-chair', title: 'Study Table & Dining Table Assembly', price: '₹249', rating: '4.7', reviews: '720', desc: 'Leg bolt alignment, structural wobble removal, and surface leveling.', image: '/drill_wall_decor.png' }
+          ]
+        },
+        {
+          id: 'wardrobe-hinge',
+          sectionTitle: 'Cupboard & Hinge Fix',
+          items: [
+            { id: 'carp-soft-hinge', title: 'Soft-Close Cabinet Hinge Fitting', price: '₹129', rating: '4.8', reviews: '610', desc: 'Replacement of rusted or loose cabinet auto-hinges and magnetic catches.', image: '/switchboard_repair.png' },
+            { id: 'carp-drawer-channel', title: 'Drawer Telescopic Channel Repair', price: '₹179', rating: '4.7', reviews: '490', desc: 'Smooth ball-bearing channel realigning for kitchen & wardrobe drawers.', image: '/switchboard_repair.png' }
+          ]
+        },
+        {
+          id: 'custom-drilling',
+          sectionTitle: 'Wall Hanging & Drill',
+          items: [
+            { id: 'carp-curtain-rod', title: 'Curtain Rod Installation (Per Rod)', price: '₹99', rating: '4.9', reviews: '1.5k', desc: 'Heavy masonry anchor drill fitting with spirit level alignment.', image: '/drill_wall_decor.png' },
+            { id: 'carp-heavy-mirror', title: 'Large Mirror & Artwork Mounting', price: '₹149', rating: '4.8', reviews: '820', desc: 'Secure load-rated bracket wall drilling for vanity mirrors and framed art.', image: '/drill_wall_decor.png' }
+          ]
+        }
+      ]
+    },
+    'salon-for-women': {
+      bannerTitle: 'SALON & SPA FOR WOMEN',
+      title: 'Salon for Women',
+      rating: '4.9',
+      reviews: '15k+ reviews',
+      desc: 'Certified female beauticians delivering hygienic doorstep waxing, glowing facials, manicures, pedicures, and hair rituals with single-use kits.',
+      subGrid: [
+        { id: 'waxing', name: 'Waxing & Threading', image: '/cat_images/salon_women.jpg' },
+        { id: 'facial', name: 'Facials & Cleanups', image: '/cat_images/salon_women.jpg' },
+        { id: 'korean-glow', name: 'Korean Glass Glow', image: '/cat_images/salon_women.jpg' },
+        { id: 'mani-pedi', name: 'Manicure & Pedicure', image: '/cat_images/salon_women.jpg' },
+        { id: 'hair-spa', name: 'Hair Care & Spa', image: '/cat_images/salon_women.jpg' }
+      ],
+      detailedSections: [
+        {
+          id: 'waxing',
+          sectionTitle: 'Waxing & Threading',
+          items: [
+            { id: 'salon-wax-combo', title: 'Rica Full Arms + Full Legs Waxing', price: '₹499', rating: '4.9', reviews: '3.2k', desc: 'Painless roll-on Rica waxing with pre-wax gel & post-wax oil treatment.', image: '/cat_images/salon_women.jpg' },
+            { id: 'salon-threading', title: 'Eyebrow + Upper Lip Threading', price: '₹79', rating: '4.8', reviews: '4.5k', desc: 'Precision shaping with sanitized organic antibacterial thread.', image: '/cat_images/salon_women.jpg' }
+          ]
+        },
+        {
+          id: 'facial',
+          sectionTitle: 'Facials & Cleanups',
+          items: [
+            { id: 'salon-o3-facial', title: 'O3+ Bridal Radiance & Glow Facial', price: '₹1,199', rating: '4.9', reviews: '2.1k', desc: '6-Step brightening treatment with peel-off algae mask and serum infusion.', image: '/cat_images/salon_women.jpg' },
+            { id: 'salon-fruit-cleanup', title: 'Herbal Fruit Cleanup', price: '₹399', rating: '4.8', reviews: '1.7k', desc: 'Deep pore cleansing, fruit enzyme scrub, blackhead extraction, and pack.', image: '/cat_images/salon_women.jpg' }
+          ]
+        },
+        {
+          id: 'korean-glow',
+          sectionTitle: 'Korean Glass Glow',
+          items: [
+            { id: 'salon-hydra-glow', title: 'Korean Hydra Glass Skin Facial', price: '₹1,499', rating: '4.9', reviews: '1.3k', desc: 'Deep ultrasonic exfoliation, hyaluronic hydration infusion, and LED phototherapy.', image: '/cat_images/salon_women.jpg' }
+          ]
+        },
+        {
+          id: 'mani-pedi',
+          sectionTitle: 'Manicure & Pedicure',
+          items: [
+            { id: 'salon-rose-pedi', title: 'Rose Petal Spa Pedicure + Manicure', price: '₹699', rating: '4.8', reviews: '1.9k', desc: 'Dead skin buffing, cuticle care, relaxing massage, and nail polish.', image: '/cat_images/salon_women.jpg' }
+          ]
+        }
+      ]
+    },
+    'ac-appliance-repair': {
+      bannerTitle: 'AC & APPLIANCE REPAIR SERVICES',
+      title: 'AC & Appliance Repair',
+      rating: '4.8',
+      reviews: '18k+ reviews',
+      desc: 'Certified appliance engineers for AC foam-jet servicing, gas charging, washing machines, refrigerators, and water heaters.',
+      subGrid: [
+        { id: 'ac-foam-jet', name: 'AC Service & Repair', image: '/ac_foam_jet_service.png' },
+        { id: 'refrigerator', name: 'Refrigerator Repair', image: '/ac_repair_wall.png' },
+        { id: 'washing-machine', name: 'Washing Machine', image: '/intense_bathroom_cleaning.png' },
+        { id: 'geyser', name: 'Geyser & Water Heater', image: '/geyser_checkup.png' },
+        { id: 'ro-purifier', name: 'RO Water Purifier', image: '/native_water_purifier.png' }
+      ],
+      detailedSections: [
+        {
+          id: 'ac-foam-jet',
+          sectionTitle: 'AC Service & Repair',
+          items: [
+            { id: 'app-foam-jet-1', title: 'Power-Jet Foam AC Deep Service', price: '₹599', rating: '4.8', reviews: '6.5k', desc: '2x deeper coil cleaning with pressurized foam jet gun, drain tray wash & anti-fungal spray.', image: '/ac_foam_jet_service.png' },
+            { id: 'app-ac-gas', title: 'AC Gas Charging & Leak Check', price: '₹1,499', rating: '4.7', reviews: '2.1k', desc: 'Nitrogen pressure testing, brazing leak repair, and 100% refrigerant top-up.', image: '/ac_repair_wall.png' }
+          ]
+        },
+        {
+          id: 'refrigerator',
+          sectionTitle: 'Refrigerator Repair',
+          items: [
+            { id: 'app-fridge-diag', title: 'Refrigerator Cooling Diagnosis', price: '₹199', rating: '4.8', reviews: '1.4k', desc: 'Compressor check, thermostat relay diagnostic, and cooling gas level test.', image: '/ac_repair_wall.png' }
+          ]
+        },
+        {
+          id: 'washing-machine',
+          sectionTitle: 'Washing Machine',
+          items: [
+            { id: 'app-wm-service', title: 'Automatic Washing Machine Service', price: '₹249', rating: '4.8', reviews: '1.6k', desc: 'Drum descaling, drain motor valve clearance, and spin noise balance.', image: '/intense_bathroom_cleaning.png' }
+          ]
+        },
+        {
+          id: 'geyser',
+          sectionTitle: 'Geyser & Water Heater',
+          items: [
+            { id: 'app-geyser-check', title: 'Geyser Check-up & Element Descale', price: '₹249', rating: '4.8', reviews: '980', desc: 'Heating coil descaling, thermostat temperature test, and safety valve check.', image: '/geyser_checkup.png' }
+          ]
+        }
+      ]
+    },
+    'cleaning-service': {
+      bannerTitle: 'CLEANING & HYGIENE SERVICES',
+      title: 'Cleaning Service',
+      rating: '4.8',
+      reviews: '11k+ reviews',
+      desc: 'Professional mechanized deep cleaning for bathrooms, kitchens, sofas, and full apartments with eco-friendly sanitizers.',
+      subGrid: [
+        { id: 'full-home', name: 'Full Home Deep Clean', image: '/intense_bathroom_cleaning.png' },
+        { id: 'bathroom', name: 'Bathroom Cleaning', image: '/intense_bathroom_cleaning.png' },
+        { id: 'kitchen', name: 'Kitchen Degreasing', image: '/intense_bathroom_cleaning.png' },
+        { id: 'sofa-carpet', name: 'Sofa & Carpet Wash', image: '/mattress_cleaning.png' }
+      ],
+      detailedSections: [
+        {
+          id: 'full-home',
+          sectionTitle: 'Full Home Deep Clean',
+          items: [
+            { id: 'clean-1bhk', title: '1 BHK Complete Home Deep Clean', price: '₹1,899', rating: '4.8', reviews: '1.2k', desc: 'Floor single-disc buffing, bathroom descaling, kitchen degreasing & balcony wash.', image: '/intense_bathroom_cleaning.png' },
+            { id: 'clean-2bhk', title: '2 BHK Complete Home Deep Clean', price: '₹2,499', rating: '4.9', reviews: '2.4k', desc: 'Comprehensive deep cleaning for 2 bedrooms, hall, kitchen & 2 bathrooms.', image: '/intense_bathroom_cleaning.png' }
+          ]
+        },
+        {
+          id: 'bathroom',
+          sectionTitle: 'Bathroom Cleaning',
+          items: [
+            { id: 'clean-bath-intense', title: 'Intense Bathroom Descaling (2 Bathrooms)', price: '₹699', rating: '4.8', reviews: '3.1k', desc: 'Heavy hard-water stain removal from tiles, taps, mirrors, and WC sanitization.', image: '/intense_bathroom_cleaning.png' }
+          ]
+        },
+        {
+          id: 'sofa-carpet',
+          sectionTitle: 'Sofa & Carpet Wash',
+          items: [
+            { id: 'clean-sofa-shampoo', title: '3-Seater Sofa Injection Shampooing', price: '₹599', rating: '4.9', reviews: '1.8k', desc: 'High-power foam extraction wash for fabric sofas with dust mite removal.', image: '/mattress_cleaning.png' }
+          ]
+        }
+      ]
+    },
+    'pest-control': {
+      bannerTitle: 'PEST CONTROL & DISINFECTION',
+      title: 'Pest Control',
+      rating: '4.8',
+      reviews: '7.2k+ reviews',
+      desc: 'Odorless, government-approved herbal pest control for cockroaches, termites, bed bugs, and rodents with warranty.',
+      subGrid: [
+        { id: 'cockroach', name: 'Cockroach & Ant Control', image: '/intense_bathroom_cleaning.png' },
+        { id: 'termite', name: 'Termite Treatment', image: '/drill_wall_decor.png' },
+        { id: 'bedbug', name: 'Bed Bug Eradication', image: '/mattress_cleaning.png' }
+      ],
+      detailedSections: [
+        {
+          id: 'cockroach',
+          sectionTitle: 'Cockroach & Ant Control',
+          items: [
+            { id: 'pest-cockroach-1bhk', title: '1 BHK Herbal Gel Cockroach Treatment', price: '₹699', rating: '4.8', reviews: '1.5k', desc: 'Odorless German gel baiting across cabinets and kitchen corners with 3-month warranty.', image: '/intense_bathroom_cleaning.png' },
+            { id: 'pest-cockroach-2bhk', title: '2 BHK Herbal Gel + Drain Spray', price: '₹899', rating: '4.9', reviews: '2.1k', desc: 'Dual-action gel baiting and anti-cockroach drain piping treatment.', image: '/intense_bathroom_cleaning.png' }
+          ]
+        },
+        {
+          id: 'termite',
+          sectionTitle: 'Termite Treatment',
+          items: [
+            { id: 'pest-termite-barrier', title: 'Drill-Fill-Seal Termite Barrier (1 Room)', price: '₹1,499', rating: '4.9', reviews: '620', desc: 'Subterranean chemical barrier drill injection with color-matched sealant.', image: '/drill_wall_decor.png' }
+          ]
+        }
+      ]
+    },
+    'painting-service': {
+      bannerTitle: 'PAINTING & WATERPROOFING',
+      title: 'Painting Service',
+      rating: '4.8',
+      reviews: '6.4k+ reviews',
+      desc: 'Expert wall painting, moisture leak waterproofing, texture stencils, and dustless mechanized sanding.',
+      subGrid: [
+        { id: 'interior-paint', name: 'Full Interior Painting', image: '/drill_wall_decor.png' },
+        { id: 'waterproofing', name: 'Seepage Waterproofing', image: '/tap_plumbing_repair.png' },
+        { id: 'accent-wall', name: 'Accent Wall Textures', image: '/drill_wall_decor.png' }
+      ],
+      detailedSections: [
+        {
+          id: 'interior-paint',
+          sectionTitle: 'Full Interior Painting',
+          items: [
+            { id: 'paint-1room', title: '1 Room Fresh Paint (Walls + Ceiling)', price: '₹1,999', rating: '4.8', reviews: '840', desc: '2 Coats premium washable acrylic emulsion with floor masking and putty touchup.', image: '/drill_wall_decor.png' },
+            { id: 'paint-2bhk', title: '2 BHK Full Interior Painting Package', price: '₹8,999', rating: '4.9', reviews: '1.1k', desc: 'Complete Asian Paints / Berger premium paint finish with mechanized dustless sanding.', image: '/drill_wall_decor.png' }
+          ]
+        },
+        {
+          id: 'waterproofing',
+          sectionTitle: 'Seepage Waterproofing',
+          items: [
+            { id: 'paint-seepage-fix', title: 'Wall Dampness & Efflorescence Sealing', price: '₹999', rating: '4.8', reviews: '530', desc: 'Epoxy injection and silicone barrier primer to permanently stop peeling paint.', image: '/tap_plumbing_repair.png' }
+          ]
+        }
+      ]
+    },
+    'construction-renovation': {
+      bannerTitle: 'CONSTRUCTION & RENOVATION',
+      title: 'Construction & Renovation',
+      rating: '4.8',
+      reviews: '5.1k+ reviews',
+      desc: 'Civil repair work, false ceiling installations, tile laying, bathroom remodels, and structural masonry work.',
+      subGrid: [
+        { id: 'civil-repair', name: 'Civil Repair Work', image: '/switchboard_repair.png' },
+        { id: 'false-ceiling', name: 'False Ceiling & Gypsum', image: '/ac_repair_wall.png' },
+        { id: 'tile-laying', name: 'Tile & Marble Laying', image: '/drill_wall_decor.png' }
+      ],
+      detailedSections: [
+        {
+          id: 'civil-repair',
+          sectionTitle: 'Civil Repair Work',
+          items: [
+            { id: 'const-wall-crack', title: 'Structural Wall Crack Repair & Stitching', price: '₹499', rating: '4.8', reviews: '410', desc: 'Polymer modified mortar patching and structural fiber mesh reinforcement.', image: '/switchboard_repair.png' },
+            { id: 'const-core-cut', title: 'Masonry Wall Cut & Plastering', price: '₹799', rating: '4.7', reviews: '290', desc: 'Neat electrical/plumbing chase groove cutting and cement sand plaster finishing.', image: '/switchboard_repair.png' }
+          ]
+        },
+        {
+          id: 'tile-laying',
+          sectionTitle: 'Tile & Marble Laying',
+          items: [
+            { id: 'const-tile-replace', title: 'Broken Tile Replacement & Re-Grouting', price: '₹349', rating: '4.8', reviews: '380', desc: 'Chiseling cracked floor/wall tiles, adhesive bed leveling, and epoxy joint sealing.', image: '/drill_wall_decor.png' }
+          ]
+        }
+      ]
+    },
+    'solar-service': {
+      bannerTitle: 'SOLAR ROOFTOP & INVERTER SERVICES',
+      title: 'Solar Service',
+      rating: '4.9',
+      reviews: '4.3k+ reviews',
+      desc: 'Specialized solar technicians for inverter wiring repair, de-ionized solar panel washing, and full rooftop solar generation audits.',
+      subGrid: [
+        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', image: '/native_water_purifier.png' },
+        { id: 'solar-panel-washing', name: 'Solar Panel Washing & Maintenance', image: '/intense_bathroom_cleaning.png' },
+        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation Checkup', image: '/native_water_purifier.png' }
+      ],
+      detailedSections: [
+        {
+          id: 'solar-inverter-wiring-repair',
+          sectionTitle: 'Solar Inverter & Wiring Repair',
+          items: [
+            { id: 'solar-inv-diag', title: 'Solar Inverter Error & Fault Diagnostics', price: '₹299', rating: '4.9', reviews: '520', desc: 'Diagnostic check for MPPT charge controller, grid sync faults, and MC4 connectors.', image: '/native_water_purifier.png' },
+            { id: 'solar-string-wire', title: 'DC String Cable & Surge Protector Fix', price: '₹399', rating: '4.8', reviews: '340', desc: 'Rewiring damaged solar DC cables, replacement of SPD fuses and isolator switches.', image: '/native_water_purifier.png' }
+          ]
+        },
+        {
+          id: 'solar-panel-washing',
+          sectionTitle: 'Solar Panel Washing & Maintenance',
+          items: [
+            { id: 'solar-wash-10', title: 'De-ionized Pressure Wash (Up to 10 Panels)', price: '₹499', rating: '4.9', reviews: '810', desc: 'Non-abrasive microfiber de-ionized pressure wash removing dust and bird drops to boost output by 15-25%.', image: '/intense_bathroom_cleaning.png' },
+            { id: 'solar-wash-20', title: 'Rooftop Solar Deep Clean (11-25 Panels)', price: '₹799', rating: '4.9', reviews: '640', desc: 'Complete frame scrub, glass polish, and anti-static dust repellent coating.', image: '/intense_bathroom_cleaning.png' }
+          ]
+        },
+        {
+          id: 'rooftop-solar-installation',
+          sectionTitle: 'Rooftop Solar Installation Checkup',
+          items: [
+            { id: 'solar-audit-full', title: 'Comprehensive Solar Plant Generation Audit', price: '₹699', rating: '4.9', reviews: '430', desc: 'Thermal imaging for hot spots, inverter efficiency test, and structural bolt torque check.', image: '/native_water_purifier.png' }
+          ]
+        }
+      ]
+    }
+  };
+
+  // Helper to dynamically resolve full service detail template for ANY category
+  const resolveCategoryDetail = (category, subCategory) => {
+    const catSlug = (category.slug || category.id || category.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+    
+    let key = Object.keys(CATEGORY_CATALOG_REGISTRY).find(k => catSlug.includes(k) || k.includes(catSlug));
+    if (!key) {
+      if (catSlug.includes('electr')) key = 'electrician';
+      else if (catSlug.includes('plumb')) key = 'plumber';
+      else if (catSlug.includes('carpent')) key = 'carpenter';
+      else if (catSlug.includes('salon') || catSlug.includes('women')) key = 'salon-for-women';
+      else if (catSlug.includes('ac') || catSlug.includes('appliance')) key = 'ac-appliance-repair';
+      else if (catSlug.includes('clean')) key = 'cleaning-service';
+      else if (catSlug.includes('pest')) key = 'pest-control';
+      else if (catSlug.includes('paint')) key = 'painting-service';
+      else if (catSlug.includes('construct') || catSlug.includes('renovat')) key = 'construction-renovation';
+      else if (catSlug.includes('solar')) key = 'solar-service';
+      else key = 'electrician';
+    }
+
+    const template = CATEGORY_CATALOG_REGISTRY[key] || CATEGORY_CATALOG_REGISTRY.electrician;
+    return {
+      ...template,
+      title: category.title || template.title,
+      bannerTitle: `${(category.title || template.title).toUpperCase()} SERVICES`
+    };
   };
 
   // Lower Sections Data
@@ -772,8 +1070,8 @@ const UserDashboard = () => {
               <span className="text-[10px] font-bold tracking-widest text-amber-400 uppercase">
                 SAFE • RELIABLE • PROFESSIONAL
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-                ELECTRICAL SERVICES
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight uppercase">
+                {activeDetailView.bannerTitle || `${activeDetailView.title} SERVICES`}
               </h1>
             </div>
           </div>
@@ -1505,58 +1803,55 @@ const UserDashboard = () => {
                   <div
                     key={sub.id}
                     onClick={async () => {
+                      const currentCategory = activeCategoryModal;
+                      const currentSub = sub;
+                      setActiveCategoryModal(null);
+
+                      // 1. Resolve fallback detail immediately based on the selected category
+                      const fallbackDetail = resolveCategoryDetail(currentCategory, currentSub);
+
                       try {
-                        const categorySlug = activeCategoryModal.id || activeCategoryModal.slug || 'electrician';
-                        setActiveCategoryModal(null);
+                        const categorySlug = currentCategory.slug || currentCategory.id || '';
                         
                         // Fetch live brands & services for this category from backend API
                         const brandRes = await publicCatalogService.getBrands({ categorySlug });
                         
                         if (brandRes.success && Array.isArray(brandRes.brands) && brandRes.brands.length > 0) {
                           // Find matching brand or use first brand
-                          const matchBrand = brandRes.brands.find(b => b.slug === sub.id || b.title.toLowerCase().includes(sub.name.toLowerCase())) || brandRes.brands[0];
+                          const matchBrand = brandRes.brands.find(b => b.slug === currentSub.id || b.title.toLowerCase().includes(currentSub.name.toLowerCase())) || brandRes.brands[0];
                           
                           // Fetch full brand services
                           const fullBrandRes = await publicCatalogService.getBrandBySlug(matchBrand.slug);
-                          if (fullBrandRes.success && fullBrandRes.brand) {
+                          if (fullBrandRes.success && fullBrandRes.brand && fullBrandRes.brand.sections?.length > 0) {
                             const brandData = fullBrandRes.brand;
                             const sections = brandData.sections || [];
                             
                             const dynamicSubGrid = brandRes.brands.map(b => ({
                               id: b.slug,
                               name: b.title,
-                              image: toAssetUrl(b.icon || b.imageUrl || sub.image || '/cat_electrician_plumber.png')
+                              image: toAssetUrl(b.icon || b.imageUrl || currentSub.image || '/cat_electrician_plumber.png')
                             }));
                             
-                            const dynamicSections = sections.length > 0 ? sections.map(sec => ({
+                            const dynamicSections = sections.map(sec => ({
+                              id: (sec.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-'),
                               sectionTitle: sec.title,
                               items: (sec.cards || []).map(card => ({
-                                id: card.id,
+                                id: card.id || card._id,
                                 title: card.title,
                                 rating: card.rating || '4.8',
                                 reviews: card.reviews || '100+ reviews',
                                 price: card.price ? `₹${card.price}` : (card.basePrice ? `₹${card.basePrice}` : '₹99'),
-                                desc: card.subtitle || card.features?.join(' • ') || 'Professional home service package.',
+                                desc: card.subtitle || card.features?.join(' • ') || 'Professional certified home service package.',
                                 image: toAssetUrl(card.imageUrl || matchBrand.icon || '/cat_electrician_plumber.png')
                               }))
-                            })) : [{
-                              sectionTitle: sub.name,
-                              items: [{
-                                id: matchBrand.id,
-                                title: matchBrand.title,
-                                rating: '4.8',
-                                reviews: '150+ reviews',
-                                price: matchBrand.price ? `₹${matchBrand.price}` : '₹99',
-                                desc: 'Professional certified doorstep service package.',
-                                image: toAssetUrl(matchBrand.icon || '/cat_electrician_plumber.png')
-                              }]
-                            }];
+                            }));
 
                             setActiveDetailView({
-                              title: activeCategoryModal.title,
-                              rating: '4.8',
-                              reviews: '1.2k+ reviews',
-                              desc: `Book certified, professional ${activeCategoryModal.title} experts at transparent doorstep prices.`,
+                              title: currentCategory.title,
+                              bannerTitle: `${currentCategory.title.toUpperCase()} SERVICES`,
+                              rating: currentCategory.rating || '4.8',
+                              reviews: currentCategory.reviews || '1.2k+ reviews',
+                              desc: `Book certified, professional ${currentCategory.title} experts at transparent doorstep prices.`,
                               subGrid: dynamicSubGrid,
                               detailedSections: dynamicSections
                             });
@@ -1567,8 +1862,8 @@ const UserDashboard = () => {
                         console.error('Error fetching live brand services:', err);
                       }
 
-                      // Fallback to default detail structure if network error
-                      setActiveDetailView(electricianDetailData);
+                      // Set category-specific detail view
+                      setActiveDetailView(fallbackDetail);
                     }}
                     className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
                   >
