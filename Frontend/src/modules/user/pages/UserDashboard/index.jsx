@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   FiSearch,
   FiUser,
@@ -38,12 +38,21 @@ const toAssetUrl = (url) => {
 
 const DEFAULT_CATEGORY_CONFIG = {
   electrician: {
-    icon: '/cat_images/electrician.jpg',
-    subCategories: [
-      { id: 'switch-socket', name: 'Switch & Socket Replacement', icon: '🔌' },
-      { id: 'fan-repair', name: 'Ceiling Fan Repair & Mounting', icon: '🌀' },
-      { id: 'mcb-repair', name: 'MCB & Fuse Box Repair', icon: '⚡' },
-      { id: 'tv-install', name: 'Tv Installation & Wiring', icon: '📺' },
+    title: 'Electrician Services',
+    rating: 4.8,
+    reviews: '12K+',
+    icon: '⚡',
+    gradient: 'from-amber-500 to-yellow-600',
+    sections: [
+      {
+        sectionTitle: 'Popular Fixes & Repairs',
+        items: [
+          { id: 'elec-1', title: 'Switch / Socket Replacement', price: '₹99', rating: 4.8, reviews: '3.4K', desc: 'Replacement or new switch/socket installation with surge testing.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300&auto=format&fit=crop&q=80' },
+          { id: 'elec-2', title: 'Ceiling Fan Installation / Repair', price: '₹149', rating: 4.9, reviews: '5.1K', desc: 'Blade balancing, regulator repair, and noise isolation setup.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&auto=format&fit=crop&q=80' },
+          { id: 'elec-3', title: 'MCB / Fuse Box Troubleshooting', price: '₹199', rating: 4.7, reviews: '2.2K', desc: 'Short circuit tracing, main breaker diagnostics, load balancing.', image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&auto=format&fit=crop&q=80' },
+          { id: 'elec-4', title: 'Full House Wiring Inspection', price: '₹349', rating: 4.9, reviews: '1.8K', desc: 'Earthing health check, voltage leak audit, power point mapping.', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=300&auto=format&fit=crop&q=80' }
+        ]
+      }
     ]
   },
   plumber: {
@@ -127,6 +136,7 @@ const DEFAULT_CATEGORY_CONFIG = {
 };
 
 const UserDashboard = () => {
+  const navigate = useNavigate();
   const { cartItems = [], cartCount = 0, addToCart, removeItem } = useCart() || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -728,12 +738,19 @@ const UserDashboard = () => {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleToggleAddService(item, sec.sectionTitle)}
-                            className={`w-16 sm:w-20 py-1 rounded-md font-bold text-[11px] transition-all shadow-2xs flex items-center justify-center gap-1 ${
+                            onClick={() => {
+                              if (isAdded) {
+                                navigate('/cart');
+                              } else {
+                                handleToggleAddService(item, sec.sectionTitle);
+                              }
+                            }}
+                            className={`w-16 sm:w-20 py-1 rounded-md font-bold text-[11px] transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer ${
                               isAdded
-                                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                : 'bg-white text-red-600 border border-red-200 hover:bg-red-50'
+                                ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                                : 'bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-95'
                             }`}
+                            title={isAdded ? 'Go to Cart' : 'Add to Cart'}
                           >
                             {isAdded ? (
                               <>
