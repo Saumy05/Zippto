@@ -88,9 +88,23 @@ const Bookings = () => {
         setTotalPages(res.pagination.pages);
       }
 
-      if (stats.total === 0) {
+      try {
+        const analyticsRes = await adminBookingService.getAnalytics();
+        if (analyticsRes?.success && analyticsRes.data) {
+          const byStatus = analyticsRes.data.bookingsByStatus || {};
+          setStats({
+            pending: (byStatus.pending || 0) + (byStatus.searching || 0) + (byStatus.no_vendors_available || 0),
+            confirmed: (byStatus.confirmed || 0) + (byStatus.accepted || 0) + (byStatus.assigned || 0),
+            inProgress: (byStatus.in_progress || 0) + (byStatus.journey_started || 0) + (byStatus.visited || 0) + (byStatus.work_done || 0),
+            completed: byStatus.completed || 0,
+            cancelled: (byStatus.cancelled || 0) + (byStatus.rejected || 0),
+            total: analyticsRes.data.totalBookings || 0
+          });
+        }
+      } catch (analyticsErr) {
+        // Fallback to dashboard stats if needed
         const statsRes = await getDashboardStats();
-        if (statsRes.success) {
+        if (statsRes?.success) {
           const s = statsRes.data.stats;
           setStats({
             pending: s.pendingBookings || 0,
@@ -230,15 +244,12 @@ const Bookings = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <BookingStatsCard title="Awaiting" count={stats.pending} icon={FiClock} bgClass="bg-yellow-50" colorClass="text-yellow-600" />
-        <BookingStatsCard title="Confirmed" count={stats.pending} icon={FiCheckCircle} bgClass="bg-blue-50" colorClass="text-blue-600" />
-        <BookingStatsCard title="In Progress" count={stats.inProgress} icon={FiBox} bgClass="bg-purple-50" colorClass="text-purple-600" />
-        <BookingStatsCard title="Completed" count={stats.completed} icon={FiTruck} bgClass="bg-green-50" colorClass="text-green-600" />
-        <BookingStatsCard title="Delivered" count={stats.completed} icon={FiCheckCircle} bgClass="bg-emerald-50" colorClass="text-emerald-600" />
-        <BookingStatsCard title="Cancelled" count={stats.cancelled} icon={FiXCircle} bgClass="bg-red-50" colorClass="text-red-600" />
-        <BookingStatsCard title="Returned" count={0} icon={FiRefreshCw} bgClass="bg-orange-50" colorClass="text-orange-600" />
-        <BookingStatsCard title="Total Orders" count={stats.total} icon={FiShoppingBag} bgClass="bg-gray-50" colorClass="text-gray-600" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <BookingStatsCard title="Awaiting / Alerting" count={stats.pending} icon={FiClock} bgClass="bg-amber-50/70" colorClass="text-amber-600" />
+        <BookingStatsCard title="Confirmed & Assigned" count={stats.confirmed} icon={FiCheckCircle} bgClass="bg-blue-50/70" colorClass="text-blue-600" />
+        <BookingStatsCard title="In Progress" count={stats.inProgress} icon={FiBox} bgClass="bg-purple-50/70" colorClass="text-purple-600" />
+        <BookingStatsCard title="Completed" count={stats.completed} icon={FiTruck} bgClass="bg-emerald-50/70" colorClass="text-emerald-600" />
+        <BookingStatsCard title="Total Volume" count={stats.total} icon={FiShoppingBag} bgClass="bg-gray-50/80" colorClass="text-gray-700" />
       </div>
 
       {/* Filter Bar */}
