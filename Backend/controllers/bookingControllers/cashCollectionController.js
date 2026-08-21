@@ -343,7 +343,7 @@ exports.confirmCashCollection = async (req, res) => {
       booking.paymentMethod = 'cash collected'; // Standardized label
     }
 
-    if (booking.status === 'work_done' || booking.status === 'visited' || booking.status === 'in_progress') {
+    if (['work_done', 'visited', 'in_progress', 'awaiting_payment'].includes(booking.status)) {
       booking.status = 'completed';
       booking.completedAt = new Date();
     }

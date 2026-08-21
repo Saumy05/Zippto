@@ -31,7 +31,7 @@ const createOrUpdateBill = async (req, res) => {
     const { USER_ROLES } = require('../../utils/constants');
 
     // Auth check: Vendor
-    const isVendorAuth = booking.vendorId.toString() === req.user.id && req.userRole === USER_ROLES.VENDOR;
+    const isVendorAuth = booking.vendorId.toString() === req.user.id.toString() && (req.userRole === USER_ROLES.VENDOR || req.userRole?.toLowerCase() === 'vendor');
 
     if (!isVendorAuth) {
       return res.status(403).json({ success: false, message: 'Not authorized for this booking' });

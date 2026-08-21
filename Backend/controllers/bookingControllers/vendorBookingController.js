@@ -704,13 +704,6 @@ const startSelfJob = async (req, res) => {
       });
     }
 
-    if (booking.paymentStatus === 'success' || booking.paymentStatus === 'paid') {
-      return res.status(400).json({
-        success: false,
-        message: 'Cannot start journey. Booking payment is already completed.'
-      });
-    }
-
     // Status Check: Only allowed from CONFIRMED, ASSIGNED, or ACCEPTED
     const allowed = [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.ACCEPTED];
     if (!allowed.includes(booking.status)) {
@@ -727,6 +720,7 @@ const startSelfJob = async (req, res) => {
     booking.status = BOOKING_STATUS.JOURNEY_STARTED;
     booking.journeyStartedAt = new Date();
     booking.visitOtp = otp;
+    booking.customerConfirmationOTP = otp;
     booking.assignedAt = booking.assignedAt || new Date(); // Implicitly assigned to self now
 
     await booking.save();
@@ -832,7 +826,7 @@ const verifySelfVisit = async (req, res) => {
 
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
     if (booking.status !== BOOKING_STATUS.JOURNEY_STARTED) return res.status(400).json({ success: false, message: 'Journey not started' });
-    if (booking.visitOtp !== otp) return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    if (booking.visitOtp !== otp && booking.customerConfirmationOTP !== otp) return res.status(400).json({ success: false, message: 'Invalid OTP' });
 
     booking.status = BOOKING_STATUS.VISITED;
     booking.visitedAt = new Date();
@@ -900,15 +894,33 @@ const completeSelfJob = async (req, res) => {
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
     // Status guard
-    if (booking.status !== BOOKING_STATUS.VISITED && booking.status !== BOOKING_STATUS.IN_PROGRESS) {
-      return res.status(400).json({ success: false, message: 'Cannot complete from current status' });
+    const allowedStatuses = [BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.AWAITING_PAYMENT, BOOKING_STATUS.COMPLETED];
+    if (!allowedStatuses.includes(booking.status)) {
+      return res.status(400).json({ success: false, message: `Cannot complete from current status: ${booking.status}` });
     }
 
-    // Prevent duplicate bills
+    if (workPhotos && Array.isArray(workPhotos)) {
+      booking.workPhotos = workPhotos;
+    }
+
+    // If bill was already generated via /bill route, finalize completion smoothly
     const VendorBill = require('../../models/VendorBill');
     const existingBill = await VendorBill.findOne({ bookingId: booking._id });
     if (existingBill) {
-      return res.status(400).json({ success: false, message: 'Bill already generated for this booking' });
+      if (booking.status !== BOOKING_STATUS.COMPLETED) {
+        booking.status = (booking.paymentStatus === 'success' || booking.cashCollected) ? BOOKING_STATUS.COMPLETED : BOOKING_STATUS.WORK_DONE;
+        if (booking.status === BOOKING_STATUS.COMPLETED) {
+          booking.completedAt = booking.completedAt || new Date();
+        }
+      }
+      booking.vendorBillId = existingBill._id;
+      await booking.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Job completed successfully',
+        data: booking
+      });
     }
 
     // ── Fetch Settings (frozen snapshot for this bill) ──
