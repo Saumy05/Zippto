@@ -12,13 +12,13 @@ const Payments = () => {
       {/* Content */}
       <div className="min-h-[400px]">
         <Routes>
-          <Route index element={<Navigate to="overview" replace />} />
+          <Route index element={<Navigate to="/admin/payments/overview" replace />} />
           <Route path="overview" element={<PaymentOverview />} />
           <Route path="users" element={<UserPayments />} />
           <Route path="vendors" element={<VendorPayments />} />
           <Route path="revenue" element={<AdminRevenue />} />
           <Route path="reports" element={<PaymentReports />} />
-          <Route path="*" element={<Navigate to="overview" replace />} />
+          <Route path="*" element={<Navigate to="/admin/payments/overview" replace />} />
         </Routes>
       </div>
     </div>
