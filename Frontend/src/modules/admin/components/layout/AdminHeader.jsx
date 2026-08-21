@@ -3,7 +3,6 @@ import { FiMenu, FiBell, FiLogOut, FiChevronRight, FiShield } from 'react-icons/
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Button from '../Button';
-import NotificationWindow from './NotificationWindow';
 import { adminAuthService } from '../../../../services/authService';
 import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 
@@ -338,8 +337,6 @@ const ROUTE_DEFINITIONS = [
 const AdminHeader = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Dynamic Route Information Resolver (longest prefix match + exact match priority)
@@ -386,16 +383,11 @@ const AdminHeader = ({ onMenuClick }) => {
     }
   };
 
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-  };
-
   const fetchNotifications = async () => {
     try {
       const { default: api } = await import('../../../../services/api');
       const res = await api.get('/notifications/admin');
       if (res.data?.success) {
-        setNotifications(res.data.data || []);
         setUnreadCount(res.data.unreadCount || 0);
       }
     } catch (error) {
@@ -406,41 +398,19 @@ const AdminHeader = ({ onMenuClick }) => {
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 45000);
-    return () => clearInterval(interval);
-  }, []);
 
-  const handleMarkAsRead = async (id) => {
-    try {
-      const { default: api } = await import('../../../../services/api');
-      await api.put(`/notifications/${id}/read`);
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error marking as read:', error);
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      const { default: api } = await import('../../../../services/api');
-      await api.put(`/notifications/read-all`);
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      const { default: api } = await import('../../../../services/api');
-      await api.delete(`/notifications/${id}`);
-      setNotifications(prev => prev.filter(n => n._id !== id));
+    const handleNotificationAlert = () => {
       fetchNotifications();
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
-  };
+    };
+    window.addEventListener('adminNotificationsUpdated', handleNotificationAlert);
+    window.addEventListener('adminBookingAlert', handleNotificationAlert);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('adminNotificationsUpdated', handleNotificationAlert);
+      window.removeEventListener('adminBookingAlert', handleNotificationAlert);
+    };
+  }, []);
 
   return (
     <header
@@ -499,31 +469,19 @@ const AdminHeader = ({ onMenuClick }) => {
           <LanguageToggle />
 
           {/* Real-time Notification Bell */}
-          <div className="relative">
-            <button
-              data-notification-button
-              onClick={toggleNotifications}
-              className="p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50/60 rounded-xl border border-gray-200/80 transition-all relative cursor-pointer"
-              title="System Alerts"
-            >
-              <FiBell className="w-4 h-4 sm:w-5 sm:h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-600 rounded-full text-[10px] text-white flex items-center justify-center font-bold shadow-xs animate-bounce">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </button>
-
-            <NotificationWindow
-              isOpen={showNotifications}
-              onClose={() => setShowNotifications(false)}
-              position="right"
-              notifications={notifications}
-              onMarkAsRead={handleMarkAsRead}
-              onMarkAllAsRead={handleMarkAllAsRead}
-              onDelete={handleDelete}
-            />
-          </div>
+          <Link
+            to="/admin/bookings/notifications"
+            className="p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50/60 rounded-xl border border-gray-200/80 transition-all relative cursor-pointer flex items-center justify-center"
+            title="System & Order Notifications"
+            aria-label="Notifications"
+          >
+            <FiBell className="w-4 h-4 sm:w-5 sm:h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-600 rounded-full text-[10px] text-white flex items-center justify-center font-bold shadow-xs animate-bounce">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Link>
 
           {/* Super Admin Badge / Pill */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-50/80 border border-gray-200/80 rounded-xl">
