@@ -120,7 +120,7 @@ const navSections = [
         children: [
           { label: "Revenue Report", to: "/admin/reports/revenue" },
           { label: "Booking Report", to: "/admin/reports/bookings" },
-          { label: "Financial Audit", to: "/admin/payments/reports" }
+          { label: "Partner Reports", to: "/admin/reports/vendors" }
         ]
       },
       {

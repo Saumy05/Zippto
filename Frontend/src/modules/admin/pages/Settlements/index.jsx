@@ -35,8 +35,11 @@ const SettlementManagement = () => {
       setActiveTab(path);
     } else {
       setActiveTab('pending');
+      if (location.pathname === '/admin/settlements' || location.pathname === '/admin/settlements/') {
+        navigate('/admin/settlements/pending', { replace: true });
+      }
     }
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   useEffect(() => {
     loadData();
