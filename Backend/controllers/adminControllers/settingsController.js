@@ -169,11 +169,23 @@ exports.updateSettings = async (req, res, next) => {
 // Get Public Settings (Visited Charges, GST, Dynamic Languages, Feature Flags)
 exports.getPublicSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage supportEmail supportPhone supportWhatsapp cancellationPenalty companyName companyAddress companyCity companyState companyPincode companyPhone companyEmail isOnlinePaymentEnabled isReferralEnabled referralRewardAmount refereeRewardAmount isPushNotificationEnabled isChatEnabled supportedLanguages');
+    let settings = await Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage supportEmail supportPhone supportWhatsapp cancellationPenalty companyName companyAddress companyCity companyState companyPincode companyPhone companyEmail isOnlinePaymentEnabled isCashPaymentEnabled isWalletPaymentEnabled isB2BEnabled workerAutoAssignment isReferralEnabled referralRewardAmount refereeRewardAmount isPushNotificationEnabled isChatEnabled supportedLanguages');
 
     // Default if not found (fallback values)
     if (!settings) {
-      settings = { visitedCharges: 0, serviceGstPercentage: 18, partsGstPercentage: 18, isReferralEnabled: true, isPushNotificationEnabled: true, isChatEnabled: true };
+      settings = {
+        visitedCharges: 0,
+        serviceGstPercentage: 18,
+        partsGstPercentage: 18,
+        isReferralEnabled: true,
+        isPushNotificationEnabled: true,
+        isChatEnabled: true,
+        isOnlinePaymentEnabled: true,
+        isCashPaymentEnabled: true,
+        workerAutoAssignment: true,
+        referralRewardAmount: 50,
+        refereeRewardAmount: 50
+      };
     }
 
     res.status(200).json({

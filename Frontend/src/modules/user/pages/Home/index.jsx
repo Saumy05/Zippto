@@ -8,6 +8,7 @@ import ServiceCategories from './components/ServiceCategories';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { useCart } from '../../../../context/CartContext';
 import { useCity } from '../../../../context/CityContext';
+import { useSettings } from '../../../../context/SettingsContext';
 import { toast } from 'react-hot-toast';
 import { registerFCMToken } from '../../../../services/pushNotificationService';
 import { motion } from 'framer-motion';
@@ -49,6 +50,7 @@ const Home = () => {
 
   const { cartCount, addToCart } = useCart();
   const { currentCity, cities, selectCity, loading: cityLoading } = useCity();
+  const { isReferralEnabled } = useSettings();
 
   // Clean up legacy storage keys on mount
   useEffect(() => {
@@ -666,12 +668,14 @@ const Home = () => {
                 </motion.div>
               )}
 
-              {/* Refer & Earn Section */}
-              <motion.div variants={itemVariants}>
-                <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                  <ReferEarnSection onReferClick={handleReferClick} />
-                </Suspense>
-              </motion.div>
+              {/* Refer & Earn Section - conditionally rendered based on admin feature flag */}
+              {isReferralEnabled && (
+                <motion.div variants={itemVariants}>
+                  <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                    <ReferEarnSection onReferClick={handleReferClick} />
+                  </Suspense>
+                </motion.div>
+              )}
             </>
           )}
         </main>

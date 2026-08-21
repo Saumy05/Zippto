@@ -215,9 +215,15 @@ const NotificationSettingsView = () => {
 
   const save = async () => {
     setLoading(true);
-    try { await api.put('/admin/settings', settings); toast.success('Settings saved'); }
-    catch { toast.error('Failed to save'); }
-    finally { setLoading(false); }
+    try {
+      await api.put('/admin/settings', settings);
+      toast.success('Settings saved');
+      window.dispatchEvent(new Event('platformSettingsUpdated'));
+    } catch {
+      toast.error('Failed to save');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const items = [

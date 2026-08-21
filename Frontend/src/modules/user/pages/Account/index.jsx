@@ -26,6 +26,7 @@ import {
 } from 'react-icons/fi';
 import { MdAccountBalanceWallet } from 'react-icons/md';
 import { useLanguage } from '../../../../context/LanguageContext';
+import { useSettings } from '../../../../context/SettingsContext';
 import { userAuthService } from '../../../../services/authService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import NotificationBell from '../../components/common/NotificationBell';
@@ -33,6 +34,7 @@ import NotificationBell from '../../components/common/NotificationBell';
 const Account = () => {
   const navigate = useNavigate();
   const { openLanguageModal } = useLanguage();
+  const { isReferralEnabled, referralRewardAmount, refereeRewardAmount } = useSettings();
   const [userProfile, setUserProfile] = useState({
     name: 'Verified Customer',
     phone: '',
@@ -302,7 +304,9 @@ const Account = () => {
                     Rewards & Offers
                   </span>
                   <p className="text-sm font-black text-white mt-0.5 leading-snug">
-                    Refer & Earn ₹100
+                    {isReferralEnabled
+                      ? `Refer & Earn ₹${(referralRewardAmount || 50) + (refereeRewardAmount || 50)}`
+                      : 'View Coupons & Cashbacks'}
                   </p>
                 </div>
               </div>

@@ -8,6 +8,20 @@ import { messaging, getToken, onMessage } from '../firebase';
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 /**
+ * Check if push notifications are enabled in global settings
+ */
+function isPushEnabled() {
+  try {
+    const cached = localStorage.getItem('zippto_public_settings');
+    if (cached) {
+      const s = JSON.parse(cached);
+      return s.isPushNotificationEnabled !== false;
+    }
+  } catch {}
+  return true;
+}
+
+/**
  * Check if running inside Flutter WebView
  * @returns {boolean}
  */
@@ -47,6 +61,10 @@ async function registerServiceWorker() {
  * @returns {Promise<boolean>}
  */
 async function requestNotificationPermission() {
+  if (!isPushEnabled()) {
+    // console.log('Push notifications globally disabled by admin');
+    return false;
+  }
   if ('Notification' in window) {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
@@ -67,6 +85,9 @@ async function requestNotificationPermission() {
  */
 async function getFCMToken() {
   try {
+    if (!isPushEnabled()) {
+      return null;
+    }
     if (!messaging) {
       // console.error('Firebase messaging not initialized');
       return null;
@@ -292,6 +313,9 @@ function setupForegroundNotificationHandler(handler) {
  */
 async function initializePushNotifications() {
   try {
+    if (!isPushEnabled()) {
+      return;
+    }
     if (!('serviceWorker' in navigator)) {
       // console.log('Service workers not supported');
       return;

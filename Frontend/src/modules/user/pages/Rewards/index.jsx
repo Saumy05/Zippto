@@ -17,10 +17,12 @@ import {
 import { FaWhatsapp, FaFacebookMessenger } from 'react-icons/fa';
 import { themeColors } from '../../../../theme';
 import referralService from '../../../../services/referralService';
+import { useSettings } from '../../../../context/SettingsContext';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Rewards = () => {
   const navigate = useNavigate();
+  const { isReferralEnabled: globalReferralEnabled, referralRewardAmount: globalRewardAmount } = useSettings();
   const [loading, setLoading] = useState(true);
   const [referralData, setReferralData] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -49,9 +51,10 @@ const Rewards = () => {
     fetchReferralDetails();
   }, []);
 
+  const isProgramActive = (referralData?.isReferralEnabled !== undefined ? referralData.isReferralEnabled : globalReferralEnabled) !== false;
   const referralCode = referralData?.referralCode || 'ZIP-REWARDS';
   const referralLink = referralData?.referralLink || `${window.location.origin}/signup?ref=${referralCode}`;
-  const rewardAmount = referralData?.rewardPerReferral || 50;
+  const rewardAmount = referralData?.rewardPerReferral || globalRewardAmount || 50;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(referralCode).then(() => {
@@ -148,7 +151,7 @@ const Rewards = () => {
 
       <main className="max-w-xl mx-auto px-4 pt-4 space-y-4">
         {/* Paused Program Notice */}
-        {referralData && referralData.isReferralEnabled === false && (
+        {!isProgramActive && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
             <FiAlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>

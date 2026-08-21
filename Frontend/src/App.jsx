@@ -6,6 +6,7 @@ import { SocketProvider } from './context/SocketContext';
 import { CartProvider } from './context/CartContext';
 import { CityProvider } from './context/CityContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { SettingsProvider } from './context/SettingsContext';
 import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
 import { LocationPermissionChecker, LanguageSelectorModal } from './components/common';
 
@@ -56,45 +57,47 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <LanguageProvider>
-        <SocketProvider>
-          <CityProvider>
-            <CartProvider>
-              <div className="App">
-                <AppRoutes />
-                <LocationPermissionChecker />
-                <LanguageSelectorModal />
-                <SingleToastEnforcer />
-                <Toaster
-                  position="top-center"
-                  reverseOrder={false}
-                  toastOptions={{
-                    duration: 2000,
-                    style: {
-                      background: '#333',
-                      color: '#fff',
-                      borderRadius: '10px',
-                      padding: '12px 20px',
-                    },
-                    success: {
-                      duration: 1000,
-                      style: {
-                        background: '#10B981',
-                      },
-                    },
-                    error: {
+      <SettingsProvider>
+        <LanguageProvider>
+          <SocketProvider>
+            <CityProvider>
+              <CartProvider>
+                <div className="App">
+                  <AppRoutes />
+                  <LocationPermissionChecker />
+                  <LanguageSelectorModal />
+                  <SingleToastEnforcer />
+                  <Toaster
+                    position="top-center"
+                    reverseOrder={false}
+                    toastOptions={{
                       duration: 2000,
                       style: {
-                        background: '#EF4444',
+                        background: '#333',
+                        color: '#fff',
+                        borderRadius: '10px',
+                        padding: '12px 20px',
                       },
-                    },
-                  }}
-                />
-              </div>
-            </CartProvider>
-          </CityProvider>
-        </SocketProvider>
-      </LanguageProvider>
+                      success: {
+                        duration: 1000,
+                        style: {
+                          background: '#10B981',
+                        },
+                      },
+                      error: {
+                        duration: 2000,
+                        style: {
+                          background: '#EF4444',
+                        },
+                      },
+                    }}
+                  />
+                </div>
+              </CartProvider>
+            </CityProvider>
+          </SocketProvider>
+        </LanguageProvider>
+      </SettingsProvider>
     </BrowserRouter>
   );
 }

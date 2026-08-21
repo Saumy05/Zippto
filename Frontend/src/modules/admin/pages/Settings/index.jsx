@@ -456,6 +456,7 @@ const AdminSettings = () => {
     try {
       await updateSettings({ [key]: newValue });
       toast.success(`${label} ${newValue ? 'Enabled' : 'Disabled'}`);
+      window.dispatchEvent(new Event('platformSettingsUpdated'));
     } catch (err) {
       toast.error(`Failed to update ${label}`);
     }

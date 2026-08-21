@@ -84,6 +84,7 @@ const CustomizationSettings = () => {
     try {
       await updateSettings({ [key]: newValue });
       toast.success(`${label} ${newValue ? 'Enabled' : 'Disabled'}`);
+      window.dispatchEvent(new Event('platformSettingsUpdated'));
     } catch (err) {
       console.error(`Failed to update ${label}:`, err);
       toast.error(`Failed to update ${label}`);
@@ -104,6 +105,7 @@ const CustomizationSettings = () => {
         refereeRewardAmount: Number(referralRewards.refereeRewardAmount)
       });
       toast.success('Referral reward amounts updated successfully');
+      window.dispatchEvent(new Event('platformSettingsUpdated'));
     } catch (err) {
       console.error('Failed to save referral rewards:', err);
       toast.error('Failed to save referral rewards');

@@ -6,6 +6,7 @@ import {
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useSocket } from '../../context/SocketContext';
+import { useSettings } from '../../context/SettingsContext';
 import { chatService } from '../../services/chatService';
 
 // Fallback quick replies by role
@@ -44,6 +45,8 @@ export default function ChatDrawerModal({
   userType = 'user' // 'user' | 'vendor' | 'worker' | 'admin'
 }) {
   const socket = useSocket();
+  const { isChatEnabled } = useSettings();
+  const isChatAllowed = isChatEnabled || userType === 'admin';
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -313,6 +316,10 @@ export default function ChatDrawerModal({
 
   // Send message (Optimistic UI)
   const handleSendMessage = async (customText = null, mediaUrl = null) => {
+    if (!isChatAllowed) {
+      toast.error('In-app chat is currently disabled by admin');
+      return;
+    }
     const textToSend = (customText !== null ? customText : inputText).trim();
     if (!textToSend && !mediaUrl) return;
     if (isReadOnly) {
@@ -700,7 +707,7 @@ export default function ChatDrawerModal({
         </div>
 
         {/* Quick Replies Chips (Rapido Style) */}
-        {!isReadOnly && (
+        {!isReadOnly && isChatAllowed && (
           <div className="px-4 py-2 border-t border-gray-200 bg-white/90 overflow-x-auto flex gap-1.5 shrink-0 no-scrollbar">
             {quickRepliesList.map((reply, i) => (
               <button
@@ -715,7 +722,16 @@ export default function ChatDrawerModal({
         )}
 
         {/* Input Bar */}
-        {!isReadOnly ? (
+        {isReadOnly ? (
+          <div className="p-3 bg-gray-100 border-t border-gray-200 text-center text-xs text-gray-500 font-medium shrink-0">
+            Chat is closed for this completed booking.
+          </div>
+        ) : !isChatAllowed ? (
+          <div className="p-4 bg-slate-50 border-t border-gray-200 shrink-0 text-center text-xs text-slate-600 font-semibold flex items-center justify-center gap-2">
+            <FiAlertCircle className="w-4 h-4 text-amber-500" />
+            <span>In-app chat is currently paused by admin. Please contact via phone call.</span>
+          </div>
+        ) : (
           <div className="p-3 bg-white border-t border-gray-200 shrink-0">
             {/* Upload Progress Bar */}
             {uploadingImage && (
@@ -774,10 +790,6 @@ export default function ChatDrawerModal({
                 <FiSend className="w-4 h-4" />
               </button>
             </form>
-          </div>
-        ) : (
-          <div className="p-3 bg-gray-100 border-t border-gray-200 text-center text-xs text-gray-500 font-medium shrink-0">
-            Chat is closed for this completed booking.
           </div>
         )}
       </motion.div>
