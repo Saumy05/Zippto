@@ -311,8 +311,73 @@ const getWorkerNotifications = async (req, res) => {
 };
 
 /**
- * Get admin notifications
+ * Broadcast notification to all users / vendors / workers (or a specific audience)
+ * POST /notifications/broadcast
+ * Body: { title, message, audience: 'all'|'users'|'vendors'|'workers', data?: {} }
  */
+const broadcastNotification = async (req, res) => {
+  try {
+    const { title, message, audience = 'all', data = {} } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({ success: false, message: 'title and message are required' });
+    }
+
+    const User   = require('../../models/User');
+    const Vendor = require('../../models/Vendor');
+    const Worker = require('../../models/Worker');
+
+    const payload = { title, body: message, data };
+    let sentCount = 0;
+    const errors = [];
+
+    // Helper: send FCM + create DB record for one recipient
+    const sendOne = async ({ userId, vendorId, workerId }) => {
+      try {
+        await createNotification({
+          userId:   userId   || null,
+          vendorId: vendorId || null,
+          workerId: workerId || null,
+          type:     'broadcast',
+          title,
+          message,
+          data,
+          skipPush: false,
+          pushData: payload,
+        });
+        sentCount++;
+      } catch (e) {
+        errors.push(e.message);
+      }
+    };
+
+    if (audience === 'all' || audience === 'users') {
+      const users = await User.find({ isActive: true }).select('_id').lean();
+      for (const u of users) await sendOne({ userId: u._id });
+    }
+    if (audience === 'all' || audience === 'vendors') {
+      const vendors = await Vendor.find({ isActive: true }).select('_id').lean();
+      for (const v of vendors) await sendOne({ vendorId: v._id });
+    }
+    if (audience === 'all' || audience === 'workers') {
+      const Worker = require('../../models/Worker');
+      const workers = await Worker.find({ isActive: true }).select('_id').lean();
+      for (const w of workers) await sendOne({ workerId: w._id });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Broadcast sent to ${sentCount} recipient(s)`,
+      sentCount,
+      errors: errors.length ? errors.slice(0, 10) : undefined,
+    });
+  } catch (error) {
+    console.error('Broadcast notification error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send broadcast' });
+  }
+};
+
+
 const getAdminNotifications = async (req, res) => {
   try {
     const adminId = req.user.id;
@@ -534,9 +599,11 @@ module.exports = {
   getVendorNotifications,
   getWorkerNotifications,
   getAdminNotifications,
+  broadcastNotification,
   markAsRead,
   markAllAsRead,
   deleteNotification,
   deleteAllNotifications
 };
+
 
