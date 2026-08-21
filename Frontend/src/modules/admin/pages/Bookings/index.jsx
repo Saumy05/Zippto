@@ -11,15 +11,16 @@ import { getDashboardStats } from '../../../../services/adminDashboardService';
 import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 
 const BookingStatsCard = ({ title, count, icon: Icon, colorClass, bgClass }) => (
-  <div className={`p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between ${bgClass}`}>
-    <div>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${colorClass.replace('text-', 'bg-').replace('600', '100')}`}>
+  <div className={`p-2.5 rounded-lg border border-slate-100/90 shadow-2xs flex items-center justify-between transition-all ${bgClass}`}>
+    <div className="flex items-center gap-2.5">
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${colorClass.replace('text-', 'bg-').replace('600', '100').replace('700', '100')}`}>
         <Icon className={`w-4 h-4 ${colorClass}`} />
       </div>
-      <h3 className="text-gray-500 text-[10px] font-bold uppercase tracking-wider">{title}</h3>
-      <p className="text-xl font-bold text-gray-800 mt-0.5">{count}</p>
+      <div>
+        <h3 className="text-slate-500 text-[10px] font-bold uppercase tracking-wider leading-none">{title}</h3>
+        <p className="text-base font-bold text-slate-800 mt-1 leading-none">{count}</p>
+      </div>
     </div>
-    <div className={`w-12 h-12 rounded-full opacity-10 -mr-3 -mb-3 ${colorClass.replace('text-', 'bg-')}`}></div>
   </div>
 );
 
@@ -221,47 +222,47 @@ const Bookings = () => {
     const s = (status || '').toLowerCase();
     switch (s) {
       case 'completed':
-        return <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">Completed</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60 whitespace-nowrap">Completed</span>;
       case 'cancelled':
-        return <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200">Cancelled</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200/60 whitespace-nowrap">Cancelled</span>;
       case 'in_progress':
       case 'started':
-        return <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200">In Progress</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200/60 whitespace-nowrap">In Progress</span>;
       case 'accepted':
       case 'assigned':
-        return <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 border border-blue-200">Partner Assigned</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/60 whitespace-nowrap">Partner Assigned</span>;
       case 'no_vendors':
       case 'rejected':
-        return <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-500 text-white animate-pulse shadow-xs">🚨 Needs Vendor</span>;
+        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-600 text-white shadow-2xs whitespace-nowrap animate-pulse">🚨 Needs Partner</span>;
       case 'searching':
       case 'requested':
       case 'pending':
       default:
-        return <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">Searching</span>;
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200/60 whitespace-nowrap">Searching</span>;
     }
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        <BookingStatsCard title="Awaiting / Alerting" count={stats.pending} icon={FiClock} bgClass="bg-amber-50/70" colorClass="text-amber-600" />
-        <BookingStatsCard title="Confirmed & Assigned" count={stats.confirmed} icon={FiCheckCircle} bgClass="bg-blue-50/70" colorClass="text-blue-600" />
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+        <BookingStatsCard title="Awaiting Alert" count={stats.pending} icon={FiClock} bgClass="bg-amber-50/70" colorClass="text-amber-600" />
+        <BookingStatsCard title="Assigned" count={stats.confirmed} icon={FiCheckCircle} bgClass="bg-blue-50/70" colorClass="text-blue-600" />
         <BookingStatsCard title="In Progress" count={stats.inProgress} icon={FiBox} bgClass="bg-purple-50/70" colorClass="text-purple-600" />
         <BookingStatsCard title="Completed" count={stats.completed} icon={FiTruck} bgClass="bg-emerald-50/70" colorClass="text-emerald-600" />
-        <BookingStatsCard title="Total Volume" count={stats.total} icon={FiShoppingBag} bgClass="bg-gray-50/80" colorClass="text-gray-700" />
+        <BookingStatsCard title="Total Volume" count={stats.total} icon={FiShoppingBag} bgClass="bg-slate-50/80" colorClass="text-slate-700" />
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-3 justify-between items-center">
-        <div className="relative w-full lg:w-80">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+      <div className="bg-white p-2.5 rounded-xl shadow-2xs border border-gray-100 flex flex-col lg:flex-row gap-2.5 justify-between items-center">
+        <div className="relative w-full lg:w-72">
+          <FiSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
           <input
             type="text"
             placeholder="Search by ID, customer, service..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-xs"
+            className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-xs"
           />
         </div>
 
@@ -269,19 +270,19 @@ const Bookings = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 focus:outline-none focus:border-green-500 cursor-pointer"
+            className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 focus:outline-none focus:border-green-500 cursor-pointer"
           >
             <option>All Status</option>
             <option value="pending">Pending</option>
             <option value="searching">Searching</option>
-            <option value="no_vendors">Needs Vendor (Rejected/Timeout)</option>
+            <option value="no_vendors">Needs Partner (Unassigned)</option>
             <option value="accepted">Assigned</option>
             <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
 
-          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5">
+          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
             <FiCalendar className="text-gray-400 w-3.5 h-3.5" />
             <input
               type="date"
@@ -300,107 +301,108 @@ const Bookings = () => {
 
           <button
             onClick={handleExport}
-            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors shadow-sm shadow-green-200 cursor-pointer"
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
           >
-            <FiDownload className="w-4 h-4" /> Export
+            <FiDownload className="w-3.5 h-3.5" /> Export
           </button>
         </div>
       </div>
 
       {/* Bookings Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-2xs border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50/50">
-                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Order ID</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Customer</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Service</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Partner</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total (₹)</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Order Date</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              <tr className="border-b border-slate-100 bg-slate-50/75">
+                <th className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Order ID</th>
+                <th className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Customer</th>
+                <th className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Service</th>
+                <th className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Partner</th>
+                <th className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Total (₹)</th>
+                <th className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                <th className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Order Date</th>
+                <th className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-slate-100/75 text-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="px-4 py-8 text-center text-xs text-gray-500">Loading bookings...</td>
+                  <td colSpan="8" className="px-3 py-6 text-center text-xs text-slate-500">Loading bookings...</td>
                 </tr>
               ) : bookings.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-4 py-8 text-center text-xs text-gray-500">No bookings found</td>
+                  <td colSpan="8" className="px-3 py-6 text-center text-xs text-slate-500">No bookings found</td>
                 </tr>
               ) : (
                 bookings.map((booking) => {
                   const needsAssignment = ['no_vendors', 'rejected', 'searching', 'pending', 'requested'].includes(booking.status);
 
                   return (
-                    <tr key={booking._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <span className="font-bold text-gray-900 text-xs">#{booking.bookingNumber || booking._id.slice(-6).toUpperCase()}</span>
+                    <tr key={booking._id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-3 py-2 whitespace-nowrap align-middle">
+                        <span className="font-mono font-semibold text-slate-900 text-xs tracking-tight">#{booking.bookingNumber || booking._id.slice(-6).toUpperCase()}</span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-bold text-gray-900 text-xs">{booking.userId?.name || booking.customerName || 'Guest'}</p>
-                          <p className="text-[10px] text-gray-400">{booking.userId?.phone || booking.customerPhone}</p>
+                      <td className="px-3 py-2 whitespace-nowrap align-middle">
+                        <div className="leading-tight">
+                          <p className="font-semibold text-slate-800 text-xs truncate max-w-[130px]">{booking.userId?.name || booking.customerName || 'Guest'}</p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">{booking.userId?.phone || booking.customerPhone}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-gray-900 text-xs font-bold">
-                          {booking.serviceName || booking.serviceId?.title || 'Service'}
-                        </div>
-                        <div className="text-[10px] text-gray-400">
-                          {booking.serviceCategory || booking.categoryId?.title || 'General'}
+                      <td className="px-3 py-2 whitespace-nowrap align-middle">
+                        <div className="leading-tight max-w-[200px]">
+                          <p className="text-slate-800 text-xs font-semibold truncate" title={booking.serviceName || booking.serviceId?.title}>{booking.serviceName || booking.serviceId?.title || 'Service'}</p>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">{booking.serviceCategory || booking.categoryId?.title || 'General'}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 whitespace-nowrap align-middle">
                         {booking.vendorId ? (
-                          <div>
-                            <p className="font-bold text-teal-700 text-xs">{booking.vendorId?.name || booking.vendorId?.businessName || 'Assigned'}</p>
-                            <p className="text-[10px] text-gray-400">{booking.vendorId?.phone}</p>
+                          <div className="leading-tight max-w-[140px]">
+                            <p className="font-semibold text-teal-700 text-xs truncate">{booking.vendorId?.name || booking.vendorId?.businessName || 'Assigned'}</p>
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">{booking.vendorId?.phone}</p>
                           </div>
                         ) : (
-                          <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">
+                          <span className="inline-flex items-center text-[10px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100 whitespace-nowrap">
                             Unassigned
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="font-bold text-gray-900 text-xs">₹{booking.finalAmount?.toLocaleString()}</span>
+                      <td className="px-3 py-2 whitespace-nowrap align-middle">
+                        <span className="font-bold text-slate-900 text-xs">₹{booking.finalAmount?.toLocaleString()}</span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 whitespace-nowrap align-middle">
                         {getStatusBadge(booking.status)}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="text-[10px] text-gray-600 font-medium">
-                          {new Date(booking.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                          })}
-                        </span>
+                      <td className="px-3 py-2 whitespace-nowrap align-middle">
+                        <div className="leading-tight text-slate-700">
+                          <p className="text-[11px] font-medium">
+                            {new Date(booking.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            {new Date(booking.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-3 py-2 whitespace-nowrap align-middle text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => {
                               setSelectedBookingForChat(booking);
                               setChatModalOpen(true);
                             }}
-                            className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[11px] font-bold flex items-center gap-1 border border-indigo-100/80 transition-all cursor-pointer shadow-2xs"
+                            className="px-2 py-1 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[11px] font-semibold flex items-center gap-1 border border-indigo-100 transition-all cursor-pointer shadow-2xs"
                             title="Audit Live Chat & Messages"
                           >
-                            <FiMessageSquare className="w-3.5 h-3.5" />
+                            <FiMessageSquare className="w-3 h-3" />
                             <span>Chat Logs</span>
                           </button>
 
                           {needsAssignment && (
                             <button
                               onClick={() => handleOpenAssignModal(booking)}
-                              className="px-2.5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                              className="px-2 py-1 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-semibold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
                               title="Manually Assign Service Partner"
                             >
-                              <FiUserCheck className="w-3.5 h-3.5" />
+                              <FiUserCheck className="w-3 h-3" />
                               <span>Assign Partner</span>
                             </button>
                           )}
