@@ -6,7 +6,7 @@
  * Usage:
  * - User module: import { userTheme } from '../../../../theme'
  * - Vendor module: import { vendorTheme } from '../../../../theme'
- * - Worker module: import { workerTheme } from '../../../../theme'
+ * - Admin module: import { adminTheme } from '../../../../theme'
  */
 
 // Homestr LOGO Core Brand Colors
@@ -41,16 +41,6 @@ const vendorTheme = {
   brand: brand
 };
 
-// Worker Theme Colors
-const workerTheme = {
-  backgroundGradient: 'linear-gradient(to bottom, rgba(52, 121, 137, 0.03) 0%, rgba(187, 95, 54, 0.02) 10%, #ffffff 20%)',
-  gradient: brand.gradient,
-  headerGradient: brand.teal,
-  button: brand.teal,
-  icon: brand.teal,
-  brand: brand
-};
-
 // Admin Theme Colors
 const adminTheme = {
   backgroundGradient: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
@@ -65,7 +55,7 @@ const adminTheme = {
 const themeColors = userTheme;
 
 // Export all themes
-export { userTheme, vendorTheme, workerTheme, adminTheme, brand };
+export { userTheme, vendorTheme, adminTheme, brand };
 export default themeColors;
 
 

@@ -8,7 +8,7 @@ import LocationAccessModal from '../../../../components/common/LocationAccessMod
 
 /**
  * Reusable Visit Verification Modal
- * Used for OTP-based arrival verification by vendors/workers
+ * Used for OTP-based arrival verification by verified service partners
  * 
  * @param {boolean} isOpen - Whether modal is visible
  * @param {function} onClose - Callback to close modal
@@ -20,14 +20,6 @@ const VisitVerificationModal = ({ isOpen, onClose, bookingId, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [userType, setUserType] = useState('vendor');
-
-  // Detect user type
-  React.useEffect(() => {
-    const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
-    const workerData = JSON.parse(localStorage.getItem('workerData') || '{}');
-    if (workerData._id || workerData.id) setUserType('worker');
-    else if (vendorData._id || vendorData.id) setUserType('vendor');
-  }, []);
 
   // Auto-verify as last digit enters
   React.useEffect(() => {

@@ -56,11 +56,11 @@ const getVendorBookings = async (req, res) => {
         query.status = {
           $in: [
             BOOKING_STATUS.COMPLETED,
-            'worker_paid', 'settlement_pending', 'paid', 'closed'
+            'settlement_pending', 'paid', 'closed'
           ]
         };
       } else if (status === 'assigned') {
-        query.status = { $in: [BOOKING_STATUS.ASSIGNED, 'worker_accepted'] };
+        query.status = BOOKING_STATUS.ASSIGNED;
       } else {
         query.status = status;
       }
@@ -501,76 +501,7 @@ const rejectBooking = async (req, res) => {
   }
 };
 
-/**
- * Assign worker to booking
- */
-const assignWorker = async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
 
-    const vendorId = req.user.id;
-    const { id } = req.params;
-
-    const booking = await Booking.findOne({ _id: id, vendorId });
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    booking.assignedAt = new Date();
-    if (booking.status === BOOKING_STATUS.CONFIRMED || booking.status === BOOKING_STATUS.ACCEPTED) {
-      booking.status = BOOKING_STATUS.ASSIGNED;
-    }
-
-    await booking.save();
-
-    // Notify User
-    await createNotification({
-      userId: booking.userId,
-      type: 'booking_accepted',
-      title: 'Service Partner Assigned',
-      message: `Partner ${req.user.businessName || req.user.name} will handle your booking ${booking.bookingNumber}.`,
-      relatedId: booking._id,
-      relatedType: 'booking',
-      pushData: {
-        type: 'booking_accepted',
-        bookingId: booking._id.toString(),
-        link: `/user/booking/${booking._id}`
-      }
-    });
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`user_${booking.userId}`).emit('booking_updated', {
-        bookingId: booking._id,
-        status: booking.status,
-        message: 'Partner assigned to your booking'
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: 'Booking assigned successfully',
-      data: booking
-    });
-  } catch (error) {
-    console.error('Assign booking error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to assign booking. Please try again.'
-    });
-  }
-};
 
 /**
  * Update booking status
@@ -588,7 +519,7 @@ const updateBookingStatus = async (req, res) => {
 
     const vendorId = req.user.id;
     const { id } = req.params;
-    const { status, workerPaymentStatus, finalSettlementStatus } = req.body;
+    const { status, finalSettlementStatus } = req.body;
 
     const booking = await Booking.findOne({ _id: id, vendorId });
 
@@ -643,13 +574,6 @@ const updateBookingStatus = async (req, res) => {
     }
 
     // Update other fields
-    if (workerPaymentStatus) {
-      booking.workerPaymentStatus = workerPaymentStatus;
-      if (workerPaymentStatus === 'PAID' || workerPaymentStatus === 'SUCCESS') {
-        booking.isWorkerPaid = true;
-        booking.workerPaidAt = booking.workerPaidAt || new Date();
-      }
-    }
     if (finalSettlementStatus) booking.finalSettlementStatus = finalSettlementStatus;
 
     await booking.save();
@@ -811,7 +735,7 @@ const startSelfJob = async (req, res) => {
     const { createNotification } = require('../notificationControllers/notificationController');
     await createNotification({
       userId: booking.userId,
-      type: 'worker_started',
+      type: 'journey_started',
       title: 'Vendor Started Journey',
       message: `Vendor is on the way! OTP for verification: ${otp}.`,
       relatedId: booking._id,
@@ -1364,15 +1288,7 @@ const collectSelfCash = async (req, res) => {
   }
 };
 
-/**
- * Pay Worker (Manual Settlement)
- */
-const payWorker = async (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: 'Settlement completed'
-  });
-};
+
 
 /**
  * Get vendor ratings and reviews
@@ -1506,7 +1422,6 @@ module.exports = {
   getBookingById,
   acceptBooking,
   rejectBooking,
-  assignWorker,
   updateBookingStatus,
   addVendorNotes,
   startSelfJob,
@@ -1514,7 +1429,6 @@ module.exports = {
   verifySelfVisit,
   completeSelfJob,
   collectSelfCash,
-  payWorker,
   getVendorRatings,
   getPendingBookings
 };

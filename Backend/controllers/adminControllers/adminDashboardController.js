@@ -59,7 +59,7 @@ const getDashboardStats = async (req, res) => {
       {
         $match: {
           status: BOOKING_STATUS.COMPLETED,
-          paymentStatus: { $in: [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'collected_by_worker', 'paid'] },
+          paymentStatus: { $in: [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'paid'] },
           ...revenueDateFilter
         }
       },
@@ -102,8 +102,7 @@ const getDashboardStats = async (req, res) => {
       acceptedAt: b.acceptedAt,
       assignedAt: b.assignedAt,
       visitedAt: b.visitedAt,
-      completedAt: b.completedAt,
-      workerPaymentStatus: b.workerPaymentStatus
+      completedAt: b.completedAt
     }));
 
     res.status(200).json({
@@ -161,7 +160,7 @@ const getRevenueAnalytics = async (req, res) => {
       {
         $match: {
           status: BOOKING_STATUS.COMPLETED,
-          paymentStatus: { $in: [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'collected_by_worker', 'paid'] },
+          paymentStatus: { $in: [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'paid'] },
           ...dateFilter
         }
       },

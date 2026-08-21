@@ -756,7 +756,7 @@ const cancelBooking = async (req, res) => {
     const isCash = booking.paymentMethod === 'cash';
 
     if (hasStartedJourney) {
-      // SCENARIO: Worker/Vendor already started journey
+      // SCENARIO: Vendor Partner already started journey
 
       const hasReached = !!booking.visitedAt || booking.status === 'visited';
 

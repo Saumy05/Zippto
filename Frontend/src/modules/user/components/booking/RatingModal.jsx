@@ -5,7 +5,7 @@ import { themeColors } from '../../../../theme';
 import { uploadToCloudinary } from '../../../../utils/cloudinaryUpload';
 import { toast } from 'react-hot-toast';
 
-const RatingModal = ({ isOpen, onClose, onSubmit, bookingName, workerName }) => {
+const RatingModal = ({ isOpen, onClose, onSubmit, bookingName, partnerName }) => {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [review, setReview] = useState('');

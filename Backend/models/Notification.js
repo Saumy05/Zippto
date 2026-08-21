@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 /**
  * Notification Model
- * Stores notifications for users, vendors, workers, and admins
+ * Stores notifications for users, vendors, and admins
  */
 const notificationSchema = new mongoose.Schema({
   // Recipient Information
@@ -24,58 +24,63 @@ const notificationSchema = new mongoose.Schema({
     default: null,
     index: true
   },
-  // Notification Type
+  recipientRole: {
+    type: String,
+    enum: ['user', 'vendor', 'admin'],
+    default: 'user'
+  },
+  // Notification Details
   type: {
     type: String,
-    required: true,
-    enum: [
-      'booking_created',
-      'booking_request',      // New booking request to vendor
-      'booking_requested',    // New booking created confirmation to user
-      'booking_accepted',     // Vendor accepted booking
-      'booking_confirmed',
-      'booking_cancelled',
-      'booking_completed',
-      'booking_rejected',
-      'booking_unassigned',
-      'booking_timeout',
-      'booking_assigned_by_admin',
-      'booking_rescheduled',
-      'job_accepted',
-      'job_rejected',
-      'job_cancelled',
-      'work_done',
-      'work_completed',       // Added for vendor self completion
-      'vendor_reached',
-      'journey_started',
-      'visit_verified',
-      'payment_received',
-      'payment_success',
-      'payment_failed',
-      'payment_refunded',
-      'review_submitted',
-      'vendor_approved',
-      'vendor_rejected',
-      'wallet_topup',
-      'payout_requested',
-      'payout_processed',
-      'vendor_withdrawal_request',
-      'referral_reward',
-      'referral_bonus',
-      'general'
-    ],
+    required: [true, 'Notification type is required'],
     index: true
   },
-  // Notification Content
   title: {
     type: String,
-    required: true,
-    trim: true
+    required: [true, 'Notification title is required'],
+    trim: true,
+    maxlength: [100, 'Title cannot exceed 100 characters']
   },
   message: {
     type: String,
-    required: true,
-    trim: true
+    required: [true, 'Notification message is required'],
+    trim: true,
+    maxlength: [500, 'Message cannot exceed 500 characters']
+  },
+  // Optional action url/deep link
+  actionUrl: {
+    type: String,
+    default: null
+  },
+  // Custom payload data for mobile/web app navigation
+  data: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  // Priority level
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
+  },
+  // Delivery Channels
+  channels: {
+    push: {
+      type: Boolean,
+      default: true
+    },
+    inApp: {
+      type: Boolean,
+      default: true
+    },
+    email: {
+      type: Boolean,
+      default: false
+    },
+    sms: {
+      type: Boolean,
+      default: false
+    }
   },
   // Related Entity (optional)
   relatedId: {
@@ -84,7 +89,7 @@ const notificationSchema = new mongoose.Schema({
   },
   relatedType: {
     type: String,
-    enum: ['booking', 'payment', 'user', 'vendor', 'worker', 'service', 'withdrawal'],
+    enum: ['booking', 'payment', 'user', 'vendor', 'service', 'withdrawal'],
     default: null
   },
   // Notification Status
@@ -96,11 +101,6 @@ const notificationSchema = new mongoose.Schema({
   readAt: {
     type: Date,
     default: null
-  },
-  // Additional Data
-  data: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {}
   }
 }, {
   timestamps: true

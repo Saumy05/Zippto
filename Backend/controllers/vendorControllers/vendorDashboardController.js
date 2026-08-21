@@ -228,12 +228,7 @@ const getRevenueAnalytics = async (req, res) => {
   }
 };
 
-const getWorkerPerformance = async (req, res) => {
-  return res.status(200).json({
-    success: true,
-    data: []
-  });
-};
+
 
 /**
  * Get service performance metrics
@@ -314,7 +309,6 @@ const getServicePerformance = async (req, res) => {
 module.exports = {
   getDashboardStats,
   getRevenueAnalytics,
-  getWorkerPerformance,
   getServicePerformance
 };
 

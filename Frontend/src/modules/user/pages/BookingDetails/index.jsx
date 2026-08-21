@@ -540,7 +540,7 @@ const BookingDetails = () => {
   ];
 
   const bookingCode = booking.bookingNumber || booking._id?.slice(-8).toUpperCase();
-  const assignedPartner = booking.workerId || booking.assignedTo || booking.vendorId;
+  const assignedPartner = booking.vendorId || booking.assignedTo;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-32">
@@ -1186,7 +1186,7 @@ const BookingDetails = () => {
           }}
           onSubmit={handleRateSubmit}
           bookingName={booking.serviceName || booking.serviceCategory || 'Service'}
-          workerName={booking.workerId?.name || (booking.assignedTo?.name === 'You (Self)' ? 'Service Provider' : (booking.assignedTo?.name || 'Expert'))}
+          partnerName={booking.vendorId?.businessName || booking.vendorId?.name || 'Service Partner'}
         />
 
         {/* Payment Verification Modal */}

@@ -16,7 +16,6 @@ import {
 } from '../../services/bookingService';
 import { CashCollectionModal, ConfirmDialog, OtpVerificationModal, VisitVerificationModal } from '../../components/common';
 import WorkCompletionModal from '../../components/common/WorkCompletionModal';
-import vendorWalletService from '../../../../services/vendorWalletService';
 import vendorBillService from '../../../../services/vendorBillService';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
@@ -122,13 +121,10 @@ export default function BookingDetails() {
         },
         status: apiData.status,
         description: apiData.description || apiData.notes || 'No description provided',
-        assignedTo: apiData.workerId ? { name: apiData.workerId.name } : (apiData.assignedAt ? { name: 'You (Self)' } : null),
-        workerResponse: apiData.workerResponse,
-        workerResponseAt: apiData.workerResponseAt,
+        assignedTo: { name: 'Direct Partner' },
         paymentMethod: apiData.paymentMethod,
         paymentStatus: apiData.paymentStatus,
         cashCollected: apiData.cashCollected || false,
-        workerPaymentStatus: apiData.workerPaymentStatus,
         finalSettlementStatus: apiData.finalSettlementStatus
       };
 
@@ -262,111 +258,24 @@ export default function BookingDetails() {
     }
   };
   const getAvailableStatuses = (currentStatus, booking) => {
-    // Check payment status
-    const workerPaymentDone = booking?.workerPaymentStatus === 'PAID';
-    const finalSettlementDone = booking?.finalSettlementStatus === 'DONE';
-    const isSelfJob = booking?.assignedTo?.name === 'You (Self)';
-
     const statusFlow = {
-      'confirmed': ['assigned', 'visited', 'journey_started'],
-      'assigned': ['visited', 'journey_started'],
+      'confirmed': ['journey_started'],
       'journey_started': ['visited'],
       'visited': ['in_progress', 'work_done'],
       'in_progress': ['work_done'],
-      'work_done': ['completed', 'final_settlement'],
-      'final_settlement': ['completed'],
+      'work_done': ['completed'],
       'completed': [],
     };
     return statusFlow[currentStatus] || [];
   };
 
-  const canPayWorker = (booking) => {
-    // If assigned to self, no worker payment needed
-    if (booking?.assignedTo?.name === 'You (Self)') return false;
-
-    // Allow payment ONLY if booking is completed (Vendor Approved)
-    const validStatus = booking?.status === 'completed';
-    return validStatus && booking?.workerPaymentStatus !== 'PAID';
-  };
-
   const canDoFinalSettlement = (booking) => {
-    // Check if payment is already done (Online SUCCESS or Cash COLLECTED)
-    // Robust check for various status strings (case-insensitive)
     const pStatus = booking?.paymentStatus?.toLowerCase() || '';
     const isPaid = pStatus === 'success' || pStatus === 'paid' || booking?.cashCollected;
-
     const status = booking?.status?.toLowerCase() || '';
-    const isWorkDone = status === 'work_done' || status === 'completed' || status === 'worker_paid';
+    const isWorkDone = status === 'work_done' || status === 'completed';
 
-    // Check worker payment (enforce worker is paid before vendor can finalize unless doing job self)
-    const isSelfJob = booking?.assignedTo?.name === 'You (Self)';
-    const handleWorkerCheck = isSelfJob || booking?.workerPaymentStatus === 'PAID';
-
-    return isWorkDone && isPaid && handleWorkerCheck && booking?.finalSettlementStatus !== 'DONE';
-  };
-
-  const handleStatusChange = async (newStatus) => {
-    if (!booking) return;
-
-    const availableStatuses = getAvailableStatuses(booking.status, booking);
-    if (!availableStatuses.includes(newStatus)) {
-      toast.error(`Cannot change status from ${booking.status} to ${newStatus}. Please follow the proper flow.`);
-      return;
-    }
-
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Update Status',
-      message: `Are you sure you want to change status to ${newStatus.replace('_', ' ')}?`,
-      type: 'info',
-      onConfirm: async () => {
-        setLoading(true);
-        try {
-          await updateBookingStatus(id, newStatus);
-          window.dispatchEvent(new Event('vendorJobsUpdated'));
-          toast.success(`Status updated to ${newStatus.replace('_', ' ')} successfully!`);
-          loadBooking();
-        } catch (error) {
-          console.error('Error updating status:', error);
-          toast.error('Failed to update status. Please try again.');
-        } finally {
-          setLoading(false);
-        }
-      }
-    });
-  };
-
-  const handlePayWorkerClick = () => {
-    setIsPayWorkerModalOpen(true);
-  };
-
-  const handlePayWorkerSubmit = async (payoutData) => {
-    const { amount, notes, transactionId, screenshot, paymentMethod } = payoutData;
-
-    try {
-      setPaySubmitting(true);
-      const res = await vendorWalletService.payWorker(
-        booking.id || booking._id,
-        amount,
-        notes,
-        transactionId,
-        screenshot,
-        paymentMethod
-      );
-
-      if (res.success) {
-        toast.success(res.message || 'Payment recorded successfully');
-        setIsPayWorkerModalOpen(false);
-        // Refresh booking data
-        loadBooking();
-      } else {
-        toast.error(res.message || 'Failed to record payment');
-      }
-    } catch (error) {
-      toast.error('Failed to process payment');
-    } finally {
-      setPaySubmitting(false);
-    }
+    return isWorkDone && isPaid && booking?.finalSettlementStatus !== 'DONE';
   };
 
   const handleFinalSettlement = async () => {
@@ -503,9 +412,7 @@ export default function BookingDetails() {
     navigate(`/vendor/booking/${booking.id}/timeline`);
   };
 
-  const handleAssignWorker = () => {
-    navigate(`/vendor/booking/${booking.id}/assign-worker`);
-  };
+
 
 
 
@@ -547,28 +454,7 @@ export default function BookingDetails() {
     }
   };
 
-  const handleApproveWork = () => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Approve Work',
-      message: 'Approve the work done by the worker? This will mark the job as completed and enable payout.',
-      type: 'success',
-      onConfirm: async () => {
-        setLoading(true);
-        try {
-          await updateBookingStatus(id, 'completed');
-          window.dispatchEvent(new Event('vendorJobsUpdated'));
-          toast.success('Work Approved! You can now pay the worker.');
-          window.location.reload();
-        } catch (error) {
-          console.error('Error approving work:', error);
-          toast.error('Failed to approve work');
-        } finally {
-          setLoading(false);
-        }
-      }
-    });
-  };
+
 
   // --- Payment Breakdown Calculations ---
   // Default values from booking (fallback)
@@ -1048,7 +934,7 @@ export default function BookingDetails() {
         </div>
 
         {/* Work Photos (after completion) */}
-        {booking.workPhotos && booking.workPhotos.length > 0 && booking.assignedTo?.name !== 'You (Self)' && (
+        {booking.workPhotos && booking.workPhotos.length > 0 && (
           <div className="bg-white rounded-xl p-4 mb-4 shadow-md border-t-4 border-green-500">
             <p className="text-sm font-semibold text-gray-700 mb-3">Work Evidence (Photos)</p>
             <div className="grid grid-cols-2 gap-2">
@@ -1074,191 +960,10 @@ export default function BookingDetails() {
               );
               })}
             </div>
-
-            {/* Approval/Reject Buttons */}
-            {booking.status === 'work_done' && booking.workerPaymentStatus !== 'PAID' && booking.assignedTo?.name !== 'You (Self)' && (
-              <div className="flex gap-3 mt-4 pt-3 border-t border-gray-100">
-                <button
-                  onClick={() => {
-                    setConfirmDialog({
-                      isOpen: true,
-                      title: 'Reject Work',
-                      message: 'Reject work? This will notify the worker to fix issues.',
-                      type: 'warning',
-                      onConfirm: () => {
-                        toast.error('Work Marked as Rejected');
-                        // Add actual reject logic here if available
-                      }
-                    });
-                  }}
-                  className="flex-1 py-3 bg-white text-red-600 rounded-xl font-bold text-sm active:scale-95 transition-transform border border-red-200 shadow-sm"
-                >
-                  <FiX className="inline w-4 h-4 mr-1" /> Reject Work
-                </button>
-                <button
-                  onClick={handleApproveWork}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-bold text-sm shadow-md shadow-green-200 active:scale-95 transition-transform"
-                >
-                  <FiCheckCircle className="inline w-4 h-4 mr-1" /> Approve Work
-                </button>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Worker & Job Status Card (Enhanced) */}
-        {booking.assignedTo && booking.assignedTo?.name !== 'You (Self)' && (
-          <div className="bg-white rounded-2xl p-5 mb-5 shadow-lg border border-gray-100">
-            <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden border-2 border-white shadow-sm flex items-center justify-center">
-                  <FiUser className="w-6 h-6 text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-sm">{booking.assignedTo.name}</h3>
-                  <p className="text-xs text-gray-500 font-medium">Service Partner</p>
-                </div>
-              </div>
 
-              {/* Call Button */}
-              {booking.assignedTo?.phone && (
-                <a href={`tel:${booking.assignedTo.phone}`} className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600 hover:bg-green-100 transition-colors">
-                  <FiPhone className="w-5 h-5" />
-                </a>
-              )}
-            </div>
-
-            {/* Status Section - Premium Design */}
-            <div className="rounded-2xl p-6 relative overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)',
-                boxShadow: 'inset 0 0 40px rgba(74, 222, 128, 0.05)'
-              }}>
-
-              {/* Decorative background blur */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2"></div>
-
-              <div className="flex justify-between items-center mb-6 relative z-10">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                  <span className="text-xs font-bold text-green-800 uppercase tracking-widest">Live Status</span>
-                </div>
-                {booking.workerAcceptedAt && (
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/60 border border-green-100/50 backdrop-blur-sm shadow-sm">
-                    <FiClock className="w-3 h-3 text-green-600" />
-                    <span className="text-[10px] text-green-700 font-bold font-mono">
-                      {new Date(booking.workerAcceptedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Status Display */}
-              {!booking.workerResponse || booking.workerResponse === 'PENDING' ? (
-                <div className="flex items-center gap-4 text-amber-600 bg-white/80 backdrop-blur-md p-4 rounded-xl border border-amber-100 shadow-sm relative z-10">
-                  <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0">
-                    <FiClock className="w-5 h-5 animate-pulse" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-sm text-gray-900">Awaiting Acceptance</p>
-                    <p className="text-xs text-amber-700/80 font-medium mt-0.5">Worker has not responded yet</p>
-                  </div>
-                </div>
-              ) : booking.workerResponse === 'ACCEPTED' ? (
-                <div className="space-y-6 relative z-10">
-                  {/* Progress Steps Visual - Pro Design */}
-                  <div className="relative px-2">
-                    {/* Track Line */}
-                    <div className="absolute left-6 right-6 top-[15px] h-1.5 bg-gray-100/80 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-700 ease-out shadow-[0_0_10px_rgba(16,185,129,0.3)]" style={{
-                        width: booking.status === 'completed' || booking.status === 'work_done' ? '100%' :
-                          booking.status === 'in_progress' || booking.status === 'visited' ? '66%' :
-                            booking.status === 'journey_started' ? '33%' : '0%'
-                      }}>
-                        <div className="w-full h-full bg-white/20 animate-[shimmer_2s_infinite]"></div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-start relative">
-                      {/* Accepted Step */}
-                      <div className="flex flex-col items-center gap-2 group cursor-default">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-green-200 ring-4 ring-white z-10 transition-transform group-hover:scale-110 duration-300">
-                          <FiCheck className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-800 tracking-wide uppercase bg-white/50 px-2 py-0.5 rounded-full backdrop-blur-sm">Accepted</span>
-                      </div>
-
-                      {/* Started Step */}
-                      <div className="flex flex-col items-center gap-2 group cursor-default">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white z-10 transition-all duration-500 group-hover:scale-110 ${['journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status) ? 'bg-gradient-to-br from-green-400 to-emerald-600 text-white shadow-green-200' : 'bg-white text-gray-300 border-2 border-dashed border-gray-200'}`}>
-                          <FiNavigation className="w-4 h-4" />
-                        </div>
-                        <span className={`text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-full backdrop-blur-sm transition-colors ${['journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status) ? 'text-emerald-800 bg-white/50' : 'text-gray-400'}`}>On Way</span>
-                      </div>
-
-                      {/* Working Step */}
-                      <div className="flex flex-col items-center gap-2 group cursor-default">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white z-10 transition-all duration-500 group-hover:scale-110 ${['visited', 'in_progress', 'work_done', 'completed'].includes(booking.status) ? 'bg-gradient-to-br from-green-400 to-emerald-600 text-white shadow-green-200' : 'bg-white text-gray-300 border-2 border-dashed border-gray-200'}`}>
-                          <FiTool className="w-4 h-4" />
-                        </div>
-                        <span className={`text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-full backdrop-blur-sm transition-colors ${['visited', 'in_progress', 'work_done', 'completed'].includes(booking.status) ? 'text-emerald-800 bg-white/50' : 'text-gray-400'}`}>Working</span>
-                      </div>
-
-                      {/* Done Step */}
-                      <div className="flex flex-col items-center gap-2 group cursor-default">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white z-10 transition-all duration-500 group-hover:scale-110 ${['work_done', 'completed'].includes(booking.status) ? 'bg-gradient-to-br from-green-400 to-emerald-600 text-white shadow-green-200' : 'bg-white text-gray-300 border-2 border-dashed border-gray-200'}`}>
-                          <FiCheckCircle className="w-4 h-4" />
-                        </div>
-                        <span className={`text-[10px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-full backdrop-blur-sm transition-colors ${['work_done', 'completed'].includes(booking.status) ? 'text-emerald-800 bg-white/50' : 'text-gray-400'}`}>Done</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Clear Text Status with Glass Effect */}
-                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow duration-300">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-inner ${booking.status === 'journey_started' ? 'bg-blue-50 text-blue-600' :
-                      booking.status === 'in_progress' ? 'bg-orange-50 text-orange-600' :
-                        ['work_done', 'completed'].includes(booking.status) ? 'bg-green-50 text-green-600' :
-                          'bg-gray-100 text-gray-500'
-                      }`}>
-                      {booking.status === 'journey_started' ? <FiNavigation className="w-6 h-6 drop-shadow-sm" /> :
-                        booking.status === 'in_progress' ? <FiTool className="w-6 h-6 animate-pulse drop-shadow-sm" /> :
-                          ['work_done', 'completed'].includes(booking.status) ? <FiCheckCircle className="w-6 h-6 drop-shadow-sm" /> :
-                            <FiCheck className="w-6 h-6 text-gray-400" />}
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900 text-base tracking-tight mb-0.5">
-                        {booking.status === 'journey_started' ? 'Worker is On the Way' :
-                          booking.status === 'visited' ? 'Worker Reached Location' :
-                            booking.status === 'in_progress' ? 'Work In Progress' :
-                              ['work_done', 'completed'].includes(booking.status) ? 'Work Completed' :
-                                'Worker Accepted Job'}
-                      </p>
-                      <p className="text-xs text-gray-500 font-medium">
-                        {booking.status === 'journey_started' ? 'Tracking is active. Monitor live location.' :
-                          booking.status === 'visited' ? 'Waiting for OTP verification to start work.' :
-                            booking.status === 'in_progress' ? 'Service is currently being performed.' :
-                              ['work_done', 'completed'].includes(booking.status) ? 'Service marked as done. Pending final checks.' :
-                                'Worker is preparing to start the journey.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
-                  <FiXCircle className="w-5 h-5" />
-                  <div className="flex-1">
-                    <p className="font-bold text-sm">Request Declined</p>
-                    <p className="text-[10px] opacity-80">Worker is unavailable.</p>
-                  </div>
-                  <button onClick={handleAssignWorker} className="px-3 py-1 bg-white border border-red-200 rounded shadow-sm text-xs font-bold text-red-600 hover:bg-red-50">
-                    Reassign
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Payment Collection Section */}
         {canCollectCash(booking) && (
@@ -1370,34 +1075,7 @@ export default function BookingDetails() {
           </div>
         )}
 
-        {/* Worker Payment Button */}
-        {canPayWorker(booking) && (
-          <div
-            id="worker-payment-section"
-            className="bg-white rounded-2xl p-5 mb-4 shadow-md border-l-4 border-green-500"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500">
-                <FiDollarSign className="w-5 h-5" />
-              </div>
-              <h3 className="font-bold text-gray-800">Worker Payout</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Service complete. Pay {booking.assignedTo?.name}'s share to close this booking.
-            </p>
-            <button
-              onClick={handlePayWorkerClick}
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md hover:brightness-105"
-              style={{
-                background: 'linear-gradient(135deg, #10B981, #059669)',
-              }}
-            >
-              <FiCheckCircle className="w-5 h-5" />
-              Pay Worker
-            </button>
-          </div>
-        )}
+
 
         {/* Final Settlement Button (Improved UI) */}
         {canDoFinalSettlement(booking) && (
@@ -1560,7 +1238,7 @@ export default function BookingDetails() {
         onSuccess={() => window.location.reload()}
       />
 
-      {/* Unified Worker Completion Modal - REUSABLE COMPONENT */}
+      {/* Work Completion Modal */}
       <WorkCompletionModal
         isOpen={isWorkDoneModalOpen}
         onClose={() => setIsWorkDoneModalOpen(false)}

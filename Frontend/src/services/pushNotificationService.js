@@ -116,7 +116,7 @@ async function getFCMToken() {
 
 /**
  * Register FCM token with backend
- * @param {string} userType - 'user', 'vendor', or 'worker'
+ * @param {string} userType - 'user', 'vendor', or 'admin'
  * @param {boolean} forceUpdate - Force token update
  * @returns {Promise<string|null>}
  */
@@ -209,7 +209,7 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
 
 /**
  * Remove FCM token from backend (removes specific token for current device)
- * @param {string} userType - 'user', 'vendor', or 'worker'
+ * @param {string} userType - 'user', 'vendor', or 'admin'
  */
 async function removeFCMToken(userType = 'user') {
   try {

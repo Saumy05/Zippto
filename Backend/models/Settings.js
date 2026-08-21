@@ -202,10 +202,6 @@ const settingsSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  workerAutoAssignment: {
-    type: Boolean,
-    default: true
-  },
   isPushNotificationEnabled: {
     type: Boolean,
     default: true

@@ -120,7 +120,6 @@ exports.updateSettings = async (req, res, next) => {
       // System Feature Flags & Toggles
       if (req.body.isOnlinePaymentEnabled !== undefined) settings.isOnlinePaymentEnabled = req.body.isOnlinePaymentEnabled;
       if (req.body.isCashPaymentEnabled !== undefined) settings.isCashPaymentEnabled = req.body.isCashPaymentEnabled;
-      if (req.body.workerAutoAssignment !== undefined) settings.workerAutoAssignment = req.body.workerAutoAssignment;
       if (req.body.isPushNotificationEnabled !== undefined) settings.isPushNotificationEnabled = req.body.isPushNotificationEnabled;
       if (req.body.isChatEnabled !== undefined) settings.isChatEnabled = req.body.isChatEnabled;
       if (req.body.isB2BEnabled !== undefined) settings.isB2BEnabled = req.body.isB2BEnabled;
@@ -169,7 +168,7 @@ exports.updateSettings = async (req, res, next) => {
 // Get Public Settings (Visited Charges, GST, Dynamic Languages, Feature Flags)
 exports.getPublicSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage supportEmail supportPhone supportWhatsapp cancellationPenalty companyName companyAddress companyCity companyState companyPincode companyPhone companyEmail isOnlinePaymentEnabled isCashPaymentEnabled isWalletPaymentEnabled isB2BEnabled workerAutoAssignment isReferralEnabled referralRewardAmount refereeRewardAmount isPushNotificationEnabled isChatEnabled supportedLanguages');
+    let settings = await Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage supportEmail supportPhone supportWhatsapp cancellationPenalty companyName companyAddress companyCity companyState companyPincode companyPhone companyEmail isOnlinePaymentEnabled isCashPaymentEnabled isWalletPaymentEnabled isB2BEnabled isReferralEnabled referralRewardAmount refereeRewardAmount isPushNotificationEnabled isChatEnabled supportedLanguages');
 
     // Default if not found (fallback values)
     if (!settings) {
@@ -182,7 +181,6 @@ exports.getPublicSettings = async (req, res, next) => {
         isChatEnabled: true,
         isOnlinePaymentEnabled: true,
         isCashPaymentEnabled: true,
-        workerAutoAssignment: true,
         referralRewardAmount: 50,
         refereeRewardAmount: 50
       };

@@ -4,7 +4,7 @@ import { registerFCMToken, removeFCMToken } from './pushNotificationService';
 /**
  * Notify Flutter WebView about successful login
  * This directly calls Flutter's captureLoginResponse handler
- * @param {object} responseData - The login response data containing accessToken and user/vendor/worker info
+ * @param {object} responseData - The login response data containing accessToken and user/vendor/admin info
  */
 function notifyFlutterLogin(responseData) {
   try {

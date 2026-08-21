@@ -376,7 +376,6 @@ const Dashboard = memo(() => {
       'in_progress': '#F59E0B',
       'work_done': '#10B981',
       'completed': '#10B981',
-      'worker_paid': '#06B6D4',
       'settlement_pending': '#F97316',
     };
     return statusColors[s] || '#6B7280';
@@ -395,7 +394,6 @@ const Dashboard = memo(() => {
       'in_progress': 'In Progress',
       'work_done': 'Work Done',
       'completed': 'Completed',
-      'worker_paid': 'Payment Done',
       'settlement_pending': 'Settlement',
       'cancelled': 'Cancelled',
       'rejected': 'Rejected'
@@ -619,7 +617,7 @@ const Dashboard = memo(() => {
             </div>
           </div>
 
-          {/* Right Sidebar Column (Performance, Operations & Workers) */}
+          {/* Right Sidebar Column (Performance & Operations) */}
           <div className="space-y-6">
             {/* Performance Overview Widget */}
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5 sm:p-6 space-y-4">

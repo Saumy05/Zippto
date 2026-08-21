@@ -38,9 +38,9 @@ export const CartProvider = ({ children }) => {
   // Fetch cart (Handles both Guest Cart from localStorage and User Cart from API + Auto-Merge)
   const fetchCart = useCallback(async () => {
     try {
-      // Prevention: Do not fetch user cart if we are in vendor/admin/worker apps
+      // Prevention: Do not fetch user cart if we are in vendor or admin apps
       const path = window.location.pathname;
-      if (path.startsWith('/vendor') || path.startsWith('/admin') || path.startsWith('/worker')) {
+      if (path.startsWith('/vendor') || path.startsWith('/admin')) {
         return;
       }
 

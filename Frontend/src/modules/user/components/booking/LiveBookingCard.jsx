@@ -311,7 +311,7 @@ const LiveBookingCard = ({ hasBottomNav }) => {
         }}
         onSubmit={handleRateSubmit}
         bookingName={activeBooking.serviceName || 'Service'}
-        workerName={activeBooking.workerId?.name || 'Expert'}
+        partnerName={activeBooking.vendorId?.name || activeBooking.vendorId?.businessName || 'Service Partner'}
       />
     </AnimatePresence>
   );

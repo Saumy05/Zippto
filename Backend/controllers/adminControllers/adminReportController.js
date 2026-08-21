@@ -130,15 +130,7 @@ exports.getVendorReport = async (req, res) => {
   }
 };
 
-exports.getWorkerReport = async (req, res) => {
-  return res.status(200).json({
-    success: true,
-    data: {
-      topWorkers: [],
-      availabilityDistribution: []
-    }
-  });
-};
+
 
 /**
  * Get Customer/User Report Data

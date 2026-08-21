@@ -62,26 +62,6 @@ router.post('/save', authenticate, async (req, res) => {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    // Remove this token from Vendor and Worker collections to prevent cross-account notifications
-    // Remove this token from Vendor and Worker collections to prevent cross-account notifications
-    // COMMENTED OUT to allow testing on same device (e.g. localhost) without tokens getting deleted
-    /*
-    try {
-      await Vendor.updateMany(
-        { $or: [{ fcmTokens: token }, { fcmTokenMobile: token }] },
-        { $pull: { fcmTokens: token, fcmTokenMobile: token } }
-      );
-
-      await Worker.updateMany(
-        { $or: [{ fcmTokens: token }, { fcmTokenMobile: token }] },
-        { $pull: { fcmTokens: token, fcmTokenMobile: token } }
-      );
-    } catch (cleanupError) {
-      console.error('Error removing token from other collections:', cleanupError);
-      // Don't fail the request if cleanup fails
-    }
-    */
-
     res.json({ success: true, message: 'FCM token saved successfully' });
   } catch (error) {
     console.error('Error saving FCM token:', error);

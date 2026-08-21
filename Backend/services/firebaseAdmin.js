@@ -283,7 +283,7 @@ async function sendNotificationToUser(userId, payload, includeMobile = true) {
     const finalPayload = {
       ...payload,
       highPriority: payload.priority === 'high' ||
-        ['booking_accepted', 'worker_started', 'journey_started', 'work_done', 'work_completed', 'booking_completed', 'vendor_reached', 'visit_verified', 'payment_success', 'payment_received', 'work_started', 'in_progress', 'worker_accepted'].includes(payload.data?.type),
+        ['booking_accepted', 'journey_started', 'work_done', 'work_completed', 'booking_completed', 'vendor_reached', 'visit_verified', 'payment_success', 'payment_received', 'work_started', 'in_progress'].includes(payload.data?.type),
       dataOnly: false // Explicitly disable dataOnly to force system tray notification
     };
 

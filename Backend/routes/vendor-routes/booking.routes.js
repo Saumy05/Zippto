@@ -9,7 +9,6 @@ const {
   getBookingById,
   acceptBooking,
   rejectBooking,
-  assignWorker,
   updateBookingStatus,
   addVendorNotes,
   startSelfJob,
@@ -17,7 +16,6 @@ const {
   verifySelfVisit,
   completeSelfJob,
   collectSelfCash,
-  payWorker,
   getVendorRatings,
   getPendingBookings
 } = require('../../controllers/bookingControllers/vendorBookingController');
@@ -26,8 +24,6 @@ const {
 const rejectBookingValidation = [
   body('reason').optional().trim()
 ];
-
-const assignWorkerValidation = [];
 
 const updateStatusValidation = [
   body('status').isIn(['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'rejected'])
@@ -45,19 +41,15 @@ router.get('/', authenticate, isVendor, getVendorBookings);
 router.get('/:id', authenticate, isVendor, getBookingById);
 router.post('/:id/accept', authenticate, isVendor, acceptBooking);
 router.post('/:id/reject', authenticate, isVendor, rejectBookingValidation, rejectBooking);
-router.post('/:id/assign-worker', authenticate, isVendor, assignWorkerValidation, assignWorker);
 router.put('/:id/status', authenticate, isVendor, updateStatusValidation, updateBookingStatus);
 router.post('/:id/notes', authenticate, isVendor, addNotesValidation, addVendorNotes);
 
-// Self-Job Routes
+// Direct Partner Job Routes
 router.post('/:id/self/start', authenticate, isVendor, startSelfJob);
 router.post('/:id/self/reached', authenticate, isVendor, vendorReachedLocation);
 router.post('/:id/self/visit/verify', authenticate, isVendor, verifySelfVisit);
 router.post('/:id/self/complete', authenticate, isVendor, completeSelfJob);
 router.post('/:id/self/payment/collect', authenticate, isVendor, collectSelfCash);
-
-// Payment Route
-router.post('/:id/pay-worker', authenticate, isVendor, payWorker);
 
 module.exports = router;
 

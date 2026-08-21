@@ -101,7 +101,7 @@ const ReportsOverview = () => {
       icon: FiUsers,
       color: 'text-indigo-600',
       bg: 'bg-indigo-50',
-      link: '/admin/reports/workers' // Just as an example link
+      link: '/admin/reports/vendors'
     }
   ];
 

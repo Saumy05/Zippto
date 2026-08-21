@@ -208,7 +208,7 @@ const verifyPaymentWebhook = async (req, res) => {
       priority: 'high'
     });
 
-    // Notify vendor & worker
+    // Notify vendor
     let vendorTitle = 'Booking Confirmed';
     let vendorMsg = `Payment received for booking ${booking.bookingNumber}. The service is now confirmed.`;
 
@@ -237,7 +237,7 @@ const verifyPaymentWebhook = async (req, res) => {
       });
     }
 
-    // ── Emit Real-Time Socket Events to Vendor, Worker & User ──
+    // ── Emit Real-Time Socket Events to Vendor & User ──
     try {
       const { getIO } = require('../../sockets');
       const io = getIO();
@@ -429,7 +429,7 @@ const processWalletPayment = async (req, res) => {
       priority: 'high'
     });
 
-    // Notify vendor & worker
+    // Notify vendor
     let vendorTitle = 'Booking Confirmed';
     let vendorMsg = `Payment received for booking ${booking.bookingNumber}. The service is now confirmed.`;
 

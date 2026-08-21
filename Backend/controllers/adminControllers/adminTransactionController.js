@@ -128,7 +128,7 @@ const getAllTransactions = async (req, res) => {
 
     }
 
-    // --- STANDARD LOGIC FOR OTHERS (User, Vendor, Worker, All) ---
+    // --- STANDARD LOGIC FOR OTHERS (User, Vendor, All) ---
     const skip = (parseInt(page) - 1) * parseInt(limit);
     let query = {};
 

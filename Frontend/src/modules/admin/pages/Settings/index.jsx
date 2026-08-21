@@ -37,9 +37,7 @@ export const PRESET_INDIAN_LANGUAGES = [
 ];
 
 const AdminSettings = () => {
-  const [settings, setSettings] = useState({
-    workerAutoAssignment: true,
-  });
+  const [settings, setSettings] = useState({});
 
   const [financialSettings, setFinancialSettings] = useState({
     visitedCharges: 0,
@@ -132,7 +130,7 @@ const AdminSettings = () => {
       'profile':            'profile',
       'general':            'financial',
       'financial':          'financial',
-      'worker-assignment':  'financial',  // Dispatch & Radii fields live inside the financial view
+      'dispatch':           'financial',  // Dispatch & Radii fields live inside the financial view
       'system':             'system',     // Global System Settings → Contact & Support view
       'customization':      'customization',
       'toggles':            'toggles',
@@ -449,9 +447,6 @@ const AdminSettings = () => {
     }
     if (key === 'isOnlinePaymentEnabled') {
       setFinancialSettings(prev => ({ ...prev, isOnlinePaymentEnabled: newValue }));
-    }
-    if (key === 'workerAutoAssignment') {
-      setSettings(prev => ({ ...prev, workerAutoAssignment: newValue }));
     }
     try {
       await updateSettings({ [key]: newValue });

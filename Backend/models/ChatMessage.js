@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 /**
  * ChatMessage Model
- * Stores in-app real-time chat messages between Customers, Vendors, and Workers for active bookings.
+ * Stores in-app real-time chat messages between Customers, Vendors, and Admins for active bookings.
  */
 const chatMessageSchema = new mongoose.Schema({
   bookingId: {

@@ -36,7 +36,7 @@ export default function ChatDrawerModal({
   onClose,
   bookingId,
   bookingData = null,
-  userType = 'user' // 'user' | 'vendor' | 'worker' | 'admin'
+  userType = 'user' // 'user' | 'vendor' | 'admin'
 }) {
   const socket = useSocket();
   const { isChatEnabled } = useSettings();

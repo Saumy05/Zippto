@@ -666,15 +666,7 @@ const getWalletSummary = async (req, res) => {
   }
 };
 
-/**
- * Pay worker for a booking
- */
-const payWorker = async (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: 'Settlement recorded successfully'
-  });
-};
+
 
 /**
  * Get vendor's withdrawal history
@@ -794,7 +786,6 @@ module.exports = {
   requestSettlement,
   getSettlements,
   getWalletSummary,
-  payWorker,
   requestWithdrawal,
   getWithdrawals,
   offsetDuesFromEarnings

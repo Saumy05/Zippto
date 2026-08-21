@@ -112,7 +112,6 @@ const ActiveJobs = memo(() => {
       'JOURNEY_STARTED': '#F59E0B',
       'VISITED': '#8B5CF6',
       'WORK_DONE': '#10B981',
-      'WORKER_PAID': '#06B6D4',
       'SETTLEMENT_PENDING': '#F97316',
       'COMPLETED': '#059669',
     };

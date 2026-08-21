@@ -28,7 +28,7 @@ const READONLY_STATUSES = [
  * Unified authorization helper for in-app booking chat
  * Verifies:
  * 1. Booking exists
- * 2. Actor is an authorized participant (Customer, Vendor, Worker, or Admin)
+ * 2. Actor is an authorized participant (Customer, Vendor, or Admin)
  * 3. Booking lifecycle status permits chat
  */
 const assertBookingChatParticipant = async (bookingId, actor) => {

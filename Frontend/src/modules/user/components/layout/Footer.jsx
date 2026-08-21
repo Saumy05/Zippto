@@ -147,12 +147,7 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link to="/vendor/signup" className="hover:text-slate-900 transition-colors">
-                    Register as Vendor
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/worker/signup" className="hover:text-slate-900 transition-colors">
-                    Register as Worker
+                    Register as Partner / Vendor
                   </Link>
                 </li>
               </ul>
