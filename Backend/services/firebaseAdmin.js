@@ -228,7 +228,6 @@ async function removeInvalidTokens(tokens) {
     console.log(`[FCM Cleanup] Removing ${tokens.length} invalid tokens...`);
     const User = require('../models/User');
     const Vendor = require('../models/Vendor');
-    const Worker = require('../models/Worker');
 
     const updateQuery = {
       $pull: {
@@ -240,8 +239,7 @@ async function removeInvalidTokens(tokens) {
     // We run updates in parallel for all collections as a token might belong to any
     await Promise.all([
       User.updateMany({ $or: [{ fcmTokens: { $in: tokens } }, { fcmTokenMobile: { $in: tokens } }] }, updateQuery),
-      Vendor.updateMany({ $or: [{ fcmTokens: { $in: tokens } }, { fcmTokenMobile: { $in: tokens } }] }, updateQuery),
-      Worker.updateMany({ $or: [{ fcmTokens: { $in: tokens } }, { fcmTokenMobile: { $in: tokens } }] }, updateQuery)
+      Vendor.updateMany({ $or: [{ fcmTokens: { $in: tokens } }, { fcmTokenMobile: { $in: tokens } }] }, updateQuery)
     ]);
 
     console.log('[FCM Cleanup] ✅ Invalid tokens removed from database');

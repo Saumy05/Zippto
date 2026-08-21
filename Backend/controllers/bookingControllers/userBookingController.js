@@ -5,12 +5,11 @@ const Category = require('../../models/Category');
 const Cart = require('../../models/Cart');
 const User = require('../../models/User');
 const Vendor = require('../../models/Vendor');
-const Worker = require('../../models/Worker');
 const Review = require('../../models/Review');
 const { validationResult } = require('express-validator');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
-const { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } = require('../../services/firebaseAdmin');
+const { sendNotificationToUser, sendNotificationToVendor } = require('../../services/firebaseAdmin');
 
 /**
  * Create a new booking
@@ -645,7 +644,6 @@ const getBookingById = async (req, res) => {
       .populate('vendorId', 'name businessName phone email address profilePhoto')
       .populate('serviceId', 'title description iconUrl images')
       .populate('categoryId', 'title slug')
-      .populate('workerId', 'name phone rating totalJobs location profilePhoto')
       .lean();
 
     if (!booking) {
@@ -880,24 +878,6 @@ const cancelBooking = async (req, res) => {
       // Manual FCM push removed
     }
 
-    // Notify worker if assigned
-    if (booking.workerId) {
-      await createNotification({
-        workerId: booking.workerId,
-        type: 'booking_cancelled',
-        title: 'Booking Cancelled',
-        message: `Job ${booking.bookingNumber} has been cancelled by the customer.`,
-        relatedId: booking._id,
-        relatedType: 'booking',
-        pushData: {
-          type: 'job_cancelled',
-          bookingId: booking._id.toString(),
-          link: `/worker/job/${booking._id}`
-        }
-      });
-      // Manual FCM push removed
-    }
-
     res.status(200).json({
       success: true,
       message: refundMessage || 'Booking cancelled successfully',
@@ -1056,7 +1036,6 @@ const addReview = async (req, res) => {
         userId: booking.userId,
         serviceId: booking.serviceId,
         vendorId: booking.vendorId,
-        workerId: booking.workerId,
         rating: rating,
         review: review || '',
         images: reviewImages || [],
@@ -1090,11 +1069,6 @@ const addReview = async (req, res) => {
     // Update Vendor Rating (Always)
     if (booking.vendorId) {
       await updateCumulativeRating(Vendor, booking.vendorId, rating);
-    }
-
-    // Update Worker Rating (Only if worker was assigned)
-    if (booking.workerId) {
-      await updateCumulativeRating(Worker, booking.workerId, rating);
     }
 
     // Send notification to vendor

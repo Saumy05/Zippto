@@ -9,7 +9,6 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 const connectDB = require('../config/db');
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
-const Worker = require('../models/Worker');
 const Admin = require('../models/Admin');
 const Token = require('../models/Token');
 const { VENDOR_STATUS } = require('../utils/constants');
@@ -109,36 +108,6 @@ const seedLogin = async () => {
       console.log(`✅ Created new Vendor for phone ${PHONE}`);
     }
 
-    // 3. Seed Worker
-    let worker = await Worker.findOne({ phone: PHONE });
-    if (worker) {
-      worker.name = 'Test Worker';
-      worker.password = PASSWORD;
-      worker.approvalStatus = 'approved';
-      worker.isPhoneVerified = true;
-      worker.isEmailVerified = true;
-      worker.isActive = true;
-      worker.vendorId = vendor._id;
-      await worker.save();
-      console.log(`✅ Updated existing Worker for phone ${PHONE}`);
-    } else {
-      worker = await Worker.create({
-        name: 'Test Worker',
-        phone: PHONE,
-        email: `worker_${PHONE}@zippto.com`,
-        password: PASSWORD,
-        vendorId: vendor._id,
-        approvalStatus: 'approved',
-        isPhoneVerified: true,
-        isEmailVerified: true,
-        isActive: true,
-        role: 'worker',
-        status: 'OFFLINE',
-        serviceCategories: ['Electricity', 'AC']
-      });
-      console.log(`✅ Created new Worker for phone ${PHONE}`);
-    }
-
     // 4. Seed Admin
     let admin = await Admin.findOne({ $or: [{ phone: PHONE }, { email: 'admin@zippto.com' }, { email: 'admin@admin.com' }] });
     if (admin) {
@@ -181,7 +150,7 @@ const seedLogin = async () => {
     console.log(`Phone:    ${PHONE}`);
     console.log(`OTP:      ${OTP}`);
     console.log(`Password: ${PASSWORD}`);
-    console.log('Roles Created/Updated: User, Vendor, Worker, Admin');
+    console.log('Roles Created/Updated: User, Vendor, Admin');
     console.log('-------------------------------------------\n');
 
   } catch (error) {

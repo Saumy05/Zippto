@@ -420,13 +420,11 @@ export default function ChatDrawerModal({
 
     if (userType === 'user') {
       const partner = b.partner || b.vendorId;
-      const worker = b.worker || b.workerId;
-      const activeEntity = worker || partner;
       return {
-        name: activeEntity?.name || activeEntity?.businessName || b.servicePartnerName || 'Service Partner',
-        phone: activeEntity?.phone || '',
-        avatar: activeEntity?.avatar || activeEntity?.profilePhoto || null,
-        rating: activeEntity?.rating || 4.8,
+        name: partner?.name || partner?.businessName || b.servicePartnerName || 'Service Partner',
+        phone: partner?.phone || '',
+        avatar: partner?.avatar || partner?.profilePhoto || null,
+        rating: partner?.rating || 4.8,
         role: 'Verified Partner'
       };
     } else {

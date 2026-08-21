@@ -6,7 +6,6 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
-const Worker = require('../models/Worker');
 const Category = require('../models/Category');
 const Brand = require('../models/Brand');
 const UserService = require('../models/UserService');
@@ -30,57 +29,33 @@ async function testVendorFlow() {
         serviceCategories: ['AC Service & Repair Test'],
         location: {
           type: 'Point',
-          coordinates: [75.8577, 22.7196]
+          coordinates: [75.8577, 22.7196] // Indore
         },
-        pan: {
-          number: 'ABCDE1234F',
-          document: 'https://example.com/pan.jpg',
-          isVerified: true
-        },
-        aadhar: {
-          number: '123456789012',
-          document: 'https://example.com/aadhar_front.jpg',
-          backDocument: 'https://example.com/aadhar_back.jpg',
-          isVerified: true
+        wallet: {
+          balance: 0,
+          pendingSettlement: 0
         }
       });
       console.log('Created test vendor:', vendor._id);
     }
 
-    // 2. Create test worker under vendor
-    let worker = await Worker.findOne({ phone: '7777777777' });
-    if (!worker) {
-      worker = await Worker.create({
-        name: 'Test Field Worker',
-        phone: '7777777777',
-        vendorId: vendor._id,
-        status: 'active',
-        isOnline: true
+    // 2. Create test customer user
+    let user = await User.findOne({ phone: '9999999999' });
+    if (!user) {
+      user = await User.create({
+        name: 'Test Customer',
+        phone: '9999999999',
+        email: 'customer.test@example.com'
       });
-      console.log('Created test worker:', worker._id);
+      console.log('Created test user:', user._id);
     }
 
-    // 3. Create test user & booking
-    let user = await User.create({ name: 'Vendor Flow Customer', phone: '9999988888', isVerified: true });
-    let category = await Category.create({ title: 'AC Repair Test V3', slug: 'ac-repair-v3', status: 'active' });
-    let brand = await Brand.create({ title: 'Daikin Test', slug: 'daikin-test', categoryIds: [category._id] });
-    let service = await UserService.create({ title: 'AC Repair Service', categoryId: category._id, brandId: brand._id, basePrice: 600 });
-
+    // 3. Create test booking
     const booking = await Booking.create({
-      bookingNumber: `BKVEN${Date.now()}`,
       userId: user._id,
-      serviceId: service._id,
-      categoryId: category._id,
-      serviceName: service.title,
-      serviceCategory: category.title,
-      basePrice: 600,
-      finalAmount: 600,
-      userPayableAmount: 600,
-      address: { addressLine1: 'MG Road', city: 'Indore', state: 'MP', pincode: '452001' },
-      scheduledDate: new Date(),
-      scheduledTime: '02:00 PM',
-      timeSlot: { start: '14:00', end: '15:00' },
-      paymentMethod: 'pay_at_home',
+      vendorId: null,
+      serviceName: 'AC Cleaning Service',
+      bookingNumber: 'ZIP-TEST-1234',
       status: 'searching',
       paymentStatus: 'pending'
     });
