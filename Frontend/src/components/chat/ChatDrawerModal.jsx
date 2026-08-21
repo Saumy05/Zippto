@@ -23,12 +23,6 @@ const QUICK_REPLIES = {
     "Please share the exact landmark / flat number.",
     "I'm on my way to your location."
   ],
-  WORKER: [
-    "I'm arriving in 5-10 minutes.",
-    "I have reached your doorstep.",
-    "Please share the exact landmark.",
-    "I'm on my way."
-  ],
   ADMIN: [
     "Hello! Support Admin here. How can I assist you with this booking?",
     "We have reviewed the dispute details and are processing the resolution.",
@@ -83,13 +77,6 @@ export default function ChatDrawerModal({
           id: (vData._id || vData.id || '').toString(),
           role: 'VENDOR',
           name: vData.name || vData.businessName || 'Service Partner'
-        };
-      } else if (userType === 'worker') {
-        const wData = JSON.parse(localStorage.getItem('workerData') || '{}');
-        return {
-          id: (wData._id || wData.id || '').toString(),
-          role: 'WORKER',
-          name: wData.name || 'Technician'
         };
       } else {
         const uData = JSON.parse(localStorage.getItem('userData') || '{}');

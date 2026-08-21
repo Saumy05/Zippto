@@ -11,11 +11,6 @@ const transactionSchema = new mongoose.Schema({
     ref: 'Vendor',
     default: null
   },
-  workerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Worker',
-    default: null
-  },
   bookingId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Booking',
@@ -23,7 +18,7 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['credit', 'debit', 'refund', 'withdrawal', 'commission', 'cash_collected', 'settlement', 'worker_payment', 'earnings_credit', 'tds_deduction', 'payment', 'platform_fee', 'convenience_fee', 'gst', 'penalty', 'referral_bonus'],
+    enum: ['credit', 'debit', 'refund', 'withdrawal', 'commission', 'cash_collected', 'settlement', 'earnings_credit', 'tds_deduction', 'payment', 'platform_fee', 'convenience_fee', 'gst', 'penalty', 'referral_bonus'],
     required: true
   },
   amount: {

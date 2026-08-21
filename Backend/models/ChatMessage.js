@@ -18,7 +18,7 @@ const chatMessageSchema = new mongoose.Schema({
   },
   senderRole: {
     type: String,
-    enum: ['USER', 'VENDOR', 'WORKER', 'ADMIN'],
+    enum: ['USER', 'VENDOR', 'ADMIN'],
     required: [true, 'Sender role is required'],
     index: true
   },
@@ -56,7 +56,7 @@ const chatMessageSchema = new mongoose.Schema({
       },
       role: {
         type: String,
-        enum: ['USER', 'VENDOR', 'WORKER', 'ADMIN'],
+        enum: ['USER', 'VENDOR', 'ADMIN'],
         required: true
       },
       readAt: {

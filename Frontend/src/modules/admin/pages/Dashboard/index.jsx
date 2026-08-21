@@ -26,7 +26,6 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalVendors: 0,
-    totalWorkers: 0,
     activeBookings: 0,
     completedBookings: 0,
     totalRevenue: 0,
@@ -74,7 +73,6 @@ const AdminDashboard = () => {
           setStats({
             totalUsers: s.totalUsers,
             totalVendors: s.totalVendors,
-            totalWorkers: s.totalWorkers,
             activeBookings: s.pendingBookings,
             completedBookings: s.completedBookings,
             totalRevenue: s.totalRevenue,

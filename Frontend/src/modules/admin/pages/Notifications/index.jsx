@@ -107,8 +107,7 @@ const PushNotificationsView = () => {
 const AUDIENCE_OPTIONS = [
   { value: 'all',     label: 'Everyone',           Icon: FiUsers,     color: 'blue'   },
   { value: 'users',   label: 'Users / Customers',  Icon: FiUser,      color: 'green'  },
-  { value: 'vendors', label: 'Vendors',            Icon: FiBriefcase, color: 'amber'  },
-  { value: 'workers', label: 'Workers',            Icon: FiTool,      color: 'purple' },
+  { value: 'vendors', label: 'Service Partners',   Icon: FiBriefcase, color: 'amber'  },
 ];
 
 const CustomBroadcastsView = () => {
@@ -166,7 +165,7 @@ const CustomBroadcastsView = () => {
           </div>
           <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl p-3">
             <FiAlertCircle className="text-amber-500 mt-0.5 flex-shrink-0"/>
-            <p className="text-xs text-amber-700">This will send to <strong>all active {form.audience==='all'?'users, vendors, and workers':form.audience}</strong> immediately.</p>
+            <p className="text-xs text-amber-700">This will send to <strong>all active {form.audience==='all'?'users and vendors':form.audience}</strong> immediately.</p>
           </div>
           <button type="submit" disabled={sending}
             className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 flex items-center justify-center gap-2 disabled:opacity-60 transition-all shadow-md shadow-indigo-200">

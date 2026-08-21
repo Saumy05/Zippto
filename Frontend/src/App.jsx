@@ -48,7 +48,6 @@ function App() {
     setupForegroundNotificationHandler((payload) => {
       window.dispatchEvent(new Event('vendorJobsUpdated'));
       window.dispatchEvent(new Event('vendorStatsUpdated'));
-      window.dispatchEvent(new Event('workerJobsUpdated'));
       window.dispatchEvent(new Event('userBookingsUpdated'));
       window.dispatchEvent(new Event('appNotificationReceived'));
     });

@@ -27,12 +27,6 @@ const bookingSchema = new mongoose.Schema({
     required: false,
     index: true
   },
-  workerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Worker',
-    default: null,
-    index: true
-  },
   notifiedVendors: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor'
@@ -208,12 +202,12 @@ const bookingSchema = new mongoose.Schema({
   },
   cashCollectedBy: {
     type: String,
-    enum: ['vendor', 'worker'],
+    enum: ['vendor'],
     default: null
   },
   cashCollectorId: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'cashCollectedBy',
+    ref: 'Vendor',
     default: null
   },
 
@@ -265,11 +259,6 @@ const bookingSchema = new mongoose.Schema({
     enum: Object.values(BOOKING_STATUS),
     default: BOOKING_STATUS.PENDING,
     index: true
-  },
-  workerResponse: {
-    type: String,
-    enum: ['PENDING', 'ACCEPTED', 'REJECTED'],
-    default: 'PENDING'
   },
   // Timestamps
   acceptedAt: { type: Date, default: null },
@@ -337,26 +326,14 @@ const bookingSchema = new mongoose.Schema({
   reviewedAt: { type: Date, default: null },
 
   // ==========================================
-  // 12. SETTLEMENT (Worker/User)
+  // 12. SETTLEMENT & NOTES
   // ==========================================
-  workerPaymentStatus: {
-    type: String,
-    enum: ['PENDING', 'PAID', 'SUCCESS'],
-    default: 'PENDING'
-  },
-  isWorkerPaid: { type: Boolean, default: false },
-  workerPaidAt: { type: Date, default: null },
   finalSettlementStatus: {
     type: String,
     enum: ['PENDING', 'DONE'],
     default: 'PENDING'
   },
-
-  // ==========================================
-  // 13. NOTES
-  // ==========================================
-  vendorNotes: { type: String, default: null },
-  workerNotes: { type: String, default: null }
+  vendorNotes: { type: String, default: null }
 
 }, {
   timestamps: true
@@ -375,7 +352,6 @@ bookingSchema.pre('save', async function (next) {
 // Core compound indexes
 bookingSchema.index({ userId: 1, status: 1, createdAt: -1 });
 bookingSchema.index({ vendorId: 1, status: 1, createdAt: -1 });
-bookingSchema.index({ workerId: 1, status: 1, createdAt: -1 });
 bookingSchema.index({ scheduledDate: 1, status: 1 });
 bookingSchema.index({ paymentStatus: 1, status: 1 });
 

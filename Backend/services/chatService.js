@@ -3,11 +3,10 @@ const Booking = require('../models/Booking');
 const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
-const Worker = require('../models/Worker');
 const Service = require('../models/Service');
 const UserService = require('../models/UserService');
 const Settings = require('../models/Settings');
-const { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } = require('./firebaseAdmin');
+const { sendNotificationToUser, sendNotificationToVendor } = require('./firebaseAdmin');
 
 // Allowed status mapping
 const WRITABLE_STATUSES = [
@@ -45,7 +44,6 @@ const assertBookingChatParticipant = async (bookingId, actor) => {
   const booking = await Booking.findById(bookingId)
     .populate('userId', 'name phone profilePicture')
     .populate('vendorId', 'name businessName phone profilePhoto')
-    .populate('workerId', 'name phone profilePhoto')
     .populate('serviceId', 'title');
 
   if (!booking) {
@@ -90,12 +88,6 @@ const assertBookingChatParticipant = async (bookingId, actor) => {
     if (bookingVendorId && bookingVendorId === actorId) {
       isAuthorized = true;
       senderName = booking.vendorId?.name || booking.vendorId?.businessName || actor.name || 'Service Partner';
-    }
-  } else if (actorRole === 'WORKER') {
-    const bookingWorkerId = (booking.workerId?._id || booking.workerId || '').toString();
-    if (bookingWorkerId && bookingWorkerId === actorId) {
-      isAuthorized = true;
-      senderName = booking.workerId?.name || actor.name || 'Technician';
     }
   }
 
@@ -170,12 +162,6 @@ const getChatHistory = async (bookingId, actor, { limit = 50, before = null } = 
         phone: booking.vendorId?.phone,
         avatar: booking.vendorId?.profilePhoto || null,
         rating: booking.vendorId?.rating || 4.8
-      } : null,
-      worker: booking.workerId ? {
-        id: booking.workerId?._id,
-        name: booking.workerId?.name,
-        phone: booking.workerId?.phone,
-        avatar: booking.workerId?.profilePhoto || null
       } : null
     },
     isReadOnly,
@@ -334,8 +320,6 @@ const getUnreadCount = async (actor) => {
     bookingQuery.userId = actorId;
   } else if (actorRole === 'VENDOR') {
     bookingQuery.vendorId = actorId;
-  } else if (actorRole === 'WORKER') {
-    bookingQuery.workerId = actorId;
   } else if (actorRole === 'ADMIN') {
     // Admin unreads not grouped by personal booking
     return { totalUnread: 0, bookings: [] };
@@ -394,13 +378,12 @@ const isParticipantOnlineInChat = (io, bookingId, recipientId) => {
     const chatRoom = `chat_booking_${bookingId.toString()}`;
     const userPersonalRoom = `user_${recipientId.toString()}`;
     const vendorPersonalRoom = `vendor_${recipientId.toString()}`;
-    const workerPersonalRoom = `worker_${recipientId.toString()}`;
 
     const chatRoomSockets = io.sockets.adapter.rooms.get(chatRoom);
     if (!chatRoomSockets || chatRoomSockets.size === 0) return false;
 
     // Check if any socket in personal room is also in chat room
-    for (const pRoom of [userPersonalRoom, vendorPersonalRoom, workerPersonalRoom]) {
+    for (const pRoom of [userPersonalRoom, vendorPersonalRoom]) {
       const personalSockets = io.sockets.adapter.rooms.get(pRoom);
       if (personalSockets) {
         for (const sockId of personalSockets) {
@@ -432,7 +415,7 @@ const sendOfflinePushNotification = async (io, booking, senderActor, message) =>
 
     // Determine target recipient(s)
     if (senderRole === 'USER') {
-      // Recipient is Vendor and/or Worker
+      // Recipient is Vendor
       if (booking.vendorId) {
         const vId = (booking.vendorId._id || booking.vendorId).toString();
         const isOnline = isParticipantOnlineInChat(io, booking._id, vId);
@@ -448,23 +431,8 @@ const sendOfflinePushNotification = async (io, booking, senderActor, message) =>
           });
         }
       }
-      if (booking.workerId) {
-        const wId = (booking.workerId._id || booking.workerId).toString();
-        const isOnline = isParticipantOnlineInChat(io, booking._id, wId);
-        if (!isOnline) {
-          await sendNotificationToWorker(wId, {
-            title: `💬 New message from ${senderName}`,
-            body: messagePreview,
-            data: {
-              type: 'chat_message',
-              bookingId: bookingIdStr,
-              link: `/worker/booking/${bookingIdStr}`
-            }
-          });
-        }
-      }
     } else {
-      // Sender is Vendor or Worker -> Recipient is Customer
+      // Sender is Vendor -> Recipient is Customer
       if (booking.userId) {
         const uId = (booking.userId._id || booking.userId).toString();
         const isOnline = isParticipantOnlineInChat(io, booking._id, uId);

@@ -151,15 +151,15 @@ const ReportsOverview = () => {
           </CardShell>
         </Link>
 
-        <Link to="/admin/reports/workers" className="group">
-          <CardShell className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white border-none hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-4">
+        <Link to="/admin/payments" className="group">
+          <CardShell className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-none hover:shadow-xl hover:-translate-y-1 transition-all duration-300 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-indigo-100 font-bold uppercase tracking-wider text-[10px]">Force Analytics</p>
-                <h3 className="text-lg font-black mt-0.5">Worker Reports</h3>
+                <p className="text-emerald-100 font-bold uppercase tracking-wider text-[10px]">Revenue & Payouts</p>
+                <h3 className="text-lg font-black mt-0.5">Financial Reports</h3>
               </div>
               <div className="bg-white/20 p-2.5 rounded-xl">
-                <FiUsers size={20} />
+                <FiDollarSign size={20} />
               </div>
             </div>
             <div className="mt-4 flex items-center gap-2 text-xs font-bold">

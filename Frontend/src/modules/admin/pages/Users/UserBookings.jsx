@@ -123,8 +123,8 @@ const UserBookings = () => {
                             <span>Date: {new Date(booking.bookingDate).toLocaleDateString()}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <FiUser className="w-4 h-4 text-green-500" />
-                            <span>Worker: <span className="font-medium text-gray-800">{booking.workerId?.name || 'Pending Assignment'}</span></span>
+                            <FiUser className="w-4 h-4 text-emerald-500" />
+                            <span>Partner: <span className="font-medium text-gray-800">{booking.vendorId?.businessName || booking.vendorId?.name || 'Pending Assignment'}</span></span>
                           </div>
                           <div className="flex items-center gap-2">
                             <FiClock className="w-4 h-4" />

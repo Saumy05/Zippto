@@ -6,7 +6,6 @@
 const USER_ROLES = {
   USER: 'USER',
   VENDOR: 'VENDOR',
-  WORKER: 'WORKER',
   ADMIN: 'ADMIN'
 };
 
@@ -24,15 +23,6 @@ const VENDOR_STATUS = {
   APPROVED: 'approved',
   REJECTED: 'rejected',
   SUSPENDED: 'suspended'
-};
-
-// Worker Status
-const WORKER_STATUS = {
-  ACTIVE: 'active',
-  INACTIVE: 'inactive',
-  SUSPENDED: 'suspended',
-  ONLINE: 'ONLINE',
-  OFFLINE: 'OFFLINE'
 };
 
 // Booking Status

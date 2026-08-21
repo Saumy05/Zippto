@@ -18,12 +18,6 @@ const notificationSchema = new mongoose.Schema({
     default: null,
     index: true
   },
-  workerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Worker',
-    default: null,
-    index: true
-  },
   adminId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
@@ -50,9 +44,6 @@ const notificationSchema = new mongoose.Schema({
       'job_accepted',
       'job_rejected',
       'job_cancelled',
-      'worker_assigned',
-      'worker_started',
-      'worker_completed',
       'work_done',
       'work_completed',       // Added for vendor self completion
       'vendor_reached',

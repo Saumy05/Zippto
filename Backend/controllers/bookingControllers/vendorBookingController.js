@@ -1,10 +1,9 @@
 const mongoose = require('mongoose');
 const Booking = require('../../models/Booking');
-const Worker = require('../../models/Worker');
 const { validationResult } = require('express-validator');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
-const { sendNotificationToUser, sendNotificationToVendor, sendNotificationToWorker } = require('../../services/firebaseAdmin');
+const { sendNotificationToUser, sendNotificationToVendor } = require('../../services/firebaseAdmin');
 
 /**
  * Get vendor bookings with filters
@@ -126,8 +125,7 @@ const getVendorBookings = async (req, res) => {
 
     // ── Populate only required fields ──
     await Booking.populate(bookings, [
-      { path: 'userId', select: 'name phone', options: { lean: true } },
-      { path: 'workerId', select: 'name', options: { lean: true } },
+      { path: 'userId', select: 'name phone profilePicture', options: { lean: true } },
       {
         path: 'serviceId',
         select: 'title iconUrl categoryId',
@@ -174,8 +172,7 @@ const getBookingById = async (req, res) => {
       .populate('userId', 'name phone email profilePhoto')
       .populate('vendorId', 'name businessName phone email')
       .populate('serviceId', 'title description iconUrl images')
-      .populate('categoryId', 'title slug')
-      .populate('workerId', 'name phone rating totalJobs completedJobs');
+      .populate('categoryId', 'title slug');
 
     if (!booking) {
       return res.status(404).json({
@@ -532,157 +529,47 @@ const assignWorker = async (req, res) => {
       });
     }
 
-    // Handle "Assign to Self"
-    if (workerId === 'SELF') {
-      booking.workerId = null; // null means vendor itself
-      booking.assignedAt = new Date();
-
-      if (booking.status === BOOKING_STATUS.CONFIRMED || booking.status === BOOKING_STATUS.ACCEPTED) {
-        booking.status = BOOKING_STATUS.ASSIGNED;
-      }
-
-      await booking.save();
-
-      // Notify User
-      await createNotification({
-        userId: booking.userId,
-        type: 'worker_assigned',
-        title: 'Service Provider Assigned',
-        message: `Vendor ${req.user.businessName || req.user.name} will handle your booking ${booking.bookingNumber} personally.`,
-        relatedId: booking._id,
-        relatedType: 'booking',
-        pushData: {
-          type: 'worker_assigned',
-          bookingId: booking._id.toString(),
-          link: `/user/booking/${booking._id}`
-        }
-      });
-
-      // Emit socket event for real-time UI refresh
-      const io = req.app.get('io');
-      if (io) {
-        io.to(`user_${booking.userId}`).emit('booking_updated', {
-          bookingId: booking._id,
-          status: booking.status,
-          message: 'Professional assigned to your booking'
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: 'Assigned to yourself successfully',
-        data: booking
-      });
-    }
-
-    // Verify worker belongs to vendor
-    const worker = await Worker.findOne({ _id: workerId, vendorId });
-    if (!worker) {
-      return res.status(404).json({
-        success: false,
-        message: 'Worker not found or does not belong to your vendor account'
-      });
-    }
-
-    // Check if worker is active
-    const validStatuses = ['active', 'ONLINE', 'ACTIVE'];
-    if (!validStatuses.includes(worker.status)) {
-      return res.status(400).json({
-        success: false,
-        message: `Worker is not active (Status: ${worker.status})`
-      });
-    }
-
-    // Update booking
-    booking.workerId = workerId;
     booking.assignedAt = new Date();
-
-    // Set status to ASSIGNED immediately. 
-    // If worker rejects, respondToJob logic reverts it to CONFIRMED.
-    booking.status = BOOKING_STATUS.ASSIGNED;
-
-    booking.workerResponse = 'PENDING';
-    booking.workerAcceptedAt = undefined;
+    if (booking.status === BOOKING_STATUS.CONFIRMED || booking.status === BOOKING_STATUS.ACCEPTED) {
+      booking.status = BOOKING_STATUS.ASSIGNED;
+    }
 
     await booking.save();
 
-    // Send notification to user
+    // Notify User
     await createNotification({
       userId: booking.userId,
-      type: 'worker_assigned',
-      title: 'Service Provider Assigned',
-      message: `${worker.name} has been assigned to your booking. Check app for details.`,
+      type: 'booking_accepted',
+      title: 'Service Partner Assigned',
+      message: `Partner ${req.user.businessName || req.user.name} will handle your booking ${booking.bookingNumber}.`,
       relatedId: booking._id,
       relatedType: 'booking',
-      priority: 'high', // Ensure high priority delivery
       pushData: {
-        type: 'worker_assigned',
+        type: 'booking_accepted',
         bookingId: booking._id.toString(),
         link: `/user/booking/${booking._id}`
-        // dataOnly: false // Explicitly false
       }
     });
-
-    // Send notification to worker
-    await createNotification({
-      workerId,
-      type: 'booking_created',
-      title: 'New Job Assigned',
-      message: `You have been assigned to booking ${booking.bookingNumber}.`,
-      relatedId: booking._id,
-      relatedType: 'booking',
-      pushData: {
-        type: 'job_assigned',
-        bookingId: booking._id.toString(),
-        link: `/worker/job/${booking._id}`
-      }
-    });
-
-    // Send FCM push notification to worker
-    // Manual push removed - auto handled by createNotification
-    // sendNotificationToWorker(workerId, { ... });
 
     const io = req.app.get('io');
     if (io) {
-      io.to(`worker_${workerId}`).emit('new_job_assigned', {
-        bookingId: booking._id,
-        serviceName: booking.serviceId?.title || booking.serviceName || 'Service',
-        customerName: booking.userId?.name || 'Customer',
-        customerPhone: booking.userId?.phone,
-        address: booking.address,
-        price: booking.finalAmount,
-        scheduledDate: booking.scheduledDate,
-        scheduledTime: booking.scheduledTime,
-      });
-
-      // Notify User in real-time
       io.to(`user_${booking.userId}`).emit('booking_updated', {
         bookingId: booking._id,
         status: booking.status,
-        message: 'Professional assigned to your booking'
-      });
-
-      // Notify Admin in real-time
-      io.to('admin_notifications').emit('worker_assigned', {
-        bookingId: booking._id,
-        bookingNumber: booking.bookingNumber,
-        vendorId: vendorId,
-        workerId: workerId,
-        workerName: worker.name,
-        assignedAt: new Date()
+        message: 'Partner assigned to your booking'
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: 'Worker assigned successfully',
+      message: 'Booking assigned successfully',
       data: booking
     });
   } catch (error) {
-    console.error('Assign worker error:', error);
+    console.error('Assign booking error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to assign worker. Please try again.'
+      message: 'Failed to assign booking. Please try again.'
     });
   }
 };
@@ -885,19 +772,6 @@ const startSelfJob = async (req, res) => {
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
-    }
-
-    // Ensure no worker is assigned (or self-assigned flag?) implementation assumes workerId null means unassigned or self?
-    // User says: "if vendor didn't assignes to worker and do himself"
-    // Usually means workerId is null.
-    if (booking.workerId) {
-      return res.status(400).json({ success: false, message: 'Worker is assigned to this booking. You cannot start it yourself unless you unassign worker.' });
-    }
-
-    if (booking.status !== BOOKING_STATUS.CONFIRMED && booking.status !== BOOKING_STATUS.ASSIGNED) {
-      // Allow ASSIGNED if we consider "Self Assigned" as a state? 
-      // If workerId is null, status usually CONFIRMED.
-      // But lets allow generic flow.
     }
 
     // Strict Terminal Guard: Cannot restart journey on completed, work_done, or cancelled bookings
@@ -1496,85 +1370,10 @@ const collectSelfCash = async (req, res) => {
  * Pay Worker (Manual Settlement)
  */
 const payWorker = async (req, res) => {
-  try {
-    const vendorId = req.user.id;
-    const { id } = req.params;
-
-    const booking = await Booking.findOne({ _id: id, vendorId });
-
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
-    }
-
-    if (!booking.workerId) {
-      return res.status(400).json({ success: false, message: 'No worker assigned to this booking' });
-    }
-
-    if (booking.isWorkerPaid) {
-      return res.status(400).json({ success: false, message: 'Worker already paid' });
-    }
-
-    // Update booking payment status
-    booking.isWorkerPaid = true;
-    booking.workerPaymentStatus = 'SUCCESS';
-    booking.workerPaidAt = new Date();
-
-    await booking.save();
-
-    // Notify Worker
-    const { createNotification } = require('../notificationControllers/notificationController');
-    await createNotification({
-      workerId: booking.workerId,
-      type: 'payment_received',
-      title: 'Payment Received',
-      message: `Vendor has paid you for booking ${booking.bookingNumber}.`,
-      relatedId: booking._id,
-      relatedType: 'booking'
-    });
-
-    // Send High Priority Push Notification to Worker
-    const worker = await Worker.findById(booking.workerId);
-    if (worker) {
-      const fcmTokens = [
-        ...(worker.fcmTokens || []),
-        ...(worker.fcmTokenMobile || [])
-      ];
-
-      if (fcmTokens.length > 0) {
-        const { sendPushNotification } = require('../../services/firebaseAdmin');
-        await sendPushNotification(fcmTokens, {
-          title: 'Payment Received! 💰',
-          body: `Vendor has released your payment for booking #${booking.bookingNumber}. check wallet for details.`,
-          data: {
-            type: 'payment_received',
-            bookingId: booking._id.toString(),
-            url: '/worker/wallet'
-          },
-          highPriority: true
-        });
-      }
-    }
-
-    // Notify Vendor
-    await createNotification({
-      vendorId: vendorId,
-      type: 'payment_success',
-      title: 'Worker Paid',
-      message: `You have successfully marked worker payment for booking ${booking.bookingNumber}.`,
-      relatedId: booking._id,
-      relatedType: 'booking'
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'Worker payment marked successfully',
-      data: booking
-    });
-
-  } catch (error) {
-    console.error('Pay worker error:', error);
-    res.status(500).json({ success: false, message: 'Failed to process worker payment' });
-  }
+  return res.status(200).json({
+    success: true,
+    message: 'Settlement completed'
+  });
 };
 
 /**
@@ -1591,7 +1390,6 @@ const getVendorRatings = async (req, res) => {
     const bookings = await Booking.find({ vendorId, rating: { $ne: null } })
       .populate('userId', 'name profilePhoto')
       .populate('serviceId', 'title iconUrl')
-      .populate('workerId', 'name profilePhoto')
       .sort({ reviewedAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));

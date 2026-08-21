@@ -157,16 +157,12 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
         endpoint = '/vendors/fcm-tokens/save';
         authTokenKey = 'vendorAccessToken';
         break;
-      case 'worker':
-        endpoint = '/workers/fcm-tokens/save';
-        authTokenKey = 'workerAccessToken';
+      case 'admin':
+        endpoint = '/admin/fcm-tokens/save';
+        authTokenKey = 'adminAccessToken';
         break;
       case 'user':
-        endpoint = '/users/fcm-tokens/save';
-        authTokenKey = 'accessToken';
-        break;
       default:
-        // console.warn(`[FCM] Unknown userType: ${userType}, defaulting to user`);
         endpoint = '/users/fcm-tokens/save';
         authTokenKey = 'accessToken';
     }
@@ -236,10 +232,6 @@ async function removeFCMToken(userType = 'user') {
       case 'vendor':
         endpoint = '/vendors/fcm-tokens/remove';
         authTokenKey = 'vendorAccessToken';
-        break;
-      case 'worker':
-        endpoint = '/workers/fcm-tokens/remove';
-        authTokenKey = 'workerAccessToken';
         break;
       default:
         endpoint = '/users/fcm-tokens/remove';

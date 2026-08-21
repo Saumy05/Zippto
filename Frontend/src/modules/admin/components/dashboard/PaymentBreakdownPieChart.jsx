@@ -10,12 +10,12 @@ const PaymentBreakdownPieChart = ({ bookings = [] }) => {
       // Payment is relevant after work done
       const isWorkDoneStage = ['WORK_DONE', 'FINAL_SETTLEMENT', 'COMPLETED'].includes((b.status || '').toUpperCase());
       if (!isWorkDoneStage) return;
-      if ((b.workerPaymentStatus || '').toUpperCase() === 'PAID') paid += 1;
+      if ((b.finalSettlementStatus || '').toUpperCase() === 'DONE' || (b.paymentStatus || '').toLowerCase() === 'paid') paid += 1;
       else pending += 1;
     });
     return [
-      { name: 'Paid to Worker', value: paid },
-      { name: 'Pending Worker Payment', value: pending },
+      { name: 'Settled to Partner', value: paid },
+      { name: 'Pending Partner Settlement', value: pending },
     ];
   }, [bookings]);
 
@@ -42,8 +42,8 @@ const PaymentBreakdownPieChart = ({ bookings = [] }) => {
       className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200"
     >
       <div className="mb-4">
-        <h3 className="text-base sm:text-lg font-extrabold text-gray-800">Worker Payment</h3>
-        <p className="text-xs sm:text-sm text-gray-500 mt-1">Paid vs pending (after work done)</p>
+        <h3 className="text-base sm:text-lg font-extrabold text-gray-800">Vendor Settlements</h3>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">Settled vs pending (after work completed)</p>
       </div>
 
       <div className="w-full h-[260px]">

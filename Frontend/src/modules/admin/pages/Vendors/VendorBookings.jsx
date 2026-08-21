@@ -126,8 +126,8 @@ const VendorBookings = () => {
                             <span>Date: {new Date(booking.bookingDate).toLocaleDateString()}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <FiUser className="w-4 h-4 text-green-500" />
-                            <span>Worker: <span className="font-medium text-gray-800">{booking.workerId?.name || 'Pending Assignment'}</span></span>
+                            <FiCalendar className="w-4 h-4 text-emerald-500" />
+                            <span>Service: <span className="font-medium text-gray-800">{booking.serviceName || booking.serviceId?.title || 'Service'}</span></span>
                           </div>
                         </div>
                       </div>
