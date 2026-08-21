@@ -265,8 +265,20 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     return location.pathname.startsWith(to + "/");
   }, [location.pathname]);
 
-  const isChildActive = useCallback((to) => {
-    return location.pathname === to || location.pathname.startsWith(to + "/");
+  const isChildActive = useCallback((childTo, siblingChildren = []) => {
+    if (location.pathname === childTo) return true;
+
+    // Disambiguation: If a sibling has an exact match or longer match to the current pathname, do not match this child
+    const hasMoreSpecificSibling = siblingChildren.some(sibling => {
+      if (sibling.to === childTo) return false;
+      if (location.pathname === sibling.to) return true;
+      if (sibling.to.length > childTo.length && location.pathname.startsWith(sibling.to + "/")) return true;
+      return false;
+    });
+
+    if (hasMoreSpecificSibling) return false;
+
+    return location.pathname.startsWith(childTo + "/");
   }, [location.pathname]);
 
   // Auto-expand active category accordion on page load/navigation
@@ -464,7 +476,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
                         >
                           <div className="border-l border-slate-700/60 ml-5 pl-3.5 space-y-1 py-1.5 my-1">
                             {item.children.map((child, cIdx) => {
-                              const childActive = isChildActive(child.to);
+                              const childActive = isChildActive(child.to, item.children);
                               return (
                                 <button
                                   key={cIdx}
