@@ -80,7 +80,7 @@ const initializeSocket = (server) => {
         let cachedLocation = await getLiveLocation(bookingId);
         if (!cachedLocation) {
           const Booking = require('../models/Booking');
-          const b = await Booking.findById(bookingId).select('vendorId workerId');
+          const b = await Booking.findById(bookingId).select('vendorId');
           if (b?.vendorId) {
             const vLoc = await getVendorLocation(b.vendorId);
             if (vLoc) cachedLocation = vLoc;

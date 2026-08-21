@@ -22,9 +22,8 @@ const seedVendorBookings = async () => {
   try {
     console.log('Starting vendor bookings seeding...');
 
-    // Get existing vendors, workers, and services
+    // Get existing vendors and services
     const vendors = await Vendor.find({ approvalStatus: 'approved' });
-    const workers = await Worker.find({});
     const services = await Service.find({});
 
     if (vendors.length === 0) {
@@ -77,14 +76,11 @@ const seedVendorBookings = async () => {
     // Bookings for Rajesh Kumar
     const rajesh = vendors.find(v => v.name === 'Rajesh Kumar');
     if (rajesh) {
-      const rajeshWorkers = workers.filter(w => w.vendorId.toString() === rajesh._id.toString());
-
       bookingsData.push(
         {
           userId: createdUsers[0]._id,
           vendorId: rajesh._id,
           serviceId: services[0]?._id || null,
-          workerId: rajeshWorkers[0]?._id || null,
           baseAmount: 500,
           finalAmount: 500,
           scheduledDate: new Date(),
@@ -104,7 +100,6 @@ const seedVendorBookings = async () => {
           userId: createdUsers[1]._id,
           vendorId: rajesh._id,
           serviceId: services[1]?._id || null,
-          workerId: rajeshWorkers[1]?._id || null,
           baseAmount: 1200,
           finalAmount: 1200,
           scheduledDate: new Date(),
@@ -143,14 +138,11 @@ const seedVendorBookings = async () => {
     // Bookings for Amit Sharma
     const amit = vendors.find(v => v.name === 'Amit Sharma');
     if (amit) {
-      const amitWorkers = workers.filter(w => w.vendorId.toString() === amit._id.toString());
-
       bookingsData.push(
         {
           userId: createdUsers[0]._id,
           vendorId: amit._id,
           serviceId: services[0]?._id || null,
-          workerId: amitWorkers[0]?._id || null,
           baseAmount: 600,
           finalAmount: 600,
           scheduledDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday

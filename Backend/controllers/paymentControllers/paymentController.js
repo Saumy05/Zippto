@@ -237,18 +237,6 @@ const verifyPaymentWebhook = async (req, res) => {
       });
     }
 
-    if (booking.workerId) {
-      await createNotification({
-        workerId: booking.workerId,
-        type: 'payment_success',
-        title: vendorTitle,
-        message: vendorMsg,
-        relatedId: booking._id,
-        relatedType: 'booking',
-        priority: 'high'
-      });
-    }
-
     // ── Emit Real-Time Socket Events to Vendor, Worker & User ──
     try {
       const { getIO } = require('../../sockets');
@@ -269,10 +257,6 @@ const verifyPaymentWebhook = async (req, res) => {
         if (booking.vendorId) {
           io.to(`vendor_${booking.vendorId}`).emit('booking_updated', payload);
           io.to(`vendor_${booking.vendorId}`).emit('payment_success', payload);
-        }
-        if (booking.workerId) {
-          io.to(`worker_${booking.workerId}`).emit('booking_updated', payload);
-          io.to(`worker_${booking.workerId}`).emit('payment_success', payload);
         }
         io.to(`user_${booking.userId}`).emit('booking_updated', payload);
         io.to(`user_${booking.userId}`).emit('payment_success', payload);
@@ -457,18 +441,6 @@ const processWalletPayment = async (req, res) => {
     if (booking.vendorId) {
       await createNotification({
         vendorId: booking.vendorId,
-        type: 'payment_success',
-        title: vendorTitle,
-        message: vendorMsg,
-        relatedId: booking._id,
-        relatedType: 'booking',
-        priority: 'high'
-      });
-    }
-
-    if (booking.workerId) {
-      await createNotification({
-        workerId: booking.workerId,
         type: 'payment_success',
         title: vendorTitle,
         message: vendorMsg,

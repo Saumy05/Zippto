@@ -105,7 +105,6 @@ const getVendorBookings = async (req, res) => {
                 'address.addressLine1': 1,
                 'address.city': 1,
                 userId: 1,
-                workerId: 1,
                 serviceId: 1,
                 acceptedAt: 1,
                 assignedAt: 1,
@@ -518,7 +517,6 @@ const assignWorker = async (req, res) => {
 
     const vendorId = req.user.id;
     const { id } = req.params;
-    const { workerId } = req.body;
 
     const booking = await Booking.findOne({ _id: id, vendorId });
 

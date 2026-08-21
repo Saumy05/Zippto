@@ -62,7 +62,6 @@ const transactionSchema = new mongoose.Schema({
 // Index for faster queries
 transactionSchema.index({ userId: 1, createdAt: -1 });
 transactionSchema.index({ vendorId: 1, createdAt: -1 });
-transactionSchema.index({ workerId: 1, createdAt: -1 });
 transactionSchema.index({ bookingId: 1 });
 transactionSchema.index({ type: 1, status: 1 });
 

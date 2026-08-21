@@ -27,13 +27,7 @@ const rejectBookingValidation = [
   body('reason').optional().trim()
 ];
 
-const assignWorkerValidation = [
-  body('workerId').custom((value) => {
-    if (value === 'SELF') return true;
-    if (mongoose.Types.ObjectId.isValid(value)) return true;
-    throw new Error('Valid worker ID or "SELF" is required');
-  })
-];
+const assignWorkerValidation = [];
 
 const updateStatusValidation = [
   body('status').isIn(['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'rejected'])

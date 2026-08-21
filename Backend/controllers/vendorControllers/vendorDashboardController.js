@@ -105,7 +105,6 @@ const getDashboardStats = async (req, res) => {
                   vendorEarnings: 1,
                   'address.addressLine1': 1,
                   userId: 1,
-                  workerId: 1,
                   serviceId: 1,
                   potentialVendors: 1,
                   serviceCategory: 1,

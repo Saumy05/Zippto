@@ -326,7 +326,7 @@ const getAdminNotifications = async (req, res) => {
     const adminFilter = {
       $or: [
         { adminId },
-        { adminId: null, userId: null, vendorId: null, workerId: null }
+        { adminId: null, userId: null, vendorId: null }
       ]
     };
 

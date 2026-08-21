@@ -68,22 +68,12 @@ async function testVendorFlow() {
     await booking.save();
     console.log('Vendor accepted booking. Status:', booking.status, 'VendorID:', booking.vendorId);
 
-    // 5. Test Vendor ASSIGN Worker
-    booking.workerId = worker._id;
-    booking.status = 'assigned';
-    await booking.save();
-    console.log('Vendor assigned worker. Status:', booking.status, 'WorkerID:', booking.workerId);
-
     // Clean up
     await Booking.findByIdAndDelete(booking._id);
-    await UserService.findByIdAndDelete(service._id);
-    await Brand.findByIdAndDelete(brand._id);
-    await Category.findByIdAndDelete(category._id);
     await User.findByIdAndDelete(user._id);
-    await Worker.findByIdAndDelete(worker._id);
     await Vendor.findByIdAndDelete(vendor._id);
 
-    console.log('Step 3 Vendor alert, accept & worker assignment flow verified & cleaned up.');
+    console.log('Vendor alert & accept flow verified & cleaned up.');
     process.exit(0);
   } catch (error) {
     console.error('Test vendor flow failed:', error);
