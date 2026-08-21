@@ -157,10 +157,13 @@ const navSections = [
         to: "/admin/settings",
         Icon: FiSettings,
         children: [
-          { label: "Customization Switchboard", to: "/admin/settings/customization" },
-          { label: "Financial & Tax Config", to: "/admin/settings/general" },
-          { label: "Dispatch & Radii", to: "/admin/settings/worker-assignment" },
-          { label: "Global System Settings", to: "/admin/settings/system" }
+          { label: "Profile Settings",         to: "/admin/settings/profile" },
+          { label: "Financial Info",            to: "/admin/settings/general" },
+          { label: "Customization Settings",    to: "/admin/settings/customization" },
+          { label: "Contact & Support",         to: "/admin/settings/system" },
+          { label: "City Management",           to: "/admin/settings/cities" },
+          { label: "Languages & Localization",  to: "/admin/settings/languages" },
+          { label: "Manage Admins",             to: "/admin/settings/admins" }
         ]
       }
     ]
@@ -411,6 +414,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
                       type="button"
                       onClick={(e) => {
                         if (hasChildren) {
+                          handleNavigate(item.to);
                           toggleExpand(item.id, e);
                         } else {
                           handleNavigate(item.to);

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, 
@@ -121,7 +122,42 @@ const AdminSettings = () => {
 
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [activeView, setActiveView] = useState('main'); // 'main', 'profile', 'financial', 'system', 'admins', 'languages'
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Derive active view from the URL so sidebar links work correctly
+  const activeView = useMemo(() => {
+    const seg = location.pathname.replace('/admin/settings', '').replace(/^\//, '');
+    const map = {
+      'profile':            'profile',
+      'general':            'financial',
+      'financial':          'financial',
+      'worker-assignment':  'financial',  // Dispatch & Radii fields live inside the financial view
+      'system':             'system',     // Global System Settings → Contact & Support view
+      'customization':      'customization',
+      'toggles':            'toggles',
+      'cities':             'cities',
+      'admins':             'admins',
+      'languages':          'languages',
+    };
+    return map[seg] || 'main';
+  }, [location.pathname]);
+
+  // Adapter: translate view keys to URL paths
+  const setActiveView = (view) => {
+    const viewToPath = {
+      'main':          '/admin/settings',
+      'profile':       '/admin/settings/profile',
+      'financial':     '/admin/settings/general',
+      'customization': '/admin/settings/customization',
+      'toggles':       '/admin/settings/toggles',
+      'system':        '/admin/settings/system',
+      'cities':        '/admin/settings/cities',
+      'admins':        '/admin/settings/admins',
+      'languages':     '/admin/settings/languages',
+    };
+    navigate(viewToPath[view] || '/admin/settings');
+  };
 
   const isSuperAdmin = profile.role === 'super_admin';
 

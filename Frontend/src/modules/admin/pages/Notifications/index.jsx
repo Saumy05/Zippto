@@ -14,7 +14,7 @@ const Notifications = () => {
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get('/notifications', {
+      const res = await api.get('/notifications/admin', {
         params: { limit: 50 }
       });
       if (res.data.success) {
