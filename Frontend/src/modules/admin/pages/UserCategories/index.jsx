@@ -10,6 +10,7 @@ import VendorServicesPage from "./pages/VendorServicesPage";
 import VendorPartsPage from "./pages/VendorPartsPage";
 
 import { cityService } from "../../services/cityService";
+import { CustomSelect } from '../../../../components/common';
 
 const UserCategories = () => {
   const [catalog, setCatalog] = useState(() => ensureIds(loadCatalog()));
@@ -73,16 +74,20 @@ const UserCategories = () => {
           </div>
           <div className="flex items-center gap-3">
             <label className="text-sm font-medium text-slate-200">Selected City:</label>
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="px-4 py-2 bg-slate-700 text-white border border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 min-w-[200px]"
-            >
-              {cities.map(city => {
-                const cityId = city._id || city.id;
-                return <option key={cityId} value={cityId}>{city.name}</option>
-              })}
-            </select>
+            <div className="w-56">
+              <CustomSelect
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                options={cities.map(city => ({
+                  value: city._id || city.id,
+                  label: city.name
+                }))}
+                variant="dark"
+                size="md"
+                align="right"
+                placeholder="Select city..."
+              />
+            </div>
           </div>
         </div>
       )}
