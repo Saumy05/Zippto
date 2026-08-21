@@ -8,7 +8,7 @@ import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 
-import { getBookings, assignWorker as assignWorkerApi } from '../../services/bookingService';
+import { getBookings } from '../../services/bookingService';
 import { ConfirmDialog } from '../../components/common';
 
 const ActiveJobs = memo(() => {
@@ -64,7 +64,6 @@ const ActiveJobs = memo(() => {
         },
         price: (job.finalAmount ? job.finalAmount * 0.9 : 0).toFixed(2),
         status: job.status,
-        assignedTo: job.workerId ? { name: job.workerId.name } : (job.assignedAt ? { name: 'You (Self)' } : null),
         timeSlot: {
           date: job.scheduledDate ? new Date(job.scheduledDate).toLocaleDateString() : 'Date',
           time: job.scheduledTime || 'Time'
@@ -97,27 +96,6 @@ const ActiveJobs = memo(() => {
 
   // filteredJobs is now just the jobs from the server
   const filteredJobs = jobs;
-
-  const handleAssignToSelf = async (jobId) => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Assign to Self',
-      message: 'Are you sure you want to do this job yourself?',
-      onConfirm: async () => {
-        try {
-          const response = await assignWorkerApi(jobId, 'SELF');
-          if (response && response.success) {
-            toast.success("Assigned to yourself!");
-            // Refresh jobs list instead of full page reload
-            loadJobs(filter, searchQuery);
-          }
-        } catch (error) {
-          console.error("Error assigning to self:", error);
-          toast.error("Failed to assign to yourself");
-        }
-      }
-    });
-  };
 
   const hexToRgba = useCallback((hex, alpha) => {
     if (!hex || typeof hex !== 'string') return `rgba(0,0,0,${alpha})`;

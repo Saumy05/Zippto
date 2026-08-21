@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { BookingAlertModal } from '../bookings';
-import { acceptBooking, rejectBooking, assignWorker } from '../../services/bookingService';
+import { acceptBooking, rejectBooking } from '../../services/bookingService';
 import { playAlertRing, stopAlertRing } from '../../../../utils/notificationSound';
 
 export default function GlobalBookingAlert() {

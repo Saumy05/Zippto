@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiBriefcase, FiUsers, FiBell, FiArrowRight, FiUser, FiClock, FiMapPin, FiCheckCircle, FiTrendingUp, FiChevronRight, FiShield, FiStar, FiPlusCircle, FiSettings, FiHelpCircle, FiSliders, FiDollarSign } from 'react-icons/fi';
+import { FiBriefcase, FiUsers, FiBell, FiArrowRight, FiUser, FiClock, FiMapPin, FiCheckCircle, FiTrendingUp, FiChevronRight, FiShield, FiStar, FiPlusCircle, FiSettings, FiHelpCircle, FiSliders, FiDollarSign, FiLayers } from 'react-icons/fi';
 import { FaWallet } from 'react-icons/fa';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import { vendorDashboardService } from '../../services/dashboardService';
-import { acceptBooking, rejectBooking, assignWorker } from '../../services/bookingService';
+import { acceptBooking, rejectBooking } from '../../services/bookingService';
 // Booking alert handled globally
 import { toast } from 'react-hot-toast';
 import { io } from 'socket.io-client';
@@ -34,7 +34,6 @@ const Dashboard = memo(() => {
     todayEarnings: 0,
     activeJobs: 0,
     pendingAlerts: 0,
-    workersOnline: 0,
     totalEarnings: 0,
     completedJobs: 0,
     rating: 0,
@@ -176,7 +175,6 @@ const Dashboard = memo(() => {
       todayEarnings: apiStats.vendorEarnings || 0,
       activeJobs: apiStats.inProgressBookings || 0,
       pendingAlerts: mergedPending.length,
-      workersOnline: apiStats.workersOnline || 0,
       totalEarnings: apiStats.vendorEarnings || 0,
       completedJobs: apiStats.completedBookings || 0,
       rating: apiStats.rating || 0,
@@ -195,7 +193,6 @@ const Dashboard = memo(() => {
         time: booking.scheduledTime || 'Time not set'
       },
       status: booking.status,
-      assignedTo: booking.workerId ? { name: booking.workerId.name } : null,
     }));
     setRecentJobs(recentJobsData);
 
@@ -342,10 +339,6 @@ const Dashboard = memo(() => {
     }
   };
 
-  const handleAssignAlert = async (bookingId) => {
-    navigate('/vendor/workers', { state: { bookingId } });
-  };
-
   // Memoize quickActions to prevent recreation on every render
   const quickActions = useMemo(() => [
     {
@@ -357,12 +350,11 @@ const Dashboard = memo(() => {
       subtitle: `${stats.activeJobs} running`,
     },
     {
-      title: 'Manage Workers',
-      icon: FiUsers,
+      title: 'My Services',
+      icon: FiLayers,
       color: '#29ad81',
-      path: '/vendor/workers',
-      count: stats.workersOnline,
-      subtitle: `${stats.workersOnline} online`,
+      path: '/vendor/manage-services',
+      subtitle: 'Catalog & Skills',
     },
     {
       title: 'Wallet',
@@ -371,7 +363,7 @@ const Dashboard = memo(() => {
       path: '/vendor/wallet',
       subtitle: `₹${stats.totalEarnings.toLocaleString()} total`,
     },
-  ], [stats.activeJobs, stats.workersOnline, stats.totalEarnings]);
+  ], [stats.activeJobs, stats.totalEarnings]);
 
   const getStatusColor = (status) => {
     const s = String(status).toLowerCase();
@@ -435,24 +427,7 @@ const Dashboard = memo(() => {
     );
   }
 
-  // Show error state
-  if (error && error.length > 0 && !loading) {
-    return (
-      <div className="min-h-screen pb-20 flex items-center justify-center" style={{ background: themeColors.backgroundGradient }}>
-        <div className="text-center px-6">
-          <div className="text-red-400 text-6xl mb-4">⚠️</div>
-          <h2 className="text-white text-xl font-semibold mb-2">Failed to Load Dashboard</h2>
-          <p className="text-gray-300 mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-slate-50/60 text-slate-900 pb-28">
@@ -693,7 +668,7 @@ const Dashboard = memo(() => {
 
               <div className="grid grid-cols-1 gap-2">
                 {[
-                  { title: 'Manage Workers & Fleet', path: '/vendor/workers', icon: FiUsers, count: `${stats.workersOnline} online` },
+                  { title: 'Service Catalog & Skills', path: '/vendor/manage-services', icon: FiLayers },
                   { title: 'Earnings & Wallet', path: '/vendor/wallet', icon: FaWallet, count: `₹${stats.totalEarnings.toLocaleString()}` },
                   { title: 'Address & Service Hub', path: '/vendor/address-management', icon: FiMapPin },
                   { title: 'Customer Ratings', path: '/vendor/my-ratings', icon: FiStar },
@@ -728,27 +703,27 @@ const Dashboard = memo(() => {
               </div>
             </div>
 
-            {/* Worker Fleet Summary Card */}
+            {/* Direct Partner Operations Summary Card */}
             <div className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-sm relative overflow-hidden">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2.5 rounded-xl bg-teal-50 text-teal-600 border border-teal-100">
-                    <FiUsers className="w-5 h-5" />
+                    <FiShield className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-slate-900">Worker Fleet Status</h3>
-                    <p className="text-xs text-slate-500 font-medium">{stats.workersOnline} workers active online</p>
+                    <h3 className="text-sm font-extrabold text-slate-900">Direct Partner Fulfillment</h3>
+                    <p className="text-xs text-slate-500 font-medium">Verified Service Partner</p>
                   </div>
                 </div>
               </div>
               <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-                Assign available workers to incoming jobs to optimize dispatch speed and maintain high service ratings.
+                Accept bookings directly, verify arrival OTPs on customer doorstep, and receive instant payouts upon service completion.
               </p>
               <button
-                onClick={() => navigate('/vendor/workers')}
-                className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-colors shadow-xs"
+                onClick={() => navigate('/vendor/jobs')}
+                className="w-full py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-colors shadow-xs cursor-pointer"
               >
-                Manage Worker Fleet
+                View Active Jobs
               </button>
             </div>
           </div>

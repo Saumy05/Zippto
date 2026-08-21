@@ -166,13 +166,10 @@ const MyRatings = () => {
                   </div>
                 )}
 
-                {rating.workerId && (
+                {rating.bookingNumber && (
                   <div className="pt-3 border-t border-gray-50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase">Service by:</span>
-                      <span className="text-[11px] font-black text-teal-600">{rating.workerId.name}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-300">#{rating.bookingNumber}</span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">Verified Booking</span>
+                    <span className="text-[10px] font-bold text-gray-400">#{rating.bookingNumber}</span>
                   </div>
                 )}
               </div>

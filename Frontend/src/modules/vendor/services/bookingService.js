@@ -71,21 +71,7 @@ export const rejectBooking = async (bookingId, reason = '') => {
   }
 };
 
-/**
- * Assign worker to booking
- * @param {string} bookingId - Booking ID
- * @param {string} workerId - Worker ID (or 'SELF')
- * @returns {Promise<Object>} Updated booking
- */
-export const assignWorker = async (bookingId, workerId) => {
-  try {
-    const response = await api.post(`/vendors/bookings/${bookingId}/assign-worker`, { workerId });
-    return response.data;
-  } catch (error) {
-    console.error('Error assigning worker:', error);
-    throw error;
-  }
-};
+
 
 /**
  * Update booking status
@@ -144,13 +130,7 @@ export const collectSelfCash = async (bookingId, otp, amount) => {
   return response.data;
 };
 
-/**
- * Pay Worker (Worker Payment Settlement)
- */
-export const payWorker = async (bookingId) => {
-  const response = await api.post(`/vendors/bookings/${bookingId}/pay-worker`);
-  return response.data;
-};
+
 
 /**
  * Get pending booking alerts

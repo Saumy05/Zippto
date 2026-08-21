@@ -9,7 +9,6 @@ import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 import {
   getBookingById,
   updateBookingStatus,
-  assignWorker as assignWorkerApi,
   startSelfJob,
   vendorReached,
   verifySelfVisit,
@@ -508,32 +507,7 @@ export default function BookingDetails() {
     navigate(`/vendor/booking/${booking.id}/assign-worker`);
   };
 
-  const handleAssignToSelf = async () => {
-    setConfirmDialog({
-      isOpen: true,
-      title: 'Assign to Self',
-      message: 'Are you sure you want to do this job yourself?',
-      type: 'info',
-      onConfirm: async () => {
-        setLoading(true);
-        try {
-          const response = await assignWorkerApi(id, 'SELF');
-          if (response && response.success) {
-            toast.success('Assigned to yourself successfully');
-            window.dispatchEvent(new Event('vendorJobsUpdated'));
-            window.location.reload();
-          } else {
-            throw new Error(response?.message || 'Failed to assign');
-          }
-        } catch (error) {
-          console.error('Error assigning to self:', error);
-          toast.error(error.message || 'Failed to assign to yourself');
-        } finally {
-          setLoading(false);
-        }
-      }
-    });
-  };
+
 
   const handleStartJourney = async () => {
     try {

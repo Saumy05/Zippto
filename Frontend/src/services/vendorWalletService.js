@@ -102,20 +102,7 @@ const vendorWalletService = {
     return response.data;
   },
 
-  /**
-   * Pay worker for a booking
-   */
-  payWorker: async (bookingId, amount, notes = '', transactionId = '', screenshot = '', paymentMethod = 'cash') => {
-    const response = await api.post('/vendors/wallet/pay-worker', {
-      bookingId,
-      amount,
-      notes,
-      transactionId,
-      screenshot,
-      paymentMethod
-    });
-    return response.data;
-  },
+
 
   /**
    * Request Withdrawal
