@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FiSearch, FiUser, FiPhone, FiMail, FiCheckCircle, FiSlash, FiCheck, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { adminUserService } from '../../../../services/adminUserService';
+import { CustomSelect } from '../../../../components/common';
 
 const AllUsers = () => {
   const [users, setUsers] = useState([]);
@@ -100,17 +101,20 @@ const AllUsers = () => {
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 focus:outline-none focus:border-green-500 cursor-pointer"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Blocked Only</option>
-          </select>
+          <div className="w-44">
+            <CustomSelect
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'active', label: 'Active Only' },
+                { value: 'inactive', label: 'Blocked Only' }
+              ]}
+              size="sm"
+            />
+          </div>
 
-          <div className="px-3 py-2 bg-green-50 rounded-lg border border-green-100">
+          <div className="px-3 py-1.5 bg-green-50 rounded-lg border border-green-100 shrink-0">
             <span className="text-xs font-bold text-green-700">{totalUsers} Users</span>
           </div>
         </div>

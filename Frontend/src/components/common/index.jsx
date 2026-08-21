@@ -9,4 +9,5 @@ export { default as LogoLoader } from './LogoLoader.jsx';
 export { default as OptimizedImage } from './OptimizedImage.jsx';
 export { default as OptimizedVideo } from './OptimizedVideo.jsx';
 export { default as LanguageSelectorModal, LanguageToggle } from './LanguageSelectorModal.jsx';
+export { default as CustomSelect } from './CustomSelect.jsx';
 export * from './SkeletonLoaders.jsx';

@@ -15,6 +15,7 @@ import {
 import { adminTransactionService } from '../../../../services/adminTransactionService';
 import toast from 'react-hot-toast';
 import { exportToCSV } from '../../../../utils/csvExport';
+import { CustomSelect } from '../../../../components/common';
 
 const PaymentOverview = () => {
   const [stats, setStats] = useState({
@@ -217,30 +218,35 @@ const PaymentOverview = () => {
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto">
-          <select
-            value={filters.status}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:border-blue-500"
-          >
-            <option value="all">All Status</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
-          </select>
+          <div className="w-40">
+            <CustomSelect
+              value={filters.status}
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'failed', label: 'Failed' },
+                { value: 'refunded', label: 'Refunded' }
+              ]}
+              icon={FiFilter}
+            />
+          </div>
 
-          <select
-            value={filters.type}
-            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-            className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:border-blue-500"
-          >
-            <option value="all">All Types</option>
-            <option value="credit">Credit (Platform)</option>
-            <option value="debit">Debit (Wallet)</option>
-            <option value="payment">Online Payment</option>
-            <option value="cash_collected">Cash Collected</option>
-            <option value="refund">Refund</option>
-          </select>
+          <div className="w-44">
+            <CustomSelect
+              value={filters.type}
+              onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+              options={[
+                { value: 'all', label: 'All Types' },
+                { value: 'credit', label: 'Credit (Platform)' },
+                { value: 'debit', label: 'Debit (Wallet)' },
+                { value: 'payment', label: 'Online Payment' },
+                { value: 'cash_collected', label: 'Cash Collected' },
+                { value: 'refund', label: 'Refund' }
+              ]}
+            />
+          </div>
 
           <button
             onClick={handleExport}

@@ -4,6 +4,7 @@ import { FiSearch, FiLoader, FiCalendar, FiClock, FiUser, FiShoppingBag } from '
 import { toast } from 'react-hot-toast';
 import CardShell from '../UserCategories/components/CardShell';
 import { adminUserService } from '../../../../services/adminUserService';
+import { CustomSelect } from '../../../../components/common';
 
 const UserBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -69,18 +70,21 @@ const UserBookings = () => {
               className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+          <div className="w-52">
+            <CustomSelect
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'confirmed', label: 'Confirmed' },
+                { value: 'ongoing', label: 'Ongoing' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]}
+              size="md"
+            />
+          </div>
         </div>
 
         {/* Bookings List */}

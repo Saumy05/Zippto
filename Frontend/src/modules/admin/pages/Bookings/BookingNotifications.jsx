@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiBell, FiCheck, FiX, FiInfo, FiTrash2 } from 'react-icons/fi';
+import { FiBell, FiCheck, FiX, FiInfo, FiTrash2, FiFilter } from 'react-icons/fi';
+import { CustomSelect } from '../../../../components/common';
 
 const BookingNotifications = () => {
   const [filter, setFilter] = useState('All Types');
@@ -70,17 +71,18 @@ const BookingNotifications = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       {/* Controls Bar */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div>
-          <select
+        <div className="w-48">
+          <CustomSelect
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none focus:border-blue-500 cursor-pointer min-w-[150px]"
-          >
-            <option>All Types</option>
-            <option value="new_booking">New Bookings</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="payment_failed">Payment Issues</option>
-          </select>
+            options={[
+              { value: 'All Types', label: 'All Types' },
+              { value: 'new_booking', label: 'New Bookings' },
+              { value: 'cancelled', label: 'Cancelled' },
+              { value: 'payment_failed', label: 'Payment Issues' }
+            ]}
+            icon={FiFilter}
+          />
         </div>
 
         <div className="flex items-center gap-3">

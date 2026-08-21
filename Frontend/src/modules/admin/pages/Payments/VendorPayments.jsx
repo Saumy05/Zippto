@@ -15,6 +15,7 @@ import {
 import { adminTransactionService } from '../../../../services/adminTransactionService';
 import toast from 'react-hot-toast';
 import { exportToCSV } from '../../../../utils/csvExport';
+import { CustomSelect } from '../../../../components/common';
 
 const VendorPayments = () => {
   const [transactions, setTransactions] = useState([]);
@@ -250,30 +251,35 @@ const VendorPayments = () => {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <select
-            value={filters.status}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium text-gray-600 min-w-[150px]"
-          >
-            <option value="all">All Status</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-          </select>
+          <div className="w-40">
+            <CustomSelect
+              value={filters.status}
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'failed', label: 'Failed' }
+              ]}
+              icon={FiFilter}
+            />
+          </div>
 
-          <select
-            value={filters.type}
-            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium text-gray-600 min-w-[150px]"
-          >
-            <option value="all">All Types</option>
-            <option value="earnings_credit">Earnings</option>
-            <option value="cash_collected">Cash Collected</option>
-            <option value="settlement">Settlement</option>
-            <option value="withdrawal">Withdrawal</option>
-            <option value="tds_deduction">TDS Deduction</option>
-            <option value="platform_fee">Platform Charge</option>
-          </select>
+          <div className="w-44">
+            <CustomSelect
+              value={filters.type}
+              onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+              options={[
+                { value: 'all', label: 'All Types' },
+                { value: 'earnings_credit', label: 'Earnings' },
+                { value: 'cash_collected', label: 'Cash Collected' },
+                { value: 'settlement', label: 'Settlement' },
+                { value: 'withdrawal', label: 'Withdrawal' },
+                { value: 'tds_deduction', label: 'TDS Deduction' },
+                { value: 'platform_fee', label: 'Platform Charge' }
+              ]}
+            />
+          </div>
 
           <button
             onClick={handleExport}

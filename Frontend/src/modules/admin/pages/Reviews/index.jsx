@@ -14,6 +14,7 @@ import {
 import { toast } from 'react-hot-toast';
 import reviewService from '../../services/reviewService';
 import CardShell from '../UserCategories/components/CardShell';
+import { CustomSelect } from '../../../../components/common';
 
 const ReviewsPage = () => {
   const [reviews, setReviews] = useState([]);
@@ -117,31 +118,33 @@ const ReviewsPage = () => {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[180px]">
             <label className="block text-xs font-bold text-gray-700 mb-1 ml-1">Rating</label>
-            <select
+            <CustomSelect
               value={filters.rating}
               onChange={(e) => setFilters({ ...filters, rating: e.target.value, page: 1 })}
-              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:ring-2 focus:ring-primary-500 outline-none transition-all"
-            >
-              <option value="">All Ratings</option>
-              <option value="5">5 Stars</option>
-              <option value="4">4 Stars</option>
-              <option value="3">3 Stars</option>
-              <option value="2">2 Stars</option>
-              <option value="1">1 Star</option>
-            </select>
+              options={[
+                { value: '', label: 'All Ratings' },
+                { value: '5', label: '5 Stars' },
+                { value: '4', label: '4 Stars' },
+                { value: '3', label: '3 Stars' },
+                { value: '2', label: '2 Stars' },
+                { value: '1', label: '1 Star' }
+              ]}
+              icon={FiStar}
+            />
           </div>
 
           <div className="flex-1 min-w-[180px]">
             <label className="block text-xs font-bold text-gray-700 mb-1 ml-1">Status</label>
-            <select
+            <CustomSelect
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
-              className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:ring-2 focus:ring-primary-500 outline-none transition-all"
-            >
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="hidden">Hidden</option>
-            </select>
+              options={[
+                { value: '', label: 'All Status' },
+                { value: 'active', label: 'Active' },
+                { value: 'hidden', label: 'Hidden' }
+              ]}
+              icon={FiFilter}
+            />
           </div>
         </div>
       </CardShell>

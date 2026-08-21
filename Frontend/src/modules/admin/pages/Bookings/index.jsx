@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import { adminBookingService } from '../../../../services/adminBookingService';
 import { getDashboardStats } from '../../../../services/adminDashboardService';
 import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
+import { CustomSelect } from '../../../../components/common';
 
 const BookingStatsCard = ({ title, count, icon: Icon, colorClass, bgClass }) => (
   <div className={`p-2.5 rounded-lg border border-slate-100/90 shadow-2xs flex items-center justify-between transition-all ${bgClass}`}>
@@ -267,20 +268,22 @@ const Bookings = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-600 focus:outline-none focus:border-green-500 cursor-pointer"
-          >
-            <option>All Status</option>
-            <option value="pending">Pending</option>
-            <option value="searching">Searching</option>
-            <option value="no_vendors">Needs Partner (Unassigned)</option>
-            <option value="accepted">Assigned</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+          <div className="w-48">
+            <CustomSelect
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              options={[
+                { value: 'All Status', label: 'All Status' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'searching', label: 'Searching' },
+                { value: 'no_vendors', label: 'Needs Partner (Unassigned)' },
+                { value: 'accepted', label: 'Assigned' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]}
+            />
+          </div>
 
           <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1">
             <FiCalendar className="text-gray-400 w-3.5 h-3.5" />

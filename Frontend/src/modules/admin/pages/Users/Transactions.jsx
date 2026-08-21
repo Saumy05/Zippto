@@ -4,6 +4,7 @@ import { FiSearch, FiDollarSign, FiArrowUpRight, FiArrowDownLeft, FiFilter, FiCa
 import { toast } from 'react-hot-toast';
 import { adminTransactionService } from '../../../../services/adminTransactionService';
 import { formatCurrency } from '../../utils/adminHelpers';
+import { CustomSelect } from '../../../../components/common';
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -163,17 +164,20 @@ const Transactions = () => {
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm font-medium text-gray-600 min-w-[150px]"
-          >
-            <option value="all">All Status</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+          <div className="w-48">
+            <CustomSelect
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'failed', label: 'Failed' },
+                { value: 'cancelled', label: 'Cancelled' }
+              ]}
+              icon={FiFilter}
+            />
+          </div>
         </div>
       </div>
 
