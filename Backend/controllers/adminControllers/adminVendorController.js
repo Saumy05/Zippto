@@ -504,9 +504,201 @@ const deleteVendor = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete vendor error:', error);
+/**
+ * Update vendor details (Admin)
+ */
+const updateVendor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vendor = await Vendor.findById(id);
+
+    if (!vendor) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vendor not found'
+      });
+    }
+
+    const {
+      name,
+      email,
+      phone,
+      password,
+      businessName,
+      service,
+      categories,
+      skills,
+      approvalStatus,
+      isActive,
+      isPhoneVerified,
+      isEmailVerified,
+      profilePhoto,
+      address,
+      aadhar,
+      pan,
+      otherDocuments,
+      wallet,
+      bankDetails,
+      settings
+    } = req.body;
+
+    // Check email conflict
+    if (email && email.toLowerCase() !== (vendor.email || '').toLowerCase()) {
+      const existingEmail = await Vendor.findOne({
+        _id: { $ne: id },
+        email: email.toLowerCase().trim()
+      });
+      if (existingEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Another vendor already exists with this email address'
+        });
+      }
+      vendor.email = email.toLowerCase().trim();
+    }
+
+    // Check phone conflict
+    if (phone && phone !== vendor.phone) {
+      const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+      const existingPhone = await Vendor.findOne({
+        _id: { $ne: id },
+        $or: [{ phone }, { phone: cleanPhone }]
+      });
+      if (existingPhone) {
+        return res.status(400).json({
+          success: false,
+          message: 'Another vendor already exists with this phone number'
+        });
+      }
+      vendor.phone = cleanPhone || phone.trim();
+    }
+
+    if (name !== undefined) vendor.name = name.trim();
+    if (businessName !== undefined) vendor.businessName = businessName ? businessName.trim() : '';
+    if (password && password.trim().length >= 6) {
+      vendor.password = password.trim(); // Will be hashed via pre-save hook
+    }
+    if (service !== undefined) {
+      const parsedService = Array.isArray(service)
+        ? service
+        : (typeof service === 'string' ? service.split(',').map(s => s.trim()).filter(Boolean) : []);
+      vendor.service = parsedService;
+      vendor.categories = parsedService;
+    }
+    if (categories !== undefined && Array.isArray(categories)) {
+      vendor.categories = categories;
+      if (!service) vendor.service = categories;
+    }
+    if (skills !== undefined) {
+      vendor.skills = Array.isArray(skills) ? skills : [];
+    }
+    if (approvalStatus !== undefined && Object.values(VENDOR_STATUS).includes(approvalStatus)) {
+      vendor.approvalStatus = approvalStatus;
+      if (approvalStatus === VENDOR_STATUS.APPROVED && !vendor.approvalDate) {
+        vendor.approvalDate = new Date();
+      }
+    }
+    if (isActive !== undefined) vendor.isActive = Boolean(isActive);
+    if (isPhoneVerified !== undefined) vendor.isPhoneVerified = Boolean(isPhoneVerified);
+    if (isEmailVerified !== undefined) vendor.isEmailVerified = Boolean(isEmailVerified);
+    if (profilePhoto !== undefined) vendor.profilePhoto = profilePhoto || null;
+
+    // Address
+    if (address && typeof address === 'object') {
+      const currentAddr = vendor.address || {};
+      vendor.address = {
+        fullAddress: address.fullAddress || `${address.addressLine1 || ''} ${address.addressLine2 || ''} ${address.city || ''} ${address.state || ''} ${address.pincode || ''}`.trim(),
+        addressLine1: address.addressLine1 !== undefined ? address.addressLine1 : currentAddr.addressLine1,
+        addressLine2: address.addressLine2 !== undefined ? address.addressLine2 : currentAddr.addressLine2,
+        city: address.city !== undefined ? address.city : currentAddr.city,
+        state: address.state !== undefined ? address.state : currentAddr.state,
+        pincode: address.pincode !== undefined ? address.pincode : currentAddr.pincode,
+        landmark: address.landmark !== undefined ? address.landmark : currentAddr.landmark,
+        lat: address.lat !== undefined ? Number(address.lat) : currentAddr.lat,
+        lng: address.lng !== undefined ? Number(address.lng) : currentAddr.lng
+      };
+      if (address.lng && address.lat) {
+        vendor.geoLocation = {
+          type: 'Point',
+          coordinates: [Number(address.lng), Number(address.lat)]
+        };
+      }
+    }
+
+    // Aadhar
+    if (aadhar && typeof aadhar === 'object') {
+      vendor.aadhar = {
+        number: aadhar.number !== undefined ? aadhar.number.trim() : (vendor.aadhar?.number || ''),
+        document: aadhar.document !== undefined ? aadhar.document : (vendor.aadhar?.document || ''),
+        backDocument: aadhar.backDocument !== undefined ? aadhar.backDocument : (vendor.aadhar?.backDocument || '')
+      };
+    }
+
+    // PAN
+    if (pan && typeof pan === 'object') {
+      vendor.pan = {
+        number: pan.number !== undefined ? pan.number.trim().toUpperCase() : (vendor.pan?.number || ''),
+        document: pan.document !== undefined ? pan.document : (vendor.pan?.document || '')
+      };
+    }
+
+    // Other Docs
+    if (otherDocuments !== undefined && Array.isArray(otherDocuments)) {
+      vendor.otherDocuments = otherDocuments;
+    }
+
+    // Wallet settings & limits
+    if (wallet && typeof wallet === 'object') {
+      if (wallet.cashLimit !== undefined) vendor.wallet.cashLimit = Number(wallet.cashLimit);
+      if (wallet.isBlocked !== undefined) {
+        vendor.wallet.isBlocked = Boolean(wallet.isBlocked);
+        if (wallet.isBlocked) {
+          vendor.wallet.blockedAt = new Date();
+          vendor.wallet.blockReason = wallet.blockReason || 'Blocked by administrator';
+        } else {
+          vendor.wallet.blockedAt = null;
+          vendor.wallet.blockReason = null;
+        }
+      }
+      if (wallet.blockReason !== undefined && vendor.wallet.isBlocked) {
+        vendor.wallet.blockReason = wallet.blockReason;
+      }
+    }
+
+    // Bank Details
+    if (bankDetails && typeof bankDetails === 'object') {
+      vendor.bankDetails = {
+        accountHolderName: bankDetails.accountHolderName !== undefined ? bankDetails.accountHolderName : (vendor.bankDetails?.accountHolderName || ''),
+        bankName: bankDetails.bankName !== undefined ? bankDetails.bankName : (vendor.bankDetails?.bankName || ''),
+        accountNumber: bankDetails.accountNumber !== undefined ? bankDetails.accountNumber : (vendor.bankDetails?.accountNumber || ''),
+        ifscCode: bankDetails.ifscCode !== undefined ? bankDetails.ifscCode : (vendor.bankDetails?.ifscCode || ''),
+        upiId: bankDetails.upiId !== undefined ? bankDetails.upiId : (vendor.bankDetails?.upiId || ''),
+        isVerified: bankDetails.isVerified !== undefined ? Boolean(bankDetails.isVerified) : (vendor.bankDetails?.isVerified || false)
+      };
+    }
+
+    // Settings
+    if (settings && typeof settings === 'object') {
+      vendor.settings = {
+        notifications: settings.notifications !== undefined ? Boolean(settings.notifications) : (vendor.settings?.notifications ?? true),
+        soundAlerts: settings.soundAlerts !== undefined ? Boolean(settings.soundAlerts) : (vendor.settings?.soundAlerts ?? true),
+        language: settings.language || vendor.settings?.language || 'en',
+        serviceRange: Number(settings.serviceRange) || vendor.settings?.serviceRange || 10
+      };
+    }
+
+    await vendor.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Vendor details updated successfully',
+      data: vendor
+    });
+  } catch (error) {
+    console.error('Update vendor error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete vendor'
+      message: error.message || 'Failed to update vendor details'
     });
   }
 };
@@ -514,6 +706,7 @@ const deleteVendor = async (req, res) => {
 module.exports = {
   getAllVendors,
   getVendorDetails,
+  updateVendor,
   approveVendor,
   rejectVendor,
   suspendVendor,

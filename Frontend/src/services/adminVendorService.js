@@ -18,6 +18,14 @@ const adminVendorService = {
   },
 
   /**
+   * Update vendor details
+   */
+  updateVendor: async (id, vendorData) => {
+    const response = await api.put(`/admin/vendors/${id}`, vendorData);
+    return response.data;
+  },
+
+  /**
    * Approve vendor registration
    */
   approveVendor: async (id) => {

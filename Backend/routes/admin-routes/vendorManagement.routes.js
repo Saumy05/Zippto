@@ -6,6 +6,7 @@ const { isAdmin } = require('../../middleware/roleMiddleware');
 const {
   getAllVendors,
   getVendorDetails,
+  updateVendor,
   approveVendor,
   rejectVendor,
   suspendVendor,
@@ -27,11 +28,13 @@ router.get('/vendors', authenticate, isAdmin, getAllVendors);
 router.get('/vendors/bookings', authenticate, isAdmin, getAllVendorBookings);
 router.get('/vendors/payments', authenticate, isAdmin, getVendorPaymentsSummary);
 router.get('/vendors/:id', authenticate, isAdmin, getVendorDetails);
+router.put('/vendors/:id', authenticate, isAdmin, updateVendor);
+router.patch('/vendors/:id', authenticate, isAdmin, updateVendor);
 router.post('/vendors/:id/approve', authenticate, isAdmin, approveVendor);
 router.post('/vendors/:id/reject', authenticate, isAdmin, rejectVendorValidation, rejectVendor);
 router.post('/vendors/:id/suspend', authenticate, isAdmin, suspendVendor);
-router.patch('/vendors/:id/status', authenticate, isAdmin, toggleVendorStatus); // New
-router.delete('/vendors/:id', authenticate, isAdmin, deleteVendor); // New
+router.patch('/vendors/:id/status', authenticate, isAdmin, toggleVendorStatus);
+router.delete('/vendors/:id', authenticate, isAdmin, deleteVendor);
 router.get('/vendors/:id/bookings', authenticate, isAdmin, getVendorBookings);
 router.get('/vendors/:id/earnings', authenticate, isAdmin, getVendorEarnings);
 
