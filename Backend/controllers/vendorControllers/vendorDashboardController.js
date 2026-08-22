@@ -72,10 +72,10 @@ const getDashboardStats = async (req, res) => {
                 }
               }
             ],
-            // Average Rating
+            // Average Rating and Total Reviews
             rating: [
               { $match: { vendorId: vId, rating: { $ne: null } } },
-              { $group: { _id: null, avg: { $avg: '$rating' } } }
+              { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } }
             ],
             // Recent Bookings List (Optimized Projection)
             recent: [
@@ -131,7 +131,9 @@ const getDashboardStats = async (req, res) => {
     const facet = bookingData[0];
     const counts = facet.counts?.[0] || { total: 0, completed: 0, inProgress: 0, pending: 0 };
     const recentBookings = facet.recent || [];
-    const rating = facet.rating?.[0]?.avg || req.user.rating || 0;
+    const ratingData = facet.rating?.[0];
+    const totalReviews = ratingData?.count || 0;
+    const rating = (totalReviews > 0 && ratingData?.avg) ? parseFloat(ratingData.avg.toFixed(1)) : 0;
     const vendorEarnings = earningsResult[0]?.total || 0;
 
     // Minimal population for recent bookings (Lean)
@@ -162,7 +164,8 @@ const getDashboardStats = async (req, res) => {
           inProgressBookings: counts.inProgress,
           totalRevenue: vendorEarnings, // UI shows totalEarnings as sum
           vendorEarnings: vendorEarnings,
-          rating: parseFloat(rating.toFixed(1))
+          rating: rating,
+          totalReviews: totalReviews
         },
         recentBookings
       }

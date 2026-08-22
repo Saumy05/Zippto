@@ -37,6 +37,7 @@ const Dashboard = memo(() => {
     totalEarnings: 0,
     completedJobs: 0,
     rating: 0,
+    totalReviews: 0,
   });
   const [vendorProfile, setVendorProfile] = useState({
     name: 'Vendor Name',
@@ -178,6 +179,7 @@ const Dashboard = memo(() => {
       totalEarnings: apiStats.vendorEarnings || 0,
       completedJobs: apiStats.completedBookings || 0,
       rating: apiStats.rating || 0,
+      totalReviews: apiStats.totalReviews || 0,
     });
 
     // Recent jobs (non-requested)
@@ -471,7 +473,11 @@ const Dashboard = memo(() => {
                   </span>
                   <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
                     <FiStar className="w-3 h-3 fill-amber-400 text-amber-500" />
-                    {stats.rating > 0 ? stats.rating.toFixed(1) : '5.0'} Rating
+                    {stats.rating > 0 ? (
+                      <span>{stats.rating.toFixed(1)} Rating{stats.totalReviews > 0 ? ` (${stats.totalReviews})` : ''}</span>
+                    ) : (
+                      <span>No Ratings Yet</span>
+                    )}
                   </span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight group-hover:text-teal-700 transition-colors">

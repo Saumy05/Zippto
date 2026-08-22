@@ -553,7 +553,7 @@ const Bookings = () => {
                           <p className="text-[10px] text-gray-500 truncate">{vendor.businessName || vendor.phone}</p>
                           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400">
                             <span className="flex items-center gap-0.5 text-amber-500 font-bold">
-                              <FiStar className="w-3 h-3 fill-amber-400" /> {vendor.rating || '4.8'}
+                              <FiStar className="w-3 h-3 fill-amber-400" /> {vendor.rating && Number(vendor.rating) > 0 ? Number(vendor.rating).toFixed(1) : 'New'}
                             </span>
                             <span>•</span>
                             <span>{vendor.totalJobs || 0} jobs</span>

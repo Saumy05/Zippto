@@ -3,6 +3,7 @@ const Vendor = require('../../models/Vendor');
 const Booking = require('../../models/Booking');
 const Withdrawal = require('../../models/Withdrawal');
 const Settlement = require('../../models/Settlement');
+const UserService = require('../../models/UserService');
 
 const { BOOKING_STATUS, PAYMENT_STATUS, VENDOR_STATUS } = require('../../utils/constants');
 
@@ -83,6 +84,9 @@ const getDashboardStats = async (req, res) => {
     const pendingWithdrawals = await Withdrawal.countDocuments({ status: 'pending', ...dateFilter });
     const pendingSettlementsCount = await Settlement.countDocuments({ status: 'pending', ...dateFilter });
 
+    // Dynamic active services count
+    const totalServices = await UserService.countDocuments({ status: 'active' });
+
     // Recent activities (filtered by period)
     const recentActivityDocs = await Booking.find(dateFilter)
       .populate('userId', 'name phone')
@@ -119,7 +123,8 @@ const getDashboardStats = async (req, res) => {
           platformCommission,
           pendingVendors,
           approvedVendors,
-          pendingSettlements: pendingSettlementsCount
+          pendingSettlements: pendingSettlementsCount,
+          totalServices
         },
         recentBookings
       }

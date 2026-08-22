@@ -30,6 +30,7 @@ const AdminDashboard = () => {
     completedBookings: 0,
     totalRevenue: 0,
     todayRevenue: 0,
+    totalServices: 0,
   });
 
   useEffect(() => {
@@ -77,6 +78,7 @@ const AdminDashboard = () => {
             completedBookings: s.completedBookings,
             totalRevenue: s.totalRevenue,
             todayRevenue: 0,
+            totalServices: s.totalServices || 0,
           });
           setRecentBookingsList(statsRes.data.recentBookings || []);
         }
@@ -196,7 +198,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'Active Services',
-      value: (stats.totalServices || stats.servicesCount || '24+').toString(),
+      value: (stats.totalServices || 0).toString(),
       change: 0,
       icon: FiGrid,
       color: 'text-white',

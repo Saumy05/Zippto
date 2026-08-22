@@ -15,18 +15,15 @@ const getProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Vendor not found' });
     }
 
-    // Use stored rating if available (and > 0), otherwise calculate
-    let rating = vendor.rating || 0;
-
     const Booking = require('../../models/Booking');
 
-    if (rating === 0) {
-      const [ratingData] = await Booking.aggregate([
-        { $match: { vendorId: new mongoose.Types.ObjectId(vendorId), rating: { $ne: null } } },
-        { $group: { _id: null, avgRating: { $avg: '$rating' } } }
-      ]);
-      rating = ratingData ? ratingData.avgRating : 0;
-    }
+    // Dynamically calculate average rating and reviews from actual rated bookings
+    const [ratingData] = await Booking.aggregate([
+      { $match: { vendorId: new mongoose.Types.ObjectId(vendorId), rating: { $ne: null } } },
+      { $group: { _id: null, avgRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+    ]);
+    const totalReviews = ratingData ? ratingData.totalReviews : (vendor.totalReviews || 0);
+    const rating = (totalReviews > 0 && ratingData?.avgRating) ? parseFloat(ratingData.avgRating.toFixed(1)) : 0;
 
     const totalJobs = await Booking.countDocuments({ vendorId });
     const completedJobs = await Booking.countDocuments({ vendorId, status: 'completed' });
@@ -45,7 +42,8 @@ const getProfile = async (req, res) => {
         serviceRange: vendor.settings?.serviceRange || 10,
         settings: vendor.settings || { serviceRange: 10 },
         address: vendor.address || null,
-        rating: rating > 0 ? parseFloat(rating.toFixed(1)) : 0,
+        rating: rating,
+        totalReviews: totalReviews,
         totalJobs,
         completionRate,
         approvalStatus: vendor.approvalStatus,

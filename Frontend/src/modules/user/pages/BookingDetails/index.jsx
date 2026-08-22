@@ -740,7 +740,7 @@ const BookingDetails = () => {
                   <div className="flex items-center gap-2 mt-1">
                     <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-xs font-black px-2 py-0.5 rounded-lg border border-amber-200/60">
                       <FiStar className="w-3 h-3 text-amber-500 fill-current" />
-                      {(assignedPartner?.rating || 0) > 0 ? Number(assignedPartner?.rating).toFixed(1) : '4.9'}
+                      {(assignedPartner?.rating || 0) > 0 ? Number(assignedPartner?.rating).toFixed(1) : 'New'}
                     </span>
                     <span className="text-[11px] text-slate-500 font-semibold truncate">
                       • Doorstep Specialist

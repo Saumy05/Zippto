@@ -14,16 +14,14 @@ const ROUTE_DEFINITIONS = [
     title: 'Live Order Tracking',
     description: 'Real-time dispatch, lifecycle progression, and live order status',
     category: 'Bookings',
-    categoryPath: '/admin/bookings',
-    badge: 'Live Stream'
+    categoryPath: '/admin/bookings'
   },
   {
     path: '/admin/bookings/notifications',
     title: 'Order Notifications',
     description: 'Real-time booking alerts, broadcasts, and system dispatches',
     category: 'Bookings',
-    categoryPath: '/admin/bookings',
-    badge: 'Alerts'
+    categoryPath: '/admin/bookings'
   },
   {
     path: '/admin/bookings',
@@ -39,8 +37,7 @@ const ROUTE_DEFINITIONS = [
     title: 'Executive Dashboard',
     description: 'High-level platform metrics, revenue trends, and operational health',
     category: 'Core Operations',
-    categoryPath: '/admin/dashboard',
-    badge: 'Live Overview'
+    categoryPath: '/admin/dashboard'
   },
 
   // ── Users & Customers ───────────────────────────────────────────────────
@@ -132,8 +129,7 @@ const ROUTE_DEFINITIONS = [
     title: 'Pending Settlements',
     description: 'Review and approve vendor cash collections and platform commissions',
     category: 'Settlements & Dues',
-    categoryPath: '/admin/settlements/pending',
-    badge: 'Action Required'
+    categoryPath: '/admin/settlements/pending'
   },
   {
     path: '/admin/settlements/withdrawals',
@@ -444,17 +440,11 @@ const AdminHeader = ({ onMenuClick }) => {
               <span className="text-blue-600 font-bold truncate">{pageInfo.title}</span>
             </div>
 
-            {/* Main Title with Status Badge */}
+            {/* Main Title */}
             <div className="flex items-center gap-2 min-w-0">
               <h1 className="text-base sm:text-lg lg:text-xl font-black text-gray-900 tracking-tight truncate">
                 {pageInfo.title}
               </h1>
-              {pageInfo.badge && (
-                <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/60 rounded-full shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping"></span>
-                  {pageInfo.badge}
-                </span>
-              )}
             </div>
             
             {/* Description Subtitle */}

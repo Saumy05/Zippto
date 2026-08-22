@@ -424,7 +424,7 @@ export default function ChatDrawerModal({
         name: partner?.name || partner?.businessName || b.servicePartnerName || 'Service Partner',
         phone: partner?.phone || '',
         avatar: partner?.avatar || partner?.profilePhoto || null,
-        rating: partner?.rating || 4.8,
+        rating: (partner?.rating && Number(partner?.rating) > 0) ? Number(partner?.rating) : 0,
         role: 'Verified Partner'
       };
     } else {
