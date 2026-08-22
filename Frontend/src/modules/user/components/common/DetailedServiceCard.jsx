@@ -101,9 +101,13 @@ const DetailedServiceCard = memo(({ image, title, rating, reviews, price, origin
 
         <div className="flex items-center gap-1 mb-2">
           <AiFillStar className="w-3.5 h-3.5 text-yellow-400" />
-          <span className="text-xs text-gray-900 font-bold">{rating}</span>
-          {reviews && (
-            <span className="text-[10px] text-gray-500">({reviews})</span>
+          <span className="text-xs text-gray-900 font-bold">
+            {Number(rating) > 0 ? Number(rating).toFixed(1) : (rating || 'New')}
+          </span>
+          {reviews && reviews !== '0' && reviews !== 0 && (
+            <span className="text-[10px] text-gray-500">
+              ({typeof reviews === 'number' ? `${reviews}` : reviews})
+            </span>
           )}
         </div>
 

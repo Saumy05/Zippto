@@ -89,19 +89,41 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
     }
   };
 
-  const fetchServices = async (brandId) => {
+  const fetchServices = async (brandId, brandObj) => {
     try {
       setLoading(true);
+      publicCatalogService.invalidateCache();
       const response = await publicCatalogService.getServices({
         brandId: brandId,
         cityId: cityId,
         categoryId: category?.id
       });
-      if (response.success) {
-        setServices(response.services || []);
+      if (response.success && response.services?.length > 0) {
+        setServices(response.services);
+      } else if (brandObj?.sections?.[0]?.cards?.length > 0) {
+        setServices(brandObj.sections[0].cards.map(c => ({
+          id: c.id || c._id,
+          title: c.title,
+          description: c.subtitle || c.description,
+          basePrice: c.price || c.basePrice,
+          discountPrice: c.discountPrice,
+          icon: c.imageUrl || brandObj.icon
+        })));
+      } else {
+        setServices([]);
       }
     } catch (error) {
       console.error("Failed to load services:", error);
+      if (brandObj?.sections?.[0]?.cards?.length > 0) {
+        setServices(brandObj.sections[0].cards.map(c => ({
+          id: c.id || c._id,
+          title: c.title,
+          description: c.subtitle || c.description,
+          basePrice: c.price || c.basePrice,
+          discountPrice: c.discountPrice,
+          icon: c.imageUrl || brandObj.icon
+        })));
+      }
     } finally {
       setLoading(false);
     }
@@ -110,7 +132,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
   const handleBrandClick = (brand) => {
     setSelectedBrand(brand);
     setView('services');
-    fetchServices(brand.id || brand._id);
+    fetchServices(brand.id || brand._id, brand);
   };
 
   const handleBackToBrands = () => {
@@ -139,8 +161,8 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
         originalPrice: service.discountPrice ? service.basePrice : null,
         unitPrice: service.discountPrice || service.basePrice,
         serviceCount: 1,
-        rating: "4.8",
-        reviews: "1k+",
+        rating: service.rating || null,
+        reviews: service.reviews || null,
         vendorId: service.vendorId || selectedBrand?.vendorId || null,
         card: {
           title: service.title,

@@ -983,9 +983,11 @@ const BookingTrack = () => {
               <h3 className="font-bold text-gray-900 line-clamp-1 text-lg">
                 {provider.name || 'Service Partner'}
               </h3>
-              <div className="flex items-center gap-1 text-yellow-500">
+              <div className="flex items-center gap-1.5 text-yellow-500">
                 <FiStar className="w-3.5 h-3.5 fill-current" />
-                <span className="text-sm font-bold text-gray-700">4.8</span>
+                <span className="text-sm font-bold text-gray-700">
+                  {(provider.rating || 0) > 0 ? Number(provider.rating).toFixed(1) : 'New'}
+                </span>
                 <span className="text-xs text-gray-400">• Verified Professional</span>
               </div>
             </div>

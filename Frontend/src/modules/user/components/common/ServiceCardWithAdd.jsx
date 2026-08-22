@@ -42,9 +42,13 @@ const ServiceCardWithAdd = memo(({ image, title, rating, reviews, price, onAddCl
         {rating && (
           <div className="flex items-center gap-1 mb-2">
             <AiFillStar className="w-4 h-4 text-yellow-400" />
-            <span className="text-xs text-black font-medium">{rating}</span>
-            {reviews && (
-              <span className="text-xs text-gray-500">({reviews})</span>
+            <span className="text-xs text-black font-medium">
+              {Number(rating) > 0 ? Number(rating).toFixed(1) : rating}
+            </span>
+            {reviews && reviews !== '0' && reviews !== 0 && (
+              <span className="text-xs text-gray-500">
+                ({typeof reviews === 'number' ? `${reviews}` : reviews})
+              </span>
             )}
           </div>
         )}

@@ -90,7 +90,7 @@ const getPublicBrands = async (req, res) => {
 
     let brands = await Brand.find(query)
       .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections')
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .lean();
 
     // If categorySlug is provided, filter by category
@@ -118,22 +118,56 @@ const getPublicBrands = async (req, res) => {
       }
     }
 
+    // Fetch all active services for these brands from the Service collection
+    const brandIds = brands.map(b => b._id);
+    const allServices = await Service.find({ brandId: { $in: brandIds }, status: 'active' })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    const servicesByBrand = {};
+    allServices.forEach(svc => {
+      const bId = svc.brandId ? svc.brandId.toString() : null;
+      if (bId) {
+        if (!servicesByBrand[bId]) servicesByBrand[bId] = [];
+        servicesByBrand[bId].push(svc);
+      }
+    });
+
     res.status(200).json({
       success: true,
-      brands: brands.map(brand => ({
-        id: brand._id.toString(),
-        title: brand.title,
-        slug: brand.slug,
-        icon: brand.iconUrl || '',
-        logo: brand.logo || brand.iconUrl || '',
-        imageUrl: brand.imageUrl || brand.iconUrl || '',
-        badge: brand.badge || '',
-        price: brand.basePrice || 0, // Legacy support
-        originalPrice: brand.discountPrice ? (brand.basePrice + brand.discountPrice) : (brand.basePrice || 0),
-        categoryId: brand.categoryIds && brand.categoryIds.length > 0 ? brand.categoryIds[0].toString() : null,
-        categoryIds: (brand.categoryIds || []).map(id => id.toString()),
-        sections: brand.sections || []
-      }))
+      brands: brands.map(brand => {
+        const bSvcs = servicesByBrand[brand._id.toString()] || [];
+        const liveSection = bSvcs.length > 0 ? [{
+          title: brand.title,
+          subtitle: `${bSvcs.length} services available`,
+          cards: bSvcs.map(s => ({
+            id: s._id.toString(),
+            title: s.title,
+            subtitle: s.description || '',
+            price: s.basePrice,
+            rating: s.rating || null,
+            reviews: s.reviews || null,
+            imageUrl: s.iconUrl || brand.iconUrl || '',
+            features: s.description ? [s.description] : [],
+            duration: "60 min"
+          }))
+        }] : (brand.sections && brand.sections.length > 0 ? brand.sections : []);
+
+        return {
+          id: brand._id.toString(),
+          title: brand.title,
+          slug: brand.slug,
+          icon: brand.iconUrl || '',
+          logo: brand.logo || brand.iconUrl || '',
+          imageUrl: brand.imageUrl || brand.iconUrl || '',
+          badge: brand.badge || '',
+          price: brand.basePrice || (bSvcs.length > 0 ? bSvcs[0].basePrice : 0),
+          originalPrice: brand.discountPrice ? ((brand.basePrice || 0) + brand.discountPrice) : (brand.basePrice || 0),
+          categoryId: brand.categoryIds && brand.categoryIds.length > 0 ? brand.categoryIds[0].toString() : null,
+          categoryIds: (brand.categoryIds || []).map(id => id.toString()),
+          sections: liveSection
+        };
+      })
     });
   } catch (error) {
     console.error('Get public brands error:', error);
@@ -196,8 +230,8 @@ const getPublicBrandBySlug = async (req, res) => {
         title: svc.title,
         subtitle: svc.description || '',
         price: svc.basePrice,
-        rating: "4.8", // Default rating
-        reviews: "1k+", // Default reviews
+        rating: svc.rating || null,
+        reviews: svc.reviews || null,
         imageUrl: svc.iconUrl || brand.iconUrl || '',
         features: svc.description ? [svc.description] : [],
         duration: "60 min" // Default duration
@@ -249,21 +283,36 @@ const getPublicBrandBySlug = async (req, res) => {
  */
 const getPublicServices = async (req, res) => {
   try {
-    const { brandId, brandSlug, categoryId } = req.query;
+    const { brandId, brandSlug, categoryId, categorySlug } = req.query;
 
     const query = { status: 'active' };
 
     if (brandId) {
       query.brandId = brandId;
     } else if (brandSlug) {
-      const brand = await Brand.findOne({ slug: brandSlug });
+      const brand = await Brand.findOne({ slug: brandSlug, status: 'active' });
       if (brand) {
         query.brandId = brand._id;
       } else {
         return res.status(200).json({ success: true, services: [] });
       }
+    } else if (categorySlug) {
+      const category = await Category.findOne({ slug: categorySlug, status: 'active' }).lean();
+      if (category) {
+        const brands = await Brand.find({ categoryIds: category._id, status: 'active' }).lean();
+        const brandIds = brands.map(b => b._id);
+        query.$or = [
+          { categoryId: category._id },
+          { brandId: { $in: brandIds } }
+        ];
+      }
     } else if (categoryId) {
-      query.categoryId = categoryId;
+      const brands = await Brand.find({ categoryIds: categoryId, status: 'active' }).lean();
+      const brandIds = brands.map(b => b._id);
+      query.$or = [
+        { categoryId: categoryId },
+        { brandId: { $in: brandIds } }
+      ];
     }
 
     if (req.query.search) {
