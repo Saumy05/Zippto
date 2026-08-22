@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
   const sizeClasses = {
     sm: "max-w-md",
-    md: "max-w-2xl",
-    lg: "max-w-4xl",
-    xl: "max-w-6xl",
+    md: "max-w-xl",
+    lg: "max-w-2xl",
+    xl: "max-w-3xl",
+    full: "max-w-5xl",
   };
 
   return (

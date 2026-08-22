@@ -709,7 +709,7 @@ const AllVendors = () => {
           }
         }}
         title={`Edit Partner: ${editingVendor?.name || ''}`}
-        size="xl"
+        size="lg"
       >
         {editingVendor && (
           <form onSubmit={handleSaveVendor} className="space-y-6">
