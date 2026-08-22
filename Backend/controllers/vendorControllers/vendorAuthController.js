@@ -112,14 +112,13 @@ const verifyLogin = async (req, res) => {
       vendor = await Vendor.create({
         name: 'Test Vendor',
         phone: cleanPhone,
-        email: `vendor_${cleanPhone}@zippto.com`,
         password: '123456',
         businessName: 'Zippto Test Services',
         service: ['Electricity', 'AC'],
         categories: ['Electricity', 'AC'],
         approvalStatus: VENDOR_STATUS.APPROVED || 'approved',
         isPhoneVerified: true,
-        isEmailVerified: true,
+        isEmailVerified: false,
         isActive: true,
         role: 'vendor'
       });
@@ -230,10 +229,14 @@ const register = async (req, res) => {
       if (!ver.success) return res.status(400).json({ success: false, message: ver.message });
     }
 
-    // Check existing
-    const existing = await Vendor.findOne({ $or: [{ phone }, { email }] });
+    // Check existing vendor by phone or email (if provided)
+    const orQuery = [{ phone }];
+    if (email && email.trim()) {
+      orQuery.push({ email: email.trim().toLowerCase() });
+    }
+    const existing = await Vendor.findOne({ $or: orQuery });
     if (existing) {
-      return res.status(400).json({ success: false, message: 'Vendor already exists. Login.' });
+      return res.status(400).json({ success: false, message: 'Vendor already exists with this phone or email. Please login.' });
     }
 
     // Upload documents
@@ -254,8 +257,6 @@ const register = async (req, res) => {
       const uploadRes = await cloudinaryService.uploadFile(panUrl, { folder: 'vendors/documents' });
       if (uploadRes.success) panUrl = uploadRes.url;
     }
-    // ... (otherDocs logic simplified for brevity, assume frontend sends valid array or backend helper used?
-    // I'll keep the simplified logic here assuming loop is standard)
     if (otherUrls && otherUrls.length > 0) {
       const uploadedOthers = [];
       for (const doc of otherUrls) {
@@ -268,7 +269,9 @@ const register = async (req, res) => {
     }
 
     const vendor = await Vendor.create({
-      name, email, phone,
+      name: name.trim(),
+      email: (email && email.trim()) ? email.trim().toLowerCase() : undefined,
+      phone,
       service: [], // Default empty as requested
       aadhar: {
         number: aadhar,

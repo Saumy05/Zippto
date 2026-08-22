@@ -101,12 +101,11 @@ const verifyLogin = async (req, res) => {
     // Auto-create test user if test number 7389279971 is used
     if (!user && cleanPhone === '7389279971') {
       user = await User.create({
-        name: 'Test User',
+        name: 'Saumy User',
         phone: cleanPhone,
-        email: `user_${cleanPhone}@zippto.com`,
         password: '123456',
         isPhoneVerified: true,
-        isEmailVerified: true,
+        isEmailVerified: false,
         isActive: true,
         role: 'user',
         addresses: [
