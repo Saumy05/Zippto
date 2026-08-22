@@ -475,16 +475,10 @@ const AdminHeader = ({ onMenuClick }) => {
 
           {/* Super Admin Badge / Pill */}
           <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-50/80 border border-gray-200/80 rounded-xl">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
               <FiShield className="w-3.5 h-3.5" />
             </div>
-            <div className="text-left">
-              <p className="text-xs font-bold text-gray-800 leading-none">Super Admin</p>
-              <span className="text-[10px] font-semibold text-emerald-600 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-ping"></span>
-                Online
-              </span>
-            </div>
+            <p className="text-xs font-bold text-gray-800 leading-none">Super Admin</p>
           </div>
 
           {/* Logout Button */}
