@@ -345,9 +345,118 @@ const getAllUserBookings = async (req, res) => {
   }
 };
 
+/**
+ * Update user details (Admin)
+ */
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const {
+      name,
+      email,
+      phone,
+      password,
+      isActive,
+      isPhoneVerified,
+      isEmailVerified,
+      profilePhoto,
+      wallet,
+      addresses
+    } = req.body;
+
+    // Check email uniqueness if email provided and changed
+    if (email && email.toLowerCase() !== (user.email || '').toLowerCase()) {
+      const existingEmail = await User.findOne({
+        _id: { $ne: id },
+        email: email.toLowerCase().trim()
+      });
+      if (existingEmail) {
+        return res.status(400).json({
+          success: false,
+          message: 'Another user already exists with this email address'
+        });
+      }
+      user.email = email.toLowerCase().trim();
+    } else if (email === '') {
+      user.email = undefined;
+    }
+
+    // Check phone uniqueness if phone changed
+    if (phone && phone !== user.phone) {
+      const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+      const existingPhone = await User.findOne({
+        _id: { $ne: id },
+        phone: cleanPhone || phone.trim()
+      });
+      if (existingPhone) {
+        return res.status(400).json({
+          success: false,
+          message: 'Another user already exists with this phone number'
+        });
+      }
+      user.phone = cleanPhone || phone.trim();
+    }
+
+    if (name !== undefined) user.name = name.trim();
+    if (password && password.trim().length >= 6) {
+      user.password = password.trim(); // Will be hashed via pre-save hook
+    }
+    if (isActive !== undefined) user.isActive = Boolean(isActive);
+    if (isPhoneVerified !== undefined) user.isPhoneVerified = Boolean(isPhoneVerified);
+    if (isEmailVerified !== undefined) user.isEmailVerified = Boolean(isEmailVerified);
+    if (profilePhoto !== undefined) user.profilePhoto = profilePhoto || null;
+
+    // Wallet balance
+    if (wallet && typeof wallet === 'object') {
+      if (wallet.balance !== undefined) {
+        user.wallet = user.wallet || {};
+        user.wallet.balance = Math.max(0, Number(wallet.balance) || 0);
+      }
+    }
+
+    // Addresses
+    if (addresses && Array.isArray(addresses)) {
+      user.addresses = addresses.map(addr => ({
+        type: addr.type || 'home',
+        addressLine1: addr.addressLine1 || '',
+        addressLine2: addr.addressLine2 || '',
+        city: addr.city || '',
+        state: addr.state || '',
+        pincode: addr.pincode || '',
+        landmark: addr.landmark || '',
+        isDefault: addr.isDefault !== undefined ? Boolean(addr.isDefault) : true
+      }));
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User details updated successfully',
+      data: user
+    });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update user details'
+    });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserDetails,
+  updateUser,
   toggleUserStatus,
   deleteUser,
   getUserBookings,

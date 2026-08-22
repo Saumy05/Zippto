@@ -6,6 +6,7 @@ const { isAdmin } = require('../../middleware/roleMiddleware');
 const {
   getAllUsers,
   getUserDetails,
+  updateUser,
   toggleUserStatus,
   deleteUser,
   getUserBookings,
@@ -22,6 +23,8 @@ const toggleStatusValidation = [
 router.get('/users', authenticate, isAdmin, getAllUsers);
 router.get('/users/bookings', authenticate, isAdmin, getAllUserBookings);
 router.get('/users/:id', authenticate, isAdmin, getUserDetails);
+router.put('/users/:id', authenticate, isAdmin, updateUser);
+router.patch('/users/:id', authenticate, isAdmin, updateUser);
 router.put('/users/:id/status', authenticate, isAdmin, toggleStatusValidation, toggleUserStatus);
 router.delete('/users/:id', authenticate, isAdmin, deleteUser);
 router.get('/users/:id/bookings', authenticate, isAdmin, getUserBookings);

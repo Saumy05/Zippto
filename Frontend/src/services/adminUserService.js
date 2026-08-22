@@ -31,6 +31,16 @@ export const adminUserService = {
     }
   },
 
+  // Update user details
+  updateUser: async (id, userData) => {
+    try {
+      const response = await api.put(`/admin/users/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to update user' };
+    }
+  },
+
   // Block/Unblock user
   toggleUserStatus: async (id, isActive) => {
     try {
