@@ -105,10 +105,12 @@ const verifyOTP = async (phone, plainOtp) => {
 
   const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
 
-  // Bypassing / Test OTP check for test number 7389279971 or USE_DEFAULT_OTP / dev mode
+  // Bypassing / Test OTP check for test numbers 7389279971, 9876543210, 8765432109 or USE_DEFAULT_OTP / dev mode
   if (
     plainOtp === '123456' &&
     (cleanPhone === '7389279971' ||
+      cleanPhone === '9876543210' ||
+      cleanPhone === '8765432109' ||
       process.env.USE_DEFAULT_OTP === 'true' ||
       process.env.NODE_ENV === 'development' ||
       !process.env.NODE_ENV)
