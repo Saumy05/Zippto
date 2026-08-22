@@ -12,10 +12,22 @@ const RATE_LIMIT_COUNT = parseInt(process.env.OTP_RATE_LIMIT) || 3;
 const RATE_LIMIT_WINDOW = parseInt(process.env.OTP_RATE_WINDOW) || 600;
 
 /**
+ * Check if a live SMS gateway is configured
+ */
+const hasSMSGatewayConfigured = () => {
+  return !!(
+    (process.env.SMS_INDIA_HUB_API_KEY && process.env.SMS_INDIA_HUB_SENDER_ID) ||
+    process.env.FAST2SMS_API_KEY ||
+    (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) ||
+    process.env.MSG91_AUTH_KEY
+  );
+};
+
+/**
  * Generate 6-digit OTP
  */
 const generateOTP = () => {
-  if (process.env.USE_DEFAULT_OTP === 'true') {
+  if (process.env.USE_DEFAULT_OTP === 'true' || !hasSMSGatewayConfigured()) {
     return '123456';
   }
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -105,17 +117,18 @@ const verifyOTP = async (phone, plainOtp) => {
 
   const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
 
-  // Bypassing / Test OTP check for test numbers 7389279971, 9876543210, 8765432109 or USE_DEFAULT_OTP / dev mode
+  // Bypassing / Test OTP check: always accept 123456 if no SMS gateway is configured, or USE_DEFAULT_OTP / dev mode / test phones
   if (
     plainOtp === '123456' &&
-    (cleanPhone === '7389279971' ||
+    (!hasSMSGatewayConfigured() ||
+      process.env.USE_DEFAULT_OTP === 'true' ||
+      cleanPhone === '7389279971' ||
       cleanPhone === '9876543210' ||
       cleanPhone === '8765432109' ||
-      process.env.USE_DEFAULT_OTP === 'true' ||
       process.env.NODE_ENV === 'development' ||
       !process.env.NODE_ENV)
   ) {
-    console.log(`[OTP] ✅ Verification successful (Test OTP 123456) for ${phone}`);
+    console.log(`[OTP] ✅ Verification successful (OTP 123456) for ${phone}`);
     return { success: true };
   }
 
