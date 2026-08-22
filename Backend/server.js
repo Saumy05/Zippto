@@ -68,8 +68,13 @@ app.use(cors({
 
 // CORS configuration finished above
 
-// Body parser middleware
-app.use(express.json({ limit: '50mb' }));
+// Body parser middleware with rawBody capture for webhook signature verification
+app.use(express.json({
+  limit: '50mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 

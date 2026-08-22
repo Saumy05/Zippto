@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const Booking = require('../../models/Booking');
 const User = require('../../models/User');
 const Vendor = require('../../models/Vendor');
@@ -279,6 +280,211 @@ const verifyPaymentWebhook = async (req, res) => {
       success: false,
       message: 'Failed to verify payment'
     });
+  }
+};
+
+/**
+ * Handle server-to-server Razorpay Webhook Events
+ * POST /api/payments/webhook
+ */
+const handleRazorpayWebhook = async (req, res) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    if (!signature) {
+      return res.status(400).json({ success: false, message: 'Missing Razorpay signature header' });
+    }
+
+    // Get Webhook Secret from ENV or DB Settings
+    let webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      const settings = await Settings.getSettings().catch(() => null);
+      webhookSecret = settings?.razorpayWebhookSecret;
+    }
+
+    if (!webhookSecret) {
+      console.warn('[Webhook] ⚠️ Razorpay Webhook Secret not configured in .env or Settings. Signature verification bypassed.');
+    } else {
+      const rawBody = req.rawBody || JSON.stringify(req.body);
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex');
+
+      if (expectedSignature !== signature) {
+        console.error('[Webhook] ❌ Invalid Razorpay Webhook signature');
+        return res.status(400).json({ success: false, message: 'Invalid webhook signature' });
+      }
+    }
+
+    const { event, payload } = req.body;
+    console.log(`[Webhook] 📩 Received Razorpay webhook event: ${event}`);
+
+    // 1. Payment Captured / Order Paid
+    if (event === 'payment.captured' || event === 'order.paid') {
+      const paymentEntity = payload?.payment?.entity || {};
+      const orderEntity = payload?.order?.entity || {};
+      const razorpayOrderId = paymentEntity.order_id || orderEntity.id;
+      const razorpayPaymentId = paymentEntity.id;
+
+      if (razorpayOrderId) {
+        const booking = await Booking.findOne({ razorpayOrderId });
+        if (booking && booking.paymentStatus !== PAYMENT_STATUS.SUCCESS) {
+          booking.paymentStatus = PAYMENT_STATUS.SUCCESS;
+          booking.paymentMethod = 'online';
+          booking.razorpayPaymentId = razorpayPaymentId;
+          booking.paymentId = razorpayPaymentId;
+
+          const bill = await VendorBill.findOne({ bookingId: booking._id });
+          if (
+            bill ||
+            booking.status === BOOKING_STATUS.AWAITING_PAYMENT ||
+            booking.status === BOOKING_STATUS.WORK_DONE ||
+            booking.status === BOOKING_STATUS.VISITED ||
+            booking.status === BOOKING_STATUS.IN_PROGRESS
+          ) {
+            booking.status = BOOKING_STATUS.COMPLETED;
+            booking.completedAt = booking.completedAt || new Date();
+          } else {
+            booking.status = BOOKING_STATUS.CONFIRMED;
+          }
+
+          await booking.save();
+
+          // Settle vendor bill and earnings if bill exists
+          if (bill && booking.vendorId) {
+            const vendorEarning = bill.vendorTotalEarning || 0;
+            bill.status = 'paid';
+            bill.paidAt = new Date();
+            await bill.save();
+
+            await Vendor.findByIdAndUpdate(booking.vendorId, {
+              $inc: { 'wallet.earnings': vendorEarning }
+            });
+
+            if (vendorEarning > 0) {
+              await Transaction.create({
+                vendorId: booking.vendorId,
+                bookingId: booking._id,
+                amount: vendorEarning,
+                type: 'earnings_credit',
+                paymentMethod: 'system',
+                status: 'completed',
+                description: `Earnings ₹${vendorEarning} credited for booking #${booking.bookingNumber} (Webhook Verified)`,
+                metadata: {
+                  type: 'earnings_increase',
+                  billId: bill._id.toString(),
+                  serviceEarning: bill.vendorServiceEarning,
+                  partsEarning: bill.vendorPartsEarning
+                }
+              });
+            }
+          }
+
+          // Record stats in Daily Earning Tracker
+          recordBookingEarning({
+            date: new Date(),
+            totalRevenue: Number(bill ? bill.grandTotal : booking.finalAmount) || 0,
+            platformCommission: Number(bill ? bill.companyRevenue : (booking.finalAmount * 0.2)) || 0,
+            vendorEarnings: Number(bill ? bill.vendorTotalEarning : (booking.finalAmount * 0.8)) || 0,
+            totalGST: Number(bill ? bill.totalGST : 0) || 0,
+            totalTDS: 0
+          }).catch(err => console.error('[Webhook] Daily tracker failed:', err));
+
+          // Notify User
+          await createNotification({
+            userId: booking.userId,
+            type: 'payment_success',
+            title: 'Payment Successful',
+            message: `Payment of ₹${booking.finalAmount} for booking #${booking.bookingNumber} confirmed via gateway.`,
+            relatedId: booking._id,
+            relatedType: 'payment',
+            priority: 'high'
+          });
+
+          // Notify Vendor
+          if (booking.vendorId) {
+            await createNotification({
+              vendorId: booking.vendorId,
+              type: 'payment_received',
+              title: 'Payment Received (Online)',
+              message: `Payment of ₹${booking.finalAmount} received online for booking #${booking.bookingNumber}.`,
+              relatedId: booking._id,
+              relatedType: 'booking',
+              priority: 'high'
+            });
+          }
+
+          // Emit real-time socket events
+          try {
+            const { getIO } = require('../../sockets');
+            const io = getIO();
+            if (io) {
+              const socketPayload = {
+                bookingId: booking._id,
+                id: booking._id,
+                bookingNumber: booking.bookingNumber,
+                status: booking.status,
+                paymentStatus: booking.paymentStatus,
+                paymentMethod: booking.paymentMethod,
+                finalAmount: booking.finalAmount,
+                completedAt: booking.completedAt
+              };
+              if (booking.vendorId) {
+                io.to(`vendor_${booking.vendorId}`).emit('booking_updated', socketPayload);
+                io.to(`vendor_${booking.vendorId}`).emit('payment_success', socketPayload);
+              }
+              io.to(`user_${booking.userId}`).emit('booking_updated', socketPayload);
+              io.to(`user_${booking.userId}`).emit('payment_success', socketPayload);
+              io.to(`tracking_${booking._id}`).emit('booking_updated', socketPayload);
+              io.to(`tracking_${booking._id}`).emit('payment_success', socketPayload);
+            }
+          } catch (sockErr) {
+            console.error('[Webhook] Socket emit error:', sockErr);
+          }
+        }
+      }
+    }
+
+    // 2. Payment Failed
+    else if (event === 'payment.failed') {
+      const paymentEntity = payload?.payment?.entity || {};
+      const razorpayOrderId = paymentEntity.order_id;
+      if (razorpayOrderId) {
+        const booking = await Booking.findOne({ razorpayOrderId });
+        if (booking && booking.paymentStatus !== PAYMENT_STATUS.SUCCESS) {
+          booking.paymentStatus = PAYMENT_STATUS.FAILED;
+          await booking.save();
+
+          await createNotification({
+            userId: booking.userId,
+            type: 'payment_failed',
+            title: 'Payment Failed',
+            message: `Payment for booking #${booking.bookingNumber} failed. Please retry payment.`,
+            relatedId: booking._id,
+            relatedType: 'payment',
+            priority: 'high'
+          });
+        }
+      }
+    }
+
+    // 3. Refund Processed
+    else if (event === 'refund.processed' || event === 'refund.created') {
+      const refundEntity = payload?.refund?.entity || {};
+      const paymentId = refundEntity.payment_id;
+      if (paymentId) {
+        const booking = await Booking.findOne({ razorpayPaymentId: paymentId });
+        if (booking) {
+          booking.paymentStatus = PAYMENT_STATUS.REFUNDED;
+          await booking.save();
+        }
+      }
+    }
+
+    res.status(200).json({ status: 'ok', eventHandled: event });
+  } catch (error) {
+    console.error('[Webhook] Razorpay webhook handling error:', error);
+    res.status(500).json({ success: false, message: 'Webhook processing error' });
   }
 };
 
@@ -785,6 +991,7 @@ const verifyPlanPayment = async (req, res) => {
 module.exports = {
   createPaymentOrder,
   verifyPaymentWebhook,
+  handleRazorpayWebhook,
   processWalletPayment,
   processRefund,
   getPaymentHistory,

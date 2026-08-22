@@ -1132,12 +1132,28 @@ const completeSelfJob = async (req, res) => {
       }
     });
 
+    // 3. Send SMS with OTP to Customer Phone
+    try {
+      const { sendSMS } = require('../../services/smsService');
+      const customerPhone = booking.userPhone || booking.phone || booking.address?.phone;
+      if (customerPhone) {
+        sendSMS(
+          customerPhone,
+          `Zippto: Service bill of ₹${grandTotal} is ready for booking #${booking.bookingNumber}. Your completion OTP is ${payOtp}. Share this with the professional only after payment/inspection.`,
+          payOtp
+        ).catch(smsErr => console.error('[WorkDone] SMS error:', smsErr));
+      }
+    } catch (smsErr) {
+      console.error('[WorkDone] SMS setup error:', smsErr);
+    }
+
     const io = req.app.get('io');
     if (io) {
       io.to(`user_${booking.userId}`).emit('booking_updated', {
         bookingId: booking._id,
         status: BOOKING_STATUS.WORK_DONE,
-        finalAmount: grandTotal
+        finalAmount: grandTotal,
+        paymentOtp: payOtp
       });
     }
 

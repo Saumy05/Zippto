@@ -6,6 +6,7 @@ const { isUser } = require('../../middleware/roleMiddleware');
 const {
   createPaymentOrder,
   verifyPaymentWebhook,
+  handleRazorpayWebhook,
   processWalletPayment,
   processRefund,
   getPaymentHistory,
@@ -36,6 +37,9 @@ const refundValidation = [
 ];
 
 // Routes
+// Server-to-Server Razorpay Webhook
+router.post('/webhook', handleRazorpayWebhook);
+
 router.post('/create-order', authenticate, isUser, createOrderValidation, createPaymentOrder);
 router.post('/verify', authenticate, isUser, verifyPaymentValidation, verifyPaymentWebhook);
 router.post('/wallet', authenticate, isUser, walletPaymentValidation, processWalletPayment);
