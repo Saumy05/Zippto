@@ -550,18 +550,22 @@ const updateVendor = async (req, res) => {
     } = req.body;
 
     // Check email conflict
-    if (email && email.toLowerCase() !== (vendor.email || '').toLowerCase()) {
-      const existingEmail = await Vendor.findOne({
-        _id: { $ne: id },
-        email: email.toLowerCase().trim()
-      });
-      if (existingEmail) {
-        return res.status(400).json({
-          success: false,
-          message: 'Another vendor already exists with this email address'
+    if (email && email.trim()) {
+      if (email.toLowerCase().trim() !== (vendor.email || '').toLowerCase()) {
+        const existingEmail = await Vendor.findOne({
+          _id: { $ne: id },
+          email: email.toLowerCase().trim()
         });
+        if (existingEmail) {
+          return res.status(400).json({
+            success: false,
+            message: 'Another vendor already exists with this email address'
+          });
+        }
+        vendor.email = email.toLowerCase().trim();
       }
-      vendor.email = email.toLowerCase().trim();
+    } else if (email === '' || email === null) {
+      vendor.email = undefined;
     }
 
     // Check phone conflict

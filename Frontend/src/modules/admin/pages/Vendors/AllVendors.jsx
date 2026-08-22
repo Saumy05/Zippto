@@ -438,7 +438,7 @@ const AllVendors = () => {
                         <div>
                           <p className="font-bold text-gray-900 text-xs">{vendor.name}</p>
                           <p className="text-[10px] text-gray-500 font-mono">{vendor.phone}</p>
-                          <p className="text-[10px] text-gray-400">{vendor.email}</p>
+                          <p className="text-[10px] text-gray-400">{vendor.email || 'No email registered'}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3">
