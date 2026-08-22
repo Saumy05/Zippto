@@ -39,6 +39,33 @@ const Dashboard = memo(() => {
     rating: 0,
     totalReviews: 0,
   });
+
+  // Dynamic Tier & Satisfaction calculations
+  const tierBadge = useMemo(() => {
+    if (stats.rating >= 4.8 && stats.completedJobs >= 10) {
+      return { label: 'Top Tier', color: 'bg-emerald-50 text-emerald-700 border-emerald-200/60' };
+    }
+    if (stats.rating >= 4.5 && stats.completedJobs >= 5) {
+      return { label: 'Pro Partner', color: 'bg-blue-50 text-blue-700 border-blue-200/60' };
+    }
+    if (stats.completedJobs > 0) {
+      return { label: 'Active Partner', color: 'bg-indigo-50 text-indigo-700 border-indigo-200/60' };
+    }
+    return { label: 'New Partner', color: 'bg-slate-100 text-slate-600 border-slate-200' };
+  }, [stats.rating, stats.completedJobs]);
+
+  const customerSatisfaction = useMemo(() => {
+    if (!stats.totalReviews || stats.totalReviews === 0 || !stats.rating || stats.rating === 0) {
+      return { percentage: 0, label: 'No reviews yet', barColor: 'bg-slate-300', textColor: 'text-slate-400' };
+    }
+    const pct = Math.min(100, Math.round((stats.rating / 5) * 100));
+    return {
+      percentage: pct,
+      label: `${pct}% Positive`,
+      barColor: pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-amber-500' : 'bg-red-500',
+      textColor: pct >= 80 ? 'text-emerald-600' : pct >= 60 ? 'text-amber-600' : 'text-red-600',
+    };
+  }, [stats.rating, stats.totalReviews]);
   const [vendorProfile, setVendorProfile] = useState({
     name: 'Vendor Name',
     businessName: 'Business Name',
@@ -629,8 +656,8 @@ const Dashboard = memo(() => {
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5 sm:p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-extrabold text-slate-900">Performance Metrics</h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                  Top Tier
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tierBadge.color}`}>
+                  {tierBadge.label}
                 </span>
               </div>
 
@@ -640,10 +667,12 @@ const Dashboard = memo(() => {
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <FiStar className="w-4 h-4 text-amber-500 fill-amber-500" />
                     <span className="text-2xl font-black text-slate-900">
-                      {stats.rating > 0 ? stats.rating.toFixed(1) : '5.0'}
+                      {stats.rating > 0 ? stats.rating.toFixed(1) : '0.0'}
                     </span>
                   </div>
-                  <p className="text-xs font-semibold text-slate-600">Average Rating</p>
+                  <p className="text-xs font-semibold text-slate-600">
+                    {stats.totalReviews > 0 ? `Average Rating (${stats.totalReviews})` : 'Average Rating'}
+                  </p>
                 </div>
 
                 {/* Completed Card */}
@@ -658,10 +687,15 @@ const Dashboard = memo(() => {
               <div className="pt-2 border-t border-slate-100 space-y-3">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                   <span>Customer Satisfaction</span>
-                  <span className="text-emerald-600 font-bold">98% Positive</span>
+                  <span className={`font-bold ${customerSatisfaction.textColor}`}>
+                    {customerSatisfaction.label}
+                  </span>
                 </div>
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full rounded-full w-[98%]" />
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${customerSatisfaction.barColor}`}
+                    style={{ width: `${customerSatisfaction.percentage}%` }}
+                  />
                 </div>
               </div>
             </div>
