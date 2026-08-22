@@ -504,6 +504,13 @@ const deleteVendor = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete vendor error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete vendor'
+    });
+  }
+};
+
 /**
  * Update vendor details (Admin)
  */
