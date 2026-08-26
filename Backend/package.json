@@ -1,7 +1,7 @@
 {
-  "name": "Appzeto-backend",
+  "name": "zippto-backend",
   "version": "1.0.0",
-  "description": "Backend API for Appzeto platform",
+  "description": "Backend API for zippto platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
