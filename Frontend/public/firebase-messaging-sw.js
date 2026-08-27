@@ -8,19 +8,26 @@
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-// Firebase configuration - Production values
+// Parse Firebase configuration dynamically from registration URL parameters
+const params = new URLSearchParams(self.location.search);
 const firebaseConfig = {
-  apiKey: 'AIzaSyA1Nu3UuEGIETspFboy2AcFgbeWm9anCLc',
-  authDomain: 'zippto-4f61f.firebaseapp.com',
-  projectId: 'zippto-4f61f',
-  storageBucket: 'zippto-4f61f.firebasestorage.app',
-  messagingSenderId: '84084901153',
-  appId: '1:84084901153:web:b3b3a298435787008faa60',
-  measurementId: 'G-H6E8EXY4ZV'
+  apiKey: params.get('apiKey') || '',
+  authDomain: params.get('authDomain') || '',
+  projectId: params.get('projectId') || '',
+  storageBucket: params.get('storageBucket') || '',
+  messagingSenderId: params.get('messagingSenderId') || '',
+  appId: params.get('appId') || '',
+  measurementId: params.get('measurementId') || ''
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase if valid config present
+if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+  try {
+    firebase.initializeApp(firebaseConfig);
+  } catch (err) {
+    console.warn('[SW] Firebase init notice:', err);
+  }
+}
 
 // Get messaging instance
 const messaging = firebase.messaging();
