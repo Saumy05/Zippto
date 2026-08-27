@@ -587,7 +587,7 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
                     setUploadingIcon(true);
                     try {
                       const categorySlug = form.slug || form.title?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                      const folder = `Homster/${categorySlug}/icons`;
+                      const folder = `Zippto/${categorySlug}/icons`;
                       const response = await serviceService.uploadImage(file, folder);
                       if (response.success && response.imageUrl) {
                         setForm((p) => ({ ...p, homeIconUrl: response.imageUrl }));

@@ -366,7 +366,63 @@ const LandingPage = () => {
                 <div className="relative w-full max-w-[260px] sm:max-w-[280px] mb-10">
                    <div className="absolute inset-0 bg-brand/20 blur-[80px] rounded-full scale-50 group-hover:scale-100 transition-transform duration-700"></div>
                    <div className="relative z-10 p-2.5 sm:p-4 bg-gray-900 rounded-[2.5rem] sm:rounded-[3rem] border-[4px] sm:border-[8px] border-white shadow-2xl aspect-[9/18.5] overflow-hidden transform group-hover:rotate-1 transition-transform duration-500">
-                      <img src="/homster user.png" alt="Zippto User App" className="w-full h-full object-cover rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
+                      <div className="w-full h-full bg-slate-900 text-white p-3 sm:p-3.5 flex flex-col justify-between rounded-2xl select-none">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-1.5">
+                              <img src="/zippto_logo.png" alt="Zippto" className="w-6 h-6 rounded-full border border-white/20" />
+                              <span className="text-xs font-bold tracking-wide text-white">ZIP<span className="text-brand">PTO</span></span>
+                            </div>
+                            <span className="text-[9px] bg-brand/20 text-brand px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                              <FaMapMarkerAlt className="text-[8px]" /> Indore
+                            </span>
+                          </div>
+                          <div className="bg-gradient-to-br from-brand/30 to-slate-800 p-2.5 rounded-xl border border-brand/20 mb-2.5 text-left">
+                            <p className="text-[8px] text-brand font-semibold uppercase tracking-wider">Fastest Tech Care</p>
+                            <p className="text-xs font-bold text-white leading-tight">Doorstep Repair in 15 Mins</p>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1.5 mb-2.5">
+                            <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-md bg-brand/20 text-brand flex items-center justify-center text-xs">⚡</div>
+                              <div className="text-left">
+                                <p className="text-[9px] font-bold text-white leading-none">Electrician</p>
+                                <p className="text-[7px] text-gray-400">from ₹149</p>
+                              </div>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-md bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs">🔧</div>
+                              <div className="text-left">
+                                <p className="text-[9px] font-bold text-white leading-none">Plumbing</p>
+                                <p className="text-[7px] text-gray-400">from ₹199</p>
+                              </div>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs">❄️</div>
+                              <div className="text-left">
+                                <p className="text-[9px] font-bold text-white leading-none">AC Service</p>
+                                <p className="text-[7px] text-gray-400">from ₹499</p>
+                              </div>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs">🧹</div>
+                              <div className="text-left">
+                                <p className="text-[9px] font-bold text-white leading-none">Cleaning</p>
+                                <p className="text-[7px] text-gray-400">from ₹299</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-slate-800/90 border border-brand/30 rounded-xl p-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
+                            <div className="text-left">
+                              <p className="text-[8px] text-gray-400 leading-none">Active Booking</p>
+                              <p className="text-[10px] font-bold text-white">Xpert on the way</p>
+                            </div>
+                          </div>
+                          <span className="text-[8px] bg-brand text-white font-bold px-2 py-0.5 rounded-md">12 min</span>
+                        </div>
+                      </div>
                       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded-full"></div>
                    </div>
                 </div>
@@ -385,7 +441,39 @@ const LandingPage = () => {
                 <div className="relative w-full max-w-[260px] sm:max-w-[280px] mb-10">
                    <div className="absolute inset-0 bg-cyan-500/20 blur-[80px] rounded-full scale-50 group-hover:scale-100 transition-transform duration-700"></div>
                    <div className="relative z-10 p-2.5 sm:p-4 bg-gray-900 rounded-[2.5rem] sm:rounded-[3rem] border-[4px] sm:border-[8px] border-white shadow-2xl aspect-[9/18.5] overflow-hidden transform group-hover:-rotate-1 transition-transform duration-500">
-                      <img src="/homster vendor.png" alt="Zippto Vendor App" className="w-full h-full object-contain bg-gray-50 rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
+                      <div className="w-full h-full bg-slate-900 text-white p-3 sm:p-3.5 flex flex-col justify-between rounded-2xl select-none">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs font-black">Z</div>
+                              <span className="text-xs font-bold tracking-wide text-white">VENDOR<span className="text-cyan-400">OS</span></span>
+                            </div>
+                            <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online
+                            </span>
+                          </div>
+                          <div className="bg-gradient-to-br from-cyan-950/60 to-slate-800 p-2.5 rounded-xl border border-cyan-500/30 mb-2.5 text-left">
+                            <div className="flex justify-between items-center mb-1">
+                              <p className="text-[8px] text-cyan-300 font-semibold uppercase tracking-wider">Today's Earnings</p>
+                              <span className="text-[8px] text-emerald-400 font-bold">+18.5%</span>
+                            </div>
+                            <p className="text-base font-extrabold text-white leading-none mb-1">₹4,850.00</p>
+                            <p className="text-[8px] text-gray-400">7 Jobs Completed • 0 Cancelled</p>
+                          </div>
+                          <div className="bg-cyan-500/10 border border-cyan-500/40 rounded-xl p-2 mb-2 text-left">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[8px] font-bold text-cyan-400 uppercase tracking-wide">🔔 New Job Request</span>
+                              <span className="text-[8px] text-white font-bold">₹899</span>
+                            </div>
+                            <p className="text-[10px] font-bold text-white leading-tight">Split AC Jet Cleaning</p>
+                            <p className="text-[8px] text-gray-400">Vijay Nagar • 1.8 km away</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button className="bg-slate-800 border border-white/10 text-gray-400 text-[9px] font-bold py-1.5 rounded-lg">Pass</button>
+                          <button className="bg-cyan-500 text-slate-950 text-[9px] font-bold py-1.5 rounded-lg">Accept (45s)</button>
+                        </div>
+                      </div>
                       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded-full"></div>
                    </div>
                 </div>
@@ -404,7 +492,42 @@ const LandingPage = () => {
                 <div className="relative w-full max-w-[260px] sm:max-w-[280px] mb-10">
                    <div className="absolute inset-0 bg-orange-500/20 blur-[80px] rounded-full scale-50 group-hover:scale-100 transition-transform duration-700"></div>
                    <div className="relative z-10 p-2.5 sm:p-4 bg-gray-900 rounded-[2.5rem] sm:rounded-[3rem] border-[4px] sm:border-[8px] border-white shadow-2xl aspect-[9/18.5] overflow-hidden transform group-hover:rotate-1 transition-transform duration-500">
-                      <img src="/Homster xpert .png" alt="Homestr Xpert App" className="w-full h-full object-contain bg-gray-50 rounded-2xl brightness-95 group-hover:brightness-100 transition-all duration-500" />
+                      <div className="w-full h-full bg-slate-900 text-white p-3 sm:p-3.5 flex flex-col justify-between rounded-2xl select-none">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-black">XP</div>
+                              <span className="text-xs font-bold tracking-wide text-white">XPERT<span className="text-orange-400">PRO</span></span>
+                            </div>
+                            <span className="text-[9px] bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-full font-medium">GPS Active</span>
+                          </div>
+                          <div className="relative bg-slate-800 rounded-xl border border-orange-500/30 p-2.5 mb-2.5 overflow-hidden">
+                            <div className="relative z-10 flex items-center justify-between mb-1.5">
+                              <span className="text-[8px] text-orange-400 font-bold uppercase">Route Navigation</span>
+                              <span className="text-[8px] text-white font-extrabold bg-orange-500/30 px-1.5 py-0.5 rounded">ETA: 6 min</span>
+                            </div>
+                            <div className="relative z-10 flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-orange-500 text-white flex items-center justify-center text-xs font-bold shadow-md">
+                                <FaTruck />
+                              </div>
+                              <div className="text-left">
+                                <p className="text-[10px] font-bold text-white leading-tight">En Route to Customer</p>
+                                <p className="text-[8px] text-gray-400">Scheme 54, Indore</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="bg-white/5 border border-white/10 rounded-xl p-2 text-left mb-2">
+                            <p className="text-[8px] text-gray-400">Customer OTP Required for Start</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-[10px] font-bold text-white">Rahul S.</span>
+                              <span className="text-[8px] text-emerald-400 font-bold">Verified Parts ✓</span>
+                            </div>
+                          </div>
+                        </div>
+                        <button className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9px] font-bold py-2 rounded-lg shadow-lg flex items-center justify-center gap-1">
+                          <FaMapMarkerAlt className="text-[8px]" /> Start Navigation
+                        </button>
+                      </div>
                       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded-full"></div>
                    </div>
                 </div>

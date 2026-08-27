@@ -10,13 +10,13 @@ importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compa
 
 // Firebase configuration - Production values
 const firebaseConfig = {
-  apiKey: 'AIzaSyB0p9BwQh6P4U6RpNI783Mf2yLV96ZFemo',
-  authDomain: 'homster-notifications.firebaseapp.com',
-  projectId: 'homster-notifications',
-  storageBucket: 'homster-notifications.firebasestorage.app',
-  messagingSenderId: '330091938710',
-  appId: '1:330091938710:web:b58aa8c0830445b1fa53b7',
-  measurementId: 'G-E493PBZLED'
+  apiKey: 'AIzaSyA1Nu3UuEGIETspFboy2AcFgbeWm9anCLc',
+  authDomain: 'zippto-4f61f.firebaseapp.com',
+  projectId: 'zippto-4f61f',
+  storageBucket: 'zippto-4f61f.firebasestorage.app',
+  messagingSenderId: '84084901153',
+  appId: '1:84084901153:web:b3b3a298435787008faa60',
+  measurementId: 'G-H6E8EXY4ZV'
 };
 
 // Initialize Firebase
