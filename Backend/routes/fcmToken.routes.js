@@ -147,19 +147,27 @@ router.delete('/remove-all', authenticate, async (req, res) => {
  */
 router.post('/test', authenticate, async (req, res) => {
   try {
-    const userId = req.user._id || req.userId;
-    const Model = getModelForRole(req.userRole);
-    const doc = await Model.findById(userId);
+    const { token } = req.body;
+    let tokens = [];
 
-    if (!doc) {
-      return res.status(404).json({ success: false, error: 'Account not found' });
+    if (token) {
+      tokens = [token];
+    } else {
+      const userId = req.user._id || req.userId;
+      const Model = getModelForRole(req.userRole);
+      const doc = await Model.findById(userId);
+
+      if (!doc) {
+        return res.status(404).json({ success: false, error: 'Account not found' });
+      }
+
+      tokens = [...(doc.fcmTokens || []), ...(doc.fcmTokenMobile || [])];
     }
 
-    const tokens = [...(doc.fcmTokens || []), ...(doc.fcmTokenMobile || [])];
-    const uniqueTokens = [...new Set(tokens)];
+    const uniqueTokens = [...new Set(tokens.filter(Boolean))];
 
     if (uniqueTokens.length === 0) {
-      return res.json({ success: false, error: 'No FCM tokens found for account' });
+      return res.status(400).json({ success: false, error: 'No FCM tokens provided or found in account' });
     }
 
     const response = await sendPushNotification(uniqueTokens, {
