@@ -31,6 +31,12 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+  'https://www.zippto.in',
+  'https://zippto.in',
+  'https://api.zippto.in',
   'https://www.homster.in',
   'https://homster.in',
   'https://api.homster.in'
@@ -40,8 +46,12 @@ if (process.env.FRONTEND_URL) {
   // Support comma-separated URLs in .env
   const envOrigins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
   envOrigins.forEach(origin => {
-    if (!allowedOrigins.includes(origin)) {
+    if (origin && !allowedOrigins.includes(origin)) {
       allowedOrigins.push(origin);
+      if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
+        allowedOrigins.push(`https://${origin}`);
+        allowedOrigins.push(`http://${origin}`);
+      }
     }
   });
 }
@@ -51,8 +61,16 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // Allow allowedOrigins or any Vercel preview URL for this project
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('.vercel.app')) {
+    // Allow allowedOrigins or any Zippto / Vercel / Localhost URL
+    const isAllowed = 
+      allowedOrigins.indexOf(origin) !== -1 ||
+      origin.includes('zippto.in') ||
+      origin.includes('homster.in') ||
+      origin.includes('.vercel.app') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1');
+
+    if (isAllowed) {
       callback(null, true);
     } else {
       console.log('BLOCKED CORS ORIGIN:', origin);
