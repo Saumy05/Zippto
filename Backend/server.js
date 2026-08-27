@@ -251,6 +251,7 @@ app.use('/api/payments', require('./routes/payment-routes/payment.routes'));
 
 // Notification routes
 app.use('/api/notifications', require('./routes/notification.routes'));
+app.use('/api/fcm-tokens', require('./routes/fcmToken.routes'));
 
 // Chat routes (In-app real-time messaging)
 app.use('/api/chat', require('./routes/chat.routes'));
