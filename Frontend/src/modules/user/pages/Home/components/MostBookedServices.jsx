@@ -102,20 +102,51 @@ const MostBookedServices = React.memo(({ services, onServiceClick, onAddClick })
         </h2>
       </div>
 
-      <div ref={cardsRef} className="flex gap-2 overflow-x-auto px-6 lg:px-4 pb-2 scrollbar-hide lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible">
+      <div ref={cardsRef} className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
         {serviceList.map((service, index) => (
-          <DetailedServiceCard
+          <div
             key={service.id || index}
-            title={service.title}
-            rating={service.rating}
-            reviews={service.reviews}
-            price={service.price}
-            originalPrice={service.originalPrice}
-            discount={service.discount}
-            image={service.image}
             onClick={() => onServiceClick?.(service)}
-            onAddClick={() => onAddClick?.(service)}
-          />
+            className="w-[124px] xs:w-[136px] sm:w-[155px] md:w-[220px] shrink-0 flex flex-col bg-white rounded-md overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-md border border-[#E5E7EB]"
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)' }}
+          >
+            <div className="relative w-full aspect-square overflow-hidden bg-gray-50">
+              {service.discount && (
+                <div className="absolute top-1.5 left-1.5 bg-[#B33A35] text-white text-[8.5px] font-bold px-1.5 py-0.2 rounded-sm shadow-xs z-10">
+                  {service.discount.toString().toUpperCase().includes('OFF') ? service.discount : `${service.discount}% OFF`}
+                </div>
+              )}
+              <img
+                src={service.image}
+                alt={service.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+            </div>
+            <div className="p-2 flex flex-col flex-1">
+              <h3 className="text-[11px] md:text-xs font-semibold text-gray-900 leading-snug mb-1 line-clamp-2 min-h-[30px] font-heading">
+                {service.title}
+              </h3>
+              {service.rating && (
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-[#F59E0B] text-xs">★</span>
+                  <span className="text-[10px] font-bold text-gray-900">{service.rating}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between mt-auto pt-1">
+                <span className="text-xs md:text-sm font-bold text-gray-900">₹{service.price}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddClick?.(service);
+                  }}
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-sm bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 active:scale-95 transition-all"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiCalendar, FiRepeat, FiShoppingCart, FiUser } from 'react-icons/fi';
-import { HiHome, HiCalendar, HiRefresh, HiShoppingCart, HiUser } from 'react-icons/hi';
+import { FiHome, FiCalendar, FiShoppingCart, FiUser } from 'react-icons/fi';
+import { HiHome, HiCalendar, HiShoppingCart, HiUser } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import { useCart } from '../../../../context/CartContext';
 
@@ -9,9 +9,9 @@ const BottomNav = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const { cartCount } = useCart();
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkModalState = () => {
       setIsModalOpen(
         document.body.style.overflow === 'hidden' ||
@@ -38,7 +38,7 @@ const BottomNav = React.memo(() => {
 
   const getActiveTab = () => {
     const path = location.pathname;
-    if (path === '/user' || path === '/user/' || path.includes('dashboard')) return 'home';
+    if (path === '/user' || path === '/user/' || path.includes('dashboard') || path.includes('/category/')) return 'home';
     if (path.includes('/my-bookings') || path.includes('/booking/')) return 'bookings';
     if (path.includes('/cart') || path.includes('/checkout')) return 'cart';
     if (path.includes('/account') || path.includes('/settings') || path.includes('/profile')) return 'account';
@@ -55,12 +55,17 @@ const BottomNav = React.memo(() => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden safe-area-bottom"
       style={{ WebkitBackfaceVisibility: 'hidden' }}
     >
-      {/* Sleek Compact Mobile Bottom Bar */}
-      <div className="w-full bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1">
-        <div className="flex items-center justify-between max-w-md mx-auto h-12">
+      {/* Mobile Glassmorphic Bottom Bar with DoorMeets Rust Design System */}
+      <div
+        className="w-full bg-white/95 backdrop-blur-[20px] border-t border-slate-100 rounded-t-[20px] px-4 py-2"
+        style={{
+          boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.15)'
+        }}
+      >
+        <div className="flex items-center justify-between max-w-md mx-auto">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             const IconComponent = isActive ? item.filledIcon : item.icon;
@@ -69,50 +74,37 @@ const BottomNav = React.memo(() => {
               <button
                 key={item.id}
                 onClick={() => handleTabClick(item.path)}
-                className="relative flex flex-col items-center justify-center flex-1 h-full focus:outline-none transition-all duration-200"
+                className="relative focus:outline-none transition-all duration-300"
               >
-                {/* Active Indicator Top Line */}
-                {isActive && (
+                {isActive ? (
                   <motion.div
-                    layoutId="activeTabIndicator"
-                    className="absolute -top-1 w-6 h-0.8 rounded-full bg-[#0B132B]"
-                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  />
-                )}
-
-                <div className="relative flex flex-col items-center justify-center">
-                  <motion.div
-                    animate={{
-                      scale: isActive ? 1.05 : 1,
-                    }}
-                    transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                    className={`relative p-1 rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? 'bg-[#0B132B] text-amber-400 shadow-2xs'
-                        : 'text-slate-400 hover:text-slate-600'
-                    }`}
+                    layoutId="activeBottomNavPill"
+                    className="flex items-center gap-1.5 bg-[#B33A35] text-white px-3.5 py-2 rounded-full max-w-[135px] shadow-md shadow-[#B33A35]/25"
+                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                   >
-                    <IconComponent className="w-4.5 h-4.5" />
+                    <IconComponent className="w-4 h-4 text-white shrink-0" />
+                    <span className="text-xs font-bold tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                      {item.label}
+                    </span>
+                  </motion.div>
+                ) : (
+                  <div
+                    className="relative w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95"
+                    style={{
+                      backgroundColor: 'rgba(179, 58, 53, 0.12)',
+                      color: '#B33A35'
+                    }}
+                  >
+                    <IconComponent className="w-5 h-5 text-[#B33A35]" />
 
                     {/* Cart Counter Badge */}
                     {item.isCart && cartCount > 0 && (
-                      <span className="absolute -top-1 -right-1.5 bg-red-500 text-white font-black text-[8px] min-w-[15px] h-[15px] px-0.5 rounded-full flex items-center justify-center ring-2 ring-white shadow-2xs">
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center ring-2 ring-white shadow-xs">
                         {cartCount > 9 ? '9+' : cartCount}
                       </span>
                     )}
-                  </motion.div>
-
-                  {/* Label */}
-                  <span
-                    className={`text-[9.5px] leading-none mt-0.5 tracking-tight transition-all duration-200 ${
-                      isActive
-                        ? 'font-extrabold text-[#0B132B]'
-                        : 'font-medium text-slate-500'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </div>
+                  </div>
+                )}
               </button>
             );
           })}

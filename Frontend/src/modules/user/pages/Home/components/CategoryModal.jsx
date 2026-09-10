@@ -203,26 +203,26 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] touch-none"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] touch-none"
             onClick={onClose}
             onTouchMove={(e) => e.preventDefault()}
           />
 
-          {/* Bottom Sheet Modal Container (Full Edge-to-Edge Sheet Overlay) */}
+          {/* Bottom Sheet Modal Container (Mobile Bottom Sheet rounded-t-[24px], Desktop modal popup rounded-2xl max-w-xl) */}
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
-            className="fixed bottom-0 left-0 right-0 z-[9999] w-full bg-white rounded-t-[32px] max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overscroll-y-contain shadow-2xl border-t border-gray-100"
+            className="fixed bottom-0 left-0 right-0 md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-xl md:w-full z-[9999] w-full bg-white rounded-t-[24px] md:rounded-2xl max-h-[85vh] sm:max-h-[90vh] overflow-y-auto overscroll-y-contain shadow-2xl border-t md:border border-gray-100"
             style={{
               willChange: 'transform',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
             }}
           >
-            {/* Top Handle Pill */}
-            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 mb-1"></div>
+            {/* Top Handle Pill (Mobile only) */}
+            <div className="md:hidden w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-3 mb-1"></div>
 
             {isRedirecting ? (
               <div className="flex flex-col items-center justify-center min-h-[35vh] py-12">
@@ -234,24 +234,24 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                 >
                   <FiCheck className="w-10 h-10 text-green-500" />
                 </motion.div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Service Added!</h3>
+                <h3 className="text-xl font-bold font-heading text-gray-900 mb-2">Service Added!</h3>
                 <p className="text-gray-500 text-sm">Proceeding to checkout...</p>
               </div>
             ) : (
               <div>
                 {/* Header Bar */}
-                <div className="sticky top-0 bg-white/95 backdrop-blur-md z-10 px-5 pt-2 pb-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="sticky top-0 bg-white/95 backdrop-blur-md z-10 px-5 pt-3 pb-4 border-b border-gray-100 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {view === 'services' && (
                       <button
                         onClick={handleBackToBrands}
                         className="p-1.5 rounded-full hover:bg-gray-100 text-gray-700 transition-colors"
                       >
-                        <FiArrowLeft className="w-6 h-6" />
+                        <FiArrowLeft className="w-5 h-5" />
                       </button>
                     )}
                     <div>
-                      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                      <h2 className="text-xl sm:text-2xl font-bold font-heading text-gray-900 tracking-tight">
                         {view === 'brands' ? (category?.title || 'Categories') : (selectedBrand?.title || 'Services')}
                       </h2>
                       {view === 'services' && <p className="text-xs text-gray-500 font-medium">Select a service to add</p>}
@@ -259,13 +259,13 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {loading && <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>}
+                    {loading && <div className="w-5 h-5 border-2 border-[#B33A35] border-t-transparent rounded-full animate-spin"></div>}
                     <button
                       onClick={onClose}
                       className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
                       aria-label="Close"
                     >
-                      <FiX className="w-6 h-6" />
+                      <FiX className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -273,10 +273,10 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                 {/* Content Body */}
                 <div className="px-5 py-6">
                   {loading && (view === 'brands' ? brands.length === 0 : services.length === 0) ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-6 animate-pulse">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 animate-pulse">
                       {[1, 2, 3, 4, 5, 6].map((i) => (
                         <div key={i} className="flex flex-col items-center">
-                          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 rounded-full mb-3"></div>
+                          <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gray-200 rounded-md mb-2"></div>
                           <div className="h-3 w-16 bg-gray-200 rounded"></div>
                         </div>
                       ))}
@@ -284,16 +284,16 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                   ) : (
                     <>
                       {view === 'brands' ? (
-                        // Brands / Subcategories Grid (Matching Screenshot 2 - Circular Avatars)
+                        // Brands / Subcategories Grid
                         brands.length > 0 ? (
-                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-y-7 gap-x-4">
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-y-6 gap-x-4">
                             {brands.map((brand) => (
                               <div
                                 key={brand.id || brand._id}
                                 onClick={() => handleBrandClick(brand)}
                                 className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
                               >
-                                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-50 flex items-center justify-center shadow-sm overflow-hidden border border-gray-100 group-hover:shadow-md transition-all relative">
+                                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-md sm:rounded-2xl bg-gray-50 flex items-center justify-center shadow-xs overflow-hidden border border-gray-100 group-hover:shadow-md transition-all relative">
                                   {brand.icon ? (
                                     <img
                                       src={toAssetUrl(brand.icon)}
@@ -302,15 +302,15 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                       loading="lazy"
                                     />
                                   ) : (
-                                    <FiLayers className="w-8 h-8 text-gray-300" />
+                                    <FiLayers className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                                   )}
                                   {brand.badge && (
-                                    <span className="absolute bottom-1 bg-purple-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                    <span className="absolute bottom-1 bg-[#B33A35] text-white text-[8px] sm:text-[9px] font-bold px-1.5 py-0.2 rounded-full shadow-xs">
                                       {brand.badge}
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs font-semibold text-gray-800 text-center mt-2.5 leading-tight line-clamp-2 px-1">
+                                <p className="text-xs font-semibold text-gray-800 text-center mt-2 leading-tight line-clamp-2 px-1">
                                   {brand.title}
                                 </p>
                               </div>
@@ -324,14 +324,14 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                       ) : (
                         // Services List
                         services.length > 0 ? (
-                          <div className="space-y-4">
+                          <div className="space-y-3.5">
                             {services.map((svc) => (
-                              <div key={svc.id || svc._id} className="flex justify-between items-center p-4 border border-gray-100 rounded-2xl hover:shadow-md transition-shadow bg-gray-50/50">
+                              <div key={svc.id || svc._id} className="flex justify-between items-center p-3.5 border border-gray-100 rounded-xl hover:shadow-md transition-shadow bg-gray-50/50">
                                 <div className="flex-1 pr-4">
-                                  <h3 className="font-bold text-gray-900 text-base leading-snug mb-1">{svc.title}</h3>
+                                  <h3 className="font-bold text-gray-900 text-sm sm:text-base leading-snug mb-1">{svc.title}</h3>
                                   <p className="text-xs text-gray-500 line-clamp-2 mb-2">{svc.description}</p>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-lg font-black text-emerald-600">₹{svc.discountPrice || svc.basePrice}</span>
+                                    <span className="text-base sm:text-lg font-black text-emerald-600">₹{svc.discountPrice || svc.basePrice}</span>
                                     {svc.discountPrice && svc.discountPrice < svc.basePrice && (
                                       <span className="text-xs text-gray-400 line-through font-bold opacity-60">₹{svc.basePrice}</span>
                                     )}
@@ -339,16 +339,16 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                 </div>
                                 <button
                                   onClick={() => handleServiceClick(svc)}
-                                  className="px-5 py-2.5 bg-green-50 text-green-700 rounded-xl text-sm font-bold flex items-center gap-1.5 hover:bg-green-100 active:scale-95 transition-all shadow-sm"
+                                  className="px-4 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-xs sm:text-sm font-bold flex items-center gap-1.5 active:scale-95 transition-all shadow-xs shrink-0"
                                 >
-                                  <FiPlus className="w-4 h-4" /> Add
+                                  <FiPlus className="w-3.5 h-3.5" /> Add
                                 </button>
                               </div>
                             ))}
 
                             {/* Bottom Disclaimer */}
-                            <div className="mt-8 pt-4 border-t border-gray-100 flex items-start gap-3 bg-gray-50 p-4 rounded-2xl">
-                              <div className="mt-0.5 text-gray-400">
+                            <div className="mt-6 pt-3 border-t border-gray-100 flex items-start gap-2.5 bg-gray-50 p-3 rounded-xl">
+                              <div className="mt-0.5 text-gray-400 shrink-0">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>

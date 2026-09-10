@@ -461,7 +461,7 @@ const getPublicHomeData = async (req, res) => {
     // Fetch both in parallel
     let [categoriesRes, homeContent] = await Promise.all([
       Category.find(categoryQuery)
-        .select('title slug homeIconUrl homeBadge hasSaleBadge')
+        .select('title slug homeIconUrl imageUrl homeBadge hasSaleBadge')
         .sort({ homeOrder: 1 })
         .lean(),
       HomeContent.getHomeContent(cityId)
@@ -469,7 +469,7 @@ const getPublicHomeData = async (req, res) => {
 
     if (!categoriesRes || categoriesRes.length === 0) {
       categoriesRes = await Category.find({ status: 'active' })
-        .select('title slug homeIconUrl homeBadge hasSaleBadge')
+        .select('title slug homeIconUrl imageUrl homeBadge hasSaleBadge')
         .sort({ homeOrder: 1 })
         .lean();
     }
@@ -478,58 +478,89 @@ const getPublicHomeData = async (req, res) => {
       id: cat._id.toString(),
       title: cat.title,
       slug: cat.slug,
-      icon: cat.homeIconUrl || '',
+      icon: cat.homeIconUrl || cat.imageUrl || '',
       badge: cat.homeBadge || '',
       hasSaleBadge: cat.hasSaleBadge || false
     }));
 
     let formattedContent = null;
     if (homeContent) {
-      const contentObj = homeContent.toObject();
+      const contentObj = homeContent.toObject ? homeContent.toObject() : homeContent;
       formattedContent = {
         banners: (contentObj.banners || []).map(item => ({
+          id: item._id ? item._id.toString() : (item.id || ''),
           imageUrl: item.imageUrl,
+          text: item.text || '',
           targetCategoryId: item.targetCategoryId?.toString() || null,
-          slug: item.slug,
-          order: item.order
+          targetServiceId: item.targetServiceId?.toString() || null,
+          slug: item.slug || '',
+          scrollToSection: item.scrollToSection || '',
+          order: item.order || 0
         })),
         promos: (contentObj.promos || []).map(item => ({
-          title: item.title,
-          subtitle: item.subtitle,
-          imageUrl: item.imageUrl,
+          id: item._id ? item._id.toString() : (item.id || ''),
+          title: item.title || '',
+          subtitle: item.subtitle || '',
+          buttonText: item.buttonText || 'Explore',
+          gradientClass: item.gradientClass || 'from-blue-600 to-blue-800',
+          imageUrl: item.imageUrl || '',
           targetCategoryId: item.targetCategoryId?.toString() || null,
-          order: item.order
+          targetServiceId: item.targetServiceId?.toString() || null,
+          slug: item.slug || '',
+          scrollToSection: item.scrollToSection || '',
+          order: item.order || 0
         })),
         curated: (contentObj.curated || []).map(item => ({
-          title: item.title,
-          gifUrl: item.gifUrl,
-          order: item.order
+          id: item._id ? item._id.toString() : (item.id || ''),
+          title: item.title || '',
+          gifUrl: item.gifUrl || '',
+          youtubeUrl: item.youtubeUrl || '',
+          order: item.order || 0
         })),
         noteworthy: (contentObj.noteworthy || []).map(item => ({
-          title: item.title,
-          imageUrl: item.imageUrl,
+          id: item._id ? item._id.toString() : (item.id || ''),
+          title: item.title || '',
+          imageUrl: item.imageUrl || '',
           targetCategoryId: item.targetCategoryId?.toString() || null,
-          order: item.order
+          targetServiceId: item.targetServiceId?.toString() || null,
+          slug: item.slug || '',
+          order: item.order || 0
         })),
         booked: (contentObj.booked || []).map(item => ({
-          title: item.title,
-          rating: item.rating,
-          price: item.price,
-          imageUrl: item.imageUrl,
+          id: item._id ? item._id.toString() : (item.id || ''),
+          title: item.title || '',
+          rating: item.rating || '',
+          reviews: item.reviews || '',
+          price: item.price || '',
+          originalPrice: item.originalPrice || '',
+          discount: item.discount || '',
+          imageUrl: item.imageUrl || '',
           targetCategoryId: item.targetCategoryId?.toString() || null,
-          order: item.order
+          targetServiceId: item.targetServiceId?.toString() || null,
+          slug: item.slug || '',
+          order: item.order || 0
         })),
         categorySections: (contentObj.categorySections || []).map(section => ({
-          title: section.title,
+          id: section._id ? section._id.toString() : (section.id || ''),
+          title: section.title || '',
           seeAllTargetCategoryId: section.seeAllTargetCategoryId?.toString() || null,
+          seeAllTargetServiceId: section.seeAllTargetServiceId?.toString() || null,
+          seeAllSlug: section.seeAllSlug || '',
           cards: (section.cards || []).map(card => ({
-            title: card.title,
-            imageUrl: card.imageUrl,
-            price: card.price,
-            rating: card.rating,
-            targetCategoryId: card.targetCategoryId?.toString() || null
+            id: card._id ? card._id.toString() : (card.id || ''),
+            title: card.title || '',
+            badge: card.badge || '',
+            imageUrl: card.imageUrl || '',
+            price: card.price || '',
+            originalPrice: card.originalPrice || '',
+            discount: card.discount || '',
+            rating: card.rating || '',
+            reviews: card.reviews || '',
+            targetCategoryId: card.targetCategoryId?.toString() || null,
+            targetServiceId: card.targetServiceId?.toString() || null,
+            slug: card.slug || ''
           })),
-          order: section.order
+          order: section.order || 0
         })),
         isBannersVisible: contentObj.isBannersVisible ?? true,
         isPromosVisible: contentObj.isPromosVisible ?? true,

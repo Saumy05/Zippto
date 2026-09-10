@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
 import {
   FiSearch,
   FiUser,
@@ -22,16 +22,20 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
+import { useCity } from '../../../../context/CityContext';
 import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 import { publicCatalogService } from '../../../../services/catalogService';
+import CitySelectorModal from '../../components/common/CitySelectorModal';
+import OfferBannerSlider from '../../components/common/OfferBannerSlider';
 
 const toAssetUrl = (url) => {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+  if (!url || typeof url !== 'string') return '';
+  if (url.includes('/uploads/')) {
+    const uploadPath = url.substring(url.indexOf('/uploads/'));
     const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
-    return `${base}/${url.replace(/^\/+/, '')}`;
+    return `${base}${uploadPath}`;
   }
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
   // Frontend public static assets
   return url;
 };
@@ -137,11 +141,37 @@ const DEFAULT_CATEGORY_CONFIG = {
 
 const UserDashboard = () => {
   const navigate = useNavigate();
+  const { categorySlug } = useParams();
   const { cartItems = [], cartCount = 0, addToCart, removeItem } = useCart() || {};
+  const { currentCity } = useCity() || {};
+  const [homeContent, setHomeContent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [newsletterInput, setNewsletterInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCityModalOpen, setIsCityModalOpen] = useState(false);
+
+  // Fetch dynamic home content (including admin banners and categories) from API
+  useEffect(() => {
+    const fetchHomeContent = async () => {
+      try {
+        const cityId = currentCity?._id || currentCity?.id;
+        const res = await publicCatalogService.getHomeData(cityId);
+        if (res?.success) {
+          if (res.homeContent) {
+            setHomeContent(res.homeContent);
+          }
+          if (Array.isArray(res.categories) && res.categories.length > 0) {
+            setCategories(res.categories);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load home content in UserDashboard:', err);
+      }
+    };
+    fetchHomeContent();
+  }, [currentCity]);
 
   // Interactive Flow States
   const [activeCategoryModal, setActiveCategoryModal] = useState(null);
@@ -868,7 +898,240 @@ const UserDashboard = () => {
     };
   };
 
-  // Lower Sections Data
+  // 6 Primary Explore Services Configured to Exactly Match the User's Reference Screenshot
+  const exploreServices = useMemo(() => [
+    {
+      id: 'handyman',
+      slug: 'electrician',
+      title: 'Electrician /\nPlumber / Carpenter',
+      displayTitle: 'Electrician / Plumber / Carpenter',
+      image: '/cat_3d/handyman.jpg',
+      count: '3 trades available',
+      isCombo: true,
+      subCategories: [
+        { id: 'electrician', name: 'Electrician Services', icon: '⚡', image: '/cat_images/electrician.jpg', slug: 'electrician' },
+        { id: 'plumber', name: 'Plumber Services', icon: '🚰', image: '/cat_images/plumber.jpg', slug: 'plumber' },
+        { id: 'carpenter', name: 'Carpenter Services', icon: '🪚', image: '/cat_images/carpenter.jpg', slug: 'carpenter' },
+      ]
+    },
+    {
+      id: 'cleaning-service',
+      slug: 'cleaning-service',
+      title: 'Cleaning Service',
+      displayTitle: 'Cleaning Service',
+      image: '/cat_3d/cleaning.jpg',
+      count: '4 services available',
+      subCategories: [
+        { id: 'full-home', name: 'Full Home Deep Clean', icon: '✨', image: '/cat_cleaning.png' },
+        { id: 'bathroom', name: 'Bathroom Cleaning', icon: '🧼', image: '/intense_bathroom_cleaning.png' },
+        { id: 'kitchen', name: 'Kitchen Degreasing', icon: '🍳', image: '/intense_bathroom_cleaning.png' },
+        { id: 'sofa-carpet', name: 'Sofa & Carpet Wash', icon: '🛋️', image: '/mattress_cleaning.png' }
+      ]
+    },
+    {
+      id: 'pest-control',
+      slug: 'pest-control',
+      title: 'Pest Control',
+      displayTitle: 'Pest Control',
+      image: '/cat_3d/pest_control.jpg',
+      count: '3 services available',
+      subCategories: [
+        { id: 'cockroach', name: 'Cockroach & Ant Control', icon: '🪲', image: '/intense_bathroom_cleaning.png' },
+        { id: 'termite', name: 'Termite Treatment', icon: '🪵', image: '/drill_wall_decor.png' },
+        { id: 'bedbug', name: 'Bed Bug Eradication', icon: '🛏️', image: '/mattress_cleaning.png' }
+      ]
+    },
+    {
+      id: 'painting-service',
+      slug: 'painting-service',
+      title: 'Painting Service',
+      displayTitle: 'Painting Service',
+      image: '/cat_3d/painting.jpg',
+      count: '3 services available',
+      subCategories: [
+        { id: 'interior-paint', name: 'Full Interior Painting', icon: '🎨', image: '/drill_wall_decor.png' },
+        { id: 'waterproofing', name: 'Seepage Waterproofing', icon: '💧', image: '/tap_plumbing_repair.png' },
+        { id: 'accent-wall', name: 'Accent Wall Textures', icon: '🖼️', image: '/drill_wall_decor.png' }
+      ]
+    },
+    {
+      id: 'construction-renovation',
+      slug: 'construction-renovation',
+      title: 'Construction & Renovation',
+      displayTitle: 'Construction & Renovation',
+      image: '/cat_3d/construction.jpg',
+      count: '3 services available',
+      subCategories: [
+        { id: 'civil-repair', name: 'Civil Repair Work', icon: '🧱', image: '/switchboard_repair.png' },
+        { id: 'false-ceiling', name: 'False Ceiling & Gypsum', icon: '🏗️', image: '/ac_repair_wall.png' },
+        { id: 'tile-laying', name: 'Tile & Marble Laying', icon: '📐', image: '/drill_wall_decor.png' }
+      ]
+    },
+    {
+      id: 'solar-service',
+      slug: 'solar-service',
+      title: 'Solar Service',
+      displayTitle: 'Solar Service',
+      image: '/cat_3d/solar.jpg',
+      count: '3 services available',
+      subCategories: [
+        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', icon: '⚡', image: '/native_water_purifier.png' },
+        { id: 'solar-panel-washing', name: 'Solar Panel Washing', icon: '🧼', image: '/intense_bathroom_cleaning.png' },
+        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', icon: '☀️', image: '/native_water_purifier.png' }
+      ]
+    }
+  ], []);
+
+  // Dynamic categories mapped from Admin API with fallback to exploreServices
+  const displayCategories = useMemo(() => {
+    if (categories && categories.length > 0) {
+      return categories.map((cat) => {
+        const matchedExplore = exploreServices.find(e => e.slug === cat.slug || e.id === cat.id);
+        const matchedMain = mainCategories.find(m => m.slug === cat.slug || m.id === cat.id);
+
+        return {
+          id: cat.id,
+          slug: cat.slug,
+          title: cat.title,
+          displayTitle: cat.title,
+          image: cat.icon ? toAssetUrl(cat.icon) : (matchedExplore?.image || matchedMain?.image || '/cat_electrician_plumber.png'),
+          badge: cat.badge || null,
+          hasSaleBadge: cat.hasSaleBadge || false,
+          isCombo: matchedExplore?.isCombo || false,
+          subCategories: matchedExplore?.subCategories || matchedMain?.subCategories || []
+        };
+      });
+    }
+    return exploreServices;
+  }, [categories, exploreServices, mainCategories]);
+
+  const RESERVED_SLUGS = useMemo(() => [
+    'login', 'signup', 'dashboard', 'home-legacy', 'native', 'cart',
+    'help-support', 'cancellation-policy', 'about-homestr', 'checkout',
+    'rewards', 'account', 'my-bookings', 'booking', 'booking-confirmation',
+    'settings', 'manage-payment-methods', 'manage-addresses', 'wallet',
+    'my-plan', 'my-rating', 'update-profile', 'notifications'
+  ], []);
+
+  // Helper to load category detail view dynamically from DB or fallback registry
+  const loadCategoryView = useCallback(async (slug) => {
+    if (!slug) {
+      setActiveDetailView(null);
+      return;
+    }
+
+    const cleanSlug = slug.toLowerCase().trim();
+    if (RESERVED_SLUGS.includes(cleanSlug)) return;
+
+    // 1. Match from displayCategories or exploreServices or mainCategories or fallback
+    const matchedCategory = displayCategories.find(
+      c => c.slug === cleanSlug || c.id === cleanSlug
+    ) || exploreServices.find(
+      c => c.slug === cleanSlug || c.id === cleanSlug
+    ) || mainCategories.find(
+      c => c.slug === cleanSlug || c.id === cleanSlug
+    ) || {
+      slug: cleanSlug,
+      id: cleanSlug,
+      title: cleanSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+    };
+
+    // 2. Resolve default/fallback template
+    const fallbackDetail = resolveCategoryDetail(matchedCategory);
+
+    // 3. Try fetching live brand services from MongoDB
+    try {
+      publicCatalogService.invalidateCache();
+      const brandRes = await publicCatalogService.getBrands({ categorySlug: cleanSlug });
+
+      if (brandRes.success && Array.isArray(brandRes.brands) && brandRes.brands.length > 0) {
+        const dynamicSubGrid = brandRes.brands.map(b => ({
+          id: b.slug,
+          name: b.title,
+          image: toAssetUrl(b.icon || b.imageUrl || b.logo || '/cat_electrician_plumber.png')
+        }));
+
+        const dynamicSections = [];
+        brandRes.brands.forEach(b => {
+          if (b.sections && b.sections.length > 0) {
+            b.sections.forEach(sec => {
+              dynamicSections.push({
+                id: (b.slug || sec.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-'),
+                sectionTitle: sec.title || b.title,
+                items: (sec.cards || []).map(card => ({
+                  id: card.id || card._id,
+                  title: card.title,
+                  rating: card.rating || null,
+                  reviews: card.reviews || null,
+                  price: card.price ? `₹${card.price}` : (card.basePrice ? `₹${card.basePrice}` : '₹99'),
+                  desc: card.subtitle || card.features?.join(' • ') || card.description || 'Professional certified home service package.',
+                  image: toAssetUrl(card.imageUrl || b.icon || '/cat_electrician_plumber.png')
+                }))
+              });
+            });
+          }
+        });
+
+        if (dynamicSections.length > 0) {
+          setActiveDetailView({
+            title: matchedCategory.title,
+            bannerTitle: `${matchedCategory.title.toUpperCase()} SERVICES`,
+            rating: matchedCategory.rating || 'New',
+            reviews: matchedCategory.reviews || null,
+            desc: `Book certified, professional ${matchedCategory.title} experts at transparent doorstep prices.`,
+            subGrid: dynamicSubGrid,
+            detailedSections: dynamicSections
+          });
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching live brand services:', err);
+    }
+
+    // Fallback template
+    setActiveDetailView(fallbackDetail);
+  }, [displayCategories, exploreServices, mainCategories, RESERVED_SLUGS]);
+
+  // Synchronize categorySlug from URL with category view
+  useEffect(() => {
+    if (categorySlug) {
+      loadCategoryView(categorySlug);
+    } else {
+      setActiveDetailView(null);
+    }
+  }, [categorySlug, loadCategoryView]);
+
+  const handleCategoryClick = (cat) => {
+    if (cat.isCombo) {
+      setActiveCategoryModal(cat);
+    } else {
+      const slug = cat.slug || cat.id;
+      navigate(`/user/category/${slug}`);
+    }
+  };
+
+  const handleBannerClick = (banner) => {
+    if (!banner) return;
+    if (banner.targetCategoryId) {
+      const cat = displayCategories.find(c => c.id === banner.targetCategoryId || c.slug === banner.targetCategoryId) ||
+                  exploreServices.find(c => c.id === banner.targetCategoryId || c.slug === banner.targetCategoryId) ||
+                  mainCategories.find(c => c.id === banner.targetCategoryId || c.slug === banner.targetCategoryId);
+      if (cat) {
+        handleCategoryClick(cat);
+        return;
+      }
+      navigate(`/user/category/${banner.targetCategoryId}`);
+      return;
+    }
+    if (banner.slug) {
+      navigate(`/user/category/${banner.slug}`);
+      return;
+    }
+    toast.success('Browsing featured service banner');
+  };
+
+  // Base fallback presets for Lower Sections
   const newNoteworthyServices = [
     { id: 'native-ro', title: 'Native Water Purifier', image: '/native_water_purifier.png', subtitle: 'Native RO', isGreenText: false },
     { id: 'bath-kitchen-clean', title: 'Bathroom & Kitchen Clean', image: '/intense_bathroom_cleaning.png', subtitle: 'Deep Clean', isGreenText: false },
@@ -885,6 +1148,67 @@ const UserDashboard = () => {
     { id: 'mattress-clean-mb', title: 'Mattress cleaning', image: '/mattress_cleaning.png', rating: '4.85', isInstant: false, price: '₹599', originalPrice: '', discountBadge: '' },
     { id: 'geyser-check-mb', title: 'Geyser check-up', image: '/geyser_checkup.png', rating: '4.72', isInstant: false, price: '₹249', originalPrice: '', discountBadge: '' },
   ];
+
+  // Dynamic Noteworthy Services with fallback to base preset
+  const displayNoteworthy = useMemo(() => {
+    if (homeContent?.noteworthy && homeContent.noteworthy.length > 0) {
+      return homeContent.noteworthy.map((item, idx) => ({
+        id: item.id || `nw-${idx}`,
+        title: item.title,
+        image: item.imageUrl ? toAssetUrl(item.imageUrl) : '/cat_electrician_plumber.png',
+        subtitle: item.subtitle || 'Featured',
+        isGreenText: false,
+        slug: item.slug,
+        targetCategoryId: item.targetCategoryId,
+        targetServiceId: item.targetServiceId
+      }));
+    }
+    return newNoteworthyServices;
+  }, [homeContent?.noteworthy]);
+
+  // Dynamic Most Booked Services with fallback to base preset
+  const displayMostBooked = useMemo(() => {
+    if (homeContent?.booked && homeContent.booked.length > 0) {
+      return homeContent.booked.map((item, idx) => ({
+        id: item.id || `mb-${idx}`,
+        title: item.title,
+        image: item.imageUrl ? toAssetUrl(item.imageUrl) : '/cat_electrician_plumber.png',
+        rating: item.rating || '4.80',
+        isInstant: true,
+        price: item.price ? (String(item.price).startsWith('₹') ? item.price : `₹${item.price}`) : '₹199',
+        originalPrice: item.originalPrice ? (String(item.originalPrice).startsWith('₹') ? item.originalPrice : `₹${item.originalPrice}`) : '',
+        discountBadge: item.discount || '',
+        slug: item.slug,
+        targetCategoryId: item.targetCategoryId,
+        targetServiceId: item.targetServiceId
+      }));
+    }
+    return mostBookedServices;
+  }, [homeContent?.booked]);
+
+  // Unified click handler for dynamic cards
+  const handleServiceCardClick = (card) => {
+    if (!card) return;
+    if (card.targetCategoryId) {
+      const cat = displayCategories.find(c => c.id === card.targetCategoryId || c.slug === card.targetCategoryId) ||
+                  mainCategories.find(c => c.id === card.targetCategoryId || c.slug === card.targetCategoryId);
+      if (cat) {
+        handleCategoryClick(cat);
+        return;
+      }
+      navigate(`/user/category/${card.targetCategoryId}`);
+      return;
+    }
+    if (card.slug) {
+      navigate(`/user/category/${card.slug}`);
+      return;
+    }
+    if (card.targetServiceId) {
+      navigate(`/user/booking?serviceId=${card.targetServiceId}`);
+      return;
+    }
+    handleToggleAddService(card, 'Services');
+  };
 
   const cleaningEssentials = [
     { id: 'intense-clean-2b', title: 'Intense cleaning (2 bath)', image: '/intense_bathroom_cleaning.png', rating: '4.80', price: '₹872', originalPrice: '₹1,038', discountBadge: '8% OFF', isTextTile: false },
@@ -930,46 +1254,47 @@ const UserDashboard = () => {
   return (
     <div className={`min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-24 lg:pb-12 selection:bg-slate-900 selection:text-white transition-[padding] duration-200 ${mobileSearchOpen ? 'pt-[108px]' : 'pt-15'}`}>
       {/* -------------------------------------------------------------
-          TOP NAVBAR HEADER (Fixed Top Navbar - Never Hides on Scroll!)
+          TOP NAVBAR HEADER (Matching User Reference Image)
          ------------------------------------------------------------- */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 h-15 flex items-center justify-between gap-1.5 sm:gap-3">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
           
-          {/* LEFT: Zippto Speed Logo Icon & Brand Name */}
-          <Link to="/user" className="flex items-center gap-1.5 shrink-0 focus:outline-none group">
-            <img
-              src="/zippto_logo.png"
-              alt="ZIPPTO"
-              className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 rounded-xl object-contain shadow-xs transition-transform group-hover:scale-105"
-            />
-            <div className="flex flex-col text-left shrink-0">
-              <span className="text-xs xs:text-sm sm:text-base font-black tracking-tight text-[#0B132B] leading-none">
-                ZIPPTO
-              </span>
-              <span className="text-[7.5px] xs:text-[8px] sm:text-[9px] font-extrabold tracking-wider text-amber-500 uppercase leading-none mt-0.5 whitespace-nowrap">
-                HOME SERVICES
-              </span>
-            </div>
-          </Link>
+          {/* LEFT: App Icon Badge & Location + Greeting (Exactly as in Reference Screenshot) */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            {/* Dark Square App Icon Badge Matching Reference Screenshot */}
+            <Link to="/user" className="shrink-0 focus:outline-none group">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#091E3A] flex items-center justify-center text-white shadow-sm border border-slate-800/40 transition-transform group-hover:scale-105">
+                <span className="font-black text-xl tracking-tighter text-white font-sans">
+                  D
+                </span>
+              </div>
+            </Link>
 
-          {/* MIDDLE: Location Selector Pill */}
-          <div className="flex items-center gap-1 cursor-pointer group shrink min-w-0 px-1">
-            <FiMapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <div className="flex items-center gap-0.5 text-[10px] xs:text-[11px] sm:text-xs font-bold text-slate-900 leading-none truncate max-w-[90px] xs:max-w-[120px] sm:max-w-none">
-              <span className="truncate">{userCity}</span>
-              <FiChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-700 shrink-0 transition-colors" />
+            {/* Location Dropdown & "What you are looking for today" */}
+            <div className="flex flex-col text-left min-w-0">
+              <button
+                type="button"
+                onClick={() => setIsCityModalOpen(true)}
+                className="flex items-center gap-1 text-[11px] sm:text-xs text-slate-500 hover:text-slate-800 font-medium leading-tight truncate focus:outline-none cursor-pointer"
+              >
+                <span className="truncate">{userCity || 'Kudwa, Maharashtra 441614'}</span>
+                <FiChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              </button>
+              <h1 className="text-xs sm:text-sm md:text-base font-bold text-slate-900 leading-tight truncate">
+                What you are looking for today
+              </h1>
             </div>
           </div>
 
           {/* DESKTOP/TABLET NAVIGATION LINKS */}
-          <nav className="hidden md:flex items-center gap-1 xl:gap-1.5 shrink-0">
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 shrink-0">
             <NavLink
               to="/user"
               end
               className={({ isActive }) =>
                 `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
                   isActive
-                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                    ? 'font-extrabold text-[#A3342E] bg-red-50 border border-red-100 shadow-2xs'
                     : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`
               }
@@ -981,7 +1306,7 @@ const UserDashboard = () => {
               className={({ isActive }) =>
                 `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
                   isActive
-                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                    ? 'font-extrabold text-[#A3342E] bg-red-50 border border-red-100 shadow-2xs'
                     : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`
               }
@@ -989,99 +1314,61 @@ const UserDashboard = () => {
               Bookings
             </NavLink>
             <NavLink
-              to="/user/my-plan"
-              className={({ isActive }) =>
-                `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap ${
-                  isActive
-                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
-                    : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`
-              }
-            >
-              My Plan
-            </NavLink>
-            <NavLink
               to="/user/cart"
               className={({ isActive }) =>
                 `px-3 py-1.5 rounded-full text-xs transition-all whitespace-nowrap flex items-center gap-1 ${
                   isActive
-                    ? 'font-extrabold text-[#0B132B] bg-slate-100 border border-slate-200/80 shadow-2xs'
+                    ? 'font-extrabold text-[#A3342E] bg-red-50 border border-red-100 shadow-2xs'
                     : 'font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`
               }
             >
               Cart
               {cartCount > 0 && (
-                <span className="bg-red-500 text-white font-black text-[9px] px-1.5 py-0.2 rounded-full">
+                <span className="bg-[#A3342E] text-white font-black text-[9px] px-1.5 py-0.2 rounded-full">
                   {cartCount}
                 </span>
               )}
             </NavLink>
           </nav>
 
-          {/* CENTER: Integrated Search Bar (Desktop / Tablet) */}
-          <div className="hidden md:flex flex-1 max-w-xs xl:max-w-sm items-center mx-1">
-            <div className="relative w-full flex items-center">
-              <FiSearch className="absolute left-3 text-slate-400 w-4 h-4 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search electrician, plumber, AC repair, cleaning..."
-                className="w-full bg-slate-50 text-slate-900 text-xs font-medium rounded-full pl-9 pr-8 py-2 border border-slate-200 focus:bg-white focus:border-slate-900 outline-none transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 text-slate-400 hover:text-slate-600"
-                >
-                  <FiX className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* RIGHT: Action Icons (Language, Search, Login Button OR Profile Avatar) */}
-          <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-2.5 shrink-0">
+          {/* RIGHT: Action Circular Icons (Search, Notifications with Badge, Profile) */}
+          <div className="flex items-center gap-2 shrink-0">
             <LanguageToggle />
+
+            {/* Circular Search Button Matching Image */}
             <button
               onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className="md:hidden w-7.5 h-7.5 xs:w-8 xs:h-8 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shadow-2xs active:scale-95 cursor-pointer"
               aria-label="Search"
             >
-              <FiSearch className="w-3.5 h-3.5" />
+              <FiSearch className="w-4 h-4" />
             </button>
 
+            {/* Circular Notification Bell with Red Badge Matching Image */}
+            <Link
+              to="/user/notifications"
+              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shadow-2xs active:scale-95"
+              aria-label="Notifications"
+            >
+              <FiBell className="w-4 h-4" />
+              <span className="absolute -top-1 -right-1 bg-[#D32F2F] text-white font-bold text-[9px] min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-0.5 shadow-xs ring-2 ring-white">
+                24
+              </span>
+            </Link>
+
             {isLoggedIn ? (
-              <>
-                <Link
-                  to="/user/wallet"
-                  className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200/80 text-xs font-bold text-slate-800 transition-colors"
-                >
-                  <FiCreditCard className="w-3.5 h-3.5 text-slate-600" />
-                  <span>₹{walletBalance.toLocaleString('en-IN')}</span>
-                </Link>
-
-                <Link
-                  to="/user/notifications"
-                  className="relative w-7.5 h-7.5 xs:w-8 xs:h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors shrink-0"
-                  aria-label="Notifications"
-                >
-                  <FiBell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </Link>
-
-                <Link
-                  to="/user/account"
-                  className="w-7.5 h-7.5 xs:w-8 xs:h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-[#0B132B] text-white flex items-center justify-center text-xs font-black shrink-0 ring-2 ring-slate-100 hover:ring-slate-300 transition-all"
-                  title={userName || 'Account'}
-                >
-                  {userName ? userName.charAt(0).toUpperCase() : 'U'}
-                </Link>
-              </>
+              <Link
+                to="/user/account"
+                className="hidden sm:flex w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#091E3A] text-white items-center justify-center text-xs font-black shrink-0 ring-2 ring-slate-100 hover:ring-slate-300 transition-all"
+                title={userName || 'Account'}
+              >
+                {userName ? userName.charAt(0).toUpperCase() : 'U'}
+              </Link>
             ) : (
               <Link
                 to="/user/login"
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-[#0B132B] text-white hover:bg-slate-800 text-xs font-bold transition-all shadow-xs active:scale-95"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#091E3A] text-white hover:bg-slate-800 text-xs font-bold transition-all shadow-xs active:scale-95"
               >
                 <FiUser className="w-3.5 h-3.5 text-amber-400" />
                 <span>Login</span>
@@ -1090,19 +1377,19 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Mobile Expandable Search Bar — rendered inside fixed header, part of sticky stack */}
+        {/* Mobile Expandable Search Bar */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-200 ease-in-out bg-white/95 border-t border-slate-100 ${
+          className={`overflow-hidden transition-all duration-200 ease-in-out bg-white/98 border-t border-slate-100 ${
             mobileSearchOpen ? 'max-h-16 opacity-100 py-2 px-4' : 'max-h-0 opacity-0 py-0 px-4'
           }`}
         >
-          <div className="relative flex items-center">
+          <div className="relative flex items-center max-w-md mx-auto">
             <FiSearch className="absolute left-3 text-slate-400 w-4 h-4 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search electrician, plumber, AC service..."
+              placeholder="Search electrician, plumber, AC service, cleaning..."
               className="w-full bg-slate-50 text-slate-900 text-xs rounded-full pl-9 pr-8 py-2 border border-slate-200 focus:bg-white focus:border-slate-900 outline-none transition-all"
             />
             {searchQuery && (
@@ -1124,8 +1411,8 @@ const UserDashboard = () => {
         <main className="max-w-4xl mx-auto px-4 py-4 space-y-5">
           <div className="bg-[#0A1A2F] text-white rounded-2xl p-5 relative overflow-hidden shadow-md">
             <button
-              onClick={() => setActiveDetailView(null)}
-              className="mb-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all backdrop-blur-xs"
+              onClick={() => navigate('/user')}
+              className="mb-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all backdrop-blur-xs cursor-pointer"
             >
               <FiArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Categories</span>
@@ -1287,507 +1574,703 @@ const UserDashboard = () => {
         /* -------------------------------------------------------------
             MAIN DASHBOARD VIEW
            ------------------------------------------------------------- */
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 space-y-5">
+        <main className="max-w-4xl mx-auto px-3.5 sm:px-6 pt-3 pb-6 space-y-6">
           
-          {/* COMPACT HERO AWARENESS BANNER */}
-          <section className="flex w-full rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-100 border border-amber-200/80 p-4 sm:p-5 flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden shadow-2xs">
-            <div className="space-y-2 max-w-xl text-left">
-              <span className="font-extrabold text-[10px] tracking-widest text-slate-900 uppercase">
-                ZIPPTO HOME SERVICES
-              </span>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight tracking-tight">
-                All Your Home Needs, <br className="hidden sm:inline" />
-                One <span className="text-slate-900 underline decoration-amber-400">Reliable Partner.</span>
-              </h1>
-              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-semibold text-slate-700 flex-wrap">
-                <span className="bg-white/80 px-2 py-0.5 rounded border border-amber-200">⚡ Electrician</span>
-                <span className="bg-white/80 px-2 py-0.5 rounded border border-amber-200">🚰 Plumber</span>
-                <span className="bg-white/80 px-2 py-0.5 rounded border border-amber-200">🧹 Cleaning</span>
-                <span className="bg-white/80 px-2 py-0.5 rounded border border-amber-200">🎨 Painting</span>
-              </div>
-              <div className="pt-0.5">
-                <button
-                  onClick={() => toast.success('Explore verified home specialists below')}
-                  className="px-3.5 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-xs shadow-xs hover:bg-slate-800 transition-all"
-                >
-                  Explore Services
-                </button>
-              </div>
-            </div>
-
-            <div className="w-full md:w-1/4 flex items-center justify-center">
-              <img
-                src="/cat_electrician_plumber.png"
-                alt="Reliable Partner"
-                className="max-h-32 sm:max-h-40 object-contain drop-shadow-sm"
-              />
-            </div>
-          </section>
-
           {/* =============================================================
-              COMPACT CATEGORIES GRID (Texts outside the image card tiles)
+              1. EXPLORE MORE SERVICES GRID (Dynamic from Admin MongoDB)
              ============================================================= */}
-          <section className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">
-                Categories
+          {homeContent?.isCategoriesVisible !== false && (
+            <section className="space-y-3">
+              <h2 className="text-base sm:text-lg font-bold font-heading text-gray-900 tracking-tight">
+                Explore More Services
               </h2>
-            </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
-              {mainCategories.map((cat) => (
-                <div
-                  key={cat.id}
-                  onClick={() => setActiveCategoryModal(cat)}
-                  className="flex flex-col items-center text-center cursor-pointer group"
-                >
-                  {/* The Image Card Tile */}
-                  <div className="w-full aspect-square rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center p-2 overflow-hidden group-hover:border-slate-400 group-hover:shadow-md transition-all duration-300">
-                    <img
-                      src={cat.image}
-                      alt={cat.title}
-                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
+                {displayCategories.map((cat, index) => {
+                  const pastelColors = [
+                    { bg: '#FEFBE8', text: '#854D0E' }, // Yellow
+                    { bg: '#FAE8FF', text: '#86198F' }, // Purple
+                    { bg: '#FFE4E6', text: '#9F1239' }, // Rose
+                    { bg: '#FFF1F2', text: '#991B1B' }, // Red
+                    { bg: '#F0FDF4', text: '#166534' }, // Green
+                    { bg: '#E0F2FE', text: '#075985' }, // Sky
+                    { bg: '#EEF2FF', text: '#3730A3' }, // Indigo
+                    { bg: '#FEF3C7', text: '#92400E' }, // Amber
+                    { bg: '#EFF6FF', text: '#1E40AF' }  // Blue
+                  ];
+                  const scheme = pastelColors[index % pastelColors.length];
 
-                  {/* Title Text Outside the Card Tile */}
-                  <h3 className="mt-1.5 text-[10.5px] sm:text-xs font-bold text-slate-900 leading-snug text-center line-clamp-2 px-0.5">
-                    {cat.title}
-                  </h3>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* =============================================================
-              SECTION: "New and noteworthy" (Desktop / Tablet Only)
-             ============================================================= */}
-          <section className="hidden md:block space-y-2 relative">
-            <h2 className="text-base font-bold text-[#111827] tracking-tight">
-              New and noteworthy
-            </h2>
-
-            <div className="relative group/carousel">
-              <div className={`absolute left-1 sm:-left-2 top-[38%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-noteworthy']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-noteworthy', -220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll left"
-                >
-                  <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-
-              <div
-                id="carousel-noteworthy"
-                onScroll={() => handleCarouselScroll('carousel-noteworthy')}
-                className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
-              >
-                {newNoteworthyServices.map((card) => (
-                  <div
-                    key={card.id}
-                    className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
-                  >
-                    <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
-                      <img
-                        src={card.image}
-                        alt={card.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="mt-1.5 px-0.5">
-                      <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight font-sans line-clamp-1">
-                        {card.title}
-                      </h3>
-                      {card.subtitle && (
-                        <p className={`text-[10px] font-bold mt-0.5 ${card.isGreenText ? 'text-[#00875A]' : 'text-slate-500'}`}>
-                          {card.subtitle}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className={`absolute right-1 sm:-right-2 top-[38%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-noteworthy']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-noteworthy', 220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll right"
-                >
-                  <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* SECTION: "Most booked services" (Desktop / Tablet Only) */}
-          <section className="hidden md:block space-y-2 relative">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-[#111827] tracking-tight">
-                Most booked services
-              </h2>
-            </div>
-
-            <div className="relative group/carousel">
-              <div className={`absolute left-1 sm:-left-2 top-[40%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-most-booked']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-most-booked', -220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll left"
-                >
-                  <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-
-              <div
-                id="carousel-most-booked"
-                onScroll={() => handleCarouselScroll('carousel-most-booked')}
-                className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
-              >
-                {mostBookedServices.map((card) => (
-                  <div
-                    key={card.id}
-                    className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
-                  >
-                    <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
-                      <img
-                        src={card.image}
-                        alt={card.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                      />
-                      {card.discountBadge && (
-                        <span className="absolute top-1.5 left-1.5 bg-[#007F5F] text-white font-bold text-[8px] px-1 py-0.2 rounded-[2px] uppercase tracking-wide">
-                          {card.discountBadge}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="px-0.5">
-                      <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
-                        {card.title}
-                      </h3>
-
-                      <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
-                        <span className="flex items-center gap-0.5 font-bold">
-                          ★ {card.rating}
-                        </span>
-                        {card.isInstant && (
-                          <>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-[#00875A] font-bold">
-                              ⚡ Instant
-                            </span>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
-                        {card.originalPrice && (
-                          <span className="text-[9px] text-slate-400 line-through font-normal">
-                            {card.originalPrice}
+                  return (
+                    <div
+                      key={cat.id || index}
+                      onClick={() => handleCategoryClick(cat)}
+                      className="flex flex-col items-center text-center cursor-pointer group select-none relative"
+                    >
+                      {/* Category Grid Card: 1:1 aspect-square, rounded-md, shadow 0 2px 8px */}
+                      <div
+                        className="w-full aspect-square rounded-md border border-[#E5E7EB] flex items-center justify-center p-2.5 sm:p-3.5 overflow-hidden group-hover:scale-[1.03] transition-all duration-300 relative"
+                        style={{
+                          backgroundColor: scheme.bg,
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+                        }}
+                      >
+                        {cat.badge && (
+                          <span className="absolute top-1 right-1 bg-amber-500 text-white font-bold text-[8px] px-1 py-0.2 rounded-full uppercase shadow-xs">
+                            {cat.badge}
                           </span>
                         )}
+                        {cat.hasSaleBadge && !cat.badge && (
+                          <span className="absolute top-1 right-1 bg-red-600 text-white font-bold text-[8px] px-1 py-0.2 rounded-full uppercase shadow-xs">
+                            SALE
+                          </span>
+                        )}
+                        <img
+                          src={cat.image}
+                          alt={cat.displayTitle || cat.title}
+                          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/cat_electrician_plumber.png';
+                          }}
+                        />
                       </div>
+
+                      {/* Title Underneath Tile */}
+                      <h3
+                        className="mt-1.5 text-[11px] sm:text-xs font-bold leading-tight text-center line-clamp-2 px-0.5 font-heading"
+                        style={{ color: scheme.text }}
+                      >
+                        {cat.displayTitle || cat.title}
+                      </h3>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+            </section>
+          )}
 
-              <div className={`absolute right-1 sm:-right-2 top-[40%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-most-booked']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-most-booked', 220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll right"
-                >
-                  <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-            </div>
-          </section>
+          {/* =============================================================
+              2. PROMO BANNER SLIDER (Dynamic from Admin HomeContent)
+             ============================================================= */}
+          {homeContent?.isBannersVisible !== false && (
+            <OfferBannerSlider
+              banners={homeContent?.banners || []}
+              onBannerClick={handleBannerClick}
+            />
+          )}
 
-          {/* NATIVE WATER PURIFIER BANNER (Desktop / Tablet Only) */}
-          <section className="hidden md:flex w-full rounded-2xl bg-[#EBE7DF] overflow-hidden border border-slate-200/60 p-4 sm:p-5 flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
-            <div className="space-y-1.5 max-w-lg">
-              <span className="inline-block bg-[#007F5F] text-white font-bold text-[9px] px-2 py-0.5 rounded-[3px]">
-                Up to ₹3,550 off
-              </span>
-              <div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-[#111827] tracking-tight">
-                  NATIVE RO water purifier
-                </h3>
-                <p className="text-xs font-medium text-slate-700">
-                  Needs no service for 2 years
-                </p>
-              </div>
-              <button className="px-3.5 py-1.5 rounded-md bg-white text-[#111827] font-bold text-xs shadow-2xs hover:bg-slate-50 transition-colors">
-                Buy now
-              </button>
-            </div>
+          {/* =============================================================
+              3. "New and noteworthy" (Dynamic from Admin / Fallback Preset)
+             ============================================================= */}
+          {homeContent?.isNoteworthyVisible !== false && displayNoteworthy.length > 0 && (
+            <section className="hidden md:block space-y-2 relative">
+              <h2 className="text-base font-bold text-[#111827] tracking-tight">
+                New and noteworthy
+              </h2>
 
-            <div className="w-full sm:w-1/3 flex items-center justify-center">
-              <img
-                src="/native_water_purifier.png"
-                alt="Native Water Purifier"
-                className="max-h-28 sm:max-h-36 object-contain rounded-lg shadow-2xs"
-              />
-            </div>
-          </section>
-
-          {/* SECTION: "Cleaning Essentials" (Desktop / Tablet Only) */}
-          <section className="hidden md:block space-y-2 relative">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-bold text-[#111827] tracking-tight">
-                  Cleaning Essentials
-                </h2>
-                <p className="text-[10px] sm:text-[11px] text-slate-500">Monthly essential services</p>
-              </div>
-              <button className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-                See all
-              </button>
-            </div>
-
-            <div className="relative group/carousel">
-              <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-cleaning']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-cleaning', -220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll left"
-                >
-                  <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-
-              <div
-                id="carousel-cleaning"
-                onScroll={() => handleCarouselScroll('carousel-cleaning')}
-                className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
-              >
-                {cleaningEssentials.map((card) => (
-                  <div
-                    key={card.id}
-                    className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
+              <div className="relative group/carousel">
+                <div className={`absolute left-1 sm:-left-2 top-[38%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-noteworthy']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                  <button
+                    onClick={() => scrollCarousel('carousel-noteworthy', -220)}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                    aria-label="Scroll left"
                   >
-                    <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-[#EFEFEF] border border-slate-200/80 shadow-2xs flex items-center justify-center">
-                      {card.isTextTile ? (
-                        <div className="flex flex-col items-center justify-center text-center p-2">
-                          <span className="text-2xl font-black text-[#111827] tracking-tighter">2</span>
-                          <span className="text-[9px] font-extrabold text-[#111827] tracking-wider uppercase mt-0.5">BATHROOMS</span>
-                        </div>
-                      ) : (
+                    <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                  </button>
+                </div>
+
+                <div
+                  id="carousel-noteworthy"
+                  onScroll={() => handleCarouselScroll('carousel-noteworthy')}
+                  className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
+                >
+                  {displayNoteworthy.map((card) => (
+                    <div
+                      key={card.id}
+                      onClick={() => handleServiceCardClick(card)}
+                      className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
+                    >
+                      <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
                         <img
                           src={card.image}
                           alt={card.title}
                           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/cat_electrician_plumber.png';
+                          }}
                         />
-                      )}
-                      {card.discountBadge && (
-                        <span className="absolute top-1.5 left-1.5 bg-[#007F5F] text-white font-bold text-[8px] px-1 py-0.2 rounded-[2px] uppercase tracking-wide">
-                          {card.discountBadge}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="px-0.5">
-                      <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
-                        {card.title}
-                      </h3>
-
-                      <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
-                        <span className="flex items-center gap-0.5 font-bold">
-                          ★ {card.rating}
-                        </span>
                       </div>
+                      <div className="mt-1.5 px-0.5">
+                        <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight font-sans line-clamp-1">
+                          {card.title}
+                        </h3>
+                        {card.subtitle && (
+                          <p className={`text-[10px] font-bold mt-0.5 ${card.isGreenText ? 'text-[#00875A]' : 'text-slate-500'}`}>
+                            {card.subtitle}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
-                        {card.originalPrice && (
-                          <span className="text-[9px] text-slate-400 line-through font-normal">
-                            {card.originalPrice}
+                <div className={`absolute right-1 sm:-right-2 top-[38%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-noteworthy']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                  <button
+                    onClick={() => scrollCarousel('carousel-noteworthy', 220)}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                    aria-label="Scroll right"
+                  >
+                    <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* =============================================================
+              4. "Most booked services" (Dynamic from Admin / Fallback Preset)
+             ============================================================= */}
+          {homeContent?.isBookedVisible !== false && displayMostBooked.length > 0 && (
+            <section className="hidden md:block space-y-2 relative">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-bold text-[#111827] tracking-tight">
+                  Most booked services
+                </h2>
+              </div>
+
+              <div className="relative group/carousel">
+                <div className={`absolute left-1 sm:-left-2 top-[40%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-most-booked']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                  <button
+                    onClick={() => scrollCarousel('carousel-most-booked', -220)}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                    aria-label="Scroll left"
+                  >
+                    <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                  </button>
+                </div>
+
+                <div
+                  id="carousel-most-booked"
+                  onScroll={() => handleCarouselScroll('carousel-most-booked')}
+                  className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
+                >
+                  {displayMostBooked.map((card) => (
+                    <div
+                      key={card.id}
+                      onClick={() => handleServiceCardClick(card)}
+                      className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
+                    >
+                      <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
+                        <img
+                          src={card.image}
+                          alt={card.title}
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/cat_electrician_plumber.png';
+                          }}
+                        />
+                        {card.discountBadge && (
+                          <span className="absolute top-1.5 left-1.5 bg-[#007F5F] text-white font-bold text-[8px] px-1 py-0.2 rounded-[2px] uppercase tracking-wide">
+                            {card.discountBadge}
                           </span>
                         )}
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
 
-              <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-cleaning']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-cleaning', 220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll right"
-                >
-                  <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-            </div>
-          </section>
+                      <div className="px-0.5">
+                        <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
+                          {card.title}
+                        </h3>
 
-          {/* SECTION: "Appliance repair & service" (Desktop / Tablet Only) */}
-          <section className="hidden md:block space-y-2 relative">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-[#111827] tracking-tight">
-                Appliance repair & service
-              </h2>
-              <button className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-                See all
-              </button>
-            </div>
-
-            <div className="relative group/carousel">
-              <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-appliance']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-appliance', -220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll left"
-                >
-                  <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-
-              <div
-                id="carousel-appliance"
-                onScroll={() => handleCarouselScroll('carousel-appliance')}
-                className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
-              >
-                {applianceRepairServices.map((card) => (
-                  <div
-                    key={card.id}
-                    className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
-                  >
-                    <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
-                      <img
-                        src={card.image}
-                        alt={card.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                      />
-                    </div>
-
-                    <div className="px-0.5">
-                      <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
-                        {card.title}
-                      </h3>
-
-                      <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
-                        <span className="flex items-center gap-0.5 font-bold">
-                          ★ {card.rating}
-                        </span>
-                        {card.isInstant && (
-                          <>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-[#00875A] font-bold">
-                              ⚡ Instant
-                            </span>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
-                        {card.originalPrice && (
-                          <span className="text-[9px] text-slate-400 line-through font-normal">
-                            {card.originalPrice}
+                        <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
+                          <span className="flex items-center gap-0.5 font-bold">
+                            ★ {card.rating}
                           </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                          {card.isInstant && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-[#00875A] font-bold">
+                                ⚡ Instant
+                              </span>
+                            </>
+                          )}
+                        </div>
 
-              <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-appliance']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-appliance', 220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll right"
-                >
-                  <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* SECTION: "Home repair & installation" (Desktop / Tablet Only) */}
-          <section className="hidden md:block space-y-2 relative">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-[#111827] tracking-tight">
-                Home repair & installation
-              </h2>
-              <button className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-                See all
-              </button>
-            </div>
-
-            <div className="relative group/carousel">
-              <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-home-repair']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-home-repair', -220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll left"
-                >
-                  <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-
-              <div
-                id="carousel-home-repair"
-                onScroll={() => handleCarouselScroll('carousel-home-repair')}
-                className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
-              >
-                {homeRepairServices.map((card) => (
-                  <div
-                    key={card.id}
-                    className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
-                  >
-                    <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
-                      <img
-                        src={card.image}
-                        alt={card.title}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                      />
-                    </div>
-
-                    <div className="px-0.5">
-                      <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
-                        {card.title}
-                      </h3>
-
-                      <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
-                        <span className="flex items-center gap-0.5 font-bold">
-                          ★ {card.rating}
-                        </span>
-                        {card.isInstant && (
-                          <>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-[#00875A] font-bold">
-                              ⚡ Instant
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
+                          {card.originalPrice && (
+                            <span className="text-[9px] text-slate-400 line-through font-normal">
+                              {card.originalPrice}
                             </span>
-                          </>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
+                </div>
+
+                <div className={`absolute right-1 sm:-right-2 top-[40%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-most-booked']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                  <button
+                    onClick={() => scrollCarousel('carousel-most-booked', 220)}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                    aria-label="Scroll right"
+                  >
+                    <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* =============================================================
+              5. PROMOTIONAL FEATURE CARDS (Dynamic Admin Promos / Native RO Fallback)
+             ============================================================= */}
+          {homeContent?.isPromosVisible !== false && (
+            (homeContent?.promos && homeContent.promos.length > 0) ? (
+              <div className="space-y-4">
+                {homeContent.promos.map((promo, pIdx) => (
+                  <section
+                    key={promo.id || pIdx}
+                    onClick={() => handleServiceCardClick(promo)}
+                    className="cursor-pointer w-full rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white overflow-hidden border border-slate-700/50 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm group hover:border-slate-500 transition-all"
+                  >
+                    <div className="space-y-2 max-w-lg">
+                      {promo.discount && (
+                        <span className="inline-block bg-emerald-500 text-slate-950 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                          {promo.discount}
+                        </span>
+                      )}
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                          {promo.title}
+                        </h3>
+                        {promo.subtitle && (
+                          <p className="text-xs font-medium text-slate-300 mt-0.5">
+                            {promo.subtitle}
+                          </p>
+                        )}
+                      </div>
+                      <button className="px-4 py-1.5 rounded-lg bg-white text-slate-900 font-bold text-xs shadow-xs hover:bg-slate-100 transition-all active:scale-95">
+                        {promo.buttonText || 'Book Now'}
+                      </button>
+                    </div>
+
+                    {promo.imageUrl && (
+                      <div className="w-full sm:w-1/3 flex items-center justify-center">
+                        <img
+                          src={toAssetUrl(promo.imageUrl)}
+                          alt={promo.title}
+                          className="max-h-28 sm:max-h-36 object-contain rounded-lg shadow-sm group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                    )}
+                  </section>
                 ))}
               </div>
+            ) : (
+              <section className="hidden md:flex w-full rounded-2xl bg-[#EBE7DF] overflow-hidden border border-slate-200/60 p-4 sm:p-5 flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+                <div className="space-y-1.5 max-w-lg">
+                  <span className="inline-block bg-[#007F5F] text-white font-bold text-[9px] px-2 py-0.5 rounded-[3px]">
+                    Up to ₹3,550 off
+                  </span>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-extrabold text-[#111827] tracking-tight">
+                      NATIVE RO water purifier
+                    </h3>
+                    <p className="text-xs font-medium text-slate-700">
+                      Needs no service for 2 years
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/user/category/solar-service')}
+                    className="px-3.5 py-1.5 rounded-md bg-white text-[#111827] font-bold text-xs shadow-2xs hover:bg-slate-50 transition-colors"
+                  >
+                    Buy now
+                  </button>
+                </div>
 
-              <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-home-repair']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <button
-                  onClick={() => scrollCarousel('carousel-home-repair', 220)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                  aria-label="Scroll right"
-                >
-                  <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                </button>
-              </div>
-            </div>
-          </section>
+                <div className="w-full sm:w-1/3 flex items-center justify-center">
+                  <img
+                    src="/native_water_purifier.png"
+                    alt="Native Water Purifier"
+                    className="max-h-28 sm:max-h-36 object-contain rounded-lg shadow-2xs"
+                  />
+                </div>
+              </section>
+            )
+          )}
+
+          {/* =============================================================
+              6. CATEGORY SECTIONS (Dynamic Admin CategorySections / Fallback Presets)
+             ============================================================= */}
+          {homeContent?.isCategorySectionsVisible !== false && (
+            (homeContent?.categorySections && homeContent.categorySections.length > 0) ? (
+              homeContent.categorySections.map((section, sIdx) => {
+                const carouselId = `carousel-dyn-sec-${sIdx}`;
+                return (
+                  <section key={section.id || sIdx} className="space-y-2 relative">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-base font-bold text-[#111827] tracking-tight">
+                          {section.title}
+                        </h2>
+                        {section.subtitle && (
+                          <p className="text-[10px] sm:text-[11px] text-slate-500">{section.subtitle}</p>
+                        )}
+                      </div>
+                      {(section.seeAllTargetCategoryId || section.seeAllSlug) && (
+                        <button
+                          onClick={() => {
+                            const target = section.seeAllTargetCategoryId || section.seeAllSlug;
+                            navigate(`/user/category/${target}`);
+                          }}
+                          className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                        >
+                          See all
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="relative group/carousel">
+                      <div
+                        id={carouselId}
+                        onScroll={() => handleCarouselScroll(carouselId)}
+                        className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
+                      >
+                        {(section.cards || []).map((card, cIdx) => (
+                          <div
+                            key={card.id || cIdx}
+                            onClick={() => handleServiceCardClick(card)}
+                            className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
+                          >
+                            <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
+                              <img
+                                src={card.imageUrl ? toAssetUrl(card.imageUrl) : '/cat_electrician_plumber.png'}
+                                alt={card.title}
+                                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = '/cat_electrician_plumber.png';
+                                }}
+                              />
+                              {card.discount && (
+                                <span className="absolute top-1.5 left-1.5 bg-[#007F5F] text-white font-bold text-[8px] px-1 py-0.2 rounded-[2px] uppercase tracking-wide">
+                                  {card.discount}
+                                </span>
+                              )}
+                              {card.badge && (
+                                <span className="absolute top-1.5 right-1.5 bg-amber-500 text-white font-bold text-[8px] px-1 py-0.2 rounded-[2px] uppercase tracking-wide">
+                                  {card.badge}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="px-0.5">
+                              <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
+                                {card.title}
+                              </h3>
+
+                              {card.rating && (
+                                <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
+                                  <span className="flex items-center gap-0.5 font-bold">
+                                    ★ {card.rating}
+                                  </span>
+                                  {card.reviews && (
+                                    <span className="text-slate-400">({card.reviews})</span>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className="text-[11px] sm:text-xs font-bold text-[#111827]">
+                                  {card.price ? (String(card.price).startsWith('₹') ? card.price : `₹${card.price}`) : '₹199'}
+                                </span>
+                                {card.originalPrice && (
+                                  <span className="text-[9px] text-slate-400 line-through font-normal">
+                                    {String(card.originalPrice).startsWith('₹') ? card.originalPrice : `₹${card.originalPrice}`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                );
+              })
+            ) : (
+              <>
+                {/* SECTION: "Cleaning Essentials" (Desktop / Tablet Only) */}
+                <section className="hidden md:block space-y-2 relative">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-base font-bold text-[#111827] tracking-tight">
+                        Cleaning Essentials
+                      </h2>
+                      <p className="text-[10px] sm:text-[11px] text-slate-500">Monthly essential services</p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/user/category/cleaning-service')}
+                      className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      See all
+                    </button>
+                  </div>
+
+                  <div className="relative group/carousel">
+                    <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-cleaning']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                      <button
+                        onClick={() => scrollCarousel('carousel-cleaning', -220)}
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                        aria-label="Scroll left"
+                      >
+                        <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                      </button>
+                    </div>
+
+                    <div
+                      id="carousel-cleaning"
+                      onScroll={() => handleCarouselScroll('carousel-cleaning')}
+                      className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
+                    >
+                      {cleaningEssentials.map((card) => (
+                        <div
+                          key={card.id}
+                          onClick={() => handleServiceCardClick(card)}
+                          className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
+                        >
+                          <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-[#EFEFEF] border border-slate-200/80 shadow-2xs flex items-center justify-center">
+                            {card.isTextTile ? (
+                              <div className="flex flex-col items-center justify-center text-center p-2">
+                                <span className="text-2xl font-black text-[#111827] tracking-tighter">2</span>
+                                <span className="text-[9px] font-extrabold text-[#111827] tracking-wider uppercase mt-0.5">BATHROOMS</span>
+                              </div>
+                            ) : (
+                              <img
+                                src={card.image}
+                                alt={card.title}
+                                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                              />
+                            )}
+                            {card.discountBadge && (
+                              <span className="absolute top-1.5 left-1.5 bg-[#007F5F] text-white font-bold text-[8px] px-1 py-0.2 rounded-[2px] uppercase tracking-wide">
+                                {card.discountBadge}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="px-0.5">
+                            <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
+                              {card.title}
+                            </h3>
+
+                            <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
+                              <span className="flex items-center gap-0.5 font-bold">
+                                ★ {card.rating}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
+                              {card.originalPrice && (
+                                <span className="text-[9px] text-slate-400 line-through font-normal">
+                                  {card.originalPrice}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-cleaning']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                      <button
+                        onClick={() => scrollCarousel('carousel-cleaning', 220)}
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                        aria-label="Scroll right"
+                      >
+                        <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                {/* SECTION: "Appliance repair & service" (Desktop / Tablet Only) */}
+                <section className="hidden md:block space-y-2 relative">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base font-bold text-[#111827] tracking-tight">
+                      Appliance repair & service
+                    </h2>
+                    <button
+                      onClick={() => navigate('/user/category/ac-appliance-repair')}
+                      className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      See all
+                    </button>
+                  </div>
+
+                  <div className="relative group/carousel">
+                    <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-appliance']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                      <button
+                        onClick={() => scrollCarousel('carousel-appliance', -220)}
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                        aria-label="Scroll left"
+                      >
+                        <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                      </button>
+                    </div>
+
+                    <div
+                      id="carousel-appliance"
+                      onScroll={() => handleCarouselScroll('carousel-appliance')}
+                      className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
+                    >
+                      {applianceRepairServices.map((card) => (
+                        <div
+                          key={card.id}
+                          onClick={() => handleServiceCardClick(card)}
+                          className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
+                        >
+                          <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
+                            <img
+                              src={card.image}
+                              alt={card.title}
+                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                            />
+                          </div>
+
+                          <div className="px-0.5">
+                            <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
+                              {card.title}
+                            </h3>
+
+                            <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
+                              <span className="flex items-center gap-0.5 font-bold">
+                                ★ {card.rating}
+                              </span>
+                              {card.isInstant && (
+                                <>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="text-[#00875A] font-bold">
+                                    ⚡ Instant
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
+                              {card.originalPrice && (
+                                <span className="text-[9px] text-slate-400 line-through font-normal">
+                                  {card.originalPrice}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-appliance']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                      <button
+                        onClick={() => scrollCarousel('carousel-appliance', 220)}
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                        aria-label="Scroll right"
+                      >
+                        <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
+                {/* SECTION: "Home repair & installation" (Desktop / Tablet Only) */}
+                <section className="hidden md:block space-y-2 relative">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base font-bold text-[#111827] tracking-tight">
+                      Home repair & installation
+                    </h2>
+                    <button
+                      onClick={() => navigate('/user/category/electrician')}
+                      className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                    >
+                      See all
+                    </button>
+                  </div>
+
+                  <div className="relative group/carousel">
+                    <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-home-repair']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                      <button
+                        onClick={() => scrollCarousel('carousel-home-repair', -220)}
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                        aria-label="Scroll left"
+                      >
+                        <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                      </button>
+                    </div>
+
+                    <div
+                      id="carousel-home-repair"
+                      onScroll={() => handleCarouselScroll('carousel-home-repair')}
+                      className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
+                    >
+                      {homeRepairServices.map((card) => (
+                        <div
+                          key={card.id}
+                          onClick={() => handleServiceCardClick(card)}
+                          className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
+                        >
+                          <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
+                            <img
+                              src={card.image}
+                              alt={card.title}
+                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                            />
+                          </div>
+
+                          <div className="px-0.5">
+                            <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
+                              {card.title}
+                            </h3>
+
+                            <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
+                              <span className="flex items-center gap-0.5 font-bold">
+                                ★ {card.rating}
+                              </span>
+                              {card.isInstant && (
+                                <>
+                                  <span className="text-slate-300">•</span>
+                                  <span className="text-[#00875A] font-bold">
+                                    ⚡ Instant
+                                  </span>
+                                </>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-home-repair']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                      <button
+                        onClick={() => scrollCarousel('carousel-home-repair', 220)}
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
+                        aria-label="Scroll right"
+                      >
+                        <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </>
+            )
+          )}
 
           {/* STATUS BAND (Desktop / Tablet Only) */}
           <section className="hidden md:flex bg-slate-900 text-white rounded-lg py-2.5 px-3.5 flex-col sm:flex-row items-center justify-between gap-1.5 shadow-2xs">
@@ -1880,83 +2363,10 @@ const UserDashboard = () => {
                 {activeCategoryModal.subCategories.map((sub) => (
                   <div
                     key={sub.id}
-                    onClick={async () => {
-                      const currentCategory = activeCategoryModal;
-                      const currentSub = sub;
+                    onClick={() => {
+                      const selectedSlug = sub.slug || sub.id;
                       setActiveCategoryModal(null);
-
-                      // 1. Resolve fallback detail immediately based on the selected category
-                      const fallbackDetail = resolveCategoryDetail(currentCategory, currentSub);
-
-                      try {
-                        const categorySlug = currentCategory.slug || currentCategory.id || '';
-                        
-                        // Invalidate cached brands to always get latest admin services
-                        publicCatalogService.invalidateCache();
-                        const brandRes = await publicCatalogService.getBrands({ categorySlug });
-                        
-                        if (brandRes.success && Array.isArray(brandRes.brands) && brandRes.brands.length > 0) {
-                          const dynamicSubGrid = brandRes.brands.map(b => ({
-                            id: b.slug,
-                            name: b.title,
-                            image: toAssetUrl(b.icon || b.imageUrl || b.logo || '/cat_electrician_plumber.png')
-                          }));
-
-                          // Combine live sections from all brands in this category
-                          const dynamicSections = [];
-                          brandRes.brands.forEach(b => {
-                            if (b.sections && b.sections.length > 0) {
-                              b.sections.forEach(sec => {
-                                dynamicSections.push({
-                                  id: (b.slug || sec.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-'),
-                                  sectionTitle: sec.title || b.title,
-                                  items: (sec.cards || []).map(card => ({
-                                    id: card.id || card._id,
-                                    title: card.title,
-                                    rating: card.rating || null,
-                                    reviews: card.reviews || null,
-                                    price: card.price ? `₹${card.price}` : (card.basePrice ? `₹${card.basePrice}` : '₹99'),
-                                    desc: card.subtitle || card.features?.join(' • ') || card.description || 'Professional certified home service package.',
-                                    image: toAssetUrl(card.imageUrl || b.icon || '/cat_electrician_plumber.png')
-                                  }))
-                                });
-                              });
-                            }
-                          });
-
-                          if (dynamicSections.length > 0) {
-                            setActiveDetailView({
-                              title: currentCategory.title,
-                              bannerTitle: `${currentCategory.title.toUpperCase()} SERVICES`,
-                              rating: currentCategory.rating || 'New',
-                              reviews: currentCategory.reviews || null,
-                              desc: `Book certified, professional ${currentCategory.title} experts at transparent doorstep prices.`,
-                              subGrid: dynamicSubGrid,
-                              detailedSections: dynamicSections
-                            });
-
-                            // Auto smooth-scroll to the selected brand section
-                            const targetSlug = (currentSub.id || currentSub.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-                            setTimeout(() => {
-                              const targetEl = document.getElementById(`section-${targetSlug}`);
-                              if (targetEl) {
-                                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                targetEl.classList.add('bg-amber-50/70', 'p-2.5', 'rounded-2xl', 'transition-all', 'duration-300');
-                                setTimeout(() => {
-                                  targetEl.classList.remove('bg-amber-50/70', 'p-2.5', 'rounded-2xl');
-                                }, 1400);
-                              }
-                            }, 250);
-
-                            return;
-                          }
-                        }
-                      } catch (err) {
-                        console.error('Error fetching live brand services:', err);
-                      }
-
-                      // Set category-specific detail view
-                      setActiveDetailView(fallbackDetail);
+                      navigate(`/user/category/${selectedSlug}`);
                     }}
                     className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
                   >
@@ -1985,6 +2395,12 @@ const UserDashboard = () => {
           </div>
         </>
       )}
+
+      {/* City Selector Modal */}
+      <CitySelectorModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+      />
     </div>
   );
 };

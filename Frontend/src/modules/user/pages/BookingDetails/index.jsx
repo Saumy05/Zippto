@@ -753,20 +753,20 @@ const BookingDetails = () => {
                   <button
                     type="button"
                     onClick={() => setIsChatOpen(true)}
-                    className="px-3.5 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-2xl flex items-center gap-1.5 text-xs font-extrabold border border-teal-200/80 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                    className="px-3 py-2 bg-[#B33A35]/10 hover:bg-[#B33A35]/20 text-[#B33A35] rounded-md flex items-center gap-1.5 text-xs font-bold border border-[#B33A35]/20 transition-all active:scale-95 shadow-2xs cursor-pointer"
                     title="Chat with Expert"
                   >
-                    <FiMessageSquare className="w-4 h-4 text-teal-600" />
+                    <FiMessageSquare className="w-4 h-4 text-[#B33A35]" />
                     <span>Chat</span>
                   </button>
 
                   {assignedPartner?.phone && (
                     <a
                       href={`tel:${assignedPartner.phone}`}
-                      className="w-10 h-10 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200/80 flex items-center justify-center transition-all active:scale-95 shadow-2xs"
+                      className="w-9 h-9 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-md flex items-center justify-center border border-emerald-200/80 transition-all active:scale-95 shadow-2xs cursor-pointer"
                       title="Call Expert"
                     >
-                      <FiPhone className="w-4.5 h-4.5" />
+                      <FiPhone className="w-4 h-4 text-emerald-600" />
                     </a>
                   )}
                 </div>
@@ -776,17 +776,17 @@ const BookingDetails = () => {
 
           {/* 3. DOORSTEP ARRIVAL VERIFICATION OTP CARD (If Active) */}
           {(booking.arrivalOTP || booking.visitOtp) && ['confirmed', 'assigned', 'journey_started'].includes(statusStr) && (
-            <div className="bg-gradient-to-br from-[#0B132B] to-slate-900 rounded-3xl p-5 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-teal-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="bg-gradient-to-br from-[#B33A35] via-[#9E2E2A] to-slate-900 rounded-md p-5 text-white shadow-md relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-[#B33A35]/20 rounded-full blur-2xl pointer-events-none" />
               
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
-                    <FiKey className="w-4.5 h-4.5 text-amber-400" />
+                  <div className="w-8 h-8 rounded-md bg-white/15 flex items-center justify-center border border-white/20">
+                    <FiKey className="w-4 h-4 text-amber-300" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-white">Start Work Verification PIN</h3>
-                    <p className="text-[11px] text-slate-300 font-medium">Share with technician upon arrival</p>
+                    <h3 className="text-sm font-bold text-white">Start Work Verification PIN</h3>
+                    <p className="text-[11px] text-slate-200 font-medium">Share with technician upon arrival</p>
                   </div>
                 </div>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -797,7 +797,7 @@ const BookingDetails = () => {
                 {String(booking.arrivalOTP || booking.visitOtp).split('').map((digit, idx) => (
                   <div
                     key={idx}
-                    className="w-12 h-14 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center border-2 border-white/30 shadow-inner"
+                    className="w-12 h-14 bg-white/15 backdrop-blur-md rounded-md flex items-center justify-center border-2 border-white/30 shadow-inner"
                   >
                     <span className="text-2xl font-black text-amber-300">{digit}</span>
                   </div>
@@ -1145,15 +1145,15 @@ const BookingDetails = () => {
           <div className="grid grid-cols-2 gap-3 pt-2">
             <a
               href={`tel:${supportInfo.phone}`}
-              className="flex items-center justify-center gap-2 py-3.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs rounded-2xl transition-all active:scale-95 shadow-2xs"
+              className="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold text-xs rounded-md transition-all active:scale-95 shadow-2xs"
             >
-              <FiPhone className="w-4 h-4 text-teal-600" />
+              <FiPhone className="w-4 h-4 text-[#B33A35]" />
               <span>Call Helpline</span>
             </a>
 
             <a
               href={`mailto:${supportInfo.email}`}
-              className="flex items-center justify-center gap-2 py-3.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs rounded-2xl transition-all active:scale-95 shadow-2xs"
+              className="flex items-center justify-center gap-2 py-3 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold text-xs rounded-md transition-all active:scale-95 shadow-2xs"
             >
               <FiMail className="w-4 h-4 text-blue-600" />
               <span>Email Support</span>

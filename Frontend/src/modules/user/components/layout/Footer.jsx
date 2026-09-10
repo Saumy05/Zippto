@@ -55,10 +55,10 @@ const Footer = () => {
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain shadow-2xs"
               />
               <div className="flex flex-col text-left">
-                <span className="text-base font-black tracking-tight text-[#0B132B] leading-none">
+                <span className="text-base font-bold tracking-tight text-slate-900 leading-none">
                   ZIPPTO
                 </span>
-                <span className="text-[9px] font-extrabold tracking-widest text-amber-500 uppercase leading-none mt-0.5">
+                <span className="text-[9px] font-bold tracking-widest text-[#B33A35] uppercase leading-none mt-0.5">
                   HOME SERVICES
                 </span>
               </div>

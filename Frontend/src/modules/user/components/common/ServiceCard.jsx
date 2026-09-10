@@ -96,10 +96,9 @@ const ServiceCard = memo(({ image, title, onClick, gif, youtubeUrl }) => {
   return (
     <div
       ref={cardRef}
-      className="relative min-w-[200px] md:min-w-[240px] h-[350px] md:h-[420px] rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 ease-out hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.98]"
+      className="relative w-[124px] xs:w-[136px] sm:w-[155px] md:w-[190px] h-[175px] xs:h-[190px] sm:h-[220px] md:h-[280px] shrink-0 rounded-md overflow-hidden cursor-pointer transition-transform duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] border border-[#E5E7EB]"
       style={{
-        boxShadow: themeColors.cardShadow,
-        border: themeColors.cardBorder,
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
         willChange: 'transform',
         backfaceVisibility: 'hidden',
         WebkitBackfaceVisibility: 'hidden',
@@ -107,8 +106,8 @@ const ServiceCard = memo(({ image, title, onClick, gif, youtubeUrl }) => {
       onClick={onClick}
     >
       {renderMedia()}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-        <h3 className="text-white font-semibold text-base">{title}</h3>
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-2.5 pt-6 flex flex-col justify-end">
+        <h3 className="text-white font-heading font-semibold text-xs sm:text-sm leading-tight line-clamp-2">{title}</h3>
       </div>
     </div>
   );

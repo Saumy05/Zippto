@@ -97,14 +97,32 @@ const NewAndNoteworthy = React.memo(({ services, onServiceClick }) => {
         </h2>
       </div>
 
-      <div ref={cardsRef} className="flex gap-2 overflow-x-auto px-6 lg:px-4 pb-2 scrollbar-hide lg:grid lg:grid-cols-4 lg:gap-6 lg:overflow-visible">
+      <div ref={cardsRef} className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-hide">
         {serviceList.map((service, index) => (
-          <SimpleServiceCard
+          <div
             key={service.id || index}
-            title={service.title}
-            image={service.image}
             onClick={() => onServiceClick?.(service)}
-          />
+            className="w-[124px] xs:w-[136px] sm:w-[155px] md:w-[220px] shrink-0 flex flex-col bg-white rounded-md overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-md border border-[#E5E7EB]"
+            style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)' }}
+          >
+            <div className="relative w-full aspect-square overflow-hidden bg-gray-50">
+              <div className="absolute top-1.5 left-1.5 bg-[#1F2937]/90 backdrop-blur-xs text-amber-400 text-[8.5px] font-bold px-1.5 py-0.5 rounded-sm shadow-xs z-10 flex items-center gap-1">
+                <span>⚡</span>
+                <span className="text-white text-[8px]">In 47 mins</span>
+              </div>
+              <img
+                src={service.image}
+                alt={service.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+            </div>
+            <div className="p-2 flex flex-col flex-1">
+              <h3 className="text-[11px] md:text-xs font-semibold text-gray-900 leading-snug line-clamp-2 min-h-[30px] font-heading">
+                {service.title}
+              </h3>
+            </div>
+          </div>
         ))}
       </div>
     </div>

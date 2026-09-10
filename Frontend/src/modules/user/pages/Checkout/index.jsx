@@ -927,7 +927,7 @@ const Checkout = () => {
           key,
           amount: amount * 100,
           currency: 'INR',
-          name: 'Homestr',
+          name: 'Zippto',
           description: `Payment for ${plan.name} ${isUpgrade ? '(Upgrade)' : ''}`,
           order_id: orderId,
           handler: async (response) => {
@@ -1506,7 +1506,7 @@ const Checkout = () => {
             <div className="space-y-2.5">
               {/* Address */}
               <div className="flex items-start gap-2.5">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(179, 58, 53, 0.1)' }}>
                   <FiHome className="w-4 h-4" style={{ color: themeColors.button }} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1526,7 +1526,7 @@ const Checkout = () => {
               {/* Time Slot (Only for Scheduled) */}
               {bookingType === 'scheduled' && (
                 <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(179, 58, 53, 0.1)' }}>
                     <FiClock className="w-4 h-4" style={{ color: themeColors.button }} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1578,7 +1578,7 @@ const Checkout = () => {
                 (currentStep === 'payment' ? handlePayment : handleSearchVendors) :
                 handleProceed}
             disabled={searchingVendors}
-            className="w-full text-white py-3 rounded-lg text-base font-semibold transition-colors disabled:opacity-50 shadow-lg shadow-teal-500/30"
+            className="w-full text-white py-3 rounded-md text-base font-semibold transition-colors disabled:opacity-50 shadow-md shadow-[#B33A35]/25"
             style={{ backgroundColor: themeColors.button }}
           >
             {searchingVendors ? 'Searching for vendors...' :
@@ -1616,7 +1616,7 @@ const Checkout = () => {
       {/* Contact Details Edit Modal */}
       {showContactModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl animate-scale-in">
+          <div className="bg-white w-full max-w-sm rounded-md p-6 shadow-xl animate-scale-in">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Update Contact Details</h3>
             <p className="text-sm text-gray-500 mb-4">These details will be used for this booking only.</p>
 
@@ -1627,14 +1627,14 @@ const Checkout = () => {
                   type="text"
                   value={contactDetails.name}
                   onChange={(e) => setContactDetails(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full mt-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full mt-1 p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B33A35]"
                   placeholder="Enter name"
                 />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-500 uppercase">Phone Number</label>
                 <div className="flex gap-2">
-                  <span className="p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 font-medium select-none">+91</span>
+                  <span className="p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-500 font-medium select-none">+91</span>
                   <input
                     type="tel"
                     maxLength={10}
@@ -1643,7 +1643,7 @@ const Checkout = () => {
                       const val = e.target.value.replace(/\D/g, '');
                       setContactDetails(prev => ({ ...prev, phone: val }));
                     }}
-                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#B33A35]"
                     placeholder="9999999999"
                   />
                 </div>
@@ -1652,7 +1652,7 @@ const Checkout = () => {
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   onClick={() => setShowContactModal(false)}
-                  className="py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                  className="py-2.5 rounded-md font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1668,7 +1668,7 @@ const Checkout = () => {
                     }
                     setShowContactModal(false);
                   }}
-                  className="py-3 rounded-xl font-bold text-white shadow-lg shadow-teal-500/30 active:scale-95 transition-all"
+                  className="py-2.5 rounded-md font-semibold text-white shadow-md shadow-[#B33A35]/25 active:scale-95 transition-all"
                   style={{ backgroundColor: themeColors.button }}
                 >
                   Save Changes

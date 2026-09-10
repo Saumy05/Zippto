@@ -119,37 +119,31 @@ const Cart = () => {
   const savings = Math.max(0, totalOriginalPrice - totalPrice);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-28">
-      {/* Background Glow */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20" />
-      </div>
-
+    <div className="min-h-screen bg-[var(--background,#F8F9FA)] text-[var(--text-primary,#1F2937)] font-sans antialiased pb-28">
       <div className="relative z-10">
         {/* Sticky Navbar Header */}
-        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 shadow-2xs">
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[var(--border,#E5E7EB)] px-4 py-3 shadow-2xs">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={handleBack}
-                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
+                className="w-8 h-8 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
                 aria-label="Go back"
               >
-                <FiArrowLeft className="w-5 h-5" />
+                <FiArrowLeft className="w-4 h-4" />
               </button>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
+                  <h1 className="text-base font-bold text-slate-900 tracking-tight leading-none">
                     Your Cart
                   </h1>
                   {cartCount > 0 && (
-                    <span className="bg-[#0B132B] text-amber-400 text-[10px] font-black px-2 py-0.5 rounded-full shadow-2xs">
+                    <span className="bg-[#B33A35] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                       {cartCount} {cartCount === 1 ? 'item' : 'items'}
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-500 font-semibold">Zippto Doorstep Booking</span>
+                <span className="text-[10px] text-slate-500 font-medium">Zippto Doorstep Booking</span>
               </div>
             </div>
             <NotificationBell />
@@ -157,48 +151,45 @@ const Cart = () => {
         </header>
 
         {/* Main Content View */}
-        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-6">
+        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-5">
           {loading ? (
             <div className="space-y-4">
               {[1, 2].map((i) => (
-                <div key={i} className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs animate-pulse space-y-4">
+                <div key={i} className="bg-white rounded-md p-4 border border-[var(--border,#E5E7EB)] shadow-2xs animate-pulse space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 bg-slate-200 rounded-2xl"></div>
+                    <div className="w-14 h-14 bg-slate-200 rounded-lg"></div>
                     <div className="space-y-2 flex-1">
                       <div className="h-4 w-36 bg-slate-200 rounded"></div>
                       <div className="h-3 w-24 bg-slate-200 rounded"></div>
                     </div>
                   </div>
-                  <div className="h-12 bg-slate-100 rounded-2xl"></div>
+                  <div className="h-10 bg-slate-100 rounded-md"></div>
                 </div>
               ))}
             </div>
           ) : cartItems.length === 0 ? (
             /* EMPTY CART STATE */
             <div className="space-y-6">
-              <div className="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-2xs space-y-4 relative overflow-hidden">
-                {/* Decorative Amber Glow */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-
-                <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-[#0B132B] via-[#1C2541] to-[#0B132B] text-amber-400 flex items-center justify-center shadow-lg border border-slate-800">
-                  <FiShoppingCart className="w-10 h-10" />
+              <div className="bg-white rounded-md p-8 text-center border border-[var(--border,#E5E7EB)] shadow-2xs space-y-4 relative overflow-hidden">
+                <div className="w-16 h-16 mx-auto rounded-xl bg-gradient-to-tr from-[#B33A35] via-[#D56C67] to-[#9E2E2A] text-white flex items-center justify-center shadow-md">
+                  <FiShoppingCart className="w-8 h-8" />
                 </div>
 
                 <div className="max-w-sm mx-auto space-y-1.5">
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                     Your Zippto Cart is Empty
                   </h2>
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                    Explore expert electrical repairs, home cleaning, AC servicing, and Plumbing packages delivered to your doorstep.
+                    Explore expert electrical repairs, home cleaning, AC servicing, and plumbing packages delivered to your doorstep.
                   </p>
                 </div>
 
                 <div className="pt-2">
                   <button
                     onClick={() => navigate('/user')}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#0B132B] hover:bg-slate-800 text-white font-extrabold text-xs uppercase tracking-wider shadow-md hover:shadow-lg active:scale-95 transition-all"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-[#B33A35] hover:bg-[#9E2E2A] text-white font-semibold text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95"
                   >
-                    <HiSparkles className="w-4 h-4 text-amber-400" />
+                    <HiSparkles className="w-4 h-4 text-amber-200" />
                     <span>Explore All Services</span>
                   </button>
                 </div>
@@ -214,16 +205,16 @@ const Cart = () => {
                     <div
                       key={cat.id}
                       onClick={() => navigate('/user')}
-                      className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs hover:border-slate-400 hover:shadow-xs transition-all cursor-pointer group flex flex-col items-center text-center space-y-2"
+                      className="bg-white rounded-md p-3 border border-[var(--border,#E5E7EB)] shadow-2xs hover:border-[#B33A35] transition-all cursor-pointer group flex flex-col items-center text-center space-y-2"
                     >
-                      <div className="w-full aspect-square rounded-xl bg-slate-50 flex items-center justify-center p-2 overflow-hidden">
+                      <div className="w-full aspect-square rounded-md bg-slate-50 flex items-center justify-center p-2 overflow-hidden">
                         <img
                           src={cat.image}
                           alt={cat.title}
                           className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
                         />
                       </div>
-                      <span className="text-xs font-bold text-slate-900 leading-tight">
+                      <span className="text-xs font-semibold text-slate-900 leading-tight">
                         {cat.title}
                       </span>
                     </div>
@@ -233,11 +224,11 @@ const Cart = () => {
             </div>
           ) : (
             /* POPULATED CART STATE */
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Savings Notification Header */}
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3.5 flex items-center gap-3 text-emerald-800">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-3 flex items-center gap-3 text-emerald-800">
                 <HiShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-                <p className="text-xs font-bold leading-snug">
+                <p className="text-xs font-semibold leading-snug">
                   🎉 Instant Technician Dispatch & Verified Service Warranty included with your order!
                 </p>
               </div>
@@ -245,25 +236,24 @@ const Cart = () => {
               {/* Category Grouped Items */}
               <div className="space-y-4">
                 {Object.entries(groupedItems).map(([category, items]) => {
-                  const categoryTotal = items.reduce((sum, item) => sum + (item.price || 0), 0);
                   const serviceCount = items.reduce((sum, item) => sum + (item.serviceCount || 1), 0);
 
                   return (
                     <div
                       key={category}
-                      className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs space-y-4"
+                      className="bg-white rounded-md p-4 border border-[var(--border,#E5E7EB)] shadow-xs space-y-4"
                     >
                       {/* Category Header */}
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="flex items-center justify-between border-b border-[var(--border,#E5E7EB)] pb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#0B132B] text-amber-400 flex items-center justify-center font-bold text-sm shrink-0">
-                            <FiTag className="w-5 h-5" />
+                          <div className="w-8 h-8 rounded-md bg-[#B33A35]/10 text-[#B33A35] flex items-center justify-center font-bold text-sm shrink-0">
+                            <FiTag className="w-4 h-4" />
                           </div>
                           <div>
-                            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">
+                            <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
                               {category}
                             </h3>
-                            <p className="text-[11px] text-slate-500 font-semibold">
+                            <p className="text-[11px] text-slate-500 font-medium">
                               {serviceCount} {serviceCount === 1 ? 'service item' : 'service items'}
                             </p>
                           </div>
@@ -271,44 +261,72 @@ const Cart = () => {
 
                         <button
                           onClick={() => handleDeleteCategory(category)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                           aria-label="Delete category items"
                         >
-                          <FiTrash2 className="w-4.5 h-4.5" />
+                          <FiTrash2 className="w-4 h-4" />
                         </button>
                       </div>
 
                       {/* Line Items */}
-                      <div className="space-y-3">
+                      <div className="space-y-2.5">
                         {items.map((item) => (
                           <div
                             key={item._id || item.id}
-                            className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100"
+                            className="w-full flex items-center gap-3 p-3 rounded-md bg-white border border-[var(--border,#E5E7EB)] shadow-xs"
                           >
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                                {item.title}
-                              </h4>
-                              <p className="text-[11px] font-extrabold text-slate-900 mt-0.5">
-                                ₹{(item.price || 0).toLocaleString('en-IN')}
-                              </p>
+                            {/* Item Thumbnail */}
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden shrink-0 border border-[var(--border,#E5E7EB)] bg-slate-50 flex items-center justify-center">
+                              {item.image || item.icon ? (
+                                <img
+                                  src={item.image || item.icon}
+                                  alt={item.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-sm font-bold text-[#B33A35]">
+                                  {(item.title || 'S').charAt(0)}
+                                </span>
+                              )}
                             </div>
 
-                            {/* Quantity Stepper */}
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
+                            {/* Middle: Title + Category + Price */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
+                                {item.title}
+                              </h4>
+                              {item.category && (
+                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
+                                  {item.category}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-xs sm:text-sm font-bold text-slate-900">
+                                  ₹{(item.price || 0).toLocaleString('en-IN')}
+                                </span>
+                                {item.originalPrice && item.originalPrice > item.price && (
+                                  <span className="text-[11px] text-gray-400 line-through">
+                                    ₹{item.originalPrice.toLocaleString('en-IN')}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Right: Quantity Stepper + Delete Icon */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex items-center border border-[var(--border,#E5E7EB)] rounded-md overflow-hidden bg-white">
                                 <button
                                   onClick={() => handleQuantityChange(item._id || item.id, -1)}
-                                  className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold transition-colors"
+                                  className="w-6 h-6 hover:bg-gray-100 text-slate-700 flex items-center justify-center font-bold text-xs transition-colors"
                                 >
                                   <FiMinus className="w-3 h-3" />
                                 </button>
-                                <span className="text-xs font-black text-slate-900 px-1 min-w-[16px] text-center">
+                                <span className="min-w-[20px] text-center text-xs font-semibold text-slate-900 px-1">
                                   {item.serviceCount || 1}
                                 </span>
                                 <button
                                   onClick={() => handleQuantityChange(item._id || item.id, 1)}
-                                  className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold transition-colors"
+                                  className="w-6 h-6 hover:bg-gray-100 text-slate-700 flex items-center justify-center font-bold text-xs transition-colors"
                                 >
                                   <FiPlus className="w-3 h-3" />
                                 </button>
@@ -316,7 +334,7 @@ const Cart = () => {
 
                               <button
                                 onClick={() => handleDelete(item._id || item.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 transition-colors"
+                                className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                               >
                                 <FiTrash2 className="w-4 h-4" />
                               </button>
@@ -329,16 +347,16 @@ const Cart = () => {
                       <div className="flex gap-2.5 pt-1">
                         <button
                           onClick={() => handleAddServices(category)}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs transition-colors"
+                          className="flex-1 py-2 px-3 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs transition-colors"
                         >
                           Add More
                         </button>
                         <button
                           onClick={() => handleCategoryCheckout(category)}
-                          className="flex-1 py-2.5 px-3 rounded-xl bg-[#0B132B] hover:bg-slate-800 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 transition-colors"
+                          className="flex-1 py-2 px-3 rounded-md bg-[#B33A35] hover:bg-[#9E2E2A] text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition-colors active:scale-95"
                         >
                           <span>Checkout ({category})</span>
-                          <FiArrowRight className="w-3.5 h-3.5 text-amber-400" />
+                          <FiArrowRight className="w-3.5 h-3.5 text-white" />
                         </button>
                       </div>
                     </div>
@@ -347,15 +365,15 @@ const Cart = () => {
               </div>
 
               {/* BILL SUMMARY */}
-              <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs space-y-3">
-                <h3 className="text-sm font-extrabold text-slate-900 border-b border-slate-100 pb-2.5">
+              <div className="bg-white rounded-md p-4 border border-[var(--border,#E5E7EB)] shadow-xs space-y-3">
+                <h3 className="text-sm font-bold text-slate-900 border-b border-[var(--border,#E5E7EB)] pb-2.5">
                   Payment Summary
                 </h3>
 
-                <div className="space-y-2 text-xs font-semibold text-slate-600">
+                <div className="space-y-2 text-xs font-medium text-slate-600">
                   <div className="flex justify-between">
                     <span>Item Total</span>
-                    <span className="text-slate-900">₹{totalPrice.toLocaleString('en-IN')}</span>
+                    <span className="text-slate-900 font-bold">₹{totalPrice.toLocaleString('en-IN')}</span>
                   </div>
 
                   {savings > 0 && (
@@ -370,9 +388,9 @@ const Cart = () => {
                     <span className="text-emerald-600 font-bold">FREE</span>
                   </div>
 
-                  <div className="border-t border-slate-100 pt-2.5 flex justify-between text-sm font-black text-slate-900">
+                  <div className="border-t border-[var(--border,#E5E7EB)] pt-2.5 flex justify-between text-sm font-bold text-slate-900">
                     <span>Total Amount</span>
-                    <span className="text-slate-900 text-base">₹{totalPrice.toLocaleString('en-IN')}</span>
+                    <span className="text-[#B33A35] text-base font-extrabold">₹{totalPrice.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>

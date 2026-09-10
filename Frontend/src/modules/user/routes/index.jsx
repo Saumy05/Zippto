@@ -109,7 +109,7 @@ const UserRoutes = () => {
     '/user/wallet',
     '/user/rewards'
   ];
-  const shouldShowBottomNav = bottomNavPages.includes(location.pathname);
+  const shouldShowBottomNav = bottomNavPages.includes(location.pathname) || location.pathname.includes('/category/');
 
   // Check if we hide the live booking card (e.g. if we are on the specific booking details or track page)
   const isBookingDetailsPage = location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/track)?$/);
@@ -156,6 +156,10 @@ const UserRoutes = () => {
               <Route path="/my-rating" element={<ProtectedRoute userType="user"><MyRating /></ProtectedRoute>} />
               <Route path="/update-profile" element={<ProtectedRoute userType="user"><UpdateProfile /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="user"><Notifications /></ProtectedRoute>} />
+
+              {/* Dynamic Category Routes */}
+              <Route path="/category/:categorySlug" element={<UserDashboard />} />
+              <Route path="/:categorySlug" element={<UserDashboard />} />
             </Routes>
           </PageTransition>
         </Suspense>
@@ -164,7 +168,7 @@ const UserRoutes = () => {
       {/* These components are OUTSIDE Suspense so they persist during page loads */}
       {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
       {shouldShowBottomNav && <BottomNav />}
-      {(location.pathname === '/user' || location.pathname === '/user/' || location.pathname.includes('dashboard')) && <Footer />}
+      {(location.pathname === '/user' || location.pathname === '/user/' || location.pathname.includes('dashboard') || location.pathname.includes('/category/')) && <Footer />}
     </ErrorBoundary>
   );
 };

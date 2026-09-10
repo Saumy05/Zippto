@@ -108,14 +108,14 @@ const MyBookings = () => {
       case 'visited':
         return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'completed':
-        return 'bg-slate-100 text-slate-700 border-slate-200';
+        return 'bg-gray-50 text-gray-700 border-gray-200';
       case 'cancelled':
       case 'rejected':
-        return 'bg-rose-50 text-rose-700 border-rose-200';
+        return 'bg-red-50 text-red-700 border-red-200';
       case 'awaiting_payment':
         return 'bg-amber-50 text-amber-700 border-amber-200';
       default:
-        return 'bg-slate-100 text-slate-700 border-slate-200';
+        return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
@@ -127,7 +127,7 @@ const MyBookings = () => {
         return 'In Progress';
       case 'journey_started': return 'On The Way';
       case 'visited': return 'Arrived';
-      case 'awaiting_payment': return 'Request Accepted';
+      case 'awaiting_payment': return 'Awaiting Payment';
       case 'work_done': return 'Work Completed';
       default: return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
     }
@@ -160,30 +160,24 @@ const MyBookings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-28">
-      {/* Background Glow */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -ml-20" />
-      </div>
-
+    <div className="min-h-screen bg-[var(--background,#F8F9FA)] text-[var(--text-primary,#1F2937)] font-sans antialiased pb-28">
       <div className="relative z-10">
         {/* Sticky Header */}
-        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 shadow-2xs">
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[var(--border,#E5E7EB)] px-4 py-3 shadow-2xs">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(-1)}
-                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
+                className="w-8 h-8 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
                 aria-label="Go back"
               >
-                <FiArrowLeft className="w-5 h-5" />
+                <FiArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
+                <h1 className="text-base font-bold text-slate-900 tracking-tight leading-none">
                   My Bookings
                 </h1>
-                <span className="text-[10px] text-slate-500 font-semibold">Track Doorstep Services</span>
+                <span className="text-[10px] text-slate-500 font-medium">Track Doorstep Services</span>
               </div>
             </div>
             <NotificationBell />
@@ -191,8 +185,8 @@ const MyBookings = () => {
         </header>
 
         {/* Filter Pills */}
-        <section className="bg-white/80 backdrop-blur-xs border-b border-slate-200/80 sticky top-[57px] z-30 shadow-2xs">
-          <div className="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <section className="bg-white/90 backdrop-blur-xs border-b border-[var(--border,#E5E7EB)] sticky top-[53px] z-30 shadow-2xs">
+          <div className="max-w-4xl mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {[
               { id: 'all', label: 'All Bookings' },
               { id: 'confirmed', label: 'Confirmed' },
@@ -203,10 +197,10 @@ const MyBookings = () => {
               <button
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all active:scale-95 ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all active:scale-95 ${
                   filter === tab.id
-                    ? 'bg-[#0B132B] text-amber-400 shadow-2xs'
-                    : 'bg-slate-100/90 text-slate-600 hover:bg-slate-200 border border-slate-200/60'
+                    ? 'bg-[#B33A35] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200/60'
                 }`}
               >
                 {tab.label}
@@ -216,29 +210,29 @@ const MyBookings = () => {
         </section>
 
         {/* Main Content Area */}
-        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-4">
+        <main className="max-w-4xl mx-auto px-4 pt-4 space-y-3.5">
           {loading ? (
-            <div className="space-y-4">
-              {[1, 2].map((i) => (
-                <div key={i} className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs animate-pulse space-y-4">
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-md p-3 border border-[var(--border,#E5E7EB)] shadow-xs animate-pulse space-y-3">
                   <div className="flex justify-between items-center">
                     <div className="h-4 w-32 bg-slate-200 rounded"></div>
-                    <div className="h-6 w-20 bg-slate-200 rounded-full"></div>
+                    <div className="h-5 w-20 bg-slate-200 rounded-full"></div>
                   </div>
-                  <div className="h-10 bg-slate-100 rounded-xl"></div>
+                  <div className="h-16 bg-slate-100 rounded-md"></div>
                 </div>
               ))}
             </div>
           ) : bookings.length === 0 ? (
             /* RICH EMPTY STATE CARD */
-            <div className="space-y-6">
-              <div className="bg-white rounded-3xl p-8 text-center border border-slate-200/80 shadow-2xs space-y-4 relative overflow-hidden">
-                <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-[#0B132B] via-[#1C2541] to-[#0B132B] text-amber-400 flex items-center justify-center shadow-lg border border-slate-800">
-                  <FiCalendar className="w-10 h-10" />
+            <div className="space-y-6 pt-2">
+              <div className="bg-white rounded-md p-8 text-center border border-[var(--border,#E5E7EB)] shadow-2xs space-y-4 relative overflow-hidden">
+                <div className="w-16 h-16 mx-auto rounded-xl bg-gradient-to-tr from-[#B33A35] via-[#D56C67] to-[#9E2E2A] text-white flex items-center justify-center shadow-md">
+                  <FiCalendar className="w-8 h-8" />
                 </div>
 
                 <div className="max-w-sm mx-auto space-y-1.5">
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                     No {filter === 'all' ? 'Active' : filter.replace('-', ' ')} Bookings
                   </h2>
                   <p className="text-xs text-slate-500 font-medium leading-relaxed">
@@ -251,9 +245,9 @@ const MyBookings = () => {
                 <div className="pt-2">
                   <button
                     onClick={() => navigate('/user')}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#0B132B] hover:bg-slate-800 text-white font-extrabold text-xs uppercase tracking-wider shadow-md hover:shadow-lg active:scale-95 transition-all"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-[#B33A35] hover:bg-[#9E2E2A] text-white font-semibold text-xs uppercase tracking-wider shadow-sm transition-all active:scale-95"
                   >
-                    <HiSparkles className="w-4 h-4 text-amber-400" />
+                    <HiSparkles className="w-4 h-4 text-amber-200" />
                     <span>Book a Home Service</span>
                   </button>
                 </div>
@@ -269,16 +263,16 @@ const MyBookings = () => {
                     <div
                       key={cat.id}
                       onClick={() => navigate('/user')}
-                      className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs hover:border-slate-400 hover:shadow-xs transition-all cursor-pointer group flex flex-col items-center text-center space-y-2"
+                      className="bg-white rounded-md p-3 border border-[var(--border,#E5E7EB)] shadow-2xs hover:border-[#B33A35] transition-all cursor-pointer group flex flex-col items-center text-center space-y-2"
                     >
-                      <div className="w-full aspect-square rounded-xl bg-slate-50 flex items-center justify-center p-2 overflow-hidden">
+                      <div className="w-full aspect-square rounded-md bg-slate-50 flex items-center justify-center p-2 overflow-hidden">
                         <img
                           src={cat.image}
                           alt={cat.title}
                           className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
                         />
                       </div>
-                      <span className="text-xs font-bold text-slate-900 leading-tight">
+                      <span className="text-xs font-semibold text-slate-900 leading-tight">
                         {cat.title}
                       </span>
                     </div>
@@ -288,72 +282,96 @@ const MyBookings = () => {
             </div>
           ) : (
             /* POPULATED BOOKINGS LIST */
-            <div className="space-y-3.5">
-              {bookings.map((booking) => (
-                <div
-                  key={booking._id || booking.id}
-                  onClick={() => handleBookingClick(booking)}
-                  className={`bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 border-l-4 ${getStatusBorderColor(
-                    booking.status
-                  )} shadow-2xs hover:border-slate-300 transition-all cursor-pointer space-y-3.5 group relative overflow-hidden`}
-                >
-                  {/* Card Header */}
-                  <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                    <div>
+            <div className="space-y-3">
+              {bookings.map((booking) => {
+                const bookingImg = booking.serviceImage || booking.image || booking.items?.[0]?.image || booking.items?.[0]?.icon;
+                const bookingTitle = booking.serviceName || booking.items?.[0]?.title || 'Home Service Request';
+                const bookingCategory = booking.serviceCategory || booking.category || booking.items?.[0]?.category || 'Service';
+
+                return (
+                  <div
+                    key={booking._id || booking.id}
+                    onClick={() => handleBookingClick(booking)}
+                    className="w-full bg-[var(--card-bg,#FFFFFF)] rounded-md p-2.5 sm:p-3 md:p-3.5 border border-[var(--border,#E5E7EB)] shadow-xs hover:border-[#B33A35]/60 transition-all cursor-pointer space-y-2.5 group"
+                  >
+                    {/* Top Row: Booking ID / Date + Status Badge */}
+                    <div className="flex items-center justify-between gap-2 border-b border-[var(--border,#E5E7EB)] pb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          #{booking.bookingNumber || (booking._id || booking.id).substring(0, 8)}
+                        <span className="text-[11px] font-semibold text-slate-500">
+                          #{booking.bookingNumber || (booking._id || booking.id).substring(0, 8).toUpperCase()}
                         </span>
-                        {booking.serviceCategory && (
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-[10px] font-bold uppercase">
-                            {booking.serviceCategory}
-                          </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          {formatDate(booking.createdAt || booking.scheduledDate)}
+                        </span>
+                      </div>
+
+                      {/* Status Badge (Pill: rounded-full px-2 py-0.5 text-[11px] font-semibold) */}
+                      <div className={`px-2 py-0.5 rounded-full border text-[11px] font-semibold flex items-center gap-1.5 shrink-0 ${getStatusBadgeStyle(booking.status)}`}>
+                        {getStatusIcon(booking.status)}
+                        <span>{getStatusLabel(booking.status)}</span>
+                      </div>
+                    </div>
+
+                    {/* Middle Row: Thumbnail (left) + Service Title + Category + Scheduled Time (middle) + Price (right) */}
+                    <div className="flex items-center gap-3">
+                      {/* Thumbnail: w-16 h-16 (sm: w-20 h-20), rounded-md, object-cover, border */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-md overflow-hidden shrink-0 border border-[var(--border,#E5E7EB)] bg-slate-50 flex items-center justify-center">
+                        {bookingImg ? (
+                          <img
+                            src={bookingImg}
+                            alt={bookingTitle}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#B33A35]/10 text-[#B33A35] flex items-center justify-center font-bold text-base">
+                            {(bookingTitle).charAt(0)}
+                          </div>
                         )}
                       </div>
 
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug mt-1 group-hover:text-blue-600 transition-colors">
-                        {booking.serviceName || 'Home Service Request'}
-                      </h3>
+                      {/* Middle: Title + Category + Slot */}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[#B33A35] block">
+                          {bookingCategory}
+                        </span>
+                        <h3 className="text-xs sm:text-sm font-semibold text-slate-900 truncate group-hover:text-[#B33A35] transition-colors mt-0.5">
+                          {bookingTitle}
+                        </h3>
+
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium mt-1">
+                          <FiCalendar className="w-3.5 h-3.5 text-[#B33A35] shrink-0" />
+                          <span className="truncate">
+                            {formatDate(booking.scheduledDate)} {booking.scheduledTime ? `• ${booking.scheduledTime}` : ''}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Right: Price */}
+                      <div className="text-right shrink-0">
+                        <span className="text-xs text-slate-400 block font-medium">Total</span>
+                        <span className="text-sm sm:text-base font-bold text-slate-900">
+                          ₹{(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Status Badge */}
-                    <div className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 ${getStatusBadgeStyle(booking.status)}`}>
-                      {getStatusIcon(booking.status)}
-                      <span>{getStatusLabel(booking.status)}</span>
+                    {/* Bottom Row: Action Buttons (height 30-34px, rounded-md, text-xs font-semibold) */}
+                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--border,#E5E7EB)]">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBookingClick(booking);
+                        }}
+                        className="h-[32px] px-3 rounded-md bg-[#B33A35] hover:bg-[#9E2E2A] text-white text-xs font-semibold transition-colors flex items-center gap-1 shadow-xs active:scale-95"
+                      >
+                        <span>View Details</span>
+                        <FiChevronRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-
-                  {/* Slot & Address Info Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold text-slate-700 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <FiCalendar className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>{formatDate(booking.scheduledDate)} • {booking.scheduledTime || 'Preferred Slot'}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <FiMapPin className="w-4 h-4 text-rose-500 shrink-0" />
-                      <span className="truncate">{getAddressString(booking.address)}</span>
-                    </div>
-                  </div>
-
-                  {/* Card Footer */}
-                  <div className="flex items-center justify-between pt-1">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                        Total Amount
-                      </span>
-                      <span className="text-base font-black text-slate-900">
-                        ₹{(booking.finalAmount || booking.totalAmount || 0).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-
-                    <button className="px-3.5 py-2 rounded-xl bg-slate-100 group-hover:bg-[#0B132B] group-hover:text-amber-400 text-slate-800 font-extrabold text-xs transition-all flex items-center gap-1">
-                      <span>Details</span>
-                      <FiChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </main>

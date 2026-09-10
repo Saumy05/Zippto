@@ -265,25 +265,42 @@ const homeContentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Ensure only one home content document exists per city
+// Ensure home content document exists per city, falling back to default content if city has no content/banners
 homeContentSchema.statics.getHomeContent = async function (cityId = null) {
-  let query = { cityId: null };
-
-  if (cityId) {
-    query = { cityId };
+  let defaultContent = await this.findOne({ cityId: null });
+  if (!defaultContent) {
+    defaultContent = await this.create({ cityId: null });
   }
 
-  let homeContent = await this.findOne(query);
+  if (!cityId) {
+    return defaultContent;
+  }
 
-  // If requesting a specific city and no content exists, create it by copying default/empty
-  if (!homeContent && cityId) {
-    // Ideally we might copy from default here, but for now we create empty/default structure
-    // Fetch default to see if we can copy basics? No, start fresh or based on migration.
-    // Let's create a new entry for this city.
-    homeContent = await this.create({ cityId });
-  } else if (!homeContent && !cityId) {
-    // Create default if it doesn't exist
-    homeContent = await this.create({ cityId: null });
+  let homeContent = await this.findOne({ cityId });
+
+  // If requesting a specific city and no content exists, return default or create with default content
+  if (!homeContent) {
+    return defaultContent;
+  }
+
+  // If city content exists but has empty sections, fall back to default content
+  const sections = ['banners', 'promos', 'curated', 'noteworthy', 'booked', 'categorySections'];
+  for (const sec of sections) {
+    if (!homeContent[sec] || homeContent[sec].length === 0) {
+      if (defaultContent[sec] && defaultContent[sec].length > 0) {
+        homeContent[sec] = defaultContent[sec];
+      }
+    }
+  }
+
+  const visibilityFlags = [
+    'isBannersVisible', 'isPromosVisible', 'isCuratedVisible',
+    'isNoteworthyVisible', 'isBookedVisible', 'isCategorySectionsVisible', 'isCategoriesVisible'
+  ];
+  for (const flag of visibilityFlags) {
+    if (homeContent[flag] === undefined && defaultContent[flag] !== undefined) {
+      homeContent[flag] = defaultContent[flag];
+    }
   }
 
   return homeContent;
