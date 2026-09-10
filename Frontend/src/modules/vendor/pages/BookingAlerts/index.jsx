@@ -6,7 +6,7 @@ import Header from '../../components/layout/Header';
 import { vendorTheme as themeColors } from '../../../../theme';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import { vendorDashboardService } from '../../services/dashboardService';
-import { acceptBooking, rejectBooking, getBookings } from '../../services/bookingService';
+import { acceptBooking, rejectBooking, getBookings, getPendingAlerts } from '../../services/bookingService';
 import { useSocket } from '../../../../context/SocketContext';
 
 import PendingJobCard from '../../components/bookings/PendingJobCard';
@@ -24,21 +24,24 @@ const BookingAlerts = () => {
     const fetchAlerts = async () => {
       try {
         setLoading(true);
-        // Fetch stats to get global config (maxSearchTime)
-        const statsRes = await vendorDashboardService.getDashboardStats();
+        // Fetch stats, active bookings, and pending booking requests in parallel
+        const [statsRes, response, pendingAlertsRes] = await Promise.all([
+          vendorDashboardService.getDashboardStats().catch(() => ({})),
+          getBookings().catch(() => ({ success: false, data: [] })),
+          getPendingAlerts().catch(() => [])
+        ]);
+
         let localConfig = { maxSearchTime: 5 };
         if (statsRes.success && statsRes.data?.config) {
           localConfig = statsRes.data.config;
           setGlobalConfig(localConfig);
         }
 
-        const response = await getBookings();
+        let bookings = [];
+        const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
+        const currentVendorId = String(vendorData._id || vendorData.id || '');
 
         if (response.success && response.data) {
-          let bookings = [];
-          const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
-          const currentVendorId = String(vendorData._id || vendorData.id || '');
-
           bookings = response.data.filter(b => {
             const status = b.status?.toLowerCase();
             const isRelevantStatus = status === 'searching' || status === 'requested';
@@ -46,48 +49,63 @@ const BookingAlerts = () => {
             const isAssignedToMe = !bVendorId || String(bVendorId) === currentVendorId;
             return isRelevantStatus && isAssignedToMe;
           });
-
-          // Merge logic: Keep if in API OR if added recently (last 2 mins)
-          const mergedPending = [];
-
-          // Add active bookings from API, skipping expired ones
-          bookings.forEach(b => {
-            const bId = b._id || b.id;
-            const expiresAt = b.expiresAt || (b.createdAt && localConfig ? new Date(new Date(b.createdAt).getTime() + (localConfig.maxSearchTime || 5) * 60000).toISOString() : null);
-            const isExpired = expiresAt && new Date(expiresAt) <= new Date();
-            if (!isExpired) {
-              mergedPending.push({ ...b, id: bId, expiresAt });
-            }
-          });
-
-          const apiIds = new Set(mergedPending.map(b => String(b.id)));
-          const localPending = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-
-          localPending.forEach(localB => {
-            const id = String(localB.id || localB._id);
-            if (!apiIds.has(id)) {
-              const createdAt = localB.createdAt ? new Date(localB.createdAt).getTime() : Date.now();
-              const expiresAt = localB.expiresAt || (localB.createdAt && localConfig ? new Date(createdAt + (localConfig.maxSearchTime || 5) * 60000).toISOString() : null);
-              const isExpired = (expiresAt && new Date(expiresAt) <= new Date()) || (Date.now() - createdAt > 300000);
-
-              if (!isExpired && (localB.status === 'requested' || localB.status === 'searching')) {
-                mergedPending.push(localB);
-              }
-            }
-          });
-
-          localStorage.setItem('vendorPendingJobs', JSON.stringify(mergedPending));
-
-          // Map for PendingJobCard parity (now using already calculated/filtered results)
-          const mappedAlerts = mergedPending.map(b => ({
-            ...b,
-            serviceName: b.serviceName || b.serviceId?.title || 'New Booking Request',
-            serviceCategory: b.serviceCategory || b.serviceId?.categoryId?.title || 'General Service',
-            customerName: b.userId?.name || 'Customer'
-          }));
-
-          setAlerts(mappedAlerts);
         }
+
+        // Merge in any pending booking requests fetched from /vendors/bookings/pending
+        if (Array.isArray(pendingAlertsRes)) {
+          pendingAlertsRes.forEach(p => {
+            const pId = String(p.id || p.bookingId || p._id);
+            if (!bookings.some(b => String(b._id || b.id) === pId)) {
+              bookings.push({
+                ...p,
+                _id: pId,
+                id: pId,
+                status: p.status || 'searching'
+              });
+            }
+          });
+        }
+
+        // Merge logic: Keep if in API OR if added recently (last 2 mins)
+        const mergedPending = [];
+
+        // Add active bookings from API, skipping expired ones
+        bookings.forEach(b => {
+          const bId = b._id || b.id;
+          const expiresAt = b.expiresAt || (b.createdAt && localConfig ? new Date(new Date(b.createdAt).getTime() + (localConfig.maxSearchTime || 5) * 60000).toISOString() : null);
+          const isExpired = expiresAt && new Date(expiresAt) <= new Date();
+          if (!isExpired) {
+            mergedPending.push({ ...b, id: bId, expiresAt });
+          }
+        });
+
+        const apiIds = new Set(mergedPending.map(b => String(b.id)));
+        const localPending = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+
+        localPending.forEach(localB => {
+          const id = String(localB.id || localB._id);
+          if (!apiIds.has(id)) {
+            const createdAt = localB.createdAt ? new Date(localB.createdAt).getTime() : Date.now();
+            const expiresAt = localB.expiresAt || (localB.createdAt && localConfig ? new Date(createdAt + (localConfig.maxSearchTime || 5) * 60000).toISOString() : null);
+            const isExpired = (expiresAt && new Date(expiresAt) <= new Date()) || (Date.now() - createdAt > 300000);
+
+            if (!isExpired && (localB.status === 'requested' || localB.status === 'searching')) {
+              mergedPending.push(localB);
+            }
+          }
+        });
+
+        localStorage.setItem('vendorPendingJobs', JSON.stringify(mergedPending));
+
+        // Map for PendingJobCard parity (now using already calculated/filtered results)
+        const mappedAlerts = mergedPending.map(b => ({
+          ...b,
+          serviceName: b.serviceName || b.serviceId?.title || 'New Booking Request',
+          serviceCategory: b.serviceCategory || b.serviceId?.categoryId?.title || 'General Service',
+          customerName: b.userId?.name || 'Customer'
+        }));
+
+        setAlerts(mappedAlerts);
       } catch (error) {
         console.error('Error fetching alerts:', error);
         toast.error('Failed to load alerts');

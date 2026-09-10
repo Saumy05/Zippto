@@ -216,15 +216,20 @@ class BookingScheduler {
               return;
             }
 
-            // Filter to only online+available vendors (single batch find for this booking)
+            // Filter to eligible vendors (active, approved, not on an active job)
             const vendorIds = vendorsToNotify.map(v => v.vendorId);
-            const onlineVendors = await Vendor.find(
-              { _id: { $in: vendorIds }, isOnline: true, availability: { $in: ['AVAILABLE', 'BUSY'] } },
-              '_id'
+            const eligibleVendors = await Vendor.find(
+              {
+                _id: { $in: vendorIds },
+                approvalStatus: { $in: ['approved', 'APPROVED'] },
+                isActive: true,
+                availability: { $ne: 'ON_JOB' }
+              },
+              '_id isOnline availability'
             ).lean();
 
-            const onlineSet = new Set(onlineVendors.map(v => v._id.toString()));
-            vendorsToNotify = vendorsToNotify.filter(v => onlineSet.has(v.vendorId.toString()));
+            const eligibleSet = new Set(eligibleVendors.map(v => v._id.toString()));
+            vendorsToNotify = vendorsToNotify.filter(v => eligibleSet.has(v.vendorId.toString()));
 
             // Advance wave in DB — use findByIdAndUpdate for atomicity (avoids race with accept)
             const notifyIds = vendorsToNotify.map(v => v.vendorId);

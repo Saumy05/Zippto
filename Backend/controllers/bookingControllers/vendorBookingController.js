@@ -25,15 +25,27 @@ const getVendorBookings = async (req, res) => {
 
     // ── Build Base Query ──
     // This Or condition ensures vendors see their own jobs OR relevant unassigned alerts
+    const unassignedMatch = {
+      vendorId: null,
+      status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING] },
+      'potentialVendors.vendorId': vId // Only show jobs where THIS vendor is within range
+    };
+
+    // If vendor has specific categories configured, match case-insensitively across both titles & slugs
+    if (Array.isArray(vendorCategories) && vendorCategories.length > 0) {
+      const categoryRegexes = vendorCategories.map(cat => {
+        const clean = String(cat).trim();
+        const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const escaped = clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`^(${escaped}|${slug})$`, 'i');
+      });
+      unassignedMatch.serviceCategory = { $in: categoryRegexes };
+    }
+
     const query = {
       $or: [
         { vendorId: vId, status: { $ne: BOOKING_STATUS.AWAITING_PAYMENT } },
-        {
-          vendorId: null,
-          status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING] },
-          serviceCategory: { $in: vendorCategories },
-          'potentialVendors.vendorId': vId // Only show jobs where THIS vendor is within range
-        }
+        unassignedMatch
       ]
     };
 
@@ -1411,18 +1423,28 @@ const getPendingBookings = async (req, res) => {
     const bookings = validRequests.map(req => ({
       requestId: req._id,
       bookingId: req.bookingId._id,
+      id: req.bookingId._id,
       bookingNumber: req.bookingId.bookingNumber,
       serviceName: req.bookingId.serviceId?.title || req.bookingId.serviceName,
-      customerName: req.bookingId.userId?.name,
+      customerName: req.bookingId.userId?.name || 'Customer',
       customerPhone: req.bookingId.userId?.phone,
       scheduledDate: req.bookingId.scheduledDate,
       scheduledTime: req.bookingId.scheduledTime,
+      timeSlot: {
+        date: new Date(req.bookingId.scheduledDate).toLocaleDateString(),
+        time: req.bookingId.scheduledTime || 'Time not set'
+      },
       address: req.bookingId.address,
+      location: {
+        address: req.bookingId.address?.addressLine1 || 'Location shared',
+        distance: req.distance ? `${Number(req.distance).toFixed(1)} km` : 'Near you'
+      },
       price: req.bookingId.finalAmount,
+      finalAmount: req.bookingId.finalAmount,
       distance: req.distance,
       wave: req.wave,
       sentAt: req.sentAt,
-      status: req.status,
+      status: req.status || req.bookingId.status,
       serviceCategory: req.bookingId.serviceCategory,
       brandName: req.bookingId.brandName,
       brandIcon: req.bookingId.brandIcon,

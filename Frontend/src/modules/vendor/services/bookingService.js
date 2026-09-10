@@ -138,16 +138,18 @@ export const collectSelfCash = async (bookingId, otp, amount) => {
  */
 export const getPendingAlerts = async () => {
   try {
-    // TODO: Replace with actual API call
-    // const response = await fetch(`${API_BASE_URL}/bookings/pending`);
-    // return await response.json();
-
-    // Mock implementation
+    const response = await api.get('/vendors/bookings/pending');
+    if (response.data && response.data.success && Array.isArray(response.data.data)) {
+      // Sync with localStorage for offline resilience
+      localStorage.setItem('vendorPendingJobs', JSON.stringify(response.data.data));
+      return response.data.data;
+    }
     const pending = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
     return pending;
   } catch (error) {
-    console.error('Error fetching pending alerts:', error);
-    throw error;
+    console.error('Error fetching pending alerts from API, falling back to local storage:', error);
+    const pending = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+    return pending;
   }
 };
 

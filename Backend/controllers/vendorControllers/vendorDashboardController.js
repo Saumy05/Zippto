@@ -34,7 +34,10 @@ const getDashboardStats = async (req, res) => {
                     {
                       vendorId: null,
                       status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING] },
-                      'potentialVendors.vendorId': vId
+                      $or: [
+                        { 'potentialVendors.vendorId': vId },
+                        { notifiedVendors: vId }
+                      ]
                     }
                   ]
                 }
@@ -86,7 +89,10 @@ const getDashboardStats = async (req, res) => {
                     {
                       vendorId: null,
                       status: { $in: [BOOKING_STATUS.REQUESTED, BOOKING_STATUS.SEARCHING] },
-                      'potentialVendors.vendorId': vId
+                      $or: [
+                        { 'potentialVendors.vendorId': vId },
+                        { notifiedVendors: vId }
+                      ]
                     }
                   ]
                 }

@@ -398,8 +398,32 @@ const createBooking = async (req, res) => {
         }
 
         // Nearby vendors offering this service category found
+        // Nearby vendors offering this service category found
         // Alert all qualified matching vendors in radius (up to 10 vendors in wave 1)
-        const sortedVendors = nearbyVendors.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        let sortedVendors = nearbyVendors.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+
+        // Fallback: If nearbyVendors is empty, search for any active approved vendors as safety net
+        if (sortedVendors.length === 0) {
+          console.warn('[CreateBooking] 0 vendors found in strict radius. Checking active approved vendors as safety net...');
+          const broadVendors = await Vendor.find({
+            $or: [
+              { approvalStatus: { $in: ['approved', 'APPROVED'] } },
+              { status: { $in: ['active', 'approved', 'ACTIVE', 'APPROVED'] } },
+              { isApproved: true }
+            ],
+            isActive: true
+          })
+            .select('name businessName phone address location profilePhoto service rating isOnline availability settings')
+            .limit(10)
+            .lean();
+
+          if (broadVendors.length > 0) {
+            sortedVendors = broadVendors.map(v => ({
+              ...v,
+              distance: 2.0
+            }));
+          }
+        }
 
         // Wave 1: Notify all matching vendors (up to 10)
         const WAVE_1_COUNT = Math.min(sortedVendors.length, 10);
@@ -449,6 +473,9 @@ const createBooking = async (req, res) => {
         const io = getIO();
         if (io) {
           console.log(`[CreateBooking] Emitting Socket.IO alerts to ${wave1Vendors.length} matching vendors...`);
+          // Use full 5-minute search window for expiresAt
+          const socketExpiresAt = new Date(new Date(bookingForBackground.createdAt || Date.now()).getTime() + (5 * 60 * 1000)).toISOString();
+
           wave1Vendors.forEach(vendor => {
             const vendorRoom = `vendor_${vendor._id.toString()}`;
             console.log(`[Wave 1] Emitting to ${vendorRoom} (dist: ${vendor.distance?.toFixed(1) || 'N/A'}km)`);
@@ -467,7 +494,7 @@ const createBooking = async (req, res) => {
               brandIcon: bookingForBackground.brandIcon,
               categoryIcon: bookingForBackground.categoryIcon,
               createdAt: bookingForBackground.createdAt || new Date(),
-              expiresAt: new Date(new Date(bookingForBackground.createdAt || Date.now()).getTime() + (60 * 1000)).toISOString(),
+              expiresAt: socketExpiresAt,
               playSound: true,
               message: `New booking request for ${bookingForBackground.serviceCategory || serviceForBackground.title} within ${vendor.distance?.toFixed(1) || '?'}km!`
             });

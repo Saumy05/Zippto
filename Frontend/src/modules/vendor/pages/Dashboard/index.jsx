@@ -5,7 +5,7 @@ import { FaWallet } from 'react-icons/fa';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import { vendorDashboardService } from '../../services/dashboardService';
-import { acceptBooking, rejectBooking } from '../../services/bookingService';
+import { acceptBooking, rejectBooking, getPendingAlerts } from '../../services/bookingService';
 // Booking alert handled globally
 import { toast } from 'react-hot-toast';
 import { io } from 'socket.io-client';
@@ -241,7 +241,10 @@ const Dashboard = memo(() => {
       if (showSpinner) setLoading(true);
       setError(null);
 
-      const response = await vendorDashboardService.getDashboardStats();
+      const [response] = await Promise.all([
+        vendorDashboardService.getDashboardStats(),
+        getPendingAlerts().catch(() => [])
+      ]);
       processApiResponse(response);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
