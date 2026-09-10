@@ -295,7 +295,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     });
   }, [location.pathname, isItemActive]);
 
-  // Accordions with auto-scroll reveal behavior (Strictly ONE open dropdown at a time)
+  // Accordions with auto-scroll reveal behavior
   const toggleExpand = (id, e) => {
     setExpandedItems(prev => {
       const isNowExpanded = !prev[id];
@@ -305,8 +305,10 @@ const AdminSidebar = ({ isOpen, onClose }) => {
           containerEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 120);
       }
-      // Single-dropdown accordion: keep only the toggled item open, collapse all others
-      return isNowExpanded ? { [id]: true } : {};
+      return {
+        ...prev,
+        [id]: isNowExpanded
+      };
     });
   };
 
@@ -426,7 +428,6 @@ const AdminSidebar = ({ isOpen, onClose }) => {
                       type="button"
                       onClick={(e) => {
                         if (hasChildren) {
-                          handleNavigate(item.to);
                           toggleExpand(item.id, e);
                         } else {
                           handleNavigate(item.to);
@@ -435,14 +436,18 @@ const AdminSidebar = ({ isOpen, onClose }) => {
                       className={`
                         w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl transition-all duration-150 text-left cursor-pointer outline-none
                         ${active
-                          ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold shadow-md shadow-blue-600/25"
+                          ? (hasChildren
+                              ? "bg-slate-800/90 text-white font-semibold border border-slate-700/50"
+                              : "bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold shadow-md shadow-blue-600/25")
                           : "text-[13.5px] font-semibold text-slate-300 hover:text-white hover:bg-slate-800/70"
                         }
                       `}
                     >
                       <Icon
                         className={`w-4.5 h-4.5 shrink-0 transition-transform duration-150 group-hover/item:scale-105 ${
-                          active ? "text-white" : "text-slate-400 group-hover/item:text-slate-200"
+                          active
+                            ? (hasChildren ? "text-blue-400" : "text-white")
+                            : "text-slate-400 group-hover/item:text-slate-200"
                         }`}
                       />
                       <span className="flex-1 text-[13.5px] truncate leading-normal py-0.5">
@@ -459,7 +464,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
                           transition={{ duration: 0.15, ease: "easeInOut" }}
                           className="shrink-0 text-slate-400 ml-1"
                         >
-                          <FiChevronDown className={`w-3.5 h-3.5 ${active ? "text-white/90" : ""}`} />
+                          <FiChevronDown className={`w-3.5 h-3.5 ${active ? "text-blue-400" : ""}`} />
                         </motion.div>
                       )}
                     </button>
