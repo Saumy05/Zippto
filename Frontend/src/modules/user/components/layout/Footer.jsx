@@ -5,7 +5,22 @@ import { configService } from '../../../../services/configService';
 
 const Footer = () => {
   const location = useLocation();
-  
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await configService.getSettings();
+        if (data?.success) {
+          setSettings(data.settings);
+        }
+      } catch (err) {
+        // Silently handle error
+      }
+    };
+    fetchSettings();
+  }, []);
+
   // Show on home and dashboard pages
   const isDashboardPage = 
     location.pathname === '/user' || 
@@ -17,17 +32,6 @@ const Footer = () => {
   }
 
   const currentYear = new Date().getFullYear();
-  const [settings, setSettings] = useState(null);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      const data = await configService.getSettings();
-      if (data?.success) {
-        setSettings(data.settings);
-      }
-    };
-    fetchSettings();
-  }, []);
 
   const supportEmail = settings?.supportEmail || settings?.companyEmail || 'Nexorahr@gmail.com';
   const supportPhone = settings?.supportPhone || settings?.companyPhone || '7879363299';

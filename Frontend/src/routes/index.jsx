@@ -25,6 +25,10 @@ const AppRoutes = () => {
       {/* Redirect Root Slash to User App */}
       <Route path="/" element={<Navigate to="/user" replace />} />
 
+      {/* Cart & Checkout Direct Route Shortcuts */}
+      <Route path="/cart" element={<Navigate to="/user/cart" replace />} />
+      <Route path="/checkout" element={<Navigate to="/user/checkout" replace />} />
+
       {/* User Routes */}
       <Route path="/user/*" element={<UserRoutes />} />
 
