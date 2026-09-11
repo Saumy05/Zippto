@@ -1,5 +1,6 @@
 const Service = require('../../models/UserService');
 const Brand = require('../../models/Brand');
+const VendorServiceCatalog = require('../../models/VendorServiceCatalog');
 const { validationResult } = require('express-validator');
 const { SERVICE_STATUS } = require('../../utils/constants');
 
@@ -112,6 +113,19 @@ const createService = async (req, res) => {
       iconUrl
     });
 
+    // Auto-sync with VendorServiceCatalog for technician billing
+    try {
+      if (categoryId) {
+        await VendorServiceCatalog.findOneAndUpdate(
+          { name: title, categoryId },
+          { name: title, categoryId, price: basePrice, status: status || SERVICE_STATUS.ACTIVE, description: description || '' },
+          { upsert: true }
+        );
+      }
+    } catch (vErr) {
+      console.warn('Vendor catalog auto-sync warning:', vErr.message);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Service created successfully',
@@ -185,6 +199,25 @@ const updateService = async (req, res) => {
 
     await service.save();
 
+    // Auto-sync with VendorServiceCatalog for technician billing
+    try {
+      if (service.categoryId) {
+        await VendorServiceCatalog.findOneAndUpdate(
+          { name: service.title, categoryId: service.categoryId },
+          {
+            name: service.title,
+            categoryId: service.categoryId,
+            price: service.basePrice,
+            status: service.status,
+            description: service.description || ''
+          },
+          { upsert: true }
+        );
+      }
+    } catch (vErr) {
+      console.warn('Vendor catalog auto-sync warning:', vErr.message);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Service updated successfully',
@@ -223,6 +256,15 @@ const deleteService = async (req, res) => {
         success: false,
         message: 'Service not found'
       });
+    }
+
+    // Auto-sync delete from VendorServiceCatalog
+    try {
+      if (service.categoryId) {
+        await VendorServiceCatalog.findOneAndDelete({ name: service.title, categoryId: service.categoryId });
+      }
+    } catch (vErr) {
+      console.warn('Vendor catalog delete warning:', vErr.message);
     }
 
     res.status(200).json({

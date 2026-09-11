@@ -402,17 +402,36 @@ const createBooking = async (req, res) => {
         // Alert all qualified matching vendors in radius (up to 10 vendors in wave 1)
         let sortedVendors = nearbyVendors.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
-        // Fallback: If nearbyVendors is empty, search for any active approved vendors as safety net
+        // Fallback: If nearbyVendors is empty, search for active approved vendors matching this service category as safety net
         if (sortedVendors.length === 0) {
-          console.warn('[CreateBooking] 0 vendors found in strict radius. Checking active approved vendors as safety net...');
-          const broadVendors = await Vendor.find({
+          console.warn('[CreateBooking] 0 vendors found in strict radius. Checking active approved vendors matching category as safety net...');
+          const broadQuery = {
             $or: [
               { approvalStatus: { $in: ['approved', 'APPROVED'] } },
               { status: { $in: ['active', 'approved', 'ACTIVE', 'APPROVED'] } },
               { isApproved: true }
             ],
             isActive: true
-          })
+          };
+
+          if (bookingForBackground.serviceCategory) {
+            const clean = bookingForBackground.serviceCategory.trim();
+            const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const rx = new RegExp(clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+            const rxSlug = new RegExp(`^${slug}$`, 'i');
+
+            broadQuery.$and = [
+              {
+                $or: [
+                  { service: { $in: [clean, slug, rx, rxSlug] } },
+                  { serviceCategory: { $in: [clean, slug, rx, rxSlug] } },
+                  { categories: { $in: [clean, slug, rx, rxSlug] } }
+                ]
+              }
+            ];
+          }
+
+          const broadVendors = await Vendor.find(broadQuery)
             .select('name businessName phone address location profilePhoto service rating isOnline availability settings')
             .limit(10)
             .lean();

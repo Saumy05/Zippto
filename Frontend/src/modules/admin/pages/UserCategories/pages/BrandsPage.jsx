@@ -107,6 +107,7 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
             categoryId: primaryCatId || (catIds.length > 0 ? catIds[0] : null),
             iconUrl: svc.iconUrl || "",
             badge: svc.badge || "",
+            servicesCount: svc.servicesCount ?? 0,
             routePath: svc.routePath || `/user/${svc.slug}`,
             page: svc.page || {},
             sections: svc.sections || [],
@@ -452,10 +453,14 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
                       <td className="py-4 px-4 text-center">
                         <button
                           onClick={() => openServicesModal(s)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-green-50 text-green-700 rounded-lg hover:bg-green-100 border border-green-200 transition-colors"
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
+                            (s.servicesCount || 0) > 0
+                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border-amber-200'
+                          }`}
                         >
                           <FiGrid className="w-3.5 h-3.5" />
-                          Manage ({s.id ? 'Services' : 'Wait'})
+                          Manage ({s.servicesCount || 0} {s.servicesCount === 1 ? 'Service' : 'Services'})
                         </button>
                       </td>
                       <td className="py-4 px-4 text-right">

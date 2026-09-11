@@ -1,5 +1,6 @@
 const Brand = require('../../models/Brand');
 const Category = require('../../models/Category');
+const Service = require('../../models/UserService');
 const { validationResult } = require('express-validator');
 const { SERVICE_STATUS } = require('../../utils/constants');
 
@@ -22,6 +23,17 @@ const getAllBrands = async (req, res) => {
       .select('-__v')
       .sort({ createdAt: -1 })
       .lean();
+
+    // Aggregate service count for each brand
+    const brandIds = brands.map(b => b._id);
+    const serviceCounts = await Service.aggregate([
+      { $match: { brandId: { $in: brandIds } } },
+      { $group: { _id: '$brandId', count: { $sum: 1 } } }
+    ]);
+    const countMap = {};
+    serviceCounts.forEach(sc => {
+      if (sc._id) countMap[sc._id.toString()] = sc.count;
+    });
 
     // Helper function to clean MongoDB _id fields from nested objects
     const cleanMongoIds = (obj) => {
@@ -72,6 +84,7 @@ const getAllBrands = async (req, res) => {
           categoryTitle: catTitles[0] || null,
           iconUrl: brand.iconUrl,
           badge: brand.badge,
+          servicesCount: countMap[brand._id.toString()] || 0,
           routePath: brand.routePath,
           status: brand.status,
           isPopular: brand.isPopular,
