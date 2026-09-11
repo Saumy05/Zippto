@@ -113,7 +113,7 @@ class BookingScheduler {
           waveStartedAt: { $ne: null },
           potentialVendors: { $exists: true, $not: { $size: 0 } }
         },
-        '_id currentWave waveStartedAt potentialVendors notifiedVendors bookingNumber createdAt userId expiresAt' // Added createdAt, userId, expiresAt
+        '_id currentWave waveStartedAt potentialVendors notifiedVendors bookingNumber createdAt userId expiresAt bookingType'
       ).lean();
 
       if (activeBookings.length === 0) {
@@ -131,15 +131,20 @@ class BookingScheduler {
             const startTime = new Date(booking.createdAt || booking.waveStartedAt).getTime();
             const totalElapsed = now - startTime;
 
+            // Differentiate wave duration and max search time for Instant (ASAP) vs Scheduled
+            const isInstant = booking.bookingType === 'instant';
+            const waveDurationMs = isInstant ? 20000 : (waveConfig.duration || 60000); // 20s for Instant, 60s for Scheduled
+            const maxSearchMs = isInstant ? (120 * 1000) : MAX_SEARCH_TIME_MS; // 120s (2 mins) for Instant, 5 mins for Scheduled
+
             // --- PERSISTENCE: Save expiresAt to DB if missing ---
             if (!booking.expiresAt) {
-              const expiresAtDate = new Date(startTime + MAX_SEARCH_TIME_MS);
+              const expiresAtDate = new Date(startTime + maxSearchMs);
               await Booking.findByIdAndUpdate(booking._id, { $set: { expiresAt: expiresAtDate } });
             }
 
             // --- EXPIRY CHECK ---
-            if (totalElapsed > MAX_SEARCH_TIME_MS) {
-              console.log(`[BookingScheduler] ${booking.bookingNumber}: Search timed out. Alerting Admin.`);
+            if (totalElapsed > maxSearchMs) {
+              console.log(`[BookingScheduler] ${booking.bookingNumber} (${booking.bookingType || 'scheduled'}): Search timed out. Alerting Admin.`);
 
               await Booking.findByIdAndUpdate(booking._id, {
                 $set: {
@@ -200,7 +205,7 @@ class BookingScheduler {
 
             const waveElapsed = now - new Date(booking.waveStartedAt).getTime();
             // Only process if this booking's wave timer has expired
-            if (waveConfig.duration === 0 || waveElapsed < waveConfig.duration) return;
+            if (waveDurationMs === 0 || waveElapsed < waveDurationMs) return;
 
             const nextWave = currentWave + 1;
             const { start, end } = getVendorRange(nextWave);
@@ -308,7 +313,7 @@ class BookingScheduler {
               brandIcon: populatedBooking.brandIcon,
               categoryIcon: populatedBooking.categoryIcon,
               createdAt: populatedBooking.createdAt,
-              expiresAt: new Date(new Date(populatedBooking.createdAt).getTime() + MAX_SEARCH_TIME_MS).toISOString(),
+              expiresAt: new Date(new Date(populatedBooking.createdAt).getTime() + (populatedBooking.bookingType === 'instant' ? 120000 : MAX_SEARCH_TIME_MS)).toISOString(),
               playSound: true,
               message: `New booking request within ${v.distance?.toFixed(1) || '?'}km!`
             });

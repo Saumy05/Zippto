@@ -424,22 +424,95 @@ const rejectBooking = async (req, res) => {
       v => v.vendorId?.toString() !== vendorId.toString()
     );
 
-    // Check if ALL vendors have rejected
+    // Emit socket to remove this booking request from the rejecting vendor's live screen
+    let io = null;
+    try {
+      const { getIO } = require('../../sockets');
+      io = getIO();
+    } catch (e) {}
+
+    if (io) {
+      io.to(`vendor_${vendorId}`).emit('removeVendorBooking', { id: booking._id });
+    }
+
+    // --- IMMEDIATE BACKFILL LOGIC ---
+    // If other potential vendors exist that haven't been notified yet, notify the next candidate immediately (0s delay)!
+    const alreadyNotifiedIds = new Set((booking.notifiedVendors || []).map(v => v.toString()));
+    const unnotifiedCandidates = (booking.potentialVendors || []).filter(
+      pv => pv.vendorId && !alreadyNotifiedIds.has(pv.vendorId.toString())
+    );
+
+    if (unnotifiedCandidates.length > 0) {
+      const nextCandidate = unnotifiedCandidates[0];
+      const Vendor = require('../../models/Vendor');
+      const nextVendor = await Vendor.findOne({
+        _id: nextCandidate.vendorId,
+        approvalStatus: { $in: ['approved', 'APPROVED'] },
+        isActive: true,
+        availability: { $ne: 'ON_JOB' }
+      }).select('_id name phone isOnline');
+
+      if (nextVendor) {
+        console.log(`[RejectBooking] Immediate backfill for booking #${booking.bookingNumber} with vendor ${nextVendor.name} (${nextVendor._id})`);
+        booking.notifiedVendors.push(nextVendor._id);
+
+        await BookingRequest.findOneAndUpdate(
+          { bookingId: id, vendorId: nextVendor._id },
+          {
+            bookingId: id,
+            vendorId: nextVendor._id,
+            status: 'PENDING',
+            wave: booking.currentWave || 1,
+            distance: nextCandidate.distance || null,
+            sentAt: new Date(),
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+          },
+          { upsert: true }
+        );
+
+        if (io) {
+          const socketExpiresAt = new Date(new Date(booking.createdAt || Date.now()).getTime() + (5 * 60 * 1000)).toISOString();
+          io.to(`vendor_${nextVendor._id.toString()}`).emit('new_booking_request', {
+            bookingId: booking._id,
+            serviceName: booking.serviceName,
+            customerName: booking.customerName || booking.userId?.name || 'Customer',
+            customerPhone: booking.customerPhone || booking.userId?.phone,
+            scheduledDate: booking.scheduledDate,
+            scheduledTime: booking.scheduledTime,
+            price: booking.finalAmount,
+            address: booking.address,
+            distance: nextCandidate.distance,
+            serviceCategory: booking.serviceCategory,
+            brandName: booking.brandName,
+            brandIcon: booking.brandIcon,
+            categoryIcon: booking.categoryIcon,
+            createdAt: booking.createdAt || new Date(),
+            expiresAt: socketExpiresAt,
+            playSound: true,
+            message: `New booking request for ${booking.serviceCategory || booking.serviceName}!`
+          });
+
+          // Inform Admin Tracking feed with real-time silent log
+          io.to('admin_notifications').emit('booking_vendor_declined', {
+            bookingId: booking._id,
+            bookingNumber: booking.bookingNumber,
+            declinedVendorId: vendorId,
+            backfilledVendorId: nextVendor._id,
+            backfilledVendorName: nextVendor.name,
+            reason: reason || 'Vendor declined',
+            remainingCandidates: unnotifiedCandidates.length - 1
+          });
+        }
+      }
+    }
+
+    const activeNotifiedCount = booking.notifiedVendors.length;
     const pendingRequests = await BookingRequest.countDocuments({
       bookingId: id,
       status: { $in: ['PENDING', 'VIEWED'] }
     });
 
-    const remainingPotential = booking.potentialVendors.length;
-
-    // Emit socket to remove this booking request from the rejecting vendor's live screen
-    const { getIO } = require('../../sockets');
-    const io = getIO();
-    if (io) {
-      io.to(`vendor_${vendorId}`).emit('removeVendorBooking', { id: booking._id });
-    }
-
-    if (pendingRequests === 0 && remainingPotential === 0) {
+    if (activeNotifiedCount === 0 && pendingRequests === 0 && booking.potentialVendors.length === 0) {
       // No vendors left - mark booking as NO_VENDORS / UNASSIGNED
       booking.status = BOOKING_STATUS.NO_VENDORS;
       booking.cancelledAt = new Date();
