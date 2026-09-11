@@ -124,15 +124,7 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
         }));
       }
 
-      setCatalog(prev => {
-        const next = { ...prev, services: mappedBrands, categories: mappedCategories };
-        saveCatalog(next);
-        return next;
-      });
-
-      // Notify other components
-      window.dispatchEvent(new Event("adminUserAppCatalogUpdated"));
-
+      setCatalog(prev => ({ ...prev, services: mappedBrands, categories: mappedCategories }));
     } catch (error) {
       console.error('Failed to fetch catalog data:', error);
       toast.error(`Failed to load data: ${error.response?.data?.message || error.message}`);

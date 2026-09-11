@@ -118,11 +118,7 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
           }));
         }
 
-        setCatalog(prev => {
-          const next = { ...prev, services: mappedBrands, categories: mappedCategories };
-          saveCatalog(next);
-          return next;
-        });
+        setCatalog(prev => ({ ...prev, services: mappedBrands, categories: mappedCategories }));
 
       } catch (error) {
         console.error('Failed to fetch catalog data:', error);
@@ -139,14 +135,15 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
   // Auto-select first brand
   useEffect(() => {
     if (filteredBrands.length > 0) {
-      if (!activeBrandId || !filteredBrands.find(b => b.id === activeBrandId)) {
+      const exists = filteredBrands.some(b => String(b.id) === String(activeBrandId));
+      if (!activeBrandId || !exists) {
         setActiveBrandId(filteredBrands[0].id);
       }
     } else {
       setActiveBrandId(null);
       setBrandServices([]);
     }
-  }, [filteredBrands]);
+  }, [filteredBrands, activeBrandId]);
 
   // Fetch Services when Active Brand Changes
   useEffect(() => {

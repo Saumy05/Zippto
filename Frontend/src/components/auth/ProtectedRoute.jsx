@@ -6,35 +6,45 @@ import { toast } from 'react-hot-toast';
  * Protected Route Component
  * Checks if user is authenticated before allowing access
  */
+const getKeys = (type) => {
+  switch (type) {
+    case 'vendor':
+      return { tokenKey: 'vendorAccessToken', refreshTokenKey: 'vendorRefreshToken', dataKey: 'vendorData' };
+    case 'admin':
+      return { tokenKey: 'adminAccessToken', refreshTokenKey: 'adminRefreshToken', dataKey: 'adminData' };
+    case 'user':
+    default:
+      return { tokenKey: 'accessToken', refreshTokenKey: 'refreshToken', dataKey: 'userData' };
+  }
+};
+
+const checkAuthSync = (type) => {
+  const { tokenKey, dataKey } = getKeys(type);
+  const token = sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
+  const userData = sessionStorage.getItem(dataKey) || localStorage.getItem(dataKey);
+  if (!token || !userData) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(atob(parts[1]));
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp > currentTime) return true;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
 const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => checkAuthSync(userType));
+  const [isLoading, setIsLoading] = useState(() => checkAuthSync(userType) === null);
 
   useEffect(() => {
     const checkAuth = async () => {
-      let tokenKey = 'accessToken';
-      let refreshTokenKey = 'refreshToken';
-      let dataKey = 'userData';
+      const { tokenKey, refreshTokenKey, dataKey } = getKeys(userType);
 
-      switch (userType) {
-        case 'vendor':
-          tokenKey = 'vendorAccessToken';
-          refreshTokenKey = 'vendorRefreshToken';
-          dataKey = 'vendorData';
-          break;
-        case 'admin':
-          tokenKey = 'adminAccessToken';
-          refreshTokenKey = 'adminRefreshToken';
-          dataKey = 'adminData';
-          break;
-        case 'user':
-        default:
-          tokenKey = 'accessToken';
-          refreshTokenKey = 'refreshToken';
-          dataKey = 'userData';
-          break;
-      }
 
       const token = sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
       const refreshToken = sessionStorage.getItem(refreshTokenKey) || localStorage.getItem(refreshTokenKey);

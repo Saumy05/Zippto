@@ -242,7 +242,6 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
             isCategoriesVisible: hc.isCategoriesVisible ?? true
           };
           setCatalog(next);
-          saveCatalog(next);
         }
       } catch (error) {
         console.error("Error fetching home content:", error);

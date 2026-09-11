@@ -5,41 +5,29 @@ import { useState, useEffect } from 'react';
  * Used to add padding-top to admin page content on mobile (fixed header).
  */
 const useAdminHeaderHeight = () => {
-  const [headerHeight, setHeaderHeight] = useState(72); // default ~ single-vendor
+  const [headerHeight, setHeaderHeight] = useState(80);
 
   useEffect(() => {
+    // Desktop layout uses fixed Tailwind padding (lg:pt-24); skip measuring on desktop
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      return;
+    }
+
     const calculateHeight = () => {
-      const header = document.querySelector('header[class*="fixed"][class*="top-0"]');
+      const header = document.querySelector('header[class*="fixed"][class*="top-0"]') || document.querySelector('header.fixed');
       if (header) {
-        setHeaderHeight(header.offsetHeight);
-        return;
+        const h = header.offsetHeight;
+        if (h > 0) {
+          setHeaderHeight(prev => (Math.abs(prev - h) > 2 ? h : prev));
+        }
       }
-      const fallbackHeader = document.querySelector('header.fixed');
-      if (fallbackHeader) setHeaderHeight(fallbackHeader.offsetHeight);
     };
 
     calculateHeight();
     window.addEventListener('resize', calculateHeight);
 
-    const t1 = window.setTimeout(calculateHeight, 100);
-    const t2 = window.setTimeout(calculateHeight, 500);
-
-    const observer = new MutationObserver(calculateHeight);
-    const header = document.querySelector('header[class*="fixed"][class*="top-0"]');
-    if (header) {
-      observer.observe(header, {
-        attributes: true,
-        attributeFilter: ['class', 'style'],
-        childList: true,
-        subtree: true,
-      });
-    }
-
     return () => {
       window.removeEventListener('resize', calculateHeight);
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-      observer.disconnect();
     };
   }, []);
 
@@ -47,5 +35,6 @@ const useAdminHeaderHeight = () => {
 };
 
 export default useAdminHeaderHeight;
+
 
 

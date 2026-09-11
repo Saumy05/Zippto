@@ -92,7 +92,7 @@ const UserCategories = () => {
         </div>
       )}
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      <div className="space-y-4">
         <Routes>
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage catalog={catalog} setCatalog={setCatalog} selectedCity={selectedCity} />} />
@@ -103,7 +103,7 @@ const UserCategories = () => {
           <Route path="vendor-parts" element={<VendorPartsPage />} />
           <Route path="*" element={<Navigate to="home" replace />} />
         </Routes>
-      </motion.div>
+      </div>
     </div>
   );
 };
