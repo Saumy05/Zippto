@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FiGrid, FiPlus, FiEdit2, FiTrash2, FiPackage, FiSearch } from "react-icons/fi";
+import { FiGrid, FiPlus, FiEdit2, FiTrash2, FiPackage, FiSearch, FiUpload, FiImage } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import CardShell from "../components/CardShell";
 import Modal from "../components/Modal";
@@ -13,7 +13,8 @@ const serviceSchema = z.object({
   basePrice: z.number().min(0, "Price must be non-negative"),
   gstPercentage: z.number().min(0).max(100).default(18),
   discountPrice: z.number().optional(),
-  categoryId: z.string().min(1, "Category is required")
+  categoryId: z.string().min(1, "Category is required"),
+  iconUrl: z.string().optional()
 });
 
 const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
@@ -175,12 +176,14 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
   // Form State
   const [editingId, setEditingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [uploadingServiceIcon, setUploadingServiceIcon] = useState(false);
   const [form, setForm] = useState({
     title: "",
     basePrice: "",
     gstPercentage: 18,
     discountPrice: "",
-    categoryId: ""
+    categoryId: "",
+    iconUrl: ""
   });
   const [saving, setSaving] = useState(false);
 
@@ -201,7 +204,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
       basePrice: "",
       gstPercentage: 18,
       discountPrice: "",
-      categoryId: defaultCat
+      categoryId: defaultCat,
+      iconUrl: ""
     });
     setIsModalOpen(false);
   };
@@ -213,9 +217,31 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
       basePrice: service.basePrice,
       gstPercentage: service.gstPercentage || 18,
       discountPrice: service.discountPrice || "",
-      categoryId: service.categoryId?._id || service.categoryId || ""
+      categoryId: service.categoryId?._id || service.categoryId || "",
+      iconUrl: service.iconUrl || ""
     });
     setIsModalOpen(true);
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploadingServiceIcon(true);
+      const res = await serviceService.uploadImage(file, 'services');
+      if (res.success && res.imageUrl) {
+        setForm(p => ({ ...p, iconUrl: res.imageUrl }));
+        toast.success('Service image uploaded successfully');
+      } else {
+        toast.error(res.message || 'Failed to upload image');
+      }
+    } catch (err) {
+      console.error('Service image upload error:', err);
+      toast.error('Failed to upload image');
+    } finally {
+      setUploadingServiceIcon(false);
+    }
   };
 
   const handleSave = async (e) => {
@@ -227,7 +253,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
       basePrice: Number(form.basePrice),
       gstPercentage: Number(form.gstPercentage),
       discountPrice: form.discountPrice ? Number(form.discountPrice) : undefined,
-      categoryId: form.categoryId
+      categoryId: form.categoryId,
+      iconUrl: form.iconUrl || undefined
     };
 
     const result = serviceSchema.safeParse(data);
@@ -450,14 +477,36 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
 
                     return (
                       <div key={service.id || service._id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow relative group">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h4 className="font-bold text-gray-900 pr-6">{service.title}</h4>
-                            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded mr-2 mt-1 inline-block">
-                              {catTitle}
-                            </span>
+                        <div className="flex items-start gap-3 mb-2">
+                          <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden shrink-0 flex items-center justify-center">
+                            {service.iconUrl ? (
+                              <img src={toAssetUrl(service.iconUrl)} alt={service.title} className="w-full h-full object-cover" />
+                            ) : activeBrand?.iconUrl ? (
+                              <img src={toAssetUrl(activeBrand.iconUrl)} alt={activeBrand.title} className="w-full h-full object-contain p-1 opacity-50" title="Inherited from brand" />
+                            ) : (
+                              <FiPackage className="w-5 h-5 text-gray-400" />
+                            )}
                           </div>
-                          <span className="bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold border border-green-100 whitespace-nowrap">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start">
+                              <h4 className="font-bold text-gray-900 pr-6 truncate">{service.title}</h4>
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                              <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                {catTitle}
+                              </span>
+                              {service.iconUrl ? (
+                                <span className="text-[10px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded font-medium">
+                                  Custom Photo
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
+                                  Brand Photo
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold border border-green-100 whitespace-nowrap shrink-0">
                             {service.gstPercentage}% GST
                           </span>
                         </div>
@@ -580,6 +629,55 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
               placeholder="Leave empty if none"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
             />
+          </div>
+
+          {/* Service Photo Upload */}
+          <div className="pt-2 border-t border-gray-100">
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Service Photo (Optional)
+            </label>
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden shrink-0 flex items-center justify-center">
+                {form.iconUrl ? (
+                  <img src={toAssetUrl(form.iconUrl)} alt="Service preview" className="w-full h-full object-cover" />
+                ) : activeBrand?.iconUrl ? (
+                  <img src={toAssetUrl(activeBrand.iconUrl)} alt={activeBrand.title} className="w-full h-full object-contain p-1 opacity-50" title="Will inherit brand icon" />
+                ) : (
+                  <FiImage className="w-6 h-6 text-gray-300" />
+                )}
+              </div>
+
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-xs font-semibold transition-colors">
+                    <FiUpload className="w-3.5 h-3.5" />
+                    {uploadingServiceIcon ? "Uploading..." : "Upload Photo"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingServiceIcon}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {form.iconUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, iconUrl: "" }))}
+                      className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded"
+                    >
+                      Remove Photo
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-400">
+                  {form.iconUrl
+                    ? "Custom image assigned to this service."
+                    : "Leave blank to automatically use the Brand’s default image."}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-4">
