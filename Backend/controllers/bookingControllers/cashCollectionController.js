@@ -254,11 +254,21 @@ exports.confirmCashCollection = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
+    // EDGE CASE: Cancelled booking
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'Cannot collect cash for a cancelled booking' });
+    }
+
+    // EDGE CASE: Authorization check - only assigned vendor or admin can confirm
+    if (userRole?.toUpperCase() !== 'ADMIN' && booking.vendorId && booking.vendorId.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to confirm cash collection for this booking' });
+    }
+
     // OTP Verification
     const isPlanBenefitNoExtras = booking.paymentMethod === 'plan_benefit' && otp === '0000';
 
-    if (!isPlanBenefitNoExtras && booking.customerConfirmationOTP && otp && booking.customerConfirmationOTP !== otp) {
-      if (process.env.NODE_ENV !== 'development' || otp !== '0000') {
+    if (!isPlanBenefitNoExtras && booking.customerConfirmationOTP) {
+      if (!otp || (booking.customerConfirmationOTP !== otp && (process.env.NODE_ENV !== 'development' || otp !== '0000'))) {
         console.warn(`[ConfirmCash] Invalid OTP attempt for booking ${id}. Expected: ${booking.customerConfirmationOTP}, Received: ${otp}`);
         return res.status(400).json({ success: false, message: 'Invalid OTP. Please enter the correct code shared by the customer.' });
       }
@@ -326,6 +336,9 @@ exports.confirmCashCollection = async (req, res) => {
       bill.status = 'paid';
       bill.paidAt = new Date();
       await bill.save();
+    } else {
+      // EDGE CASE FALLBACK: If bill is missing, default to 70% service base earning
+      vendorEarning = parseFloat((collectionAmount * 0.7).toFixed(2));
     }
 
     // Update Booking

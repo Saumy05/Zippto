@@ -226,8 +226,10 @@ const approveSettlement = async (req, res) => {
     // Ensure we don't go below zero (though validation handles request)
     vendor.wallet.dues = Math.max(0, currentDues - settlement.amount);
 
-    // Auto-unblock if dues drop below limit
-    if (vendor.wallet.isBlocked && vendor.wallet.dues <= (vendor.wallet.cashLimit || 10000)) {
+    // Auto-unblock if net owed (or dues) drop below limit
+    const netOwed = vendor.wallet.dues - (vendor.wallet.earnings || 0);
+    const cashLimit = vendor.wallet.cashLimit || 10000;
+    if (vendor.wallet.isBlocked && (netOwed <= cashLimit || vendor.wallet.dues <= cashLimit)) {
       vendor.wallet.isBlocked = false;
       vendor.wallet.blockedAt = null;
       vendor.wallet.blockReason = null;
@@ -504,8 +506,9 @@ const updateCashLimit = async (req, res) => {
 
     vendor.wallet.cashLimit = limit;
 
-    // Auto unblock if new limit covers dues
-    if (vendor.wallet.isBlocked && (vendor.wallet.dues || 0) <= limit) {
+    // Auto unblock if new limit covers dues or net owed
+    const netOwed = (vendor.wallet.dues || 0) - (vendor.wallet.earnings || 0);
+    if (vendor.wallet.isBlocked && (netOwed <= limit || (vendor.wallet.dues || 0) <= limit)) {
       vendor.wallet.isBlocked = false;
       vendor.wallet.blockedAt = null;
       vendor.wallet.blockReason = null;
