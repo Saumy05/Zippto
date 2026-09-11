@@ -39,18 +39,18 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info'],
       },
     },
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // SAFE STRATEGY: Bundle all dependencies into one vendor file
-          // This fixes the "Cannot set properties of undefined (setting 'Activity')" error
-          // by ensuring all libraries share the same execution context.
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
+        manualChunks: {
+          vendor: [
+            'react',
+            'react/jsx-runtime',
+            'react-dom',
+            'react-dom/client',
+            'react-router-dom',
+          ],
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
