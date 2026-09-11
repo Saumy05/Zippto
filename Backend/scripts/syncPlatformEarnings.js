@@ -162,9 +162,7 @@ const syncPlatformEarnings = async () => {
   }
 };
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://homecareofficialsolution:Admin123@cluster0.1tk4tkp.mongodb.net/Homster', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/zippto';
+mongoose.connect(mongoUri)
   .then(() => syncPlatformEarnings())
   .catch(err => console.log('MongoDB connection error:', err));
