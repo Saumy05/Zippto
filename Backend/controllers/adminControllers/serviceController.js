@@ -100,11 +100,13 @@ const createService = async (req, res) => {
       });
     }
 
+    const finalCategoryId = categoryId || brand.categoryId || (brand.categoryIds && brand.categoryIds[0]);
+
     // Try to create service
     // If slug collision happens within same brand, mongoose throws duplicate key error
     const service = await Service.create({
       brandId,
-      categoryId,
+      categoryId: finalCategoryId,
       title,
       basePrice,
       gstPercentage: gstPercentage || 18,
@@ -115,10 +117,10 @@ const createService = async (req, res) => {
 
     // Auto-sync with VendorServiceCatalog for technician billing
     try {
-      if (categoryId) {
+      if (finalCategoryId) {
         await VendorServiceCatalog.findOneAndUpdate(
-          { name: title, categoryId },
-          { name: title, categoryId, price: basePrice, status: status || SERVICE_STATUS.ACTIVE, description: description || '' },
+          { name: title, categoryId: finalCategoryId },
+          { name: title, categoryId: finalCategoryId, price: basePrice, status: status || SERVICE_STATUS.ACTIVE, description: description || '' },
           { upsert: true }
         );
       }

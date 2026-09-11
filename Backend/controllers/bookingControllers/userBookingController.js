@@ -75,7 +75,10 @@ const createBooking = async (req, res) => {
 
     // 1. Parallel Fetching: Service and User
     const [service, user] = await Promise.all([
-      Service.findById(serviceId).select('title basePrice discountPrice description images iconUrl categoryId category categoryIds').lean(),
+      Service.findById(serviceId)
+        .select('title basePrice discountPrice description images iconUrl categoryId category categoryIds brandId')
+        .populate('brandId', 'title slug categoryId categoryIds')
+        .lean(),
       User.findById(userId).select('name phone wallet plans')
     ]);
 
@@ -94,8 +97,21 @@ const createBooking = async (req, res) => {
     }
 
     // 2. Fetch Category if exists
-    const categoryId = service.categoryId || service.categoryIds?.[0];
-    const category = categoryId ? await Category.findById(categoryId).select('title icon image slug').lean() : null;
+    let categoryId = service.categoryId || service.categoryIds?.[0];
+    let category = categoryId ? await Category.findById(categoryId).select('title icon image slug').lean() : null;
+
+    // Resolve Brand and its canonical category if service category is missing or test category
+    const brand = service.brandId;
+    if (brand && (!category || category.slug?.includes('test'))) {
+      const brandCatId = brand.categoryId || (brand.categoryIds && brand.categoryIds[0]);
+      if (brandCatId) {
+        const brandCategory = await Category.findById(brandCatId).select('title icon image slug').lean();
+        if (brandCategory) {
+          category = brandCategory;
+          categoryId = brandCategory._id;
+        }
+      }
+    }
 
     // Calculate total value from booked items or fallback to service base price
     if (totalServiceValue === 0) {
@@ -109,7 +125,6 @@ const createBooking = async (req, res) => {
     // Find nearby vendors using location service
     const { findNearbyVendors, geocodeAddress } = require('../../services/locationService');
 
-    // ... (Vendor Search Logic Omitted/Unchanged - keeping context)
     // Determine booking location (prioritize frontend coordinates)
     let bookingLocation;
     if (address.lat && address.lng) {
@@ -122,10 +137,12 @@ const createBooking = async (req, res) => {
       console.log('Geocoded address for vendor search:', bookingLocation);
     }
 
-    // Find vendors within 10km radius who offer this service category
+    // Find vendors within 10km radius who offer this service category / brand
     // CUSTOM - Check Cash Limit only if payment method is CASH
     const vendorFilters = {
-      ...(category ? { service: category.title } : {}),
+      ...(category ? { service: category.title, categorySlug: category.slug } : {}),
+      ...(brand ? { brandSlug: brand.slug, brandTitle: brand.title } : {}),
+      serviceTitle: service.title,
       checkCashLimit: paymentMethod === 'cash',
       city: address.city
     };
@@ -398,9 +415,12 @@ const createBooking = async (req, res) => {
         }
 
         // Nearby vendors offering this service category found
-        // Nearby vendors offering this service category found
-        // Alert all qualified matching vendors in radius (up to 10 vendors in wave 1)
-        let sortedVendors = nearbyVendors.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        // Alert all qualified matching vendors in radius (prioritizing online vendors, up to 10 vendors in wave 1)
+        let sortedVendors = nearbyVendors.sort((a, b) => {
+          if (a.isOnline && !b.isOnline) return -1;
+          if (!a.isOnline && b.isOnline) return 1;
+          return (a.distance || 0) - (b.distance || 0);
+        });
 
         // Fallback: If nearbyVendors is empty, search for active approved vendors matching this service category as safety net
         if (sortedVendors.length === 0) {
@@ -420,15 +440,29 @@ const createBooking = async (req, res) => {
             const rx = new RegExp(clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
             const rxSlug = new RegExp(`^${slug}$`, 'i');
 
-            broadQuery.$and = [
-              {
-                $or: [
-                  { service: { $in: [clean, slug, rx, rxSlug] } },
-                  { serviceCategory: { $in: [clean, slug, rx, rxSlug] } },
-                  { categories: { $in: [clean, slug, rx, rxSlug] } }
-                ]
-              }
+            const matchTokens = [clean, slug, rx, rxSlug];
+            if (/appliance|ac/i.test(clean)) {
+              matchTokens.push('ac-appliance-repair', 'AC & Appliance Repair', 'ac', 'appliance-repair-service', 'Appliance Repair & Service', /ac.*appliance/i, /appliance.*repair/i);
+            }
+            if (/electric/i.test(clean)) {
+              matchTokens.push('electrician', 'Electricity', 'electrician-plumber-carpenter');
+            }
+            if (/plumb/i.test(clean)) {
+              matchTokens.push('plumber', 'Plumbing', 'electrician-plumber-carpenter');
+            }
+
+            const orRules = [
+              { service: { $in: matchTokens } },
+              { serviceCategory: { $in: matchTokens } },
+              { categories: { $in: matchTokens } }
             ];
+
+            if (bookingForBackground.brandName) {
+              const bSlug = bookingForBackground.brandName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+              orRules.push({ skills: bSlug }, { skills: new RegExp(bSlug, 'i') });
+            }
+
+            broadQuery.$and = [{ $or: orRules }];
           }
 
           const broadVendors = await Vendor.find(broadQuery)
@@ -437,6 +471,11 @@ const createBooking = async (req, res) => {
             .lean();
 
           if (broadVendors.length > 0) {
+            broadVendors.sort((a, b) => {
+              if (a.isOnline && !b.isOnline) return -1;
+              if (!a.isOnline && b.isOnline) return 1;
+              return 0;
+            });
             sortedVendors = broadVendors.map(v => ({
               ...v,
               distance: 2.0

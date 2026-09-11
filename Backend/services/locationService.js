@@ -63,10 +63,18 @@ const geocodeAddress = async (address) => {
 const _buildVendorQuery = (filters = {}, hasCoordinates = false) => {
   const checkCashLimit = filters.checkCashLimit;
   const serviceCategory = filters.service;
+  const categorySlug = filters.categorySlug;
+  const brandSlug = filters.brandSlug;
+  const skills = filters.skills;
   
   const queryFilters = { ...filters };
   delete queryFilters.checkCashLimit;
   delete queryFilters.service;
+  delete queryFilters.categorySlug;
+  delete queryFilters.brandSlug;
+  delete queryFilters.brandTitle;
+  delete queryFilters.serviceTitle;
+  delete queryFilters.skills;
   delete queryFilters.city;
 
   const baseQuery = {
@@ -85,24 +93,88 @@ const _buildVendorQuery = (filters = {}, hasCoordinates = false) => {
     baseQuery['address.city'] = { $regex: new RegExp(filters.city, 'i') };
   }
 
+  // Collect all matching tokens and patterns for category/service/skill
+  const matchTokens = new Set();
+  const regexPatterns = [];
+
   if (serviceCategory) {
     const clean = serviceCategory.trim();
     const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const rx = new RegExp(clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    const rxSlug = new RegExp(`^${slug}$`, 'i');
+    matchTokens.add(clean);
+    matchTokens.add(slug);
+    regexPatterns.push(new RegExp(clean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+    regexPatterns.push(new RegExp(`^${slug}$`, 'i'));
 
+    // Category aliases and variants
+    if (/appliance|ac/i.test(clean)) {
+      matchTokens.add('ac-appliance-repair');
+      matchTokens.add('AC & Appliance Repair');
+      matchTokens.add('ac');
+      matchTokens.add('appliance-repair-service');
+      matchTokens.add('Appliance Repair & Service');
+      regexPatterns.push(/ac.*appliance/i);
+      regexPatterns.push(/appliance.*repair/i);
+    }
+    if (/electric/i.test(clean)) {
+      matchTokens.add('electrician');
+      matchTokens.add('Electricity');
+      matchTokens.add('electrician-plumber-carpenter');
+    }
+    if (/plumb/i.test(clean)) {
+      matchTokens.add('plumber');
+      matchTokens.add('Plumbing');
+      matchTokens.add('electrician-plumber-carpenter');
+    }
+    if (/carpent/i.test(clean)) {
+      matchTokens.add('carpenter');
+      matchTokens.add('Carpenter');
+      matchTokens.add('electrician-plumber-carpenter');
+    }
+    if (/clean/i.test(clean)) {
+      matchTokens.add('cleaning');
+      matchTokens.add('cleaning-service');
+      matchTokens.add('Cleaning Service');
+    }
+    if (/paint/i.test(clean)) {
+      matchTokens.add('painting-service');
+      matchTokens.add('Painting Service');
+    }
+    if (/pest/i.test(clean)) {
+      matchTokens.add('pest-control');
+      matchTokens.add('Pest Control');
+    }
+  }
+
+  if (categorySlug) {
+    matchTokens.add(categorySlug);
+    matchTokens.add(categorySlug.replace(/-/g, ' '));
+  }
+
+  const tokenArray = Array.from(matchTokens);
+  const orConditions = [];
+
+  if (tokenArray.length > 0 || regexPatterns.length > 0) {
+    const combinedPatterns = [...tokenArray, ...regexPatterns];
+    orConditions.push(
+      { service: { $in: combinedPatterns } },
+      { serviceCategory: { $in: combinedPatterns } },
+      { categories: { $in: combinedPatterns } }
+    );
+  }
+
+  // Match brand or specific skill in vendor skills array
+  if (brandSlug) {
+    orConditions.push({ skills: brandSlug });
+    orConditions.push({ skills: new RegExp(brandSlug, 'i') });
+  }
+  if (skills) {
+    const skillList = Array.isArray(skills) ? skills : [skills];
+    orConditions.push({ skills: { $in: skillList } });
+  }
+
+  if (orConditions.length > 0) {
     baseQuery.$and = baseQuery.$and || [];
-    baseQuery.$and.push({
-      $or: [
-        { service: { $in: [clean, slug, rx, rxSlug] } },
-        { serviceCategory: { $in: [clean, slug, rx, rxSlug] } },
-        { categories: { $in: [clean, slug, rx, rxSlug] } },
-        { service: { $size: 0 } },
-        { service: { $exists: false } },
-        { categories: { $size: 0 } },
-        { categories: { $exists: false } }
-      ]
-    });
+    baseQuery.$and.push({ $or: orConditions });
   }
 
   if (checkCashLimit) {
@@ -142,7 +214,7 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
     }
 
     const baseQuery = _buildVendorQuery(filters, hasCoordinates);
-    const totalApprovedVendors = await Vendor.countDocuments({ approvalStatus: 'APPROVED', isActive: true });
+    const totalApprovedVendors = await Vendor.countDocuments({ approvalStatus: { $in: ['approved', 'APPROVED'] }, isActive: true });
     console.log(`[LocationService] Total Approved/Active Vendors in DB: ${totalApprovedVendors}`);
     console.log(`[LocationService] Searching with query: ${JSON.stringify(baseQuery)}`);
 
@@ -170,6 +242,11 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
           }));
 
         if (result.length > 0) {
+          result.sort((a, b) => {
+            if (a.isOnline && !b.isOnline) return -1;
+            if (!a.isOnline && b.isOnline) return 1;
+            return (a.distance || 0) - (b.distance || 0);
+          });
           console.log(`[LocationService] Found ${result.length} matching vendors via Redis path`);
           return result;
         }
@@ -225,6 +302,11 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
 
         console.log(`[LocationService] Found ${nearbyVendors.length} vendors using 2dsphere query`);
         if (nearbyVendors.length > 0) {
+          nearbyVendors.sort((a, b) => {
+            if (a.isOnline && !b.isOnline) return -1;
+            if (!a.isOnline && b.isOnline) return 1;
+            return (a.distance || 0) - (b.distance || 0);
+          });
           return nearbyVendors;
         }
         console.log('[LocationService] 2dsphere query yielded 0 in-range vendors. Continuing to Haversine fallback...');
@@ -296,6 +378,14 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
           distance: 2.0
         }));
       }
+    }
+
+    if (nearbyVendors.length > 0) {
+      nearbyVendors.sort((a, b) => {
+        if (a.isOnline && !b.isOnline) return -1;
+        if (!a.isOnline && b.isOnline) return 1;
+        return (a.distance || 0) - (b.distance || 0);
+      });
     }
 
     return nearbyVendors;
