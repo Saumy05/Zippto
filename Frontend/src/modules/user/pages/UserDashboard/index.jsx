@@ -1008,7 +1008,7 @@ const UserDashboard = () => {
   const RESERVED_SLUGS = useMemo(() => [
     'login', 'signup', 'dashboard', 'home-legacy', 'native', 'cart',
     'help-support', 'cancellation-policy', 'about-homestr', 'checkout',
-    'rewards', 'account', 'my-bookings', 'booking', 'booking-confirmation',
+    'rewards', 'account', 'my-bookings', 'bookings', 'booking', 'booking-confirmation',
     'settings', 'manage-payment-methods', 'manage-addresses', 'wallet',
     'my-plan', 'my-rating', 'update-profile', 'notifications'
   ], []);
@@ -1021,6 +1021,10 @@ const UserDashboard = () => {
     }
 
     const cleanSlug = slug.toLowerCase().trim();
+    if (cleanSlug === 'bookings' || cleanSlug === 'my-bookings') {
+      navigate('/user/my-bookings', { replace: true });
+      return;
+    }
     if (RESERVED_SLUGS.includes(cleanSlug)) return;
 
     // 1. Match from displayCategories or exploreServices or mainCategories or fallback

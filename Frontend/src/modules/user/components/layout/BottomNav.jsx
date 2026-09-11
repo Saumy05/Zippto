@@ -39,7 +39,7 @@ const BottomNav = React.memo(() => {
   const getActiveTab = () => {
     const path = location.pathname;
     if (path === '/user' || path === '/user/' || path.includes('dashboard') || path.includes('/category/')) return 'home';
-    if (path.includes('/my-bookings') || path.includes('/booking/')) return 'bookings';
+    if (path.includes('/my-bookings') || path.includes('/booking/') || path.includes('/bookings')) return 'bookings';
     if (path.includes('/cart') || path.includes('/checkout')) return 'cart';
     if (path.includes('/account') || path.includes('/settings') || path.includes('/profile')) return 'account';
     return 'home';

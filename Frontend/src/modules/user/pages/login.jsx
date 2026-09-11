@@ -41,29 +41,12 @@ const Login = () => {
 
   // Auto-focus logic
   useEffect(() => {
-    // Redirect if already logged in
-    if (localStorage.getItem('accessToken')) {
-      const fromTarget = location.state?.from;
-      if (fromTarget) {
-        if (typeof fromTarget === 'string') {
-          navigate(fromTarget, { replace: true });
-        } else if (fromTarget.pathname) {
-          navigate(fromTarget.pathname, { state: fromTarget.state, replace: true });
-        } else {
-          navigate('/user', { replace: true });
-        }
-      } else {
-        navigate('/user', { replace: true });
-      }
-      return;
-    }
-
     if (step === 'phone' && phoneInputRef.current) {
       setTimeout(() => phoneInputRef.current.focus(), 100);
     } else if (step === 'otp' && otpInputRefs.current[0]) {
       setTimeout(() => otpInputRefs.current[0].focus(), 100);
     }
-  }, [step, navigate, location]);
+  }, [step]);
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();

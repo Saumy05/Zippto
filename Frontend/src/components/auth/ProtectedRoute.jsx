@@ -76,17 +76,19 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
               handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
             }
           } else {
-            setIsAuthenticated(false);
-            setIsLoading(false);
+            handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
           }
         } catch (error) {
           console.error('Token validation error:', error);
+          handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
+        }
+      } else {
+        if (token || userData) {
+          handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
+        } else {
           setIsAuthenticated(false);
           setIsLoading(false);
         }
-      } else {
-        setIsAuthenticated(false);
-        setIsLoading(false);
       }
     };
 

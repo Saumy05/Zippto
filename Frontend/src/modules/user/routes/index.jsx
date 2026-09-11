@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import PageTransition from '../components/common/PageTransition';
 import BottomNav from '../components/layout/BottomNav';
 import Footer from '../components/layout/Footer';
@@ -103,6 +103,7 @@ const UserRoutes = () => {
     '/user/',
     '/user/dashboard',
     '/user/my-bookings',
+    '/user/bookings',
     '/user/cart',
     '/user/account',
     '/user/my-plan',
@@ -111,10 +112,10 @@ const UserRoutes = () => {
   ];
   const shouldShowBottomNav = bottomNavPages.includes(location.pathname) || location.pathname.includes('/category/');
 
-  // Check if we hide the live booking card (e.g. if we are on the specific booking details or track page)
+  // Check if we hide the live booking card (e.g. if we are on the specific booking details, confirmation, or my-bookings page)
   const isBookingDetailsPage = location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/track)?$/);
   const isBookingConfirmationPage = location.pathname.includes('/booking-confirmation');
-
+  const isMyBookingsPage = location.pathname.includes('/my-bookings') || location.pathname.includes('/bookings');
 
   // Check if we are on public pages (login/signup) where we shouldn't fetch bookings
   const isPublicPage = location.pathname.includes('/login') || location.pathname.includes('/signup');
@@ -143,6 +144,8 @@ const UserRoutes = () => {
               <Route path="/rewards" element={<ProtectedRoute userType="user"><Rewards /></ProtectedRoute>} />
               <Route path="/account" element={<ProtectedRoute userType="user"><Account /></ProtectedRoute>} />
               <Route path="/my-bookings" element={<ProtectedRoute userType="user"><MyBookings /></ProtectedRoute>} />
+              <Route path="/bookings" element={<Navigate to="/user/my-bookings" replace />} />
+              <Route path="/booking" element={<Navigate to="/user/my-bookings" replace />} />
               <Route path="/booking/:id" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
               <Route path="/booking/:id/chat" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
               <Route path="/booking/:id/track" element={<ProtectedRoute userType="user"><BookingTrack /></ProtectedRoute>} />
@@ -166,7 +169,7 @@ const UserRoutes = () => {
       </div>
 
       {/* These components are OUTSIDE Suspense so they persist during page loads */}
-      {!isBookingDetailsPage && !isBookingConfirmationPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
+      {!isBookingDetailsPage && !isBookingConfirmationPage && !isMyBookingsPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
       {shouldShowBottomNav && <BottomNav />}
       {(location.pathname === '/user' || location.pathname === '/user/' || location.pathname.includes('dashboard') || location.pathname.includes('/category/')) && <Footer />}
     </ErrorBoundary>

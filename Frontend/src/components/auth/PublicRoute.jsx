@@ -36,8 +36,8 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
           break;
       }
 
-      const token = localStorage.getItem(tokenKey);
-      const userData = localStorage.getItem(dataKey);
+      const token = sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
+      const userData = sessionStorage.getItem(dataKey) || localStorage.getItem(dataKey);
 
       if (token && userData) {
         try {
@@ -53,6 +53,9 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
               localStorage.removeItem(tokenKey);
               localStorage.removeItem(refreshTokenKey);
               localStorage.removeItem(dataKey);
+              sessionStorage.removeItem(tokenKey);
+              sessionStorage.removeItem(refreshTokenKey);
+              sessionStorage.removeItem(dataKey);
               setIsAuthenticated(false);
               return;
             }
@@ -72,14 +75,23 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
             }
           } else {
             // Invalid token format
+            localStorage.removeItem(tokenKey);
+            sessionStorage.removeItem(tokenKey);
             setIsAuthenticated(false);
           }
         } catch (error) {
           // Invalid token
           console.error('Token validation error:', error);
+          localStorage.removeItem(tokenKey);
+          sessionStorage.removeItem(tokenKey);
           setIsAuthenticated(false);
         }
       } else {
+        if (token && !userData) {
+          // Orphan token without user data - clear it
+          localStorage.removeItem(tokenKey);
+          sessionStorage.removeItem(tokenKey);
+        }
         setIsAuthenticated(false);
       }
 
@@ -108,7 +120,7 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
       admin: '/admin/dashboard'
     };
 
-    const redirectPath = redirectTo || defaultRedirects[userType] || '/user';
+    const redirectPath = redirectTo || location.state?.from?.pathname || defaultRedirects[userType] || '/user';
     return <Navigate to={redirectPath} replace />;
   }
 

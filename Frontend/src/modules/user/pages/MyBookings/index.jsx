@@ -32,32 +32,48 @@ const MyBookings = () => {
   ];
 
   useEffect(() => {
-    const loadBookings = async () => {
+    let isMounted = true;
+    let debounceTimer = null;
+
+    const loadBookings = async (isBackground = false) => {
       try {
-        setLoading(true);
+        if (!isBackground) setLoading(true);
         const params = {};
         if (filter !== 'all') {
           params.status = filter;
         }
         const response = await bookingService.getUserBookings(params);
-        if (response.success) {
-          setBookings(response.data || []);
-        } else {
-          setBookings([]);
+        if (isMounted) {
+          if (response.success) {
+            setBookings(response.data || []);
+          } else {
+            setBookings([]);
+          }
         }
       } catch (error) {
         console.warn('Load bookings error:', error);
-        setBookings([]);
+        if (isMounted) setBookings([]);
       } finally {
-        setLoading(false);
+        if (isMounted && !isBackground) {
+          setLoading(false);
+        }
       }
     };
 
-    loadBookings();
+    loadBookings(false);
 
-    window.addEventListener('userBookingsUpdated', loadBookings);
+    const handleBackgroundUpdate = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadBookings(true);
+      }, 300);
+    };
+
+    window.addEventListener('userBookingsUpdated', handleBackgroundUpdate);
     return () => {
-      window.removeEventListener('userBookingsUpdated', loadBookings);
+      isMounted = false;
+      if (debounceTimer) clearTimeout(debounceTimer);
+      window.removeEventListener('userBookingsUpdated', handleBackgroundUpdate);
     };
   }, [filter]);
 
