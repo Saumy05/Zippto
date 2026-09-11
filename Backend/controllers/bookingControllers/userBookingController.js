@@ -140,8 +140,8 @@ const createBooking = async (req, res) => {
     // Find vendors within 10km radius who offer this service category / brand
     // CUSTOM - Check Cash Limit only if payment method is CASH
     const vendorFilters = {
-      ...(category ? { service: category.title, categorySlug: category.slug } : {}),
-      ...(brand ? { brandSlug: brand.slug, brandTitle: brand.title } : {}),
+      ...(category ? { service: category.title, categorySlug: category.slug, categoryId: category._id.toString() } : {}),
+      ...(brand ? { brandSlug: brand.slug, brandTitle: brand.title, brandId: brand._id.toString() } : {}),
       serviceTitle: service.title,
       checkCashLimit: paymentMethod === 'cash',
       city: address.city

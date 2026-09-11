@@ -64,14 +64,18 @@ const _buildVendorQuery = (filters = {}, hasCoordinates = false) => {
   const checkCashLimit = filters.checkCashLimit;
   const serviceCategory = filters.service;
   const categorySlug = filters.categorySlug;
+  const categoryId = filters.categoryId;
   const brandSlug = filters.brandSlug;
+  const brandId = filters.brandId;
   const skills = filters.skills;
   
   const queryFilters = { ...filters };
   delete queryFilters.checkCashLimit;
   delete queryFilters.service;
   delete queryFilters.categorySlug;
+  delete queryFilters.categoryId;
   delete queryFilters.brandSlug;
+  delete queryFilters.brandId;
   delete queryFilters.brandTitle;
   delete queryFilters.serviceTitle;
   delete queryFilters.skills;
@@ -149,6 +153,9 @@ const _buildVendorQuery = (filters = {}, hasCoordinates = false) => {
     matchTokens.add(categorySlug);
     matchTokens.add(categorySlug.replace(/-/g, ' '));
   }
+  if (categoryId) {
+    matchTokens.add(String(categoryId));
+  }
 
   const tokenArray = Array.from(matchTokens);
   const orConditions = [];
@@ -166,6 +173,9 @@ const _buildVendorQuery = (filters = {}, hasCoordinates = false) => {
   if (brandSlug) {
     orConditions.push({ skills: brandSlug });
     orConditions.push({ skills: new RegExp(brandSlug, 'i') });
+  }
+  if (brandId) {
+    orConditions.push({ skills: String(brandId) });
   }
   if (skills) {
     const skillList = Array.isArray(skills) ? skills : [skills];
