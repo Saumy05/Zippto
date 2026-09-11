@@ -1006,7 +1006,7 @@ const UserDashboard = () => {
   }, [categories, exploreServices, mainCategories]);
 
   const RESERVED_SLUGS = useMemo(() => [
-    'login', 'signup', 'dashboard', 'home-legacy', 'native', 'cart',
+    'login', 'signup', 'dashboard', 'home', 'home-legacy', 'native', 'cart',
     'help-support', 'cancellation-policy', 'about-homestr', 'checkout',
     'rewards', 'account', 'my-bookings', 'bookings', 'booking', 'booking-confirmation',
     'settings', 'manage-payment-methods', 'manage-addresses', 'wallet',

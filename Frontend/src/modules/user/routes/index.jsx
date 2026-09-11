@@ -131,6 +131,7 @@ const UserRoutes = () => {
               <Route path="/login" element={<PublicRoute userType="user"><Login /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute userType="user"><Signup /></PublicRoute>} />
               <Route path="/" element={<UserDashboard />} />
+              <Route path="/home" element={<Navigate to="/user" replace />} />
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/home-legacy" element={<Home />} />
               <Route path="/native" element={<Native />} />

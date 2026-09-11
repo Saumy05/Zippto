@@ -188,6 +188,16 @@ const LiveBookingCard = ({ hasBottomNav }) => {
 
   if (!activeBooking || isDismissed) return null;
 
+  const bookingId = activeBooking._id || activeBooking.id;
+
+  // Don't show the floating card if the user is already viewing this booking's pages
+  const isOnThisBookingPage = [
+    `/user/booking/${bookingId}`,
+    `/user/booking/${bookingId}/track`,
+    `/user/booking-confirmation/${bookingId}`,
+  ].some(path => location.pathname.startsWith(path));
+  if (isOnThisBookingPage) return null;
+
   const statusInfo = getStatusInfo(activeBooking.status);
   if (!statusInfo) return null;
 
@@ -204,7 +214,6 @@ const LiveBookingCard = ({ hasBottomNav }) => {
         transition={{ type: 'spring', stiffness: 280, damping: 26 }}
         onClick={() => {
           const status = activeBooking.status?.toUpperCase();
-          const bookingId = activeBooking._id || activeBooking.id;
           if (status === 'STARTED' || status === 'JOURNEY_STARTED') {
             navigate(`/user/booking/${bookingId}/track`);
           } else if (status === 'SEARCHING' || status === 'REQUESTED') {

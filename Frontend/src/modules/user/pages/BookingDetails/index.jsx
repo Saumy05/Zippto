@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -88,6 +88,8 @@ const BookingDetails = () => {
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [bookingLoadError, setBookingLoadError] = useState(null);
+  const socketReloadTimer = useRef(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(Boolean(location.pathname?.endsWith('/chat')));
@@ -162,8 +164,8 @@ const BookingDetails = () => {
     fetchSettings();
   }, []);
 
-  // Function to load booking
-  const loadBooking = async () => {
+  // Function to load booking — never auto-navigates; sets error state instead
+  const loadBooking = useCallback(async () => {
     try {
       const response = await bookingService.getById(id);
       if (response.success) {
@@ -173,22 +175,36 @@ const BookingDetails = () => {
           if (!data.visitingCharges && !data.visitationFee) data.visitingCharges = 49;
         }
         setBooking(data);
+        setBookingLoadError(null);
       } else {
-        toast.error(response.message || 'Booking not found');
-        navigate('/user/my-bookings');
+        // Do NOT auto-navigate — let the user choose to go back
+        console.warn('[BookingDetails] Load failed:', response.message);
+        setBookingLoadError(response.message || 'Booking not found');
       }
     } catch (error) {
-      console.warn('Failed to load booking:', error);
+      console.warn('[BookingDetails] Fetch error:', error);
+      // On network/auth error keep what we have; don't redirect
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  // Debounced version for socket-triggered reloads
+  const debouncedLoadBooking = useCallback(() => {
+    if (socketReloadTimer.current) clearTimeout(socketReloadTimer.current);
+    socketReloadTimer.current = setTimeout(() => {
+      loadBooking();
+    }, 800);
+  }, [loadBooking]);
 
   useEffect(() => {
     if (id) {
       loadBooking();
     }
-  }, [id, navigate]);
+    return () => {
+      if (socketReloadTimer.current) clearTimeout(socketReloadTimer.current);
+    };
+  }, [id, loadBooking]);
 
   // Auto-show rating modal ONLY when booking is fully completed AND paid
   useEffect(() => {
@@ -246,7 +262,8 @@ const BookingDetails = () => {
             toast.success('Bill ready! You can now pay online.', { icon: '💳' });
           }
 
-          loadBooking();
+          // Use debounced reload to avoid rapid-fire fetches from socket bursts
+          debouncedLoadBooking();
 
           if (data.message) {
             toast(data.message, { icon: '🔔' });
@@ -264,7 +281,7 @@ const BookingDetails = () => {
         socket.off('notification', handleUpdate);
       };
     }
-  }, [socket, id]);
+  }, [socket, id, debouncedLoadBooking]);
 
   const handleCopyId = () => {
     const bookingCode = booking.bookingNumber || booking._id?.slice(-8).toUpperCase();
@@ -470,7 +487,9 @@ const BookingDetails = () => {
             <FiSearch className="w-9 h-9 text-slate-400" />
           </div>
           <h2 className="text-lg font-black text-slate-900 mb-1">Booking Not Found</h2>
-          <p className="text-xs text-slate-500 mb-6 font-medium">The requested booking could not be loaded or was removed.</p>
+          <p className="text-xs text-slate-500 mb-6 font-medium">
+            {bookingLoadError || 'The requested booking could not be loaded or was removed.'}
+          </p>
           <button
             onClick={() => navigate('/user/my-bookings')}
             className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg active:scale-95 transition-all"
@@ -556,7 +575,7 @@ const BookingDetails = () => {
           <div className="max-w-xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => navigate('/user/my-bookings')}
+                onClick={() => navigate('/user/home')}
                 className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
                 aria-label="Go back"
               >
