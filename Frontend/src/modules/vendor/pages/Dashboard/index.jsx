@@ -9,6 +9,7 @@ import { acceptBooking, rejectBooking, getPendingAlerts } from '../../services/b
 // Booking alert handled globally
 import { toast } from 'react-hot-toast';
 import { io } from 'socket.io-client';
+import { updateAvailability, getAvailability } from '../../services/availabilityService';
 
 import { registerFCMToken } from '../../../../services/pushNotificationService';
 import LogoLoader from '../../../../components/common/LogoLoader';
@@ -72,6 +73,8 @@ const Dashboard = memo(() => {
     photo: null,
     service: []
   });
+  const [isOnline, setIsOnline] = useState(false);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [recentJobs, setRecentJobs] = useState([]);
   const [pendingBookings, setPendingBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -256,6 +259,10 @@ const Dashboard = memo(() => {
 
   useEffect(() => {
     loadDashboardData();
+    // Fetch initial availability status
+    getAvailability()
+      .then(({ isOnline: online }) => setIsOnline(online))
+      .catch(() => {/* silently ignore — defaults to offline */});
   }, [loadDashboardData]);
 
   // Check for redirected state (to open a specific alert modal)
@@ -368,6 +375,23 @@ const Dashboard = memo(() => {
     } catch (error) {
       console.error('Error rejecting:', error);
       toast.error('Failed to reject booking');
+    }
+  };
+
+  // Availability toggle handler
+  const handleAvailabilityToggle = async () => {
+    const next = !isOnline;
+    setAvailabilityLoading(true);
+    try {
+      const res = await updateAvailability(next);
+      if (res.success) {
+        setIsOnline(next);
+        toast.success(res.message);
+      }
+    } catch (err) {
+      toast.error('Failed to update availability. Please try again.');
+    } finally {
+      setAvailabilityLoading(false);
     }
   };
 
@@ -490,7 +514,7 @@ const Dashboard = memo(() => {
                     )}
                   </div>
                 </div>
-                <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-lg shadow-xs border-2 border-white">
+                <div className={`absolute -bottom-1 -right-1 text-white p-1 rounded-lg shadow-xs border-2 border-white transition-colors duration-300 ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`}>
                   <FiShield className="w-3.5 h-3.5" />
                 </div>
               </div>
@@ -519,8 +543,35 @@ const Dashboard = memo(() => {
               </div>
             </div>
 
-            {/* Quick Action CTA Buttons */}
+            {/* Quick Action CTA Buttons + Availability Toggle */}
             <div className="flex items-center gap-3 flex-wrap border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
+                            {/* ─── Availability Toggle ─── */}
+              <button
+                onClick={handleAvailabilityToggle}
+                disabled={availabilityLoading}
+                className={`relative flex items-center justify-center gap-2.5 w-[88px] py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs border ${
+                  isOnline
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                    : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
+                } ${availabilityLoading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
+                title={isOnline ? 'Click to go Offline' : 'Click to go Online'}
+              >
+                {availabilityLoading ? (
+                  <svg className="animate-spin h-2.5 w-2.5 shrink-0" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                ) : (
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
+                    {isOnline && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    )}
+                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                  </span>
+                )}
+                <span>{isOnline ? 'Online' : 'Offline'}</span>
+              </button>
+
               <button
                 onClick={() => navigate('/vendor/manage-services')}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95"

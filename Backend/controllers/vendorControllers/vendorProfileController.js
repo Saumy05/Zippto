@@ -51,6 +51,9 @@ const getProfile = async (req, res) => {
         isEmailVerified: vendor.isEmailVerified || false,
         profilePhoto: vendor.profilePhoto || null,
         aadharDocument: vendor.aadhar?.document || null,
+        isOnline: vendor.isOnline || false,
+        availability: vendor.availability || 'OFFLINE',
+        lastSeenAt: vendor.lastSeenAt || null,
         createdAt: vendor.createdAt,
         updatedAt: vendor.updatedAt
       }
@@ -319,10 +322,55 @@ const updateLocation = async (req, res) => {
   }
 };
 
+/**
+ * Toggle vendor availability (online/offline)
+ * PATCH /api/vendors/availability
+ */
+const updateAvailability = async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+    const { isOnline } = req.body;
+
+    if (typeof isOnline !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'isOnline must be a boolean' });
+    }
+
+    const availability = isOnline ? 'AVAILABLE' : 'OFFLINE';
+
+    const vendor = await Vendor.findByIdAndUpdate(
+      vendorId,
+      {
+        isOnline,
+        availability,
+        lastSeenAt: new Date()
+      },
+      { new: true, select: 'isOnline availability lastSeenAt name businessName' }
+    );
+
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: 'Vendor not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: isOnline ? 'You are now Online and accepting bookings' : 'You are now Offline',
+      data: {
+        isOnline: vendor.isOnline,
+        availability: vendor.availability,
+        lastSeenAt: vendor.lastSeenAt
+      }
+    });
+  } catch (error) {
+    console.error('Update availability error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update availability' });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
   updateAddress,
-  updateLocation
+  updateLocation,
+  updateAvailability
 };
 
