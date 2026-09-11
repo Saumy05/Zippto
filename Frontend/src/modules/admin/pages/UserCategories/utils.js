@@ -178,6 +178,7 @@ export const ensureIds = (catalog) => {
       status: s.status || "active",
       isPopular: Boolean(s.isPopular),
       isFeatured: Boolean(s.isFeatured),
+      servicesCount: s.servicesCount ?? 0,
       routePath: s.slug ? `/user/${s.slug}` : (s.routePath || ""),
       page: {
         banners: Array.isArray(s.page?.banners)

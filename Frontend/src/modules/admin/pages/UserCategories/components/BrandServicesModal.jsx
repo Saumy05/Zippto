@@ -14,7 +14,7 @@ const serviceSchema = z.object({
   iconUrl: z.string().optional()
 });
 
-const BrandServicesModal = ({ isOpen, onClose, brand }) => {
+const BrandServicesModal = ({ isOpen, onClose, brand, onServiceChange }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -37,9 +37,12 @@ const BrandServicesModal = ({ isOpen, onClose, brand }) => {
   }, [isOpen, brand]);
 
   const loadServices = async () => {
+    const brandId = brand?.id || brand?._id;
+    if (!brandId) return;
+
     try {
       setLoading(true);
-      const response = await serviceService.getAll({ brandId: brand.id });
+      const response = await serviceService.getAll({ brandId });
       if (response.success) {
         setServices(response.services || []);
       }
@@ -104,24 +107,23 @@ const BrandServicesModal = ({ isOpen, onClose, brand }) => {
     try {
       setLoading(true);
       if (editingId) {
-        const response = await serviceService.update(editingId, {
-          ...result.data,
-          brandId: brand.id
-        });
+        const response = await serviceService.update(editingId, result.data);
         if (response.success) {
           toast.success('Service updated');
           loadServices();
           resetForm();
+          if (onServiceChange) onServiceChange();
         }
       } else {
         const response = await serviceService.create({
           ...result.data,
-          brandId: brand.id
+          brandId: brand.id || brand._id
         });
         if (response.success) {
           toast.success('Service created');
           loadServices();
           resetForm();
+          if (onServiceChange) onServiceChange();
         }
       }
     } catch (error) {
@@ -138,6 +140,7 @@ const BrandServicesModal = ({ isOpen, onClose, brand }) => {
       await serviceService.delete(id);
       toast.success('Service deleted');
       loadServices();
+      if (onServiceChange) onServiceChange();
     } catch (error) {
       toast.error('Failed to delete service');
     }

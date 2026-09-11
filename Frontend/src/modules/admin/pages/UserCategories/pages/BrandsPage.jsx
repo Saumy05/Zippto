@@ -580,6 +580,7 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
           isOpen={isServicesModalOpen}
           onClose={() => setIsServicesModalOpen(false)}
           brand={selectedBrandForServices}
+          onServiceChange={refreshData}
         />
       )}
     </div>
