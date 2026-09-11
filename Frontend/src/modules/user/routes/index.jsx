@@ -110,11 +110,17 @@ const UserRoutes = () => {
     '/user/wallet',
     '/user/rewards'
   ];
-  const shouldShowBottomNav = bottomNavPages.includes(location.pathname) || location.pathname.includes('/category/');
+  const isBookingRelatedPage = (
+    location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/(track|chat))?$/) ||
+    location.pathname.includes('/booking-confirmation')
+  );
+  const shouldShowBottomNav = (
+    bottomNavPages.includes(location.pathname) ||
+    location.pathname.includes('/category/') ||
+    !!isBookingRelatedPage
+  );
 
-  // Check if we hide the live booking card (e.g. if we are on the specific booking details, confirmation, or my-bookings page)
-  const isBookingDetailsPage = location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/track)?$/);
-  const isBookingConfirmationPage = location.pathname.includes('/booking-confirmation');
+  // Check if we hide the live booking card (already self-suppresses inside LiveBookingCard for specific booking pages)
   const isMyBookingsPage = location.pathname.includes('/my-bookings') || location.pathname.includes('/bookings');
 
   // Check if we are on public pages (login/signup) where we shouldn't fetch bookings
@@ -170,7 +176,7 @@ const UserRoutes = () => {
       </div>
 
       {/* These components are OUTSIDE Suspense so they persist during page loads */}
-      {!isBookingDetailsPage && !isBookingConfirmationPage && !isMyBookingsPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
+      {!isMyBookingsPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
       {shouldShowBottomNav && <BottomNav />}
       {(location.pathname === '/user' || location.pathname === '/user/' || location.pathname.includes('dashboard') || location.pathname.includes('/category/')) && <Footer />}
     </ErrorBoundary>
