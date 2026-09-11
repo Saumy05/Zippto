@@ -78,7 +78,9 @@ const navSections = [
           { label: "Home Showcase", to: "/admin/user-categories/home" },
           { label: "Manage Categories", to: "/admin/user-categories/categories" },
           { label: "Manage Brands", to: "/admin/user-categories/brands" },
-          { label: "Manage Services", to: "/admin/user-categories/sections" }
+          { label: "Manage Services", to: "/admin/user-categories/sections" },
+          { label: "Vendor Services", to: "/admin/user-categories/vendor-services" },
+          { label: "Vendor Parts", to: "/admin/user-categories/vendor-parts" }
         ]
       }
     ]

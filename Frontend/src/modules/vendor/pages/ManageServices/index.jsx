@@ -173,7 +173,12 @@ const ManageServices = () => {
 
           fetchedCats = cleanCats.map(c => {
             const fallback = defaultCatalog.find(d => d.slug === c.slug);
-            const catBrands = allBrands.filter(b => b.categorySlug === c.slug || b.categoryId === c.id);
+            const catBrands = allBrands.filter(b =>
+              b.categorySlug === c.slug ||
+              b.categoryId === c.id ||
+              b.categoryId === c.slug ||
+              (Array.isArray(b.categoryIds) && (b.categoryIds.includes(c.id) || b.categoryIds.includes(c.slug)))
+            );
             
             const liveSubServices = catBrands.length > 0
               ? catBrands.map(b => ({ id: b.slug, name: b.title, icon: '⚡' }))
