@@ -80,14 +80,14 @@ const BottomNav = React.memo(() => {
         }}
       >
         {/* Floating island pill */}
-        <div className="flex justify-center px-4 pb-3 pt-1">
+        <div className="flex justify-center px-3 pb-2 pt-0.5">
           <div
-            className="flex items-center justify-around w-full max-w-sm rounded-[28px] px-2 py-1.5"
+            className="flex items-center justify-around w-full max-w-[320px] sm:max-w-xs rounded-full px-1.5 py-1"
             style={{
-              background: 'rgba(255,255,255,0.92)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 1.5px 0 rgba(179,58,53,0.06) inset, 0 0 0 1px rgba(0,0,0,0.06)',
+              background: 'rgba(255,255,255,0.94)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.06)',
             }}
           >
             {navItems.map((item) => {
@@ -99,25 +99,25 @@ const BottomNav = React.memo(() => {
                   key={item.id}
                   id={`bottom-nav-${item.id}`}
                   onClick={() => handleTabClick(item)}
-                  className="relative flex flex-col items-center justify-center focus:outline-none select-none"
-                  style={{ minWidth: 60, minHeight: 52 }}
+                  className="relative flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer"
+                  style={{ minWidth: 52, minHeight: 38 }}
                 >
                   {/* Active background pill */}
                   <AnimatePresence>
                     {isActive && (
                       <motion.div
                         layoutId="nav-active-bg"
-                        className="absolute inset-x-0 rounded-[20px]"
+                        className="absolute inset-x-0 rounded-full"
                         style={{
-                          insetInline: '-4px',
-                          top: 2,
-                          bottom: 2,
-                          background: `linear-gradient(135deg, ${BRAND}18, ${BRAND}10)`,
-                          border: `1px solid ${BRAND}22`,
+                          insetInline: '-2px',
+                          top: 1,
+                          bottom: 1,
+                          background: `linear-gradient(135deg, ${BRAND}15, ${BRAND}0a)`,
+                          border: `1px solid ${BRAND}1e`,
                         }}
-                        initial={{ opacity: 0, scale: 0.85 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.85 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 34 }}
                       />
                     )}
@@ -126,8 +126,8 @@ const BottomNav = React.memo(() => {
                   {/* Icon */}
                   <motion.div
                     animate={{
-                      scale: isActive ? 1.12 : 1,
-                      y: isActive ? -1 : 0,
+                      scale: isActive ? 1.08 : 1,
+                      y: isActive ? -0.5 : 0,
                     }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     className="relative z-10"
@@ -135,8 +135,8 @@ const BottomNav = React.memo(() => {
                     <Icon
                       className="transition-none"
                       style={{
-                        width: 22,
-                        height: 22,
+                        width: 18,
+                        height: 18,
                         color: isActive ? BRAND : '#94a3b8',
                       }}
                     />
@@ -150,10 +150,10 @@ const BottomNav = React.memo(() => {
                         className="absolute -top-1.5 -right-1.5 text-white font-black flex items-center justify-center rounded-full ring-2 ring-white"
                         style={{
                           background: BRAND,
-                          fontSize: 9,
-                          minWidth: 16,
-                          height: 16,
-                          paddingInline: 3,
+                          fontSize: 8.5,
+                          minWidth: 14,
+                          height: 14,
+                          paddingInline: 2,
                         }}
                       >
                         {cartCount > 9 ? '9+' : cartCount}
@@ -168,25 +168,10 @@ const BottomNav = React.memo(() => {
                       fontWeight: isActive ? 700 : 500,
                     }}
                     transition={{ duration: 0.15 }}
-                    className="relative z-10 mt-0.5 text-[10px] leading-none tracking-tight"
+                    className="relative z-10 mt-0.5 text-[9px] leading-tight tracking-tight font-medium"
                   >
                     {item.label}
                   </motion.span>
-
-                  {/* Active dot */}
-                  <AnimatePresence>
-                    {isActive && (
-                      <motion.span
-                        layoutId="nav-dot"
-                        className="absolute bottom-1 rounded-full"
-                        style={{ width: 4, height: 4, background: BRAND }}
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      />
-                    )}
-                  </AnimatePresence>
                 </button>
               );
             })}
