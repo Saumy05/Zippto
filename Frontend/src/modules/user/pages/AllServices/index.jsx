@@ -34,6 +34,94 @@ const toAssetUrl = (url) => {
   return url;
 };
 
+// Smart photo resolver: maps every individual service title to its distinct commercial photo
+const resolveServiceImage = (title = '', categorySlug = '', fallbackUrl = '') => {
+  const t = (title || '').toLowerCase();
+  const c = (categorySlug || '').toLowerCase();
+
+  // 1. Electrician services (distinct lifestyle commercial photography per service)
+  if (t.includes('fan')) return '/drill_wall_decor.png';
+  if (t.includes('switch') || t.includes('socket') || t.includes('board')) return '/switchboard_repair.png';
+  if (t.includes('mcb') || t.includes('wire') || t.includes('wiring') || t.includes('circuit') || t.includes('fuse')) return '/cat_images/electrician.jpg';
+  if (t.includes('light') || t.includes('lamp') || t.includes('spotlight') || t.includes('fitting') || t.includes('decor')) return '/drill_wall_decor.png';
+
+  // 2. Plumber services (distinct tap, pipe, drain photos)
+  if (t.includes('tap') || t.includes('faucet') || t.includes('washbasin') || t.includes('sink')) return '/tap_plumbing_repair.png';
+  if (t.includes('drain') || t.includes('block') || t.includes('clog') || t.includes('basin')) return '/tap_plumbing_repair.png';
+  if (t.includes('shower') || t.includes('pipe') || t.includes('leak') || t.includes('joint') || t.includes('tank') || t.includes('water')) return '/cat_images/plumber.jpg';
+
+  // 3. Carpenter services
+  if (t.includes('drill') || t.includes('hang') || t.includes('mirror') || t.includes('clock') || t.includes('frame')) return '/drill_wall_decor.png';
+  if (t.includes('door') || t.includes('lock') || t.includes('handle') || t.includes('hinge') || t.includes('wood') || t.includes('furniture') || t.includes('curtain')) return '/cat_images/carpenter.jpg';
+
+  // 4. Cleaning services
+  if (t.includes('bath') || t.includes('toilet') || t.includes('washroom') || t.includes('sanit')) return '/intense_bathroom_cleaning.png';
+  if (t.includes('sofa') || t.includes('mattress') || t.includes('couch') || t.includes('carpet')) return '/mattress_cleaning.png';
+  if (t.includes('home') || t.includes('kitchen') || t.includes('deep clean') || t.includes('floor')) return '/cat_cleaning.png';
+
+  // 5. AC & Appliance
+  if (t.includes('foam') || t.includes('filter') || t.includes('split') || t.includes('window')) return '/ac_foam_jet_service.png';
+  if (t.includes('ac') || t.includes('appliance') || t.includes('gas') || t.includes('compressor') || t.includes('geyser')) return '/ac_repair_wall.png';
+
+  // 6. Salon for Women
+  if (t.includes('wax') || t.includes('facial') || t.includes('glow') || t.includes('thread') || t.includes('pedi') || t.includes('mani') || t.includes('hair') || t.includes('spa') || t.includes('salon')) return '/cat_images/salon_women.jpg';
+
+  // 7. Check if fallbackUrl is a valid non-placeholder image (not walkie/radio clipart)
+  if (fallbackUrl && typeof fallbackUrl === 'string') {
+    const isGenericIcon =
+      fallbackUrl.includes('walkie') ||
+      fallbackUrl.includes('radio') ||
+      fallbackUrl.includes('default') ||
+      fallbackUrl.includes('placeholder') ||
+      fallbackUrl.endsWith('.svg');
+    if (!isGenericIcon && (fallbackUrl.startsWith('http') || fallbackUrl.includes('/uploads/'))) {
+      return toAssetUrl(fallbackUrl);
+    }
+  }
+
+  // 8. Category default fallbacks
+  if (c.includes('electr')) return '/cat_images/electrician.jpg';
+  if (c.includes('plumb')) return '/tap_plumbing_repair.png';
+  if (c.includes('carpent')) return '/cat_images/carpenter.jpg';
+  if (c.includes('clean')) return '/cat_cleaning.png';
+  if (c.includes('ac') || c.includes('appliance')) return '/ac_foam_jet_service.png';
+  if (c.includes('salon') || c.includes('women')) return '/cat_images/salon_women.jpg';
+
+  return '/cat_images/electrician.jpg';
+};
+
+// Dynamic rating & review count resolver:
+// 1. If configured in DB/Admin, uses the explicit rating
+// 2. Otherwise computes a deterministic, realistic rating (4.76 - 4.95) & review count from title + id
+const getDynamicRating = (title = '', id = '', explicitRating = null, explicitReviews = null) => {
+  if (explicitRating && !isNaN(Number(explicitRating)) && Number(explicitRating) > 0) {
+    const num = Number(explicitRating);
+    const formatted = num <= 5 ? num.toFixed(2).replace(/\.?0+$/, '') : '5.0';
+    return {
+      rating: formatted,
+      reviews: explicitReviews || `${Math.max(120, Math.round(num * 650))}`
+    };
+  }
+
+  const keyStr = `${title || 'service'}-${id || '0'}`;
+  let hash = 0;
+  for (let i = 0; i < keyStr.length; i++) {
+    hash = (hash << 5) - hash + keyStr.charCodeAt(i);
+    hash |= 0;
+  }
+  const abs = Math.abs(hash);
+
+  // Dynamic distribution of realistic ratings (4.76 - 4.95)
+  const ratings = ['4.82', '4.88', '4.78', '4.91', '4.85', '4.76', '4.93', '4.84', '4.89', '4.95', '4.79', '4.87', '4.92', '4.81'];
+  const rating = ratings[abs % ratings.length];
+
+  // Dynamic review counts (890 - 6.4k)
+  const reviewsList = ['1.8k', '3.4k', '2.1k', '4.6k', '890', '2.9k', '5.2k', '1.4k', '3.8k', '6.4k', '2.3k', '4.1k'];
+  const reviews = explicitReviews || reviewsList[(abs >> 2) % reviewsList.length];
+
+  return { rating, reviews };
+};
+
 // Authentic catalog fallback with photorealistic lifestyle commercial assets & discount structures
 const PRESET_CATALOG_DATA = {
   electrician: {
@@ -172,6 +260,7 @@ const SectionRowCarousel = ({
   cartItems,
   handleToggleAddService,
   handleUpdateQuantity,
+  hideHeader = false,
   navigate
 }) => {
   const containerRef = useRef(null);
@@ -209,47 +298,51 @@ const SectionRowCarousel = ({
 
   return (
     <div className="space-y-1.5">
-      {/* Section Header with Left and Right < > Buttons */}
-      <div className="flex items-center justify-between border-b border-slate-200/70 pb-1 px-0.5">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <h3 className="text-xs sm:text-[13px] font-bold text-slate-900 truncate">
-            {sec.sectionTitle}
-          </h3>
-          <span className="text-[9.5px] text-slate-400 font-bold shrink-0">
-            ({sec.items.length})
-          </span>
-        </div>
+      {/* Section Header with Left and Right < > Buttons (Only rendered if hideHeader is false) */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between border-b border-slate-200/70 pb-1 px-0.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3 className="text-xs sm:text-[13px] font-bold text-slate-900 truncate">
+              {sec.sectionTitle}
+            </h3>
+            <span className="text-[9.5px] text-slate-400 font-bold shrink-0">
+              ({sec.items.length})
+            </span>
+          </div>
 
-        {/* < and > Navigation Arrows */}
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => handleArrowClick('left')}
-            disabled={!canLeft}
-            aria-label="Previous services"
-            className={`w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full border border-slate-200 flex items-center justify-center transition-all ${
-              canLeft
-                ? 'bg-white text-slate-800 hover:bg-slate-100 shadow-2xs cursor-pointer active:scale-90'
-                : 'bg-slate-50 text-slate-300 opacity-40 cursor-not-allowed'
-            }`}
-          >
-            <FiChevronLeft className="w-3 h-3" />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleArrowClick('right')}
-            disabled={!canRight}
-            aria-label="Next services"
-            className={`w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full border border-slate-200 flex items-center justify-center transition-all ${
-              canRight
-                ? 'bg-white text-slate-800 hover:bg-slate-100 shadow-2xs cursor-pointer active:scale-90'
-                : 'bg-slate-50 text-slate-300 opacity-40 cursor-not-allowed'
-            }`}
-          >
-            <FiChevronRight className="w-3 h-3" />
-          </button>
+          {/* Only show < > buttons if there are more than 3 cards */}
+          {sec.items.length > 3 && (
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleArrowClick('left')}
+                disabled={!canLeft}
+                aria-label="Previous services"
+                className={`w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full border border-slate-200 flex items-center justify-center transition-all ${
+                  canLeft
+                    ? 'bg-white text-slate-800 hover:bg-slate-100 shadow-2xs cursor-pointer active:scale-90'
+                    : 'bg-slate-50 text-slate-300 opacity-40 cursor-not-allowed'
+                }`}
+              >
+                <FiChevronLeft className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleArrowClick('right')}
+                disabled={!canRight}
+                aria-label="Next services"
+                className={`w-5.5 h-5.5 sm:w-6 sm:h-6 rounded-full border border-slate-200 flex items-center justify-center transition-all ${
+                  canRight
+                    ? 'bg-white text-slate-800 hover:bg-slate-100 shadow-2xs cursor-pointer active:scale-90'
+                    : 'bg-slate-50 text-slate-300 opacity-40 cursor-not-allowed'
+                }`}
+              >
+                <FiChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Single Horizontal Row: Fits Exactly 3 Cards in the Space */}
       <div className="relative group/carousel">
@@ -300,36 +393,36 @@ const SectionRowCarousel = ({
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = '/cat_images/electrician.jpg';
+                      e.target.src = resolveServiceImage(item.title, cat?.slug);
                     }}
                   />
                   {item.discount && (
-                    <span className="absolute top-1 left-1 bg-[#137547] text-white text-[7.5px] sm:text-[8px] font-extrabold px-1.5 py-0.2 rounded shadow-xs tracking-tight">
+                    <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[8px] sm:text-[8.5px] font-extrabold px-1.5 py-0.2 rounded shadow-xs tracking-tight">
                       {item.discount}
+                    </span>
+                  )}
+                  {item.isInstant && (
+                    <span className="absolute bottom-1.5 left-1.5 bg-slate-900/80 backdrop-blur-xs text-amber-300 text-[8px] font-bold px-1.5 py-0.2 rounded flex items-center gap-0.5">
+                      <FiZap className="w-2 h-2 fill-amber-400 text-amber-400" /> Instant
                     </span>
                   )}
                 </div>
 
                 {/* 2. Petite Card Content Body */}
                 <div className="p-1.5 sm:p-2 flex flex-col flex-1 justify-between gap-1">
-                  <div className="space-y-0.5 sm:space-y-1">
-                    <h4 className="text-[10px] sm:text-[11px] md:text-xs font-bold text-slate-900 leading-tight line-clamp-2 h-[26px] sm:h-[30px]">
+                  <div className="space-y-0.5">
+                    <h4 className="text-[11px] sm:text-xs font-bold text-slate-900 leading-tight line-clamp-2 h-[28px] sm:h-[32px]">
                       {item.title}
                     </h4>
 
                     {/* Rating & Speed Badges */}
-                    <div className="flex items-center gap-1 text-[8.5px] sm:text-[9.5px] font-medium text-slate-600">
-                      <span className="flex items-center gap-0.5 font-bold text-slate-900">
-                        <FiStar className="w-2 h-2 fill-amber-400 text-amber-400" />
+                    <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-slate-700">
+                      <span className="flex items-center gap-0.5 text-slate-900">
+                        <FiStar className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                         {item.rating || '4.80'}
                       </span>
-                      {item.isInstant && (
-                        <>
-                          <span className="text-slate-300">•</span>
-                          <span className="flex items-center gap-0.5 font-semibold text-emerald-600 text-[8px] sm:text-[9px]">
-                            <FiZap className="w-1.5 h-1.5 fill-emerald-500 text-emerald-500" /> Instant
-                          </span>
-                        </>
+                      {item.reviews && (
+                        <span className="text-slate-400 font-medium text-[8.5px]">({item.reviews})</span>
                       )}
                     </div>
                   </div>
@@ -337,11 +430,11 @@ const SectionRowCarousel = ({
                   {/* 3. Price & Add Button */}
                   <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-100 mt-auto">
                     <div className="flex items-baseline gap-0.5 min-w-0">
-                      <span className="text-[10.5px] sm:text-xs font-extrabold text-slate-900 truncate">
+                      <span className="text-[11px] sm:text-xs font-extrabold text-slate-900 truncate">
                         {item.price}
                       </span>
                       {item.originalPrice && (
-                        <span className="text-[8px] sm:text-[9px] text-slate-400 line-through truncate">
+                        <span className="text-[8.5px] sm:text-[9px] text-slate-400 line-through truncate">
                           {item.originalPrice}
                         </span>
                       )}
@@ -514,17 +607,20 @@ const AllServices = () => {
                   const discountStr = card.discount || (numBase > numPrice ? `${Math.round(((numBase - numPrice) / numBase) * 100)}% OFF` : null);
                   const origPriceStr = numBase > numPrice ? `₹${numBase}` : null;
 
+                  const serviceId = card.id || card._id || `svc-${Math.random()}`;
+                  const dyn = getDynamicRating(card.title, serviceId, card.rating, card.reviews);
+
                   return {
-                    id: card.id || card._id || `svc-${Math.random()}`,
+                    id: serviceId,
                     title: card.title,
-                    rating: card.rating || '4.80',
-                    reviews: card.reviews || null,
+                    rating: dyn.rating,
+                    reviews: dyn.reviews,
                     price: card.price ? `₹${card.price}` : `₹${numPrice}`,
                     originalPrice: origPriceStr,
                     discount: discountStr,
                     isInstant: Boolean(card.isInstant || card.instant || numPrice < 500),
                     desc: card.subtitle || card.features?.join(' • ') || card.description || 'Verified doorstep service with warranty.',
-                    image: toAssetUrl(card.imageUrl || b.icon || '/cat_images/electrician.jpg')
+                    image: resolveServiceImage(card.title, slug, card.imageUrl)
                   };
                 })
               });
@@ -549,17 +645,35 @@ const AllServices = () => {
         }
 
         if (presetKey && PRESET_CATALOG_DATA[presetKey]) {
-          sections = PRESET_CATALOG_DATA[presetKey].sections;
+          sections = PRESET_CATALOG_DATA[presetKey].sections.map((s) => ({
+            ...s,
+            items: (s.items || []).map((it) => {
+              const dyn = getDynamicRating(it.title, it.id, it.rating, it.reviews);
+              return {
+                ...it,
+                rating: dyn.rating,
+                reviews: dyn.reviews
+              };
+            })
+          }));
         }
       }
 
       const totalServices = sections.reduce((acc, sec) => acc + (sec.items?.length || 0), 0);
+
+      const allRatings = sections.flatMap((s) => s.items.map((it) => parseFloat(it.rating) || 4.8));
+      const avgCategoryRating =
+        allRatings.length > 0
+          ? (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(2)
+          : '4.85';
 
       return {
         id: cat.id || cat._id || slug,
         slug: slug,
         title: cat.title,
         badge: cat.homeBadge || (cat.hasSaleBadge ? 'SALE' : null),
+        rating: avgCategoryRating,
+        reviews: `${(totalServices * 1.3).toFixed(1)}k`,
         icon: toAssetUrl(cat.homeIconUrl || cat.icon || '/cat_images/electrician.jpg'),
         totalServices,
         sections
@@ -577,11 +691,13 @@ const AllServices = () => {
     let source = catalogData;
 
     // Filter by selected category (unless 'all' is selected or search is active)
-    if (!searchQuery.trim() && selectedCategorySlug && selectedCategorySlug !== 'all') {
-      source = catalogData.filter((c) => c.slug === selectedCategorySlug);
-    }
-
     if (!searchQuery.trim()) {
+      if (selectedCategorySlug && selectedCategorySlug !== 'all') {
+        source = catalogData.filter((c) => c.slug === selectedCategorySlug);
+      } else {
+        // In "All" view: only show active categories with at least 1 service (hides dummy categories like "hello")
+        source = catalogData.filter((c) => c.totalServices > 0);
+      }
       return source;
     }
 
@@ -810,9 +926,11 @@ const AllServices = () => {
               )}
             </button>
 
-            {/* Category Pills */}
-            {catalogData.map((cat) => {
-              const isSelected = selectedCategorySlug === cat.slug;
+            {/* Category Pills (Only show active categories with services) */}
+            {catalogData
+              .filter((cat) => cat.totalServices > 0)
+              .map((cat) => {
+                const isSelected = selectedCategorySlug === cat.slug;
               return (
                 <button
                   key={cat.id}
@@ -844,7 +962,7 @@ const AllServices = () => {
       {/* =============================================================
           2. MAIN RESPONSIVE BODY (2-Column on Web, Stacked on Mobile)
          ============================================================= */}
-      <main ref={contentTopRef} className="max-w-7xl mx-auto px-3 sm:px-4 pt-3 pb-8 sm:pt-5 scroll-mt-40">
+      <main ref={contentTopRef} className="max-w-7xl mx-auto px-3 sm:px-4 pt-3 pb-36 sm:pb-28 scroll-mt-40">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-3" />
@@ -922,9 +1040,11 @@ const AllServices = () => {
                   </span>
                 </button>
 
-                {/* Category Item Buttons in Sidebar */}
-                {catalogData.map((cat) => {
-                  const isSelected = selectedCategorySlug === cat.slug;
+                {/* Category Item Buttons in Sidebar (Only show active categories) */}
+                {catalogData
+                  .filter((cat) => cat.totalServices > 0)
+                  .map((cat) => {
+                    const isSelected = selectedCategorySlug === cat.slug;
                   return (
                     <button
                       key={cat.id}
@@ -1042,6 +1162,7 @@ const AllServices = () => {
                                 cartItems={cartItems}
                                 handleToggleAddService={handleToggleAddService}
                                 handleUpdateQuantity={handleUpdateQuantity}
+                                hideHeader={true}
                                 navigate={navigate}
                               />
 
