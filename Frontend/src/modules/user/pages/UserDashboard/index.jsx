@@ -18,7 +18,8 @@ import {
   FiChevronDown,
   FiStar,
   FiPlus,
-  FiCheck
+  FiCheck,
+  FiPackage
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
@@ -833,7 +834,7 @@ const UserDashboard = () => {
   };
 
   // Helper to dynamically resolve full service detail template for ANY category (preset or custom created by admin)
-  const resolveCategoryDetail = (category, subCategory) => {
+  const resolveCategoryDetail = (category, _subCategory) => {
     const catSlug = (category.slug || category.id || category.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
     
     let key = Object.keys(CATEGORY_CATALOG_REGISTRY).find(k => catSlug.includes(k) || k.includes(catSlug));
@@ -861,40 +862,21 @@ const UserDashboard = () => {
       };
     }
 
-    // Dynamic Generator for Brand-New Categories Created by Admin in Database
-    const subList = Array.isArray(category.subCategories) && category.subCategories.length > 0
-      ? category.subCategories
-      : [
-          { id: `${catSlug}-consultation`, name: `${category.title} Consultation`, icon: '📋' },
-          { id: `${catSlug}-standard`, name: `Standard ${category.title} Package`, icon: '⭐' }
-        ];
+    // Custom Categories Created by Admin in Database with no presets
+    const subList = Array.isArray(category.subCategories) ? category.subCategories : [];
 
     return {
       title: category.title,
       bannerTitle: `${category.title.toUpperCase()} SERVICES`,
       rating: category.rating || 'New',
       reviews: category.reviews || null,
-      desc: `Book certified, background-verified ${category.title} professionals with upfront pricing, doorstep inspection, and complete service warranty.`,
+      desc: category.description || `Explore professional ${category.title} services at your doorstep.`,
       subGrid: subList.map(sc => ({
         id: (sc.id || sc.slug || sc.name).toLowerCase().replace(/[^a-z0-9]/g, '-'),
         name: sc.name || sc.title,
-        image: toAssetUrl(sc.image || category.image || '/cat_electrician_plumber.png')
+        image: toAssetUrl(sc.image || category.image || '')
       })),
-      detailedSections: subList.map(sc => ({
-        id: (sc.id || sc.slug || sc.name).toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        sectionTitle: sc.name || sc.title,
-        items: [
-          {
-            id: `${catSlug}-${(sc.id || 'service').toLowerCase().replace(/[^a-z0-9]/g, '-')}-item`,
-            title: `${sc.name || sc.title} Doorstep Service`,
-            price: '₹199',
-            rating: 'New',
-            reviews: null,
-            desc: `Complete professional ${sc.name || sc.title} service with certified tools, safety compliance, and labor guarantee.`,
-            image: toAssetUrl(sc.image || category.image || '/cat_electrician_plumber.png')
-          }
-        ]
-      }))
+      detailedSections: []
     };
   };
 
@@ -1455,124 +1437,147 @@ const UserDashboard = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 sm:gap-4">
-            {activeDetailView.subGrid.map((sg) => (
-              <div
-                key={sg.id}
-                onClick={() => {
-                  const cleanKey = (sg.id || sg.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-                  let targetEl = document.getElementById(`section-${cleanKey}`);
-                  if (!targetEl) {
-                    const cleanName = sg.name.toLowerCase().trim();
-                    targetEl = Array.from(document.querySelectorAll('[id^="section-"]')).find(el =>
-                      el.id.toLowerCase().includes(cleanKey.slice(0, 4)) ||
-                      el.textContent.toLowerCase().includes(cleanName)
-                    );
-                  }
-                  if (targetEl) {
-                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    targetEl.classList.add('bg-amber-50/70', 'p-2.5', 'rounded-2xl', 'transition-all', 'duration-300');
-                    setTimeout(() => {
-                      targetEl.classList.remove('bg-amber-50/70', 'p-2.5', 'rounded-2xl');
-                    }, 1400);
-                  }
-                }}
-                className="flex flex-col items-center text-center cursor-pointer group active:scale-95 transition-transform"
-              >
-                <div className="w-full aspect-square rounded-2xl bg-white border border-slate-200/90 shadow-2xs overflow-hidden flex items-center justify-center p-2 group-hover:border-slate-400 group-hover:shadow-md transition-all">
-                  <img
-                    src={sg.image}
-                    alt={sg.name}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '/cat_electrician_plumber.png';
-                    }}
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
-                  />
+          {activeDetailView.subGrid && activeDetailView.subGrid.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
+              {activeDetailView.subGrid.map((sg) => (
+                <div
+                  key={sg.id}
+                  onClick={() => {
+                    const cleanKey = (sg.id || sg.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
+                    let targetEl = document.getElementById(`section-${cleanKey}`);
+                    if (!targetEl) {
+                      const cleanName = sg.name.toLowerCase().trim();
+                      targetEl = Array.from(document.querySelectorAll('[id^="section-"]')).find(el =>
+                        el.id.toLowerCase().includes(cleanKey.slice(0, 4)) ||
+                        el.textContent.toLowerCase().includes(cleanName)
+                      );
+                    }
+                    if (targetEl) {
+                      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      targetEl.classList.add('bg-amber-50/70', 'p-2.5', 'rounded-2xl', 'transition-all', 'duration-300');
+                      setTimeout(() => {
+                        targetEl.classList.remove('bg-amber-50/70', 'p-2.5', 'rounded-2xl');
+                      }, 1400);
+                    }
+                  }}
+                  className="flex flex-col items-center text-center cursor-pointer group active:scale-95 transition-transform"
+                >
+                  <div className="w-full aspect-square rounded-2xl bg-white border border-slate-200/90 shadow-2xs overflow-hidden flex items-center justify-center p-2 group-hover:border-slate-400 group-hover:shadow-md transition-all">
+                    <img
+                      src={sg.image}
+                      alt={sg.name}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/cat_electrician_plumber.png';
+                      }}
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
+                    />
+                  </div>
+                  <span className="mt-1.5 text-[10.5px] sm:text-xs font-bold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {sg.name}
+                  </span>
                 </div>
-                <span className="mt-1.5 text-[10.5px] sm:text-xs font-bold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
-                  {sg.name}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          <div className="space-y-5 pt-2">
-            {activeDetailView.detailedSections.map((sec, idx) => {
-              const secAnchorId = `section-${(sec.id || sec.sectionTitle || `sec-${idx}`).toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-              return (
-                <div key={idx} id={secAnchorId} className="space-y-2.5 scroll-mt-24">
-                  <h3 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-1.5 flex items-center justify-between">
-                    <span>{sec.sectionTitle}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">({sec.items.length} services)</span>
-                  </h3>
+          {activeDetailView.detailedSections && activeDetailView.detailedSections.length > 0 ? (
+            <div className="space-y-5 pt-2">
+              {activeDetailView.detailedSections.map((sec, idx) => {
+                const secAnchorId = `section-${(sec.id || sec.sectionTitle || `sec-${idx}`).toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+                return (
+                  <div key={idx} id={secAnchorId} className="space-y-2.5 scroll-mt-24">
+                    <h3 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-1.5 flex items-center justify-between">
+                      <span>{sec.sectionTitle}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">({sec.items.length} services)</span>
+                    </h3>
 
-                <div className="space-y-2.5">
-                  {sec.items.map((item) => {
-                    const isAdded = cartItems.some(
-                      ci => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
-                    );
-                    return (
-                      <div
-                        key={item.id}
-                        className="bg-white border border-slate-200/80 rounded-xl p-3 flex items-start justify-between gap-3 shadow-2xs hover:border-slate-300 transition-all"
-                      >
-                        <div className="space-y-1 flex-1">
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-900">{item.title}</h4>
-                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                            <span className="flex items-center gap-0.5 font-bold text-amber-500">
-                              <FiStar className="w-3 h-3 fill-amber-400 text-amber-400" />
-                              {Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : (item.rating || 'New')}
-                            </span>
-                            {item.reviews && item.reviews !== '0' && item.reviews !== 0 && (
-                              <span className="text-slate-400">
-                                ({typeof item.reviews === 'number' ? `${item.reviews}` : item.reviews})
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs font-bold text-slate-900">{item.price}</p>
-                          <p className="text-[11px] text-slate-500 leading-snug line-clamp-2 pt-0.5">
-                            {item.desc}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-col items-center shrink-0 space-y-1.5">
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-slate-100 overflow-hidden border border-slate-100 relative">
-                            <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isAdded) {
-                                navigate('/cart');
-                              } else {
-                                handleToggleAddService(item, sec.sectionTitle);
-                              }
-                            }}
-                            className={`w-16 sm:w-20 py-1 rounded-md font-bold text-[11px] transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer ${
-                              isAdded
-                                ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
-                                : 'bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-95'
-                            }`}
-                            title={isAdded ? 'Go to Cart' : 'Add to Cart'}
+                    <div className="space-y-2.5">
+                      {sec.items.map((item) => {
+                        const isAdded = cartItems.some(
+                          ci => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
+                        );
+                        return (
+                          <div
+                            key={item.id}
+                            className="bg-white border border-slate-200/80 rounded-xl p-3 flex items-start justify-between gap-3 shadow-2xs hover:border-slate-300 transition-all"
                           >
-                            {isAdded ? (
-                              <>
-                                <FiCheck className="w-3 h-3" /> Added
-                              </>
-                            ) : (
-                              <>Add +</>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                            <div className="space-y-1 flex-1">
+                              <h4 className="text-xs sm:text-sm font-bold text-slate-900">{item.title}</h4>
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                                <span className="flex items-center gap-0.5 font-bold text-amber-500">
+                                  <FiStar className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                  {Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : (item.rating || 'New')}
+                                </span>
+                                {item.reviews && item.reviews !== '0' && item.reviews !== 0 && (
+                                  <span className="text-slate-400">
+                                    ({typeof item.reviews === 'number' ? `${item.reviews}` : item.reviews})
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs font-bold text-slate-900">{item.price}</p>
+                              <p className="text-[11px] text-slate-500 leading-snug line-clamp-2 pt-0.5">
+                                {item.desc}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col items-center shrink-0 space-y-1.5">
+                              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-slate-100 overflow-hidden border border-slate-100 relative">
+                                <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isAdded) {
+                                    navigate('/cart');
+                                  } else {
+                                    handleToggleAddService(item, sec.sectionTitle);
+                                  }
+                                }}
+                                className={`w-16 sm:w-20 py-1 rounded-md font-bold text-[11px] transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer ${
+                                  isAdded
+                                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                                    : 'bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-95'
+                                }`}
+                                title={isAdded ? 'Go to Cart' : 'Add to Cart'}
+                              >
+                                {isAdded ? (
+                                  <>
+                                    <FiCheck className="w-3 h-3" /> Added
+                                  </>
+                                ) : (
+                                  <>Add +</>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-8 sm:p-12 text-center flex flex-col items-center justify-center my-4 shadow-2xs">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/70 flex items-center justify-center mb-4 text-amber-600 shadow-2xs">
+                <FiPackage className="w-8 h-8" />
               </div>
-              );
-            })}
-          </div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1.5">
+                No services available yet
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">
+                We are currently onboarding certified professionals for <span className="font-semibold text-slate-700">{activeDetailView.title}</span>. Please check back soon or browse our other active categories!
+              </p>
+              <button
+                onClick={() => navigate('/user')}
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+              >
+                <FiArrowLeft className="w-4 h-4" />
+                <span>Browse Other Categories</span>
+              </button>
+            </div>
+          )}
         </main>
       ) : (
         /* -------------------------------------------------------------
