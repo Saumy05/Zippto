@@ -15,6 +15,18 @@ import { toast } from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
 import NotificationBell from '../../components/common/NotificationBell';
 
+const toAssetUrl = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  if (url.includes('/uploads/')) {
+    const uploadPath = url.substring(url.indexOf('/uploads/'));
+    const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001').replace(/\/api\/?$/, '');
+    return `${base}${uploadPath}`;
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (!url.startsWith('/')) return `/${url}`;
+  return url;
+};
+
 const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, isLoading: loading, removeItem, removeCategoryItems, updateItem } = useCart();
@@ -27,10 +39,26 @@ const Cart = () => {
     { id: 'appliance', title: 'Appliance Repair', image: '/ac_repair_wall.png' },
   ];
 
-  // Group items by category
+  // Purge any corrupted / ghost items automatically
+  React.useEffect(() => {
+    const corruptItems = cartItems.filter(item => {
+      const isCorrupt = (!item.title || item.title.trim() === '' || item.title === 'S') && (!item.price || item.price === 0);
+      return isCorrupt;
+    });
+    if (corruptItems.length > 0) {
+      corruptItems.forEach(item => {
+        removeItem(item._id || item.id, item.title);
+      });
+    }
+  }, [cartItems, removeItem]);
+
+  // Group items by category (filtering out corrupt items)
   const groupedItems = useMemo(() => {
     const groups = {};
     cartItems.forEach(item => {
+      const isCorrupt = (!item.title || item.title.trim() === '' || item.title === 'S') && (!item.price || item.price === 0);
+      if (isCorrupt) return;
+
       const category = item.category || 'Home Services';
       if (!groups[category]) {
         groups[category] = [];
@@ -40,7 +68,7 @@ const Cart = () => {
     return groups;
   }, [cartItems]);
 
-  const cartCount = cartItems.length;
+  const cartCount = Object.values(groupedItems).reduce((sum, list) => sum + list.length, 0);
 
   const handleBack = () => {
     navigate(-1);
@@ -49,39 +77,46 @@ const Cart = () => {
   const handleDeleteCategory = async (category) => {
     try {
       const response = await removeCategoryItems(category);
-      if (response.success) {
+      if (response && response.success !== false) {
         toast.success('Category items removed');
       } else {
-        toast.error(response.message || 'Failed to remove category items');
+        toast.error(response?.message || 'Failed to remove category items');
       }
     } catch (error) {
       toast.error('Failed to remove category items');
     }
   };
 
-  const handleDelete = async (itemId) => {
+  const handleDelete = async (itemId, itemTitle) => {
     try {
-      const response = await removeItem(itemId);
-      if (response.success) {
+      const response = await removeItem(itemId, itemTitle);
+      if (response && response.success !== false) {
         toast.success('Item removed from cart');
       } else {
-        toast.error(response.message || 'Failed to remove item');
+        toast.error(response?.message || 'Failed to remove item');
       }
     } catch (error) {
       toast.error('Failed to remove item');
     }
   };
 
-  const handleQuantityChange = async (itemId, change) => {
+  const handleQuantityChange = async (itemId, change, itemTitle) => {
     try {
-      const item = cartItems.find(i => (i._id || i.id) === itemId);
+      const item = cartItems.find(i => (i._id || i.id) === itemId || (itemTitle && i.title === itemTitle));
       if (!item) return;
 
-      const newCount = Math.max(1, (item.serviceCount || 1) + change);
-      const response = await updateItem(itemId, newCount);
+      const currentCount = item.serviceCount || 1;
+      const newCount = currentCount + change;
 
-      if (!response.success) {
-        toast.error(response.message || 'Failed to update quantity');
+      if (newCount <= 0) {
+        await handleDelete(itemId || item._id || item.id, itemTitle || item.title);
+        return;
+      }
+
+      const response = await updateItem(itemId || item._id || item.id, newCount);
+
+      if (!response || response.success === false) {
+        toast.error(response?.message || 'Failed to update quantity');
       }
     } catch (error) {
       toast.error('Failed to update quantity');
@@ -89,7 +124,7 @@ const Cart = () => {
   };
 
   const handleAddServices = (category) => {
-    navigate('/user');
+    navigate('/user/services');
   };
 
   const handleCategoryCheckout = (category) => {
@@ -276,13 +311,26 @@ const Cart = () => {
                             className="w-full flex items-center gap-3 p-3 rounded-md bg-white border border-[var(--border,#E5E7EB)] shadow-xs"
                           >
                             {/* Item Thumbnail */}
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden shrink-0 border border-[var(--border,#E5E7EB)] bg-slate-50 flex items-center justify-center">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden shrink-0 border border-[var(--border,#E5E7EB)] bg-slate-50 flex items-center justify-center relative">
                               {item.image || item.icon ? (
-                                <img
-                                  src={item.image || item.icon}
-                                  alt={item.title}
-                                  className="w-full h-full object-cover"
-                                />
+                                <>
+                                  <img
+                                    src={toAssetUrl(item.image || item.icon)}
+                                    alt={item.title || 'Service'}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                      const fb = e.currentTarget.nextElementSibling;
+                                      if (fb) fb.style.display = 'flex';
+                                    }}
+                                  />
+                                  <div
+                                    className="w-full h-full items-center justify-center bg-slate-100 text-[#B33A35] font-bold text-sm"
+                                    style={{ display: 'none' }}
+                                  >
+                                    {(item.title || 'S').charAt(0)}
+                                  </div>
+                                </>
                               ) : (
                                 <span className="text-sm font-bold text-[#B33A35]">
                                   {(item.title || 'S').charAt(0)}
@@ -293,7 +341,7 @@ const Cart = () => {
                             {/* Middle: Title + Category + Price */}
                             <div className="flex-1 min-w-0">
                               <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
-                                {item.title}
+                                {item.title || 'Home Service'}
                               </h4>
                               {item.category && (
                                 <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide">
@@ -316,8 +364,10 @@ const Cart = () => {
                             <div className="flex items-center gap-2 shrink-0">
                               <div className="flex items-center border border-[var(--border,#E5E7EB)] rounded-md overflow-hidden bg-white">
                                 <button
-                                  onClick={() => handleQuantityChange(item._id || item.id, -1)}
-                                  className="w-6 h-6 hover:bg-gray-100 text-slate-700 flex items-center justify-center font-bold text-xs transition-colors"
+                                  type="button"
+                                  onClick={() => handleQuantityChange(item._id || item.id, -1, item.title)}
+                                  className="w-6 h-6 hover:bg-gray-100 text-slate-700 flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
+                                  title="Decrease quantity or remove"
                                 >
                                   <FiMinus className="w-3 h-3" />
                                 </button>
@@ -325,16 +375,20 @@ const Cart = () => {
                                   {item.serviceCount || 1}
                                 </span>
                                 <button
-                                  onClick={() => handleQuantityChange(item._id || item.id, 1)}
-                                  className="w-6 h-6 hover:bg-gray-100 text-slate-700 flex items-center justify-center font-bold text-xs transition-colors"
+                                  type="button"
+                                  onClick={() => handleQuantityChange(item._id || item.id, 1, item.title)}
+                                  className="w-6 h-6 hover:bg-gray-100 text-slate-700 flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
+                                  title="Increase quantity"
                                 >
                                   <FiPlus className="w-3 h-3" />
                                 </button>
                               </div>
 
                               <button
-                                onClick={() => handleDelete(item._id || item.id)}
-                                className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                                type="button"
+                                onClick={() => handleDelete(item._id || item.id, item.title)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer active:scale-95"
+                                title="Remove item"
                               >
                                 <FiTrash2 className="w-4 h-4" />
                               </button>

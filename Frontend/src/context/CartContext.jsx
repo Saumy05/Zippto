@@ -239,13 +239,20 @@ export const CartProvider = ({ children }) => {
   }, [fetchCart]);
 
   // Remove item from cart
-  const removeItem = useCallback(async (itemId) => {
+  const removeItem = useCallback(async (itemId, itemTitle) => {
     const token = localStorage.getItem('accessToken');
+
+    const matchesItem = (item) => {
+      if (itemId && (item._id === itemId || item.id === itemId)) return true;
+      if (itemTitle && item.title === itemTitle) return true;
+      if (!itemId && !item._id && !item.id && (!item.title || item.title === 'S')) return true;
+      return false;
+    };
 
     if (!token) {
       // Guest Mode
       const currentGuestItems = getGuestCart();
-      const updatedGuestItems = currentGuestItems.filter(item => item._id !== itemId && item.id !== itemId);
+      const updatedGuestItems = currentGuestItems.filter(item => !matchesItem(item));
       saveGuestCart(updatedGuestItems);
       setCartItems(updatedGuestItems);
       setCartCount(updatedGuestItems.length);
@@ -253,19 +260,22 @@ export const CartProvider = ({ children }) => {
     }
 
     // Authenticated Mode
-    setCartItems(prev => prev.filter(item => item._id !== itemId && item.id !== itemId));
+    setCartItems(prev => prev.filter(item => !matchesItem(item)));
     setCartCount(prev => Math.max(0, prev - 1));
 
-    try {
-      const response = await cartService.removeItem(itemId);
-      if (!response.success) {
+    if (itemId) {
+      try {
+        const response = await cartService.removeItem(itemId);
+        if (!response.success) {
+          fetchCart();
+        }
+        return response;
+      } catch (error) {
         fetchCart();
+        throw error;
       }
-      return response;
-    } catch (error) {
-      fetchCart();
-      throw error;
     }
+    return { success: true };
   }, [fetchCart]);
 
   // Remove all items from a category

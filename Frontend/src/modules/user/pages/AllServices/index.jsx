@@ -14,7 +14,9 @@ import {
   FiFilter,
   FiZap,
   FiGrid,
-  FiChevronDown
+  FiChevronDown,
+  FiPlus,
+  FiMinus
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
@@ -164,7 +166,14 @@ const PRESET_CATALOG_DATA = {
 /**
  * Single Row Carousel with Left & Right Arrow Buttons
  */
-const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navigate }) => {
+const SectionRowCarousel = ({
+  sec,
+  cat,
+  cartItems,
+  handleToggleAddService,
+  handleUpdateQuantity,
+  navigate
+}) => {
   const containerRef = useRef(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
@@ -338,30 +347,47 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isAdded) {
-                          navigate('/cart');
-                        } else {
+                    {isAdded ? (
+                      <div className="flex items-center bg-white border border-emerald-500 rounded text-[9px] sm:text-[9.5px] font-bold overflow-hidden shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateQuantity(item, -1, cat.title);
+                          }}
+                          className="w-5 h-5 flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 font-extrabold transition-colors cursor-pointer"
+                          title="Decrease quantity or remove"
+                        >
+                          <FiMinus className="w-2.5 h-2.5" />
+                        </button>
+                        <span className="text-[10px] font-extrabold text-emerald-800 px-1 min-w-[14px] text-center">
+                          {cartItem?.serviceCount || 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateQuantity(item, 1, cat.title);
+                          }}
+                          className="w-5 h-5 flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 font-extrabold transition-colors cursor-pointer"
+                          title="Increase quantity"
+                        >
+                          <FiPlus className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleToggleAddService(item, cat.title);
-                        }
-                      }}
-                      className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-[9px] sm:text-[9.5px] font-bold transition-all shadow-2xs flex items-center justify-center gap-0.5 cursor-pointer shrink-0 active:scale-95 ${
-                        isAdded
-                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                          : 'bg-white text-red-600 border border-red-200 hover:bg-red-50'
-                      }`}
-                      title={isAdded ? 'Go to Cart' : 'Add to Cart'}
-                    >
-                      {isAdded ? (
-                        <>
-                          <FiCheck className="w-2.5 h-2.5" /> Added
-                        </>
-                      ) : (
-                        <>Add +</>
-                      )}
-                    </button>
+                        }}
+                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-[9px] sm:text-[9.5px] font-bold transition-all shadow-2xs flex items-center justify-center gap-0.5 cursor-pointer shrink-0 active:scale-95 bg-white text-red-600 border border-red-200 hover:bg-red-50"
+                        title="Add to Cart"
+                      >
+                        Add +
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -377,7 +403,7 @@ const AllServices = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentCity } = useCity();
-  const { cartItems, addToCart, removeItem, cartCount } = useCart();
+  const { cartItems, addToCart, removeItem, updateItem, cartCount } = useCart();
 
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -389,20 +415,13 @@ const AllServices = () => {
     searchParams.get('category') || 'all'
   );
 
-  // Exclusive Single-Open Accordion: only one category dropdown open at a time in 'all' view
-  const [openCategorySlug, setOpenCategorySlug] = useState('electrician');
+  // Subcategory filter within a selected category
+  const [selectedSubcategoryTitle, setSelectedSubcategoryTitle] = useState('all');
 
-  // Auto-sync initial open category when categories are loaded
+  // Reset subcategory filter whenever category changes
   useEffect(() => {
-    if (categories.length > 0) {
-      const firstSlug = (categories[0].slug || categories[0].id || 'electrician').toLowerCase();
-      setOpenCategorySlug((prev) => prev || firstSlug);
-    }
-  }, [categories]);
-
-  const toggleCategoryDropdown = (slug) => {
-    setOpenCategorySlug((prev) => (prev === slug ? null : slug));
-  };
+    setSelectedSubcategoryTitle('all');
+  }, [selectedCategorySlug]);
 
   const contentTopRef = useRef(null);
 
@@ -642,15 +661,55 @@ const AllServices = () => {
     [cartItems, addToCart, removeItem]
   );
 
-  // 5. Select category handler (Only shows that category unless 'all' is clicked)
+  // 5. Quantity stepper handler directly from cards
+  const handleUpdateQuantity = useCallback(
+    async (item, change, categoryTitle) => {
+      try {
+        const found = cartItems.find(
+          (ci) => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
+        );
+
+        if (!found) {
+          if (change > 0) {
+            await handleToggleAddService(item, categoryTitle);
+          }
+          return;
+        }
+
+        const currentCount = found.serviceCount || 1;
+        const newCount = currentCount + change;
+
+        if (newCount <= 0) {
+          if (removeItem) {
+            await removeItem(found._id || found.id, item.title);
+            toast.success(`${item.title} removed from cart`);
+          }
+        } else {
+          if (updateItem) {
+            await updateItem(found._id || found.id, newCount);
+          }
+        }
+      } catch (err) {
+        console.error('Error updating quantity in AllServices:', err);
+        toast.error('Failed to update quantity.');
+      }
+    },
+    [cartItems, removeItem, updateItem, handleToggleAddService]
+  );
+
+  // Cart total price computation
+  const totalCartPrice = useMemo(() => {
+    return cartItems.reduce((sum, item) => sum + (item.price || 0), 0);
+  }, [cartItems]);
+
+  // 6. Select category handler (Only shows that category unless 'all' is clicked)
   const handleSelectCategory = (slug) => {
     setSelectedCategorySlug(slug);
+    setSelectedSubcategoryTitle('all');
     if (slug === 'all') {
       setSearchParams({});
-      setOpenCategorySlug((prev) => prev || 'electrician');
     } else {
       setSearchParams({ category: slug });
-      setOpenCategorySlug(slug);
     }
     // Scroll to the very top so the sticky header does not occlude the category heading
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -925,114 +984,236 @@ const AllServices = () => {
             {/* =========================================================
                 RIGHT SERVICE CONTENT AREA
                ========================================================= */}
-            <div className="md:col-span-8 lg:col-span-9 space-y-5">
-              {/* Top Summary Bar for 'All' View */}
-              {selectedCategorySlug === 'all' && displayCatalog.length > 1 && (
-                <div className="flex items-center justify-between px-0.5 pb-1 text-xs text-slate-500 font-medium">
-                  <span className="text-[11px] text-slate-500 font-semibold">
-                    {displayCatalog.length} Categories ({grandTotalServices} Services)
-                  </span>
-                  {openCategorySlug && (
-                    <button
-                      type="button"
-                      onClick={() => setOpenCategorySlug(null)}
-                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                    >
-                      Collapse All
-                    </button>
-                  )}
-                </div>
-              )}
+            <div className="md:col-span-8 lg:col-span-9 space-y-6">
+              {/* =======================================================
+                  CASE A: "ALL" VIEW - Visual Marketplace Showcase Feed
+                  Each category shows its title, Explore All button, and its
+                  top row of 3 cards. It is vibrant, fast, and never dull!
+                 ======================================================= */}
+              {selectedCategorySlug === 'all' ? (
+                <>
+                  <div className="flex items-center justify-between px-0.5 pb-0.5 text-xs text-slate-500 font-medium">
+                    <span className="text-[11px] text-slate-500 font-semibold">
+                      Explore All Categories ({grandTotalServices} Services Available)
+                    </span>
+                  </div>
 
-              {displayCatalog.map((cat) => {
-                // One dropdown at a time: open if single category selected, or if this category is the active open one
-                const isOpen = selectedCategorySlug !== 'all' ? true : openCategorySlug === cat.slug;
-                const isCollapsed = !isOpen;
+                  <div className="space-y-6">
+                    {displayCatalog.map((cat) => {
+                      const featuredSection = cat.sections[0];
+                      const otherSections = cat.sections.slice(1);
 
-                return (
-                  <section key={cat.id} className="space-y-2">
-                    {/* Sleek Category Heading with Accordion Dropdown (One Open at a Time) */}
-                    <div
-                      onClick={() => toggleCategoryDropdown(cat.slug)}
-                      className="flex items-center justify-between py-2 px-1 border-b border-slate-200/90 cursor-pointer select-none group transition-colors hover:border-slate-300"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <h2 className="text-sm sm:text-base font-extrabold font-heading text-slate-900 group-hover:text-blue-600 transition-colors truncate">
-                          {cat.title}
-                        </h2>
-                        {cat.badge && (
-                          <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 uppercase shrink-0">
-                            {cat.badge}
-                          </span>
-                        )}
-                        {cat.totalServices > 0 && (
-                          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 shrink-0">
-                            ({cat.totalServices} {cat.totalServices === 1 ? 'service' : 'services'})
-                          </span>
-                        )}
-                      </div>
+                      return (
+                        <section key={cat.id} className="space-y-2.5">
+                          {/* Category Header */}
+                          <div className="flex items-center justify-between py-1.5 px-0.5 border-b border-slate-200/80">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <h2 className="text-sm sm:text-base font-extrabold font-heading text-slate-900 truncate">
+                                {cat.title}
+                              </h2>
+                              {cat.badge && (
+                                <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 uppercase shrink-0">
+                                  {cat.badge}
+                                </span>
+                              )}
+                              {cat.totalServices > 0 && (
+                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 shrink-0">
+                                  ({cat.totalServices} {cat.totalServices === 1 ? 'service' : 'services'})
+                                </span>
+                              )}
+                            </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectCategory(cat.slug)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50/80 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shrink-0"
+                            >
+                              <span>Explore all {cat.totalServices > 0 ? `(${cat.totalServices})` : ''}</span>
+                              <FiChevronRight className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          {/* Featured Row of 3 Cards */}
+                          {featuredSection ? (
+                            <div className="space-y-1.5">
+                              <SectionRowCarousel
+                                sec={featuredSection}
+                                cat={cat}
+                                cartItems={cartItems}
+                                handleToggleAddService={handleToggleAddService}
+                                handleUpdateQuantity={handleUpdateQuantity}
+                                navigate={navigate}
+                              />
+
+                              {otherSections.length > 0 && (
+                                <div className="flex items-center justify-between text-[10.5px] text-slate-500 pt-0.5 px-0.5">
+                                  <span className="truncate max-w-[220px] sm:max-w-md text-slate-400">
+                                    More: {otherSections.map((s) => s.sectionTitle).join(', ')}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSelectCategory(cat.slug)}
+                                    className="font-bold text-blue-600 hover:underline shrink-0 cursor-pointer ml-2"
+                                  >
+                                    +{otherSections.length} more subcategories →
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="bg-white rounded-xl border border-dashed border-slate-200 p-3.5 text-center">
+                              <p className="text-[11px] font-semibold text-slate-500">
+                                Services coming soon for {cat.title}
+                              </p>
+                            </div>
+                          )}
+                        </section>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                /* =======================================================
+                   CASE B: CATEGORY VIEW (e.g. Electrician, Plumber)
+                   Shows the Category Header, Subcategory Filter Pills Bar,
+                   and all sections/carousels under this specific trade!
+                   ======================================================= */
+                displayCatalog.map((cat) => {
+                  const visibleSections =
+                    selectedSubcategoryTitle === 'all'
+                      ? cat.sections
+                      : cat.sections.filter((s) => s.sectionTitle === selectedSubcategoryTitle);
+
+                  return (
+                    <section key={cat.id} className="space-y-4">
+                      {/* Category Header */}
+                      <div className="flex items-center justify-between py-1 px-0.5 border-b border-slate-200/80">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <h2 className="text-base sm:text-lg font-extrabold font-heading text-slate-900 truncate">
+                            {cat.title}
+                          </h2>
+                          {cat.badge && (
+                            <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 uppercase shrink-0">
+                              {cat.badge}
+                            </span>
+                          )}
+                          {cat.totalServices > 0 && (
+                            <span className="text-[11px] font-bold text-slate-400 shrink-0">
+                              ({cat.totalServices} services available)
+                            </span>
+                          )}
+                        </div>
+
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/user/category/${cat.slug}`);
-                          }}
-                          className="hidden sm:inline-flex items-center gap-0.5 text-[10.5px] font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+                          onClick={() => handleSelectCategory('all')}
+                          className="text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                         >
-                          <span>Explore</span>
-                          <FiChevronRight className="w-3 h-3" />
+                          View All Categories
                         </button>
-
-                        <div
-                          className={`w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-full bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-transform duration-300 cursor-pointer ${
-                            isCollapsed ? '-rotate-90' : 'rotate-0'
-                          }`}
-                          title={isCollapsed ? 'Expand category' : 'Collapse category'}
-                        >
-                          <FiChevronDown className="w-3.5 h-3.5" />
-                        </div>
                       </div>
-                    </div>
 
-                    {/* Service Sections (Collapsible) */}
-                    {!isCollapsed && (
-                      cat.sections.length > 0 ? (
-                        <div className="space-y-4 pt-1">
-                          {cat.sections.map((sec, sIdx) => (
+                      {/* Subcategory Sticky/Scrollable Filter Pills Bar */}
+                      {cat.sections.length > 1 && (
+                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSubcategoryTitle('all')}
+                            className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                              selectedSubcategoryTitle === 'all'
+                                ? 'bg-slate-900 text-white shadow-xs'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            All ({cat.totalServices})
+                          </button>
+                          {cat.sections.map((sec, sIdx) => {
+                            const isSecActive = selectedSubcategoryTitle === sec.sectionTitle;
+                            return (
+                              <button
+                                key={sIdx}
+                                type="button"
+                                onClick={() => setSelectedSubcategoryTitle(sec.sectionTitle)}
+                                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                                  isSecActive
+                                    ? 'bg-slate-900 text-white shadow-xs'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                }`}
+                              >
+                                <span>{sec.sectionTitle}</span>
+                                <span
+                                  className={`ml-1 text-[9px] font-extrabold ${
+                                    isSecActive ? 'text-slate-300' : 'text-slate-400'
+                                  }`}
+                                >
+                                  ({sec.items.length})
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Subcategory Carousels */}
+                      {visibleSections.length > 0 ? (
+                        <div className="space-y-5">
+                          {visibleSections.map((sec, sIdx) => (
                             <SectionRowCarousel
                               key={sIdx}
                               sec={sec}
                               cat={cat}
                               cartItems={cartItems}
                               handleToggleAddService={handleToggleAddService}
+                              handleUpdateQuantity={handleUpdateQuantity}
                               navigate={navigate}
                             />
                           ))}
                         </div>
                       ) : (
-                        /* Clean empty state for categories with no services yet */
-                        <div className="bg-white rounded-xl border border-dashed border-slate-200 p-4 text-center mt-2">
-                          <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1.5">
-                            <FiPackage className="w-4 h-4" />
-                          </div>
-                          <h4 className="text-[11.5px] font-bold text-slate-800">
-                            Services coming soon for {cat.title}
-                          </h4>
-                          <p className="text-[10.5px] text-slate-500 max-w-sm mx-auto mt-0.5">
-                            We are actively onboarding verified professionals for this trade.
-                          </p>
+                        <div className="bg-white rounded-xl border border-dashed border-slate-200 p-4 text-center">
+                          <p className="text-xs text-slate-500">No services found for this subcategory.</p>
                         </div>
-                      )
-                    )}
-                  </section>
-                );
-              })}
+                      )}
+                    </section>
+                  );
+                })
+              )}
             </div>
           </div>
         )}
       </main>
+
+      {/* Floating Bottom Cart Bar for Seamless Quick Checkout */}
+      {cartCount > 0 && (
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 z-40 max-w-sm ml-auto animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <button
+            type="button"
+            onClick={() => navigate('/cart')}
+            className="w-full bg-slate-900 hover:bg-black text-white px-4 py-3 rounded-2xl shadow-xl flex items-center justify-between gap-3 cursor-pointer border border-slate-700/50 active:scale-98 transition-all"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-[#B33A35] flex items-center justify-center font-bold text-xs text-white shrink-0">
+                <FiShoppingCart className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-left leading-tight min-w-0">
+                <p className="text-xs font-bold truncate">
+                  {cartCount} {cartCount === 1 ? 'service' : 'services'} in cart
+                </p>
+                {totalCartPrice > 0 && (
+                  <p className="text-[11px] text-emerald-400 font-extrabold">
+                    ₹{totalCartPrice.toLocaleString('en-IN')}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 text-xs font-extrabold text-amber-300 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl shrink-0 transition-colors">
+              <span>View Cart</span>
+              <FiChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
