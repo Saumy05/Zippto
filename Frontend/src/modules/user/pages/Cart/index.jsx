@@ -13,6 +13,7 @@ import {
 import { HiSparkles, HiShieldCheck } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
+import { useSettings } from '../../../../context/SettingsContext';
 import NotificationBell from '../../components/common/NotificationBell';
 
 const toAssetUrl = (url) => {
@@ -30,6 +31,9 @@ const toAssetUrl = (url) => {
 const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, isLoading: loading, removeItem, removeCategoryItems, updateItem } = useCart();
+  const { settings } = useSettings();
+  const gstPercentage = settings?.serviceGstPercentage !== undefined ? Number(settings.serviceGstPercentage) : 18;
+  const visitedFee = settings?.visitedCharges !== undefined && Number(settings.visitedCharges) > 0 ? Number(settings.visitedCharges) : 29;
 
   // Popular category quick shortcuts for empty cart state
   const quickCategories = [
@@ -152,6 +156,9 @@ const Cart = () => {
   }, 0);
 
   const savings = Math.max(0, totalOriginalPrice - totalPrice);
+  const gstAmount = totalPrice > 0 ? Math.round((totalPrice * gstPercentage) / 100) : 0;
+  const convenienceFee = totalPrice > 0 ? visitedFee : 0;
+  const totalPayable = totalPrice > 0 ? (totalPrice + gstAmount + convenienceFee) : 0;
 
   return (
     <div className="min-h-screen bg-[var(--background,#F8F9FA)] text-[var(--text-primary,#1F2937)] font-sans antialiased pb-28">
@@ -420,9 +427,14 @@ const Cart = () => {
 
               {/* BILL SUMMARY */}
               <div className="bg-white rounded-md p-4 border border-[var(--border,#E5E7EB)] shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-slate-900 border-b border-[var(--border,#E5E7EB)] pb-2.5">
-                  Payment Summary
-                </h3>
+                <div className="flex items-center justify-between border-b border-[var(--border,#E5E7EB)] pb-2.5">
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Payment Summary
+                  </h3>
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    Prices include taxes & fees
+                  </span>
+                </div>
 
                 <div className="space-y-2 text-xs font-medium text-slate-600">
                   <div className="flex justify-between">
@@ -437,14 +449,23 @@ const Cart = () => {
                     </div>
                   )}
 
-                  <div className="flex justify-between">
-                    <span>Taxes & Safety Fee</span>
-                    <span className="text-emerald-600 font-bold">FREE</span>
-                  </div>
+                  {gstAmount > 0 && (
+                    <div className="flex justify-between">
+                      <span>GST ({gstPercentage}%)</span>
+                      <span className="text-slate-800 font-medium">₹{gstAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+
+                  {convenienceFee > 0 && (
+                    <div className="flex justify-between">
+                      <span>Convenience Fee</span>
+                      <span className="text-slate-800 font-medium">₹{convenienceFee.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
 
                   <div className="border-t border-[var(--border,#E5E7EB)] pt-2.5 flex justify-between text-sm font-bold text-slate-900">
                     <span>Total Amount</span>
-                    <span className="text-[#B33A35] text-base font-extrabold">₹{totalPrice.toLocaleString('en-IN')}</span>
+                    <span className="text-[#B33A35] text-base font-extrabold">₹{totalPayable.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>

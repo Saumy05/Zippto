@@ -853,8 +853,12 @@ const AllVendors = () => {
                     type="number"
                     min="1"
                     max="100"
-                    value={editForm.serviceRange}
-                    onChange={(e) => setEditForm({ ...editForm, serviceRange: Number(e.target.value) })}
+                    value={editForm.serviceRange !== undefined && editForm.serviceRange !== null ? editForm.serviceRange : ''}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/^0+(?=\d)/, '');
+                      setEditForm({ ...editForm, serviceRange: v === '' ? '' : Number(v) });
+                    }}
+                    onFocus={(e) => e.target.select()}
                     className="w-full sm:w-48 p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-medium"
                   />
                   <p className="text-[11px] text-gray-500 mt-1">Maximum dispatch distance for customer bookings.</p>
@@ -1052,8 +1056,12 @@ const AllVendors = () => {
                       <input
                         type="number"
                         min="0"
-                        value={editForm.cashLimit}
-                        onChange={(e) => setEditForm({ ...editForm, cashLimit: Number(e.target.value) })}
+                        value={editForm.cashLimit !== undefined && editForm.cashLimit !== null ? editForm.cashLimit : ''}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/^0+(?=\d)/, '');
+                          setEditForm({ ...editForm, cashLimit: v === '' ? '' : Number(v) });
+                        }}
+                        onFocus={(e) => e.target.select()}
                         placeholder="e.g. 5000"
                         className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-medium"
                       />

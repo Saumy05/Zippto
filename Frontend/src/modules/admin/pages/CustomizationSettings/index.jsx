@@ -231,7 +231,8 @@ const CustomizationSettings = () => {
                           type="number"
                           min="0"
                           value={referralRewards.referralRewardAmount}
-                          onChange={(e) => setReferralRewards(prev => ({ ...prev, referralRewardAmount: e.target.value }))}
+                          onChange={(e) => setReferralRewards(prev => ({ ...prev, referralRewardAmount: e.target.value.replace(/^0+(?=\d)/, '') }))}
+                          onFocus={(e) => e.target.select()}
                           className="w-full px-2 py-1 text-xs font-bold bg-white border border-gray-200 rounded-md outline-none focus:border-emerald-500"
                         />
                       </div>
@@ -241,7 +242,8 @@ const CustomizationSettings = () => {
                           type="number"
                           min="0"
                           value={referralRewards.refereeRewardAmount}
-                          onChange={(e) => setReferralRewards(prev => ({ ...prev, refereeRewardAmount: e.target.value }))}
+                          onChange={(e) => setReferralRewards(prev => ({ ...prev, refereeRewardAmount: e.target.value.replace(/^0+(?=\d)/, '') }))}
+                          onFocus={(e) => e.target.select()}
                           className="w-full px-2 py-1 text-xs font-bold bg-white border border-gray-200 rounded-md outline-none focus:border-emerald-500"
                         />
                       </div>

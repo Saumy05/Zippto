@@ -260,7 +260,8 @@ const VendorPartsPage = () => {
             <input
               type="number"
               value={form.basePrice}
-              onChange={(e) => setForm(p => ({ ...p, basePrice: e.target.value }))}
+              onChange={(e) => setForm(p => ({ ...p, basePrice: e.target.value.replace(/^0+(?=\d)/, '') }))}
+              onFocus={(e) => e.target.select()}
               className="w-full px-4 py-2 border rounded-xl"
               placeholder="0"
             />

@@ -1036,7 +1036,8 @@ const SettlementManagement = () => {
             <input
               type="number"
               value={modalInput}
-              onChange={(e) => setModalInput(e.target.value)}
+              onChange={(e) => setModalInput(e.target.value.replace(/^0+(?=\d)/, ''))}
+              onFocus={(e) => e.target.select()}
               className="w-full p-3 pl-8 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>

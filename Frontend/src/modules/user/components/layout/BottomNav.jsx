@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../../../context/CartContext';
+import { useSettings } from '../../../../context/SettingsContext';
 
 // Icons — outline
 import { FiHome, FiShoppingBag, FiUser, FiShoppingCart, FiChevronRight } from 'react-icons/fi';
@@ -18,7 +19,17 @@ const BottomNav = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const { cartItems, cartCount } = useCart();
-  const totalCartPrice = useMemo(() => cartItems.reduce((sum, item) => sum + (item.price || 0), 0), [cartItems]);
+  const { settings } = useSettings();
+  const gstPercentage = settings?.serviceGstPercentage !== undefined ? Number(settings.serviceGstPercentage) : 18;
+  const visitedFee = settings?.visitedCharges !== undefined && Number(settings.visitedCharges) > 0 ? Number(settings.visitedCharges) : 29;
+
+  const totalCartPrice = useMemo(() => {
+    const itemTotal = cartItems.reduce((sum, item) => sum + (item.price || 0), 0);
+    if (itemTotal === 0) return 0;
+    const gstAmount = Math.round((itemTotal * gstPercentage) / 100);
+    const convenienceFee = visitedFee;
+    return itemTotal + gstAmount + convenienceFee;
+  }, [cartItems, gstPercentage, visitedFee]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [prevTab, setPrevTab] = useState(null);
 

@@ -128,7 +128,7 @@ const Checkout = () => {
           const response = await userAuthService.getCheckoutData();
           if (response.success) {
             setVisitedFee(0); // Plans usually have 0 visitor fee
-            setGstPercentage(response.settings?.serviceGstPercentage || 18);
+            setGstPercentage(response.settings?.serviceGstPercentage !== undefined ? Number(response.settings.serviceGstPercentage) : 18);
 
             if (response.user?.addresses?.length > 0) {
               const defaultAddr = response.user.addresses.find(a => a.isDefault) || response.user.addresses[0];
@@ -149,8 +149,8 @@ const Checkout = () => {
           const response = await userAuthService.getCheckoutData();
           if (response.success) {
             // Set Config
-            setVisitedFee(response.settings?.visitedCharges || 29);
-            setGstPercentage(response.settings?.serviceGstPercentage || 18);
+            setVisitedFee(response.settings?.visitedCharges !== undefined && Number(response.settings.visitedCharges) > 0 ? Number(response.settings.visitedCharges) : 29);
+            setGstPercentage(response.settings?.serviceGstPercentage !== undefined ? Number(response.settings.serviceGstPercentage) : 18);
 
             // Set Addresses
             if (response.user?.addresses?.length > 0) {

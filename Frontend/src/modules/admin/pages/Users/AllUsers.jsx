@@ -644,8 +644,12 @@ const AllUsers = () => {
                       type="number"
                       min="0"
                       step="1"
-                      value={editForm.walletBalance}
-                      onChange={(e) => setEditForm({ ...editForm, walletBalance: Number(e.target.value) })}
+                      value={editForm.walletBalance !== undefined && editForm.walletBalance !== null ? editForm.walletBalance : ''}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/^0+(?=\d)/, '');
+                        setEditForm({ ...editForm, walletBalance: v === '' ? '' : Number(v) });
+                      }}
+                      onFocus={(e) => e.target.select()}
                       placeholder="0"
                       className="w-full pl-8 pr-3 py-2.5 bg-white border border-emerald-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 text-sm font-bold text-slate-900"
                     />

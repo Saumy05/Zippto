@@ -8,7 +8,7 @@ import { CityProvider } from './context/CityContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
-import { LocationPermissionChecker, LanguageSelectorModal } from './components/common';
+import { LocationPermissionChecker, LanguageSelectorModal, ScrollToTop } from './components/common';
 
 // Global component to strictly limit active toasts to maximum 1 at any time
 const SingleToastEnforcer = () => {
@@ -24,20 +24,6 @@ const SingleToastEnforcer = () => {
   return null;
 };
 
-// Global Scroll to Top component: Clean, instant scroll to top without smooth-scroll conflict jitter
-const ScrollToTop = () => {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    document.documentElement.style.scrollBehavior = 'auto';
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-    document.documentElement.style.scrollBehavior = 'smooth';
-  }, [pathname]);
-
-  return null;
-};
 
 function App() {
   // Initialize push notifications on app load

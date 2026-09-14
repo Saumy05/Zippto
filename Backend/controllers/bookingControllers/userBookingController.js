@@ -230,10 +230,10 @@ const createBooking = async (req, res) => {
       // If itemized catalog services are selected (totalServiceValue > 0), inspection fee is credited/waived (0).
       // Otherwise, charge standard category visiting/inspection fee (default ₹99).
       const categoryVisitingFee = category?.visitingCharges ?? 99;
-      if (bookedItems && bookedItems.length > 0 && totalServiceValue > 0) {
+      if (reqVisitingCharges !== undefined || reqVisitationFee !== undefined) {
+        visitingCharges = reqVisitingCharges !== undefined ? reqVisitingCharges : reqVisitationFee;
+      } else if (bookedItems && bookedItems.length > 0 && totalServiceValue > 0) {
         visitingCharges = 0; // Credited because catalog items were selected
-      } else if (reqVisitingCharges !== undefined) {
-        visitingCharges = reqVisitingCharges;
       } else {
         visitingCharges = categoryVisitingFee;
       }

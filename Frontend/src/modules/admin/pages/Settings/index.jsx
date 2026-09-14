@@ -40,7 +40,7 @@ const AdminSettings = () => {
   const [settings, setSettings] = useState({});
 
   const [financialSettings, setFinancialSettings] = useState({
-    visitedCharges: 0,
+    visitedCharges: 29,
     serviceGstPercentage: 18,
     partsGstPercentage: 18,
     servicePayoutPercentage: 90,
@@ -196,7 +196,7 @@ const AdminSettings = () => {
         const res = await getSettings();
         if (res.success && res.settings) {
           setFinancialSettings({
-            visitedCharges: res.settings.visitedCharges || 0,
+            visitedCharges: res.settings.visitedCharges !== undefined && Number(res.settings.visitedCharges) > 0 ? res.settings.visitedCharges : 29,
             serviceGstPercentage: res.settings.serviceGstPercentage ?? 18,
             partsGstPercentage: res.settings.partsGstPercentage ?? 18,
             servicePayoutPercentage: res.settings.servicePayoutPercentage ?? 90,
@@ -300,9 +300,20 @@ const AdminSettings = () => {
 
   const handleFinancialChange = (e) => {
     const { name, value } = e.target;
+    // Allow empty string so user can clear the field with backspace
+    if (value === '' || value === null) {
+      setFinancialSettings(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+      return;
+    }
+    // Strip leading zeros if followed by another digit (e.g. "03224" -> "3224")
+    const cleanValue = value.toString().replace(/^0+(?=\d)/, '');
+    const num = Number(cleanValue);
     setFinancialSettings(prev => ({
       ...prev,
-      [name]: Number(value)
+      [name]: isNaN(num) ? cleanValue : (cleanValue === '' ? '' : num)
     }));
   };
 
@@ -315,7 +326,16 @@ const AdminSettings = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await updateSettings(financialSettings);
+      const sanitizedSettings = { ...financialSettings };
+      Object.keys(sanitizedSettings).forEach(key => {
+        if (sanitizedSettings[key] === '') {
+          sanitizedSettings[key] = 0;
+        } else if (typeof sanitizedSettings[key] === 'string') {
+          sanitizedSettings[key] = Number(sanitizedSettings[key]);
+        }
+      });
+      await updateSettings(sanitizedSettings);
+      window.dispatchEvent(new Event('platformSettingsUpdated'));
       toast.success('Financial settings updated');
     } catch (error) {
       toast.error('Failed to update settings');
@@ -411,7 +431,16 @@ const AdminSettings = () => {
   // Referral management handlers
   const handleReferralChange = (e) => {
     const { name, value } = e.target;
-    setReferralSettings(prev => ({ ...prev, [name]: Number(value) }));
+    if (value === '' || value === null) {
+      setReferralSettings(prev => ({ ...prev, [name]: '' }));
+      return;
+    }
+    const cleanValue = value.toString().replace(/^0+(?=\d)/, '');
+    const num = Number(cleanValue);
+    setReferralSettings(prev => ({
+      ...prev,
+      [name]: isNaN(num) ? cleanValue : (cleanValue === '' ? '' : num)
+    }));
   };
 
   const handleReferralToggle = async () => {
@@ -429,7 +458,12 @@ const AdminSettings = () => {
     e.preventDefault();
     setReferralLoading(true);
     try {
-      await updateSettings(referralSettings);
+      const sanitized = {
+        ...referralSettings,
+        referralRewardAmount: referralSettings.referralRewardAmount === '' ? 0 : Number(referralSettings.referralRewardAmount),
+        refereeRewardAmount: referralSettings.refereeRewardAmount === '' ? 0 : Number(referralSettings.refereeRewardAmount)
+      };
+      await updateSettings(sanitized);
       toast.success('Referral settings updated successfully');
     } catch (error) {
       toast.error('Failed to update referral settings');
@@ -910,6 +944,7 @@ const AdminSettings = () => {
                             min="0"
                             value={referralSettings.referralRewardAmount}
                             onChange={handleReferralChange}
+                            onFocus={(e) => e.target.select()}
                             className="w-full px-2 py-1 text-xs font-bold bg-white border border-gray-200 rounded-md outline-none focus:border-emerald-500"
                           />
                         </div>
@@ -921,6 +956,7 @@ const AdminSettings = () => {
                             min="0"
                             value={referralSettings.refereeRewardAmount}
                             onChange={handleReferralChange}
+                            onFocus={(e) => e.target.select()}
                             className="w-full px-2 py-1 text-xs font-bold bg-white border border-gray-200 rounded-md outline-none focus:border-emerald-500"
                           />
                         </div>
@@ -1011,14 +1047,21 @@ const AdminSettings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Service GST (%)</label>
-                      <input type="number" name="serviceGstPercentage" value={financialSettings.serviceGstPercentage} onChange={handleFinancialChange}
+                      <input type="number" name="serviceGstPercentage" value={financialSettings.serviceGstPercentage} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0" max="100"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                      <p className="text-[10px] text-gray-400 mt-1">GST rate applied to services</p>
+                      <p className="text-[10px] text-gray-400 mt-1">GST rate applied to services (e.g. 18%)</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Convenience / Visiting Fee (₹)</label>
+                      <input type="number" name="visitedCharges" value={financialSettings.visitedCharges} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
+                        min="0"
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-semibold" />
+                      <p className="text-[10px] text-gray-400 mt-1">Doorstep convenience fee added per booking (e.g. ₹29)</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Parts GST (%)</label>
-                      <input type="number" name="partsGstPercentage" value={financialSettings.partsGstPercentage} onChange={handleFinancialChange}
+                      <input type="number" name="partsGstPercentage" value={financialSettings.partsGstPercentage} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0" max="100"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                       <p className="text-[10px] text-gray-400 mt-1">GST rate applied to parts &amp; materials</p>
@@ -1030,42 +1073,42 @@ const AdminSettings = () => {
                           Platform Commission: {100 - (financialSettings.servicePayoutPercentage || 90)}%
                         </span>
                       </div>
-                      <input type="number" name="servicePayoutPercentage" value={financialSettings.servicePayoutPercentage} onChange={handleFinancialChange}
+                      <input type="number" name="servicePayoutPercentage" value={financialSettings.servicePayoutPercentage} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0" max="100"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-semibold" />
                       <p className="text-[10px] text-gray-400 mt-1">Vendor keeps {financialSettings.servicePayoutPercentage || 90}% of service base price</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Parts Payout (%)</label>
-                      <input type="number" name="partsPayoutPercentage" value={financialSettings.partsPayoutPercentage} onChange={handleFinancialChange}
+                      <input type="number" name="partsPayoutPercentage" value={financialSettings.partsPayoutPercentage} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0" max="100"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-semibold" />
                       <p className="text-[10px] text-gray-400 mt-1">Vendor keeps {financialSettings.partsPayoutPercentage || 100}% of parts charges</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 uppercase mb-1.5">Vendor Cash Collection Limit (₹)</label>
-                      <input type="number" name="vendorCashLimit" value={financialSettings.vendorCashLimit} onChange={handleFinancialChange}
+                      <input type="number" name="vendorCashLimit" value={financialSettings.vendorCashLimit} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="500" step="500"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-bold text-slate-900" />
                       <p className="text-[10px] text-gray-400 mt-1">Max unpaid cash dues allowed before auto-locking vendor accounts (default ₹10,000)</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">TDS Percentage (%)</label>
-                      <input type="number" name="tdsPercentage" value={financialSettings.tdsPercentage} onChange={handleFinancialChange}
+                      <input type="number" name="tdsPercentage" value={financialSettings.tdsPercentage} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0" max="100"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                       <p className="text-[10px] text-gray-400 mt-1">TDS deducted on vendor withdrawal payouts (Govt. mandated)</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Platform Fee (%)</label>
-                      <input type="number" name="platformFeePercentage" value={financialSettings.platformFeePercentage} onChange={handleFinancialChange}
+                      <input type="number" name="platformFeePercentage" value={financialSettings.platformFeePercentage} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0" max="100"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                       <p className="text-[10px] text-gray-400 mt-1">Processing charge on vendor payouts</p>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Cancellation Penalty (₹)</label>
-                      <input type="number" name="cancellationPenalty" value={financialSettings.cancellationPenalty} onChange={handleFinancialChange}
+                      <input type="number" name="cancellationPenalty" value={financialSettings.cancellationPenalty} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                     </div>
@@ -1074,19 +1117,19 @@ const AdminSettings = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                           <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Max Global Search Time (Mins)</label>
-                          <input type="number" name="maxSearchTime" value={financialSettings.maxSearchTime} onChange={handleFinancialChange}
+                          <input type="number" name="maxSearchTime" value={financialSettings.maxSearchTime} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                           <p className="text-[10px] text-gray-400 mt-1">Total time to find a vendor before search is auto-cancelled</p>
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Wave Alert Threshold (Secs)</label>
-                          <input type="number" name="waveDuration" value={financialSettings.waveDuration} onChange={handleFinancialChange}
+                          <input type="number" name="waveDuration" value={financialSettings.waveDuration} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                           <p className="text-[10px] text-gray-400 mt-1">Time waited before alerting the next batch of vendors</p>
                         </div>
                         <div>
                           <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Global Search Radius (Km)</label>
-                          <input type="number" name="searchRadius" value={financialSettings.searchRadius} onChange={handleFinancialChange}
+                          <input type="number" name="searchRadius" value={financialSettings.searchRadius} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                           <p className="text-[10px] text-gray-400 mt-1">Default distance to hunt for vendors around booking location</p>
                         </div>

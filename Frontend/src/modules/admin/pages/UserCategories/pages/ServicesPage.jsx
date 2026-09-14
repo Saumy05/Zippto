@@ -596,7 +596,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
               <input
                 type="number"
                 value={form.basePrice}
-                onChange={e => setForm({ ...form, basePrice: e.target.value })}
+                onChange={e => setForm({ ...form, basePrice: e.target.value.replace(/^0+(?=\d)/, '') })}
+                onFocus={e => e.target.select()}
                 placeholder="0"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 required
@@ -608,7 +609,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
               <input
                 type="number"
                 value={form.gstPercentage}
-                onChange={e => setForm({ ...form, gstPercentage: e.target.value })}
+                onChange={e => setForm({ ...form, gstPercentage: e.target.value.replace(/^0+(?=\d)/, '') })}
+                onFocus={e => e.target.select()}
                 placeholder="18"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 min="0"
@@ -622,7 +624,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
             <input
               type="number"
               value={form.discountPrice}
-              onChange={e => setForm({ ...form, discountPrice: e.target.value })}
+              onChange={e => setForm({ ...form, discountPrice: e.target.value.replace(/^0+(?=\d)/, '') })}
+              onFocus={e => e.target.select()}
               placeholder="Leave empty if none"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
             />

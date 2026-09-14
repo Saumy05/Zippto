@@ -282,34 +282,29 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     return location.pathname.startsWith(childTo + "/");
   }, [location.pathname]);
 
-  // Auto-expand active category accordion on page load/navigation
+  // Auto-expand only the active category accordion on page load/navigation
   useEffect(() => {
-    navSections.forEach(section => {
-      section.items.forEach(item => {
+    for (const section of navSections) {
+      for (const item of section.items) {
         if (item.children && isItemActive(item.to, item.children)) {
-          setExpandedItems(prev => {
-            if (prev[item.id]) return prev;
-            return { ...prev, [item.id]: true };
-          });
+          setExpandedItems({ [item.id]: true });
+          return;
         }
-      });
-    });
+      }
+    }
   }, [location.pathname, isItemActive]);
 
-  // Accordions with auto-scroll reveal behavior
+  // Accordions with auto-scroll reveal behavior (only one dropdown open at a time)
   const toggleExpand = (id, e) => {
     setExpandedItems(prev => {
-      const isNowExpanded = !prev[id];
-      if (isNowExpanded && e?.currentTarget) {
+      const isCurrentlyExpanded = !!prev[id];
+      if (!isCurrentlyExpanded && e?.currentTarget) {
         const containerEl = e.currentTarget.parentElement;
         setTimeout(() => {
           containerEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }, 120);
       }
-      return {
-        ...prev,
-        [id]: isNowExpanded
-      };
+      return isCurrentlyExpanded ? {} : { [id]: true };
     });
   };
 

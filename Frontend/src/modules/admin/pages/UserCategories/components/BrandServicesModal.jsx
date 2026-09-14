@@ -184,7 +184,8 @@ const BrandServicesModal = ({ isOpen, onClose, brand, onServiceChange }) => {
                 <input
                   type="number"
                   value={form.basePrice}
-                  onChange={e => setForm(p => ({ ...p, basePrice: e.target.value }))}
+                  onChange={e => setForm(p => ({ ...p, basePrice: e.target.value.replace(/^0+(?=\d)/, '') }))}
+                  onFocus={e => e.target.select()}
                   placeholder="0"
                   className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   required
@@ -199,7 +200,8 @@ const BrandServicesModal = ({ isOpen, onClose, brand, onServiceChange }) => {
                 <input
                   type="number"
                   value={form.gstPercentage}
-                  onChange={e => setForm(p => ({ ...p, gstPercentage: e.target.value }))}
+                  onChange={e => setForm(p => ({ ...p, gstPercentage: e.target.value.replace(/^0+(?=\d)/, '') }))}
+                  onFocus={e => e.target.select()}
                   placeholder="18"
                   className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   min="0"
@@ -211,7 +213,8 @@ const BrandServicesModal = ({ isOpen, onClose, brand, onServiceChange }) => {
                 <input
                   type="number"
                   value={form.discountPrice}
-                  onChange={e => setForm(p => ({ ...p, discountPrice: e.target.value }))}
+                  onChange={e => setForm(p => ({ ...p, discountPrice: e.target.value.replace(/^0+(?=\d)/, '') }))}
+                  onFocus={e => e.target.select()}
                   placeholder="Optional discounted price"
                   className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
                   min="0"

@@ -11,3 +11,5 @@ export { default as OptimizedVideo } from './OptimizedVideo.jsx';
 export { default as LanguageSelectorModal, LanguageToggle } from './LanguageSelectorModal.jsx';
 export { default as CustomSelect } from './CustomSelect.jsx';
 export * from './SkeletonLoaders.jsx';
+
+export { default as ScrollToTop } from './ScrollToTop.jsx';

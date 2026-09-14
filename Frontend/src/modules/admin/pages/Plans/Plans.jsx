@@ -164,8 +164,9 @@ const Plans = () => {
   }, [selectedCategory, servicesList]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    const cleanVal = type === 'number' ? value.replace(/^0+(?=\d)/, '') : value;
+    setFormData(prev => ({ ...prev, [name]: cleanVal }));
   };
 
   const handleSubmit = async (e) => {
@@ -455,6 +456,7 @@ const Plans = () => {
                       name="price"
                       value={formData.price}
                       onChange={handleInputChange}
+                      onFocus={(e) => e.target.select()}
                       className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-bold text-gray-800"
                       required
                       placeholder="999"
@@ -470,6 +472,7 @@ const Plans = () => {
                     name="validityMonths"
                     value={formData.validityMonths}
                     onChange={handleInputChange}
+                    onFocus={(e) => e.target.select()}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all font-bold text-gray-800"
                     required
                     placeholder="1"
