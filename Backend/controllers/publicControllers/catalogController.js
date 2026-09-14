@@ -2,6 +2,7 @@ const Category = require('../../models/Category');
 const Brand = require('../../models/Brand');
 const Service = require('../../models/UserService');
 const HomeContent = require('../../models/HomeContent');
+const Review = require('../../models/Review');
 
 /**
  * Public Catalog Controllers
@@ -133,6 +134,26 @@ const getPublicBrands = async (req, res) => {
       }
     });
 
+    // Dynamically calculate average rating and review counts from actual rated bookings/reviews
+    const serviceIds = allServices.map(s => s._id);
+    let reviewsByService = {};
+    if (serviceIds.length > 0) {
+      try {
+        const reviewStats = await Review.aggregate([
+          { $match: { serviceId: { $in: serviceIds }, status: 'active' } },
+          { $group: { _id: '$serviceId', avgRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+        ]);
+        reviewStats.forEach(stat => {
+          reviewsByService[stat._id.toString()] = {
+            rating: stat.avgRating ? parseFloat(stat.avgRating.toFixed(1)) : null,
+            reviews: stat.totalReviews || 0
+          };
+        });
+      } catch (err) {
+        console.warn('Review aggregation error:', err.message);
+      }
+    }
+
     res.status(200).json({
       success: true,
       brands: brands.map(brand => {
@@ -140,17 +161,22 @@ const getPublicBrands = async (req, res) => {
         const liveSection = bSvcs.length > 0 ? [{
           title: brand.title,
           subtitle: `${bSvcs.length} services available`,
-          cards: bSvcs.map(s => ({
-            id: s._id.toString(),
-            title: s.title,
-            subtitle: s.description || '',
-            price: s.basePrice,
-            rating: s.rating || null,
-            reviews: s.reviews || null,
-            imageUrl: s.iconUrl || brand.iconUrl || '',
-            features: s.description ? [s.description] : [],
-            duration: "60 min"
-          }))
+          cards: bSvcs.map(s => {
+            const rev = reviewsByService[s._id.toString()];
+            const dynamicRating = rev && rev.rating ? rev.rating : (s.rating || null);
+            const dynamicReviews = rev && rev.reviews ? rev.reviews : (s.reviews || null);
+            return {
+              id: s._id.toString(),
+              title: s.title,
+              subtitle: s.description || '',
+              price: s.basePrice,
+              rating: dynamicRating,
+              reviews: dynamicReviews,
+              imageUrl: s.iconUrl || brand.iconUrl || '',
+              features: s.description ? [s.description] : [],
+              duration: "60 min"
+            };
+          })
         }] : (brand.sections && brand.sections.length > 0 ? brand.sections : []);
 
         return {
@@ -221,21 +247,45 @@ const getPublicBrandBySlug = async (req, res) => {
     // Fetch services associated with this brand
     const brandServices = await Service.find({ brandId: brand._id, status: 'active' }).lean();
 
+    const brandServiceIds = brandServices.map(s => s._id);
+    let brandReviewsByService = {};
+    if (brandServiceIds.length > 0) {
+      try {
+        const reviewStats = await Review.aggregate([
+          { $match: { serviceId: { $in: brandServiceIds }, status: 'active' } },
+          { $group: { _id: '$serviceId', avgRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+        ]);
+        reviewStats.forEach(stat => {
+          brandReviewsByService[stat._id.toString()] = {
+            rating: stat.avgRating ? parseFloat(stat.avgRating.toFixed(1)) : null,
+            reviews: stat.totalReviews || 0
+          };
+        });
+      } catch (err) {
+        console.warn('Brand review aggregation error:', err.message);
+      }
+    }
+
     // Map services to a default section structure for the frontend
     const servicesSection = {
       title: brand.title,
       subtitle: 'Available Services',
-      cards: brandServices.map(svc => ({
-        id: svc._id.toString(),
-        title: svc.title,
-        subtitle: svc.description || '',
-        price: svc.basePrice,
-        rating: svc.rating || null,
-        reviews: svc.reviews || null,
-        imageUrl: svc.iconUrl || brand.iconUrl || '',
-        features: svc.description ? [svc.description] : [],
-        duration: "60 min" // Default duration
-      }))
+      cards: brandServices.map(svc => {
+        const rev = brandReviewsByService[svc._id.toString()];
+        const dynamicRating = rev && rev.rating ? rev.rating : (svc.rating || null);
+        const dynamicReviews = rev && rev.reviews ? rev.reviews : (svc.reviews || null);
+        return {
+          id: svc._id.toString(),
+          title: svc.title,
+          subtitle: svc.description || '',
+          price: svc.basePrice,
+          rating: dynamicRating,
+          reviews: dynamicReviews,
+          imageUrl: svc.iconUrl || brand.iconUrl || '',
+          features: svc.description ? [svc.description] : [],
+          duration: "60 min" // Default duration
+        };
+      })
     };
 
     const formattedBrand = {

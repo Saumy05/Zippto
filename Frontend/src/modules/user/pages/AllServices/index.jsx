@@ -90,36 +90,24 @@ const resolveServiceImage = (title = '', categorySlug = '', fallbackUrl = '') =>
   return '/cat_images/electrician.jpg';
 };
 
-// Dynamic rating & review count resolver:
-// 1. If configured in DB/Admin, uses the explicit rating
-// 2. Otherwise computes a deterministic, realistic rating (4.76 - 4.95) & review count from title + id
-const getDynamicRating = (title = '', id = '', explicitRating = null, explicitReviews = null) => {
-  if (explicitRating && !isNaN(Number(explicitRating)) && Number(explicitRating) > 0) {
-    const num = Number(explicitRating);
-    const formatted = num <= 5 ? num.toFixed(2).replace(/\.?0+$/, '') : '5.0';
+// Truthful rating & review count resolver (Zero fake fallbacks):
+// Dynamic = real database/admin data only. Unrated services return null so UI displays 'New' or omits rating.
+const getRealRating = (explicitRating = null, explicitReviews = null) => {
+  const numRating = Number(explicitRating);
+  const hasValidRating = !isNaN(numRating) && numRating > 0;
+
+  const numReviews = Number(explicitReviews);
+  const hasValidReviews = !isNaN(numReviews) && numReviews > 0;
+
+  if (hasValidRating) {
+    const formatted = numRating <= 5 ? numRating.toFixed(1) : '5.0';
     return {
       rating: formatted,
-      reviews: explicitReviews || `${Math.max(120, Math.round(num * 650))}`
+      reviews: hasValidReviews ? String(numReviews) : (explicitReviews ? String(explicitReviews) : null)
     };
   }
 
-  const keyStr = `${title || 'service'}-${id || '0'}`;
-  let hash = 0;
-  for (let i = 0; i < keyStr.length; i++) {
-    hash = (hash << 5) - hash + keyStr.charCodeAt(i);
-    hash |= 0;
-  }
-  const abs = Math.abs(hash);
-
-  // Dynamic distribution of realistic ratings (4.76 - 4.95)
-  const ratings = ['4.82', '4.88', '4.78', '4.91', '4.85', '4.76', '4.93', '4.84', '4.89', '4.95', '4.79', '4.87', '4.92', '4.81'];
-  const rating = ratings[abs % ratings.length];
-
-  // Dynamic review counts (890 - 6.4k)
-  const reviewsList = ['1.8k', '3.4k', '2.1k', '4.6k', '890', '2.9k', '5.2k', '1.4k', '3.8k', '6.4k', '2.3k', '4.1k'];
-  const reviews = explicitReviews || reviewsList[(abs >> 2) % reviewsList.length];
-
-  return { rating, reviews };
+  return { rating: null, reviews: null };
 };
 
 // Authentic catalog fallback with photorealistic lifestyle commercial assets & discount structures
@@ -127,18 +115,18 @@ const PRESET_CATALOG_DATA = {
   electrician: {
     bannerTitle: 'ELECTRICAL SERVICES',
     title: 'Electrician',
-    rating: '4.85',
-    reviews: '12.4k',
+    rating: null,
+    reviews: null,
     desc: 'Expert electricians for wiring, switchboards, fan installations, appliance setups, and emergency repairs.',
     sections: [
       {
         sectionTitle: 'Electrical Repairs & Installation',
         items: [
-          { id: 'elec-switch-1', title: 'Switch & Socket Replacement', rating: '4.80', reviews: '3.2k', price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Installation & repair of modular switches & sockets.', image: '/switchboard_repair.png' },
-          { id: 'elec-fan-1', title: 'Ceiling Fan Repair & Mounting', rating: '4.80', reviews: '4.5k', price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'Precision ceiling fan mounting, balancing & wiring test.', image: '/drill_wall_decor.png' },
-          { id: 'elec-wire-1', title: 'MCB & Distribution Board Repair', rating: '4.88', reviews: '2.1k', price: '₹299', originalPrice: '₹349', discount: '14% OFF', isInstant: true, desc: 'Short circuit troubleshooting & trip MCB replacement.', image: '/cat_images/electrician.jpg' },
-          { id: 'elec-switch-2', title: 'Switchboard Installation', rating: '4.90', reviews: '1.8k', price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: false, desc: 'Complete multi-slot switchboard mounting & connection.', image: '/switchboard_repair.png' },
-          { id: 'elec-light-1', title: 'Decorative & Spotlight Fitting', rating: '4.75', reviews: '980', price: '₹89', originalPrice: '₹119', discount: '25% OFF', isInstant: false, desc: 'Ceiling spotlight, strip LED, or hanging lamp installation.', image: '/cat_images/electrician.jpg' }
+          { id: 'elec-switch-1', title: 'Switch & Socket Replacement', rating: null, reviews: null, price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Installation & repair of modular switches & sockets.', image: '/switchboard_repair.png' },
+          { id: 'elec-fan-1', title: 'Ceiling Fan Repair & Mounting', rating: null, reviews: null, price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'Precision ceiling fan mounting, balancing & wiring test.', image: '/drill_wall_decor.png' },
+          { id: 'elec-wire-1', title: 'MCB & Distribution Board Repair', rating: null, reviews: null, price: '₹299', originalPrice: '₹349', discount: '14% OFF', isInstant: true, desc: 'Short circuit troubleshooting & trip MCB replacement.', image: '/cat_images/electrician.jpg' },
+          { id: 'elec-switch-2', title: 'Switchboard Installation', rating: null, reviews: null, price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: false, desc: 'Complete multi-slot switchboard mounting & connection.', image: '/switchboard_repair.png' },
+          { id: 'elec-light-1', title: 'Decorative & Spotlight Fitting', rating: null, reviews: null, price: '₹89', originalPrice: '₹119', discount: '25% OFF', isInstant: false, desc: 'Ceiling spotlight, strip LED, or hanging lamp installation.', image: '/cat_images/electrician.jpg' }
         ]
       }
     ]
@@ -146,17 +134,17 @@ const PRESET_CATALOG_DATA = {
   plumber: {
     bannerTitle: 'PLUMBING SERVICES',
     title: 'Plumber',
-    rating: '4.77',
-    reviews: '9.8k',
+    rating: null,
+    reviews: null,
     desc: 'Certified plumbers for tap repairs, pipe leaks, bathroom fixtures, drainage blocks, and water tanks.',
     sections: [
       {
         sectionTitle: 'Plumbing Repairs & Fittings',
         items: [
-          { id: 'plumb-tap-1', title: 'Tap & Plumbing Repair', rating: '4.77', reviews: '2.6k', price: '₹49', originalPrice: '₹99', discount: '50% OFF', isInstant: true, desc: 'Fix dripping tap, nozzle change, or washer replacement.', image: '/tap_plumbing_repair.png' },
-          { id: 'plumb-drain-1', title: 'Sink & Basin Blockage Removal', rating: '4.90', reviews: '3.4k', price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Deep pipe cleaning and clog removal with mechanical spring.', image: '/tap_plumbing_repair.png' },
-          { id: 'plumb-shower-1', title: 'Overhead Shower Fitting', rating: '4.72', reviews: '1.2k', price: '₹129', originalPrice: '₹169', discount: '23% OFF', isInstant: false, desc: 'Shower arm & head installation or limescale deep cleaning.', image: '/cat_images/plumber.jpg' },
-          { id: 'plumb-leak-1', title: 'Pipe Joint Leakage Fix', rating: '4.82', reviews: '1.9k', price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'CPVC/PVC pipe joint soldering and pressure sealing check.', image: '/cat_images/plumber.jpg' }
+          { id: 'plumb-tap-1', title: 'Tap & Plumbing Repair', rating: null, reviews: null, price: '₹49', originalPrice: '₹99', discount: '50% OFF', isInstant: true, desc: 'Fix dripping tap, nozzle change, or washer replacement.', image: '/tap_plumbing_repair.png' },
+          { id: 'plumb-drain-1', title: 'Sink & Basin Blockage Removal', rating: null, reviews: null, price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Deep pipe cleaning and clog removal with mechanical spring.', image: '/tap_plumbing_repair.png' },
+          { id: 'plumb-shower-1', title: 'Overhead Shower Fitting', rating: null, reviews: null, price: '₹129', originalPrice: '₹169', discount: '23% OFF', isInstant: false, desc: 'Shower arm & head installation or limescale deep cleaning.', image: '/cat_images/plumber.jpg' },
+          { id: 'plumb-leak-1', title: 'Pipe Joint Leakage Fix', rating: null, reviews: null, price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'CPVC/PVC pipe joint soldering and pressure sealing check.', image: '/cat_images/plumber.jpg' }
         ]
       }
     ]
@@ -164,17 +152,17 @@ const PRESET_CATALOG_DATA = {
   carpenter: {
     bannerTitle: 'CARPENTRY SERVICES',
     title: 'Carpenter',
-    rating: '4.82',
-    reviews: '6.5k',
+    rating: null,
+    reviews: null,
     desc: 'Skilled carpenters for furniture repair, hinges, locks, drill & hang work, and custom woodwork.',
     sections: [
       {
         sectionTitle: 'Woodwork & Fixtures',
         items: [
-          { id: 'carp-drill-1', title: 'Wall Drill & Decor Hang', rating: '4.80', reviews: '2.1k', price: '₹99', originalPrice: '₹129', discount: '23% OFF', isInstant: true, desc: 'Photo frames, clocks, mirrors, paintings safely hung.', image: '/drill_wall_decor.png' },
-          { id: 'carp-door-1', title: 'Door Lock & Handle Repair', rating: '4.90', reviews: '1.7k', price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Fix sticking lock, handle alignment, or latch replacement.', image: '/cat_images/carpenter.jpg' },
-          { id: 'carp-curtain-1', title: 'Curtain Rod Installation', rating: '4.74', reviews: '1.4k', price: '₹129', originalPrice: '₹169', discount: '23% OFF', isInstant: false, desc: 'Precision wall drilling and bracket fixing for curtains.', image: '/cat_images/carpenter.jpg' },
-          { id: 'carp-hinge-1', title: 'Cabinet Hinge Adjustment', rating: '4.80', reviews: '890', price: '₹89', originalPrice: '₹109', discount: '18% OFF', isInstant: false, desc: 'Hydraulic or regular hinge tightening and realigning.', image: '/cat_images/carpenter.jpg' }
+          { id: 'carp-drill-1', title: 'Wall Drill & Decor Hang', rating: null, reviews: null, price: '₹99', originalPrice: '₹129', discount: '23% OFF', isInstant: true, desc: 'Photo frames, clocks, mirrors, paintings safely hung.', image: '/drill_wall_decor.png' },
+          { id: 'carp-door-1', title: 'Door Lock & Handle Repair', rating: null, reviews: null, price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Fix sticking lock, handle alignment, or latch replacement.', image: '/cat_images/carpenter.jpg' },
+          { id: 'carp-curtain-1', title: 'Curtain Rod Installation', rating: null, reviews: null, price: '₹129', originalPrice: '₹169', discount: '23% OFF', isInstant: false, desc: 'Precision wall drilling and bracket fixing for curtains.', image: '/cat_images/carpenter.jpg' },
+          { id: 'carp-hinge-1', title: 'Cabinet Hinge Adjustment', rating: null, reviews: null, price: '₹89', originalPrice: '₹109', discount: '18% OFF', isInstant: false, desc: 'Hydraulic or regular hinge tightening and realigning.', image: '/cat_images/carpenter.jpg' }
         ]
       }
     ]
@@ -182,17 +170,17 @@ const PRESET_CATALOG_DATA = {
   'cleaning-service': {
     bannerTitle: 'CLEANING SERVICES',
     title: 'Cleaning Service',
-    rating: '4.84',
-    reviews: '15.2k',
+    rating: null,
+    reviews: null,
     desc: 'Deep cleaning for full homes, bathrooms, kitchens, sofas, and carpets using mechanized tools.',
     sections: [
       {
         sectionTitle: 'Cleaning Essentials',
         items: [
-          { id: 'clean-bath-1', title: 'Intense Bathroom Cleaning', rating: '4.80', reviews: '5.1k', price: '₹872', originalPrice: '₹1,038', discount: '8% OFF', isInstant: true, desc: 'High-pressure mechanized scrubbing, de-scaling & sanitization.', image: '/intense_bathroom_cleaning.png' },
-          { id: 'clean-mattress-1', title: 'Mattress & Sofa Wash', rating: '4.85', reviews: '3.9k', price: '₹599', originalPrice: '₹749', discount: '20% OFF', isInstant: false, desc: 'Fabric extraction shampooing and deep suction vacuuming.', image: '/mattress_cleaning.png' },
-          { id: 'clean-home-1', title: 'Full Home Deep Clean', rating: '4.88', reviews: '2.8k', price: '₹1,499', originalPrice: '₹1,799', discount: '17% OFF', isInstant: false, desc: 'Complete multi-room floor scrubbing, balcony, and kitchen degreasing.', image: '/cat_cleaning.png' },
-          { id: 'clean-tap-1', title: 'Sink & Tap Sanitation', rating: '4.77', reviews: '1.5k', price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'Anti-bacterial chrome polish, basin scrub & drain flushing.', image: '/tap_plumbing_repair.png' }
+          { id: 'clean-bath-1', title: 'Intense Bathroom Cleaning', rating: null, reviews: null, price: '₹872', originalPrice: '₹1,038', discount: '8% OFF', isInstant: true, desc: 'High-pressure mechanized scrubbing, de-scaling & sanitization.', image: '/intense_bathroom_cleaning.png' },
+          { id: 'clean-mattress-1', title: 'Mattress & Sofa Wash', rating: null, reviews: null, price: '₹599', originalPrice: '₹749', discount: '20% OFF', isInstant: false, desc: 'Fabric extraction shampooing and deep suction vacuuming.', image: '/mattress_cleaning.png' },
+          { id: 'clean-home-1', title: 'Full Home Deep Clean', rating: null, reviews: null, price: '₹1,499', originalPrice: '₹1,799', discount: '17% OFF', isInstant: false, desc: 'Complete multi-room floor scrubbing, balcony, and kitchen degreasing.', image: '/cat_cleaning.png' },
+          { id: 'clean-tap-1', title: 'Sink & Tap Sanitation', rating: null, reviews: null, price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'Anti-bacterial chrome polish, basin scrub & drain flushing.', image: '/tap_plumbing_repair.png' }
         ]
       }
     ]
@@ -200,17 +188,17 @@ const PRESET_CATALOG_DATA = {
   'ac-appliance-repair': {
     bannerTitle: 'AC & APPLIANCE REPAIR',
     title: 'AC & Appliance Repair',
-    rating: '4.75',
-    reviews: '8.4k',
+    rating: null,
+    reviews: null,
     desc: 'Expert technicians for Split & Window AC service, gas recharge, geysers, and appliances.',
     sections: [
       {
         sectionTitle: 'AC Servicing & Appliances',
         items: [
-          { id: 'ac-foam-1', title: 'Foam-jet AC Service', rating: '4.75', reviews: '4.8k', price: '₹649', originalPrice: '₹799', discount: '18% OFF', isInstant: true, desc: '2X deeper indoor & outdoor coil cleaning with pressure jet pump.', image: '/ac_foam_jet_service.png' },
-          { id: 'ac-repair-1', title: 'AC Repair (Wall Mount)', rating: '4.73', reviews: '2.9k', price: '₹299', originalPrice: '₹399', discount: '25% OFF', isInstant: true, desc: 'Inspection, PCB troubleshooting, cooling issue fix & water leak repair.', image: '/ac_repair_wall.png' },
-          { id: 'ac-geyser-1', title: 'Geyser Check-up & Repair', rating: '4.72', reviews: '1.8k', price: '₹249', originalPrice: '₹299', discount: '16% OFF', isInstant: false, desc: 'Thermostat testing, heating element de-scaling & safety valve check.', image: '/geyser_checkup.png' },
-          { id: 'ac-purifier-1', title: 'Native RO Water Purifier', rating: '4.90', reviews: '3.1k', price: '₹4,999', originalPrice: '₹8,549', discount: 'Up to ₹3,550 OFF', isInstant: false, desc: 'Needs no service for 2 years. Multi-stage RO+UV+Copper technology.', image: '/native_water_purifier.png' }
+          { id: 'ac-foam-1', title: 'Foam-jet AC Service', rating: null, reviews: null, price: '₹649', originalPrice: '₹799', discount: '18% OFF', isInstant: true, desc: '2X deeper indoor & outdoor coil cleaning with pressure jet pump.', image: '/ac_foam_jet_service.png' },
+          { id: 'ac-repair-1', title: 'AC Repair (Wall Mount)', rating: null, reviews: null, price: '₹299', originalPrice: '₹399', discount: '25% OFF', isInstant: true, desc: 'Inspection, PCB troubleshooting, cooling issue fix & water leak repair.', image: '/ac_repair_wall.png' },
+          { id: 'ac-geyser-1', title: 'Geyser Check-up & Repair', rating: null, reviews: null, price: '₹249', originalPrice: '₹299', discount: '16% OFF', isInstant: false, desc: 'Thermostat testing, heating element de-scaling & safety valve check.', image: '/geyser_checkup.png' },
+          { id: 'ac-purifier-1', title: 'Native RO Water Purifier', rating: null, reviews: null, price: '₹4,999', originalPrice: '₹8,549', discount: 'Up to ₹3,550 OFF', isInstant: false, desc: 'Needs no service for 2 years. Multi-stage RO+UV+Copper technology.', image: '/native_water_purifier.png' }
         ]
       }
     ]
@@ -218,17 +206,17 @@ const PRESET_CATALOG_DATA = {
   'salon-for-women': {
     bannerTitle: 'SALON FOR WOMEN',
     title: 'Salon for Women',
-    rating: '4.90',
-    reviews: '18.1k',
+    rating: null,
+    reviews: null,
     desc: 'Hygienic salon treatments at home: waxing, facial, manicure, pedicure, and haircare.',
     sections: [
       {
         sectionTitle: 'Salon & Spa Services',
         items: [
-          { id: 'salon-wax-1', title: 'Full Arms + Full Legs RICA Wax', rating: '4.90', reviews: '6.4k', price: '₹599', originalPrice: '₹699', discount: '14% OFF', isInstant: false, desc: 'Gentle Italian RICA wax for smooth skin without irritation.', image: '/cat_images/salon_women.jpg' },
-          { id: 'salon-face-1', title: 'O3+ Bridal Glow Facial', rating: '4.92', reviews: '4.2k', price: '₹1,299', originalPrice: '₹1,599', discount: '18% OFF', isInstant: false, desc: 'High-frequency skin brightening and deep detox massage.', image: '/cat_images/salon_women.jpg' },
-          { id: 'salon-thread-1', title: 'Eyebrow + Upper Lip Threading', rating: '4.80', reviews: '3.1k', price: '₹49', originalPrice: '₹69', discount: '28% OFF', isInstant: true, desc: 'Precise shape contouring with disposable sanitary thread.', image: '/cat_images/salon_women.jpg' },
-          { id: 'salon-mani-1', title: 'Classic Pedicure & Foot Scrub', rating: '4.80', reviews: '2.7k', price: '₹449', originalPrice: '₹549', discount: '18% OFF', isInstant: false, desc: 'Exfoliation, cuticle care, foot massage, and nail paint.', image: '/cat_images/salon_women.jpg' }
+          { id: 'salon-wax-1', title: 'Full Arms + Full Legs RICA Wax', rating: null, reviews: null, price: '₹599', originalPrice: '₹699', discount: '14% OFF', isInstant: false, desc: 'Gentle Italian RICA wax for smooth skin without irritation.', image: '/cat_images/salon_women.jpg' },
+          { id: 'salon-face-1', title: 'O3+ Bridal Glow Facial', rating: null, reviews: null, price: '₹1,299', originalPrice: '₹1,599', discount: '18% OFF', isInstant: false, desc: 'High-frequency skin brightening and deep detox massage.', image: '/cat_images/salon_women.jpg' },
+          { id: 'salon-thread-1', title: 'Eyebrow + Upper Lip Threading', rating: null, reviews: null, price: '₹49', originalPrice: '₹69', discount: '28% OFF', isInstant: true, desc: 'Precise shape contouring with disposable sanitary thread.', image: '/cat_images/salon_women.jpg' },
+          { id: 'salon-mani-1', title: 'Classic Pedicure & Foot Scrub', rating: null, reviews: null, price: '₹449', originalPrice: '₹549', discount: '18% OFF', isInstant: false, desc: 'Exfoliation, cuticle care, foot massage, and nail paint.', image: '/cat_images/salon_women.jpg' }
         ]
       }
     ]
@@ -236,15 +224,15 @@ const PRESET_CATALOG_DATA = {
   'pest-control': {
     bannerTitle: 'PEST CONTROL',
     title: 'Pest Control',
-    rating: '4.80',
-    reviews: '4.1k',
+    rating: null,
+    reviews: null,
     desc: 'Odorless, government-approved pest treatment for cockroaches, termites, bed bugs, and ants.',
     sections: [
       {
         sectionTitle: 'Pest Control Treatments',
         items: [
-          { id: 'pest-cock-1', title: '1 BHK Herbal Gel Pest Control', rating: '4.80', reviews: '1.9k', price: '₹599', originalPrice: '₹749', discount: '20% OFF', isInstant: false, desc: 'Odorless Bayer gel dots in all corners + drain spray.', image: '/cat_3d/pest_control.jpg' },
-          { id: 'pest-cock-2', title: '2 BHK Herbal Gel Pest Control', rating: '4.90', reviews: '2.5k', price: '₹799', originalPrice: '₹999', discount: '20% OFF', isInstant: false, desc: 'Complete 2BHK coverage with 60-day service warranty.', image: '/cat_3d/pest_control.jpg' }
+          { id: 'pest-cock-1', title: '1 BHK Herbal Gel Pest Control', rating: null, reviews: null, price: '₹599', originalPrice: '₹749', discount: '20% OFF', isInstant: false, desc: 'Odorless Bayer gel dots in all corners + drain spray.', image: '/cat_3d/pest_control.jpg' },
+          { id: 'pest-cock-2', title: '2 BHK Herbal Gel Pest Control', rating: null, reviews: null, price: '₹799', originalPrice: '₹999', discount: '20% OFF', isInstant: false, desc: 'Complete 2BHK coverage with 60-day service warranty.', image: '/cat_3d/pest_control.jpg' }
         ]
       }
     ]
@@ -383,10 +371,15 @@ const SectionRowCarousel = ({
             return (
               <div
                 key={item.id}
-                className="w-[calc((100%-16px)/3)] min-w-[calc((100%-16px)/3)] max-w-[calc((100%-16px)/3)] shrink-0 bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-2xs hover:shadow-xs hover:border-slate-300 transition-all duration-200 flex flex-col group relative select-none"
+                className="w-[calc((100%-16px)/3)] min-w-[calc((100%-16px)/3)] max-w-[calc((100%-16px)/3)] shrink-0 flex flex-col group relative select-none cursor-pointer"
+                onClick={() => {
+                  if (item.id && item.id.length === 24) {
+                    navigate(`/service/${item.id}`);
+                  }
+                }}
               >
-                {/* 1. Proportional Card Photo */}
-                <div className="w-full aspect-[16/10] sm:aspect-[4/3] bg-slate-100 relative overflow-hidden shrink-0">
+                {/* 1. Photo Card Tile with Badges & Floating Add Button */}
+                <div className="w-full aspect-[4/3] bg-slate-100 rounded-xl sm:rounded-2xl overflow-hidden relative border border-slate-200/80 shadow-2xs group-hover:shadow-xs group-hover:border-slate-300 transition-all duration-200">
                   <img
                     src={item.image}
                     alt={item.title}
@@ -396,64 +389,37 @@ const SectionRowCarousel = ({
                       e.target.src = resolveServiceImage(item.title, cat?.slug);
                     }}
                   />
+
+                  {/* Discount Badge */}
                   {item.discount && (
-                    <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[8px] sm:text-[8.5px] font-extrabold px-1.5 py-0.2 rounded shadow-xs tracking-tight">
+                    <span className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5 bg-emerald-600 text-white text-[7.5px] sm:text-[8px] font-extrabold px-1.5 py-0.2 rounded-md shadow-xs tracking-tight">
                       {item.discount}
                     </span>
                   )}
+
+                  {/* Instant Badge */}
                   {item.isInstant && (
-                    <span className="absolute bottom-1.5 left-1.5 bg-slate-900/80 backdrop-blur-xs text-amber-300 text-[8px] font-bold px-1.5 py-0.2 rounded flex items-center gap-0.5">
-                      <FiZap className="w-2 h-2 fill-amber-400 text-amber-400" /> Instant
+                    <span className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 bg-slate-900/80 backdrop-blur-xs text-amber-300 text-[7px] sm:text-[7.5px] font-bold px-1 py-0.2 rounded-md flex items-center gap-0.5">
+                      <FiZap className="w-2 h-2 fill-amber-400 text-amber-400" />
                     </span>
                   )}
-                </div>
 
-                {/* 2. Petite Card Content Body */}
-                <div className="p-1.5 sm:p-2 flex flex-col flex-1 justify-between gap-1">
-                  <div className="space-y-0.5">
-                    <h4 className="text-[11px] sm:text-xs font-bold text-slate-900 leading-tight line-clamp-2 h-[28px] sm:h-[32px]">
-                      {item.title}
-                    </h4>
-
-                    {/* Rating & Speed Badges */}
-                    <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-slate-700">
-                      <span className="flex items-center gap-0.5 text-slate-900">
-                        <FiStar className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                        {item.rating || '4.80'}
-                      </span>
-                      {item.reviews && (
-                        <span className="text-slate-400 font-medium text-[8.5px]">({item.reviews})</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 3. Price & Add Button */}
-                  <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-100 mt-auto">
-                    <div className="flex items-baseline gap-0.5 min-w-0">
-                      <span className="text-[11px] sm:text-xs font-extrabold text-slate-900 truncate">
-                        {item.price}
-                      </span>
-                      {item.originalPrice && (
-                        <span className="text-[8.5px] sm:text-[9px] text-slate-400 line-through truncate">
-                          {item.originalPrice}
-                        </span>
-                      )}
-                    </div>
-
+                  {/* Floating Action Button / Stepper on the Photo Card (Zepto / Blinkit style) */}
+                  <div className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 z-10">
                     {isAdded ? (
-                      <div className="flex items-center bg-white border border-emerald-500 rounded text-[9px] sm:text-[9.5px] font-bold overflow-hidden shadow-2xs">
+                      <div className="flex items-center bg-white border border-emerald-500 rounded-md text-[9px] sm:text-[9.5px] font-black overflow-hidden shadow-xs">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleUpdateQuantity(item, -1, cat.title);
                           }}
-                          className="w-5 h-5 flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 font-extrabold transition-colors cursor-pointer"
+                          className="w-4.5 h-4.5 sm:w-5 sm:h-5 flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 font-extrabold transition-colors cursor-pointer"
                           title="Decrease quantity or remove"
                         >
-                          <FiMinus className="w-2.5 h-2.5" />
+                          <FiMinus className="w-2 h-2" />
                         </button>
-                        <span className="text-[10px] font-extrabold text-emerald-800 px-1 min-w-[14px] text-center">
+                        <span className="text-[9.5px] sm:text-[10px] font-black text-emerald-800 px-1 min-w-[12px] text-center">
                           {cartItem?.serviceCount || 1}
                         </span>
                         <button
@@ -462,10 +428,10 @@ const SectionRowCarousel = ({
                             e.stopPropagation();
                             handleUpdateQuantity(item, 1, cat.title);
                           }}
-                          className="w-5 h-5 flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 font-extrabold transition-colors cursor-pointer"
+                          className="w-4.5 h-4.5 sm:w-5 sm:h-5 flex items-center justify-center text-emerald-700 hover:bg-emerald-50 active:scale-90 font-extrabold transition-colors cursor-pointer"
                           title="Increase quantity"
                         >
-                          <FiPlus className="w-2.5 h-2.5" />
+                          <FiPlus className="w-2 h-2" />
                         </button>
                       </div>
                     ) : (
@@ -475,13 +441,50 @@ const SectionRowCarousel = ({
                           e.stopPropagation();
                           handleToggleAddService(item, cat.title);
                         }}
-                        className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-[9px] sm:text-[9.5px] font-bold transition-all shadow-2xs flex items-center justify-center gap-0.5 cursor-pointer shrink-0 active:scale-95 bg-white text-red-600 border border-red-200 hover:bg-red-50"
+                        className="px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-md text-[8.5px] sm:text-[9px] font-black transition-all shadow-xs flex items-center justify-center gap-0.5 cursor-pointer shrink-0 active:scale-95 bg-white text-red-600 border border-red-200 hover:bg-red-50 uppercase tracking-wider"
                         title="Add to Cart"
                       >
                         Add +
                       </button>
                     )}
                   </div>
+                </div>
+
+                {/* 2. Metadata OUTSIDE the Card: Price, Rating & Title */}
+                <div className="pt-1.5 px-0.5 space-y-0.5 flex flex-col">
+                  {/* Price & Real Rating Row */}
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-baseline gap-1 min-w-0">
+                      <span className="text-[11.5px] sm:text-xs font-black text-slate-900 truncate">
+                        {item.price}
+                      </span>
+                      {item.originalPrice && (
+                        <span className="text-[8px] sm:text-[8.5px] text-slate-400 line-through truncate">
+                          {item.originalPrice}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Real Dynamic Rating or 'New' Badge */}
+                    {item.rating ? (
+                      <div className="flex items-center gap-0.5 text-[8.5px] sm:text-[9px] font-bold text-slate-800 shrink-0">
+                        <FiStar className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                        <span>{item.rating}</span>
+                        {item.reviews && (
+                          <span className="text-slate-400 font-medium text-[7.5px]">({item.reviews})</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[7.5px] sm:text-[8px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1 py-0.2 rounded-xs shrink-0 uppercase tracking-tight">
+                        New
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Service Title */}
+                  <h4 className="text-[10.5px] sm:text-[11.5px] font-bold text-slate-800 leading-tight line-clamp-2 h-[26px] sm:h-[30px] group-hover:text-blue-600 transition-colors">
+                    {item.title}
+                  </h4>
                 </div>
               </div>
             );
@@ -608,13 +611,13 @@ const AllServices = () => {
                   const origPriceStr = numBase > numPrice ? `₹${numBase}` : null;
 
                   const serviceId = card.id || card._id || `svc-${Math.random()}`;
-                  const dyn = getDynamicRating(card.title, serviceId, card.rating, card.reviews);
+                  const realRating = getRealRating(card.rating, card.reviews);
 
                   return {
                     id: serviceId,
                     title: card.title,
-                    rating: dyn.rating,
-                    reviews: dyn.reviews,
+                    rating: realRating.rating,
+                    reviews: realRating.reviews,
                     price: card.price ? `₹${card.price}` : `₹${numPrice}`,
                     originalPrice: origPriceStr,
                     discount: discountStr,
@@ -648,11 +651,11 @@ const AllServices = () => {
           sections = PRESET_CATALOG_DATA[presetKey].sections.map((s) => ({
             ...s,
             items: (s.items || []).map((it) => {
-              const dyn = getDynamicRating(it.title, it.id, it.rating, it.reviews);
+              const realRating = getRealRating(it.rating, it.reviews);
               return {
                 ...it,
-                rating: dyn.rating,
-                reviews: dyn.reviews
+                rating: realRating.rating,
+                reviews: realRating.reviews
               };
             })
           }));
@@ -661,11 +664,12 @@ const AllServices = () => {
 
       const totalServices = sections.reduce((acc, sec) => acc + (sec.items?.length || 0), 0);
 
-      const allRatings = sections.flatMap((s) => s.items.map((it) => parseFloat(it.rating) || 4.8));
+      const ratedServices = sections.flatMap((s) => s.items.filter((it) => it.rating && Number(it.rating) > 0));
       const avgCategoryRating =
-        allRatings.length > 0
-          ? (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(2)
-          : '4.85';
+        ratedServices.length > 0
+          ? (ratedServices.reduce((a, b) => a + Number(b.rating), 0) / ratedServices.length).toFixed(1)
+          : null;
+      const totalCategoryReviews = ratedServices.reduce((acc, it) => acc + (Number(it.reviews) || 0), 0);
 
       return {
         id: cat.id || cat._id || slug,
@@ -673,7 +677,7 @@ const AllServices = () => {
         title: cat.title,
         badge: cat.homeBadge || (cat.hasSaleBadge ? 'SALE' : null),
         rating: avgCategoryRating,
-        reviews: `${(totalServices * 1.3).toFixed(1)}k`,
+        reviews: totalCategoryReviews > 0 ? String(totalCategoryReviews) : null,
         icon: toAssetUrl(cat.homeIconUrl || cat.icon || '/cat_images/electrician.jpg'),
         totalServices,
         sections
