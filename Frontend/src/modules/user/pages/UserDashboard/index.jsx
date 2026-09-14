@@ -1634,26 +1634,25 @@ const UserDashboard = () => {
                     >
                       {/* Category Grid Card: 1:1 aspect-square, rounded-md, shadow 0 2px 8px */}
                       <div
-                        className="w-full aspect-square rounded-md border border-[#E5E7EB] flex items-center justify-center p-2.5 sm:p-3.5 overflow-hidden group-hover:scale-[1.03] transition-all duration-300 relative"
+                        className="w-full aspect-square rounded-md border border-[#E5E7EB] overflow-hidden group-hover:scale-[1.03] transition-all duration-300 relative"
                         style={{
-                          backgroundColor: scheme.bg,
                           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
                         }}
                       >
                         {cat.badge && (
-                          <span className="absolute top-1 right-1 bg-amber-500 text-white font-bold text-[8px] px-1 py-0.2 rounded-full uppercase shadow-xs">
+                          <span className="absolute top-1 right-1 z-10 bg-amber-500 text-white font-bold text-[8px] px-1 py-0.2 rounded-full uppercase shadow-xs">
                             {cat.badge}
                           </span>
                         )}
                         {cat.hasSaleBadge && !cat.badge && (
-                          <span className="absolute top-1 right-1 bg-red-600 text-white font-bold text-[8px] px-1 py-0.2 rounded-full uppercase shadow-xs">
+                          <span className="absolute top-1 right-1 z-10 bg-red-600 text-white font-bold text-[8px] px-1 py-0.2 rounded-full uppercase shadow-xs">
                             SALE
                           </span>
                         )}
                         <img
                           src={cat.image}
                           alt={cat.displayTitle || cat.title}
-                          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = '/cat_electrician_plumber.png';
