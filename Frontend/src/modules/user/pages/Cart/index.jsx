@@ -168,8 +168,8 @@ const Cart = () => {
   return (
     <div className="min-h-screen bg-[var(--background,#F8F9FA)] text-[var(--text-primary,#1F2937)] font-sans antialiased pb-28">
       <div className="relative z-10">
-        {/* Sticky Navbar Header */}
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[var(--border,#E5E7EB)] px-4 py-3 shadow-2xs">
+        {/* Fixed Mobile App Header */}
+        <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-[var(--border,#E5E7EB)] px-4 py-3 shadow-2xs">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -198,7 +198,7 @@ const Cart = () => {
         </header>
 
         {/* Main Content View */}
-        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-5">
+        <main className="max-w-4xl mx-auto px-4 pt-20 space-y-5">
           {loading ? (
             <div className="space-y-4">
               {[1, 2].map((i) => (

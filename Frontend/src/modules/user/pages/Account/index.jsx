@@ -168,13 +168,13 @@ const Account = () => {
       </div>
 
       <div className="relative z-10">
-        {/* Sticky Header */}
-        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 shadow-2xs">
+        {/* Fixed Mobile App Header */}
+        <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 shadow-2xs">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(-1)}
-                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
                 aria-label="Go back"
               >
                 <FiArrowLeft className="w-5 h-5" />
@@ -191,7 +191,7 @@ const Account = () => {
         </header>
 
         {/* Main Content Container */}
-        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-6">
+        <main className="max-w-4xl mx-auto px-4 pt-20 space-y-6">
           
           {/* HERO USER PROFILE CARD */}
           <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0B132B] p-5 sm:p-6 text-white shadow-lg border border-slate-800">

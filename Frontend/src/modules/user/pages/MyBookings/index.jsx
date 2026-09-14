@@ -178,55 +178,60 @@ const MyBookings = () => {
   return (
     <div className="min-h-screen bg-[var(--background,#F8F9FA)] text-[var(--text-primary,#1F2937)] font-sans antialiased pb-28">
       <div className="relative z-10">
-        {/* Sticky Header */}
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[var(--border,#E5E7EB)] px-4 py-3 shadow-2xs">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="w-8 h-8 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
-                aria-label="Go back"
-              >
-                <FiArrowLeft className="w-4 h-4" />
-              </button>
-              <div>
-                <h1 className="text-base font-bold text-slate-900 tracking-tight leading-none">
-                  My Bookings
-                </h1>
-                <span className="text-[10px] text-slate-500 font-medium">Track Doorstep Services</span>
+        {/* Fixed Top Header & Filter Bar */}
+        <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md shadow-2xs">
+          <header className="border-b border-[var(--border,#E5E7EB)] px-4 py-3">
+            <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="w-8 h-8 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+                  aria-label="Go back"
+                >
+                  <FiArrowLeft className="w-4 h-4" />
+                </button>
+                <div>
+                  <h1 className="text-base font-bold text-slate-900 tracking-tight leading-none">
+                    My Bookings
+                  </h1>
+                  <span className="text-[10px] text-slate-500 font-medium">Track Doorstep Services</span>
+                </div>
               </div>
+              <NotificationBell />
             </div>
-            <NotificationBell />
-          </div>
-        </header>
+          </header>
 
-        {/* Filter Pills */}
-        <section className="bg-white/90 backdrop-blur-xs border-b border-[var(--border,#E5E7EB)] sticky top-[53px] z-30 shadow-2xs">
-          <div className="max-w-4xl mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {[
-              { id: 'all', label: 'All Bookings' },
-              { id: 'confirmed', label: 'Confirmed' },
-              { id: 'in-progress', label: 'In Progress' },
-              { id: 'completed', label: 'Completed' },
-              { id: 'cancelled', label: 'Cancelled' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all active:scale-95 ${
-                  filter === tab.id
-                    ? 'bg-[#B33A35] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200/60'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </section>
+          {/* Filter Pills */}
+          <section className="border-b border-[var(--border,#E5E7EB)] bg-white/90">
+            <div
+              className="max-w-4xl mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overscroll-x-contain"
+              style={{ overscrollBehaviorX: 'contain', WebkitOverflowScrolling: 'touch' }}
+            >
+              {[
+                { id: 'all', label: 'All Bookings' },
+                { id: 'confirmed', label: 'Confirmed' },
+                { id: 'in-progress', label: 'In Progress' },
+                { id: 'completed', label: 'Completed' },
+                { id: 'cancelled', label: 'Cancelled' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setFilter(tab.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all active:scale-95 ${
+                    filter === tab.id
+                      ? 'bg-[#B33A35] text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200/60'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
 
         {/* Main Content Area */}
-        <main className="max-w-4xl mx-auto px-4 pt-4 space-y-3.5">
+        <main className="max-w-4xl mx-auto px-4 pt-[108px] space-y-3.5">
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (

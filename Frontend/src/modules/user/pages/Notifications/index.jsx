@@ -134,70 +134,75 @@ const Notifications = () => {
       </div>
 
       <div className="relative z-10">
-        {/* Sticky Top Header */}
-        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3.5 shadow-2xs">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95"
-                aria-label="Go back"
-              >
-                <FiArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
-                  Notifications
-                </h1>
-                <span className="text-[10px] text-slate-500 font-semibold">Service Alerts & Updates</span>
+        {/* Fixed Top Header & Filter Bar */}
+        <div className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md shadow-2xs">
+          <header className="border-b border-slate-200/80 px-4 py-3.5">
+            <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 flex items-center justify-center transition-colors active:scale-95 cursor-pointer"
+                  aria-label="Go back"
+                >
+                  <FiArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none">
+                    Notifications
+                  </h1>
+                  <span className="text-[10px] text-slate-500 font-semibold">Service Alerts & Updates</span>
+                </div>
               </div>
+
+              {notifications.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-[11px] font-bold text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                  >
+                    Mark All Read
+                  </button>
+                  <button
+                    onClick={() => setShowClearConfirm(true)}
+                    className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                    title="Clear All"
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
+          </header>
 
-            {notifications.length > 0 && (
-              <div className="flex items-center gap-2">
+          {/* Filter Pills Bar */}
+          <section className="bg-white/80 backdrop-blur-xs border-b border-slate-200/80">
+            <div
+              className="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overscroll-x-contain"
+              style={{ overscrollBehaviorX: 'contain', WebkitOverflowScrolling: 'touch' }}
+            >
+              {[
+                { id: 'all', label: 'All Alerts' },
+                { id: 'jobs', label: 'Bookings' },
+                { id: 'payments', label: 'Payments' },
+              ].map((tab) => (
                 <button
-                  onClick={handleMarkAllRead}
-                  className="text-[11px] font-bold text-slate-600 hover:text-slate-900 transition-colors"
+                  key={tab.id}
+                  onClick={() => setFilter(tab.id)}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all active:scale-95 cursor-pointer ${
+                    filter === tab.id
+                      ? 'bg-[#0B132B] text-amber-400 shadow-2xs'
+                      : 'bg-slate-100/90 text-slate-600 hover:bg-slate-200 border border-slate-200/60'
+                  }`}
                 >
-                  Mark All Read
+                  {tab.label}
                 </button>
-                <button
-                  onClick={() => setShowClearConfirm(true)}
-                  className="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                  title="Clear All"
-                >
-                  <FiTrash2 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* Filter Pills Bar */}
-        <section className="bg-white/80 backdrop-blur-xs border-b border-slate-200/80 sticky top-[57px] z-30 shadow-2xs">
-          <div className="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {[
-              { id: 'all', label: 'All Alerts' },
-              { id: 'jobs', label: 'Bookings' },
-              { id: 'payments', label: 'Payments' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter(tab.id)}
-                className={`px-4 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all active:scale-95 ${
-                  filter === tab.id
-                    ? 'bg-[#0B132B] text-amber-400 shadow-2xs'
-                    : 'bg-slate-100/90 text-slate-600 hover:bg-slate-200 border border-slate-200/60'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        </div>
 
         {/* Main Content Container */}
-        <main className="max-w-4xl mx-auto px-4 pt-5 space-y-4">
+        <main className="max-w-4xl mx-auto px-4 pt-[115px] space-y-4">
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (

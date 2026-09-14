@@ -906,7 +906,10 @@ const AllServices = () => {
 
         {/* Mobile Sticky Horizontal Category Pills (Hidden on Desktop) */}
         {!searchQuery && (
-          <div className="md:hidden border-t border-slate-100 px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth">
+          <div
+            className="md:hidden border-t border-slate-100 px-3 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth overscroll-x-contain"
+            style={{ overscrollBehaviorX: 'contain', WebkitOverflowScrolling: 'touch' }}
+          >
             {/* 'ALL' Tab Pill */}
             <button
               type="button"
