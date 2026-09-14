@@ -5,11 +5,18 @@ import { gsap } from 'gsap';
 import { themeColors } from '../../../../theme';
 import api from '../../../../services/api';
 
-const NotificationBell = ({ notificationCount = 0 }) => {
+const NotificationBell = ({ notificationCount = 0, size = 'sm' }) => {
   const navigate = useNavigate();
   const bellRef = useRef(null);
   const bellButtonRef = useRef(null);
   const [count, setCount] = useState(notificationCount);
+
+  // Sizing definitions: 'sm' (default 34px, ideal for top headers), 'md' (40px)
+  const isMd = size === 'md';
+  const bellDim = isMd ? 40 : 34;
+  const iconSizeClass = isMd ? 'w-5 h-5' : 'w-4 h-4';
+  const badgeSize = isMd ? 18 : 16;
+  const badgeFont = isMd ? 'text-[10px]' : 'text-[9px]';
 
   // Sync prop changes
   useEffect(() => {
@@ -44,12 +51,12 @@ const NotificationBell = ({ notificationCount = 0 }) => {
       ref={bellButtonRef}
       className="relative rounded-full cursor-pointer group active:scale-95 transition-transform duration-300 z-50 shrink-0"
       style={{
-        width: '42px',
-        height: '42px',
+        width: `${bellDim}px`,
+        height: `${bellDim}px`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        margin: '2px'
+        margin: '1px'
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -58,42 +65,42 @@ const NotificationBell = ({ notificationCount = 0 }) => {
       onMouseEnter={() => {
         if (bellButtonRef.current && bellRef.current) {
           const btn = bellButtonRef.current.querySelector('button');
-          gsap.to(bellButtonRef.current, { scale: 1.1, duration: 0.3, ease: 'power2.out' });
+          gsap.to(bellButtonRef.current, { scale: 1.06, duration: 0.25, ease: 'power2.out' });
           if (btn) {
             gsap.to(btn, {
               boxShadow: count > 0
-                ? '0 6px 20px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
-                : `0 4px 12px ${themeColors.brand.teal}40`,
-              duration: 0.3,
+                ? '0 4px 14px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5)'
+                : `0 3px 10px ${themeColors.brand.teal}35`,
+              duration: 0.25,
               ease: 'power2.out',
             });
           }
-          gsap.to(bellRef.current, { rotation: 15, scale: 1.1, duration: 0.3, ease: 'power2.out' });
+          gsap.to(bellRef.current, { rotation: 12, scale: 1.08, duration: 0.25, ease: 'power2.out' });
         }
       }}
       onMouseLeave={() => {
         if (bellButtonRef.current && bellRef.current) {
           const btn = bellButtonRef.current.querySelector('button');
-          gsap.to(bellButtonRef.current, { scale: 1.0, duration: 0.3, ease: 'power2.out' });
+          gsap.to(bellButtonRef.current, { scale: 1.0, duration: 0.25, ease: 'power2.out' });
           if (btn) {
             gsap.to(btn, {
               boxShadow: count > 0
-                ? '0 3px 12px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
-                : `0 2px 6px ${themeColors.brand.teal}26`,
-              duration: 0.3,
+                ? '0 2px 8px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+                : `0 1px 4px ${themeColors.brand.teal}20`,
+              duration: 0.25,
               ease: 'power2.out',
             });
           }
-          gsap.to(bellRef.current, { rotation: 0, scale: 1.0, duration: 0.3, ease: 'power2.out' });
+          gsap.to(bellRef.current, { rotation: 0, scale: 1.0, duration: 0.25, ease: 'power2.out' });
         }
       }}
     >
       {/* 1. Gradient Border */}
       <div
-        className="absolute inset-[-2px] rounded-full z-0"
+        className="absolute inset-[-1.5px] rounded-full z-0"
         style={{
           background: themeColors.brand.conic,
-          boxShadow: `0 0 8px ${themeColors.brand.orange}26`
+          boxShadow: `0 0 5px ${themeColors.brand.orange}20`
         }}
       />
 
@@ -105,11 +112,11 @@ const NotificationBell = ({ notificationCount = 0 }) => {
         className="relative z-10 w-full h-full rounded-full flex items-center justify-center overflow-hidden"
         style={{
           background: count > 0
-            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.12) 100%)'
-            : 'linear-gradient(135deg, rgba(52, 121, 137, 0.1) 0%, rgba(187, 95, 54, 0.1) 100%)',
+            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.08) 100%)'
+            : 'linear-gradient(135deg, rgba(52, 121, 137, 0.08) 0%, rgba(187, 95, 54, 0.08) 100%)',
           boxShadow: count > 0
-            ? '0 3px 12px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
-            : '0 2px 6px rgba(52, 121, 137, 0.15)',
+            ? '0 2px 8px rgba(239, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+            : '0 1px 4px rgba(52, 121, 137, 0.12)',
         }}
       >
         <svg width="0" height="0" className="absolute">
@@ -122,27 +129,29 @@ const NotificationBell = ({ notificationCount = 0 }) => {
 
         <FiBell
           ref={bellRef}
-          className="w-5 h-5 transition-all duration-300"
+          className={`${iconSizeClass} transition-all duration-300`}
           style={{
             stroke: count > 0 ? '#EF4444' : 'url(#homestr-bell-gradient)',
-            strokeWidth: '2.5',
+            strokeWidth: '2.2',
             color: 'transparent',
             filter: count > 0
-              ? 'drop-shadow(0 2px 6px rgba(239, 68, 68, 0.4))'
-              : 'drop-shadow(0 1px 3px rgba(52, 121, 137, 0.3))',
+              ? 'drop-shadow(0 1px 4px rgba(239, 68, 68, 0.35))'
+              : 'drop-shadow(0 1px 2px rgba(52, 121, 137, 0.25))',
           }}
         />
       </button>
 
-      {/* 4. Active Badge (Moved outside for robustness and to prevent clipping) */}
+      {/* 4. Active Badge */}
       {count > 0 && (
         <span
-          className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center z-20"
+          className={`absolute -top-1 -right-1 bg-gradient-to-br from-red-500 to-red-600 text-white ${badgeFont} font-bold rounded-full flex items-center justify-center z-20`}
           style={{
-            minWidth: '20px',
-            height: '20px',
-            boxShadow: '0 3px 8px rgba(239, 68, 68, 0.5), 0 0 0 2px #fff',
-            border: '2px solid #fff'
+            minWidth: `${badgeSize}px`,
+            height: `${badgeSize}px`,
+            padding: '0 3px',
+            boxShadow: '0 2px 5px rgba(239, 68, 68, 0.4), 0 0 0 1.5px #fff',
+            border: '1.5px solid #fff',
+            lineHeight: 1
           }}
         >
           {count > 9 ? '9+' : count}

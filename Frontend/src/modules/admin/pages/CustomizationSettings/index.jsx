@@ -8,6 +8,7 @@ import {
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { getSettings, updateSettings } from '../../services/settingsService';
+import { broadcastSettingsUpdate } from '../../../../context/SettingsContext';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
 const CustomizationSettings = () => {
@@ -80,9 +81,13 @@ const CustomizationSettings = () => {
     setSavingKey(key);
 
     try {
-      await updateSettings({ [key]: newValue });
+      const res = await updateSettings({ [key]: newValue });
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+      } else {
+        window.dispatchEvent(new Event('platformSettingsUpdated'));
+      }
       toast.success(`${label} ${newValue ? 'Enabled' : 'Disabled'}`);
-      window.dispatchEvent(new Event('platformSettingsUpdated'));
     } catch (err) {
       console.error(`Failed to update ${label}:`, err);
       toast.error(`Failed to update ${label}`);
@@ -98,12 +103,16 @@ const CustomizationSettings = () => {
     e.preventDefault();
     setSavingReferral(true);
     try {
-      await updateSettings({
+      const res = await updateSettings({
         referralRewardAmount: Number(referralRewards.referralRewardAmount),
         refereeRewardAmount: Number(referralRewards.refereeRewardAmount)
       });
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+      } else {
+        window.dispatchEvent(new Event('platformSettingsUpdated'));
+      }
       toast.success('Referral reward amounts updated successfully');
-      window.dispatchEvent(new Event('platformSettingsUpdated'));
     } catch (err) {
       console.error('Failed to save referral rewards:', err);
       toast.error('Failed to save referral rewards');

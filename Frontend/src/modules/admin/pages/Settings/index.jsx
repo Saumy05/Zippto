@@ -11,6 +11,7 @@ import {
 import { getSettings, updateSettings, updateAdminProfile, getAdminProfile, getAllAdmins, createAdmin, deleteAdmin, updateAdminDetails, toggleAdminStatus } from '../../services/settingsService';
 import { cityService } from '../../services/cityService';
 import { DEFAULT_SUPPORTED_LANGUAGES } from '../../../../context/LanguageContext';
+import { broadcastSettingsUpdate } from '../../../../context/SettingsContext';
 import CityManagement from '../Cities';
 import { toast } from 'react-hot-toast';
 
@@ -334,8 +335,16 @@ const AdminSettings = () => {
           sanitizedSettings[key] = Number(sanitizedSettings[key]);
         }
       });
-      await updateSettings(sanitizedSettings);
-      window.dispatchEvent(new Event('platformSettingsUpdated'));
+      const res = await updateSettings(sanitizedSettings);
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+        setFinancialSettings(prev => ({
+          ...prev,
+          ...res.settings
+        }));
+      } else {
+        window.dispatchEvent(new Event('platformSettingsUpdated'));
+      }
       toast.success('Financial settings updated');
     } catch (error) {
       toast.error('Failed to update settings');
@@ -399,7 +408,10 @@ const AdminSettings = () => {
 
     setBillingLoading(true);
     try {
-      await updateSettings(billingSettings);
+      const res = await updateSettings(billingSettings);
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+      }
       toast.success('Billing settings updated');
     } catch (error) {
       toast.error('Failed to update billing settings');
@@ -419,7 +431,10 @@ const AdminSettings = () => {
     e.preventDefault();
     setSupportLoading(true);
     try {
-      await updateSettings(supportSettings);
+      const res = await updateSettings(supportSettings);
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+      }
       toast.success('Support settings updated');
     } catch (error) {
       toast.error('Failed to update support settings');
@@ -447,7 +462,10 @@ const AdminSettings = () => {
     const newValue = !referralSettings.isReferralEnabled;
     setReferralSettings(prev => ({ ...prev, isReferralEnabled: newValue }));
     try {
-      await updateSettings({ isReferralEnabled: newValue });
+      const res = await updateSettings({ isReferralEnabled: newValue });
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+      }
       toast.success(newValue ? 'Referral program enabled' : 'Referral program paused');
     } catch (err) {
       toast.error('Failed to toggle referral program');
@@ -463,7 +481,10 @@ const AdminSettings = () => {
         referralRewardAmount: referralSettings.referralRewardAmount === '' ? 0 : Number(referralSettings.referralRewardAmount),
         refereeRewardAmount: referralSettings.refereeRewardAmount === '' ? 0 : Number(referralSettings.refereeRewardAmount)
       };
-      await updateSettings(sanitized);
+      const res = await updateSettings(sanitized);
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+      }
       toast.success('Referral settings updated successfully');
     } catch (error) {
       toast.error('Failed to update referral settings');
@@ -483,9 +504,13 @@ const AdminSettings = () => {
       setFinancialSettings(prev => ({ ...prev, isOnlinePaymentEnabled: newValue }));
     }
     try {
-      await updateSettings({ [key]: newValue });
+      const res = await updateSettings({ [key]: newValue });
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+      } else {
+        window.dispatchEvent(new Event('platformSettingsUpdated'));
+      }
       toast.success(`${label} ${newValue ? 'Enabled' : 'Disabled'}`);
-      window.dispatchEvent(new Event('platformSettingsUpdated'));
     } catch (err) {
       toast.error(`Failed to update ${label}`);
     }
@@ -496,7 +521,10 @@ const AdminSettings = () => {
     setLangLoading(true);
     try {
       const targetList = updatedLangs || languages;
-      await updateSettings({ supportedLanguages: targetList });
+      const res = await updateSettings({ supportedLanguages: targetList });
+      if (res?.success && res?.settings) {
+        broadcastSettingsUpdate(res.settings);
+      }
       setLanguages(targetList);
       toast.success('Language settings updated successfully');
     } catch (error) {
@@ -1046,25 +1074,25 @@ const AdminSettings = () => {
                 <form onSubmit={handleFinancialSave} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Service GST (%)</label>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase mb-1.5">Service GST (%) <span className="text-emerald-600 font-bold">(User Cart &amp; Services)</span></label>
                       <input type="number" name="serviceGstPercentage" value={financialSettings.serviceGstPercentage} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0" max="100"
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                      <p className="text-[10px] text-gray-400 mt-1">GST rate applied to services (e.g. 18%)</p>
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-semibold" />
+                      <p className="text-[10px] text-gray-500 mt-1">Tax rate calculated in Cart &amp; Checkout on service bookings (e.g. 18%)</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Convenience / Visiting Fee (₹)</label>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase mb-1.5">Convenience / Visiting Fee (₹)</label>
                       <input type="number" name="visitedCharges" value={financialSettings.visitedCharges} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-semibold" />
-                      <p className="text-[10px] text-gray-400 mt-1">Doorstep convenience fee added per booking (e.g. ₹29)</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Doorstep convenience fee added per booking in Cart &amp; Checkout (e.g. ₹29)</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Parts GST (%)</label>
+                      <label className="block text-xs font-semibold text-gray-700 uppercase mb-1.5">Parts GST (%) <span className="text-blue-600 font-bold">(Vendor Materials)</span></label>
                       <input type="number" name="partsGstPercentage" value={financialSettings.partsGstPercentage} onChange={handleFinancialChange} onFocus={(e) => e.target.select()}
                         min="0" max="100"
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                      <p className="text-[10px] text-gray-400 mt-1">GST rate applied to parts &amp; materials</p>
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all font-semibold" />
+                      <p className="text-[10px] text-gray-500 mt-1">Tax rate applied on vendor bills for spare parts &amp; physical materials</p>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-1.5">

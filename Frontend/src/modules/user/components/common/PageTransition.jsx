@@ -11,7 +11,7 @@ const PageTransition = ({ children }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
-    if (location.pathname !== displayLocation.pathname) {
+    if (location.pathname !== displayLocation.pathname || location.search !== displayLocation.search) {
       // Start transition immediately
       setIsTransitioning(true);
 
@@ -19,11 +19,14 @@ const PageTransition = ({ children }) => {
       const timeout = setTimeout(() => {
         setDisplayLocation(location);
         setIsTransitioning(false);
+        window.scrollTo(0, 0);
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
       }, 100); // Very quick transition (100ms)
 
       return () => clearTimeout(timeout);
     }
-  }, [location.pathname, displayLocation.pathname]);
+  }, [location.pathname, location.search, displayLocation.pathname, displayLocation.search]);
 
   return (
     <div
@@ -39,5 +42,3 @@ const PageTransition = ({ children }) => {
 };
 
 export default PageTransition;
-
-

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiArrowLeft,
@@ -31,9 +31,14 @@ const toAssetUrl = (url) => {
 const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, isLoading: loading, removeItem, removeCategoryItems, updateItem } = useCart();
-  const { settings } = useSettings();
+  const { settings, refreshSettings } = useSettings();
   const gstPercentage = settings?.serviceGstPercentage !== undefined ? Number(settings.serviceGstPercentage) : 18;
   const visitedFee = settings?.visitedCharges !== undefined && Number(settings.visitedCharges) > 0 ? Number(settings.visitedCharges) : 29;
+
+  // Refresh settings whenever Cart is opened to guarantee dynamic accuracy
+  useEffect(() => {
+    refreshSettings();
+  }, [refreshSettings]);
 
   // Popular category quick shortcuts for empty cart state
   const quickCategories = [
