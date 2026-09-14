@@ -389,26 +389,19 @@ const AllServices = () => {
     searchParams.get('category') || 'all'
   );
 
-  // Accordion collapsible state for categories in 'all' view
-  const [collapsedCategories, setCollapsedCategories] = useState({});
+  // Exclusive Single-Open Accordion: only one category dropdown open at a time in 'all' view
+  const [openCategorySlug, setOpenCategorySlug] = useState('electrician');
 
-  const toggleCategoryCollapse = (slug) => {
-    setCollapsedCategories((prev) => ({
-      ...prev,
-      [slug]: !prev[slug]
-    }));
-  };
+  // Auto-sync initial open category when categories are loaded
+  useEffect(() => {
+    if (categories.length > 0) {
+      const firstSlug = (categories[0].slug || categories[0].id || 'electrician').toLowerCase();
+      setOpenCategorySlug((prev) => prev || firstSlug);
+    }
+  }, [categories]);
 
-  const handleExpandAll = () => {
-    setCollapsedCategories({});
-  };
-
-  const handleCollapseAll = (catalogList) => {
-    const all = {};
-    (catalogList || []).forEach((cat) => {
-      all[cat.slug] = true;
-    });
-    setCollapsedCategories(all);
+  const toggleCategoryDropdown = (slug) => {
+    setOpenCategorySlug((prev) => (prev === slug ? null : slug));
   };
 
   const contentTopRef = useRef(null);
@@ -467,9 +460,10 @@ const AllServices = () => {
 
   // Sync category state with query param if it changes
   useEffect(() => {
-    const urlCat = searchParams.get('category');
-    if (urlCat && urlCat !== selectedCategorySlug) {
+    const urlCat = searchParams.get('category') || 'all';
+    if (urlCat !== selectedCategorySlug) {
       setSelectedCategorySlug(urlCat);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [searchParams]);
 
@@ -653,12 +647,13 @@ const AllServices = () => {
     setSelectedCategorySlug(slug);
     if (slug === 'all') {
       setSearchParams({});
+      setOpenCategorySlug((prev) => prev || 'electrician');
     } else {
       setSearchParams({ category: slug });
+      setOpenCategorySlug(slug);
     }
-    if (contentTopRef.current) {
-      contentTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Scroll to the very top so the sticky header does not occlude the category heading
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -790,7 +785,7 @@ const AllServices = () => {
       {/* =============================================================
           2. MAIN RESPONSIVE BODY (2-Column on Web, Stacked on Mobile)
          ============================================================= */}
-      <main ref={contentTopRef} className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <main ref={contentTopRef} className="max-w-7xl mx-auto px-3 sm:px-4 pt-3 pb-8 sm:pt-5 scroll-mt-40">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-8 h-8 border-2 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-3" />
@@ -931,41 +926,35 @@ const AllServices = () => {
                 RIGHT SERVICE CONTENT AREA
                ========================================================= */}
             <div className="md:col-span-8 lg:col-span-9 space-y-5">
-              {/* Optional Top Controls Bar for 'All' View */}
+              {/* Top Summary Bar for 'All' View */}
               {selectedCategorySlug === 'all' && displayCatalog.length > 1 && (
                 <div className="flex items-center justify-between px-0.5 pb-1 text-xs text-slate-500 font-medium">
                   <span className="text-[11px] text-slate-500 font-semibold">
                     {displayCatalog.length} Categories ({grandTotalServices} Services)
                   </span>
-                  <div className="flex items-center gap-2 text-[11px] font-bold">
+                  {openCategorySlug && (
                     <button
                       type="button"
-                      onClick={handleExpandAll}
-                      className="text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-                    >
-                      Expand All
-                    </button>
-                    <span className="text-slate-300">•</span>
-                    <button
-                      type="button"
-                      onClick={() => handleCollapseAll(displayCatalog)}
-                      className="text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                      onClick={() => setOpenCategorySlug(null)}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                     >
                       Collapse All
                     </button>
-                  </div>
+                  )}
                 </div>
               )}
 
               {displayCatalog.map((cat) => {
-                const isCollapsed = Boolean(collapsedCategories[cat.slug]);
+                // One dropdown at a time: open if single category selected, or if this category is the active open one
+                const isOpen = selectedCategorySlug !== 'all' ? true : openCategorySlug === cat.slug;
+                const isCollapsed = !isOpen;
 
                 return (
                   <section key={cat.id} className="space-y-2">
-                    {/* Sleek Category Heading with Accordion Dropdown (Replaces Bulky Card Banner) */}
+                    {/* Sleek Category Heading with Accordion Dropdown (One Open at a Time) */}
                     <div
-                      onClick={() => toggleCategoryCollapse(cat.slug)}
-                      className="flex items-center justify-between py-1.5 px-0.5 border-b border-slate-200/80 cursor-pointer select-none group transition-colors hover:border-slate-300"
+                      onClick={() => toggleCategoryDropdown(cat.slug)}
+                      className="flex items-center justify-between py-2 px-1 border-b border-slate-200/90 cursor-pointer select-none group transition-colors hover:border-slate-300"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <h2 className="text-sm sm:text-base font-extrabold font-heading text-slate-900 group-hover:text-blue-600 transition-colors truncate">
@@ -977,8 +966,8 @@ const AllServices = () => {
                           </span>
                         )}
                         {cat.totalServices > 0 && (
-                          <span className="text-[10.5px] font-bold text-slate-400 shrink-0">
-                            ({cat.totalServices})
+                          <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 shrink-0">
+                            ({cat.totalServices} {cat.totalServices === 1 ? 'service' : 'services'})
                           </span>
                         )}
                       </div>
