@@ -361,10 +361,7 @@ const UserDashboard = () => {
               } else if (config.subCategories && config.subCategories.length > 0) {
                 subCats = config.subCategories;
               } else {
-                subCats = [
-                  { id: `${c.slug || 'cat'}-consult`, name: `Book ${c.title} Consultation`, icon: '📋' },
-                  { id: `${c.slug || 'cat'}-standard`, name: `Standard ${c.title} Service`, icon: '⭐' }
-                ];
+                subCats = [];
               }
 
               return {
@@ -372,7 +369,7 @@ const UserDashboard = () => {
                 slug: c.slug || c.id,
                 title: c.title,
                 image: toAssetUrl(iconPath),
-                count: `${subCats.length} services available`,
+                count: subCats.length > 0 ? `${subCats.length} services available` : 'Coming soon',
                 subCategories: subCats
               };
             });
