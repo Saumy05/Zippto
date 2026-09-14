@@ -13,7 +13,8 @@ import {
   FiMapPin,
   FiFilter,
   FiZap,
-  FiGrid
+  FiGrid,
+  FiChevronDown
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
@@ -189,7 +190,7 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
   const handleArrowClick = (direction) => {
     const el = containerRef.current;
     if (!el) return;
-    const scrollAmount = Math.max(el.clientWidth * 0.75, 220);
+    const scrollAmount = el.clientWidth;
     el.scrollBy({
       left: direction === 'left' ? -scrollAmount : scrollAmount,
       behavior: 'smooth'
@@ -241,7 +242,7 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
         </div>
       </div>
 
-      {/* Single Horizontal Row of Petite Compact Cards with Floating Nav Arrows */}
+      {/* Single Horizontal Row: Fits Exactly 3 Cards in the Space */}
       <div className="relative group/carousel">
         {/* Floating Left Arrow (Desktop) */}
         {canLeft && (
@@ -249,7 +250,7 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
             type="button"
             onClick={() => handleArrowClick('left')}
             aria-label="Scroll left"
-            className="hidden sm:flex absolute -left-2 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md border border-slate-200 items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
+            className="hidden sm:flex absolute -left-2.5 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md border border-slate-200 items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
           >
             <FiChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -261,7 +262,7 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
             type="button"
             onClick={() => handleArrowClick('right')}
             aria-label="Scroll right"
-            className="hidden sm:flex absolute -right-2 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md border border-slate-200 items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
+            className="hidden sm:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-white/95 hover:bg-white text-slate-800 shadow-md border border-slate-200 items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-90"
           >
             <FiChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -270,7 +271,7 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
         <div
           ref={containerRef}
           onScroll={checkScroll}
-          className="flex items-stretch gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 px-0.5"
+          className="flex items-stretch gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1"
         >
           {sec.items.map((item) => {
             const isAdded = cartItems.some(
@@ -280,10 +281,10 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
             return (
               <div
                 key={item.id}
-                className="w-[92px] sm:w-[102px] md:w-[112px] shrink-0 bg-white rounded-lg sm:rounded-xl border border-slate-200/90 overflow-hidden shadow-2xs hover:shadow-xs hover:border-slate-300 transition-all duration-200 flex flex-col group relative select-none"
+                className="w-[calc((100%-16px)/3)] min-w-[calc((100%-16px)/3)] max-w-[calc((100%-16px)/3)] shrink-0 bg-white rounded-xl border border-slate-200/90 overflow-hidden shadow-2xs hover:shadow-xs hover:border-slate-300 transition-all duration-200 flex flex-col group relative select-none"
               >
-                {/* 1. Petite Card Photo */}
-                <div className="w-full h-14 sm:h-15 md:h-16 bg-slate-100 relative overflow-hidden shrink-0">
+                {/* 1. Proportional Card Photo */}
+                <div className="w-full aspect-[16/10] sm:aspect-[4/3] bg-slate-100 relative overflow-hidden shrink-0">
                   <img
                     src={item.image}
                     alt={item.title}
@@ -294,29 +295,29 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
                     }}
                   />
                   {item.discount && (
-                    <span className="absolute top-0.5 left-0.5 bg-[#137547] text-white text-[7px] sm:text-[7.5px] font-extrabold px-1 py-0.2 rounded shadow-xs tracking-tight">
+                    <span className="absolute top-1 left-1 bg-[#137547] text-white text-[7.5px] sm:text-[8px] font-extrabold px-1.5 py-0.2 rounded shadow-xs tracking-tight">
                       {item.discount}
                     </span>
                   )}
                 </div>
 
                 {/* 2. Petite Card Content Body */}
-                <div className="p-1 sm:p-1.5 flex flex-col flex-1 justify-between gap-1">
-                  <div className="space-y-0.5">
-                    <h4 className="text-[9.5px] sm:text-[10px] md:text-[10.5px] font-bold text-slate-900 leading-tight line-clamp-2 h-[24px] sm:h-[26px]">
+                <div className="p-1.5 sm:p-2 flex flex-col flex-1 justify-between gap-1">
+                  <div className="space-y-0.5 sm:space-y-1">
+                    <h4 className="text-[10px] sm:text-[11px] md:text-xs font-bold text-slate-900 leading-tight line-clamp-2 h-[26px] sm:h-[30px]">
                       {item.title}
                     </h4>
 
                     {/* Rating & Speed Badges */}
-                    <div className="flex items-center gap-1 text-[8px] sm:text-[8.5px] font-medium text-slate-600">
+                    <div className="flex items-center gap-1 text-[8.5px] sm:text-[9.5px] font-medium text-slate-600">
                       <span className="flex items-center gap-0.5 font-bold text-slate-900">
-                        <FiStar className="w-1.5 h-1.5 fill-amber-400 text-amber-400" />
+                        <FiStar className="w-2 h-2 fill-amber-400 text-amber-400" />
                         {item.rating || '4.80'}
                       </span>
                       {item.isInstant && (
                         <>
                           <span className="text-slate-300">•</span>
-                          <span className="flex items-center gap-0.5 font-semibold text-emerald-600 text-[7.5px] sm:text-[8px]">
+                          <span className="flex items-center gap-0.5 font-semibold text-emerald-600 text-[8px] sm:text-[9px]">
                             <FiZap className="w-1.5 h-1.5 fill-emerald-500 text-emerald-500" /> Instant
                           </span>
                         </>
@@ -324,14 +325,14 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
                     </div>
                   </div>
 
-                  {/* 3. Price & Petite Add Button */}
-                  <div className="flex items-center justify-between gap-0.5 pt-1 border-t border-slate-100 mt-auto">
+                  {/* 3. Price & Add Button */}
+                  <div className="flex items-center justify-between gap-1 pt-1 border-t border-slate-100 mt-auto">
                     <div className="flex items-baseline gap-0.5 min-w-0">
-                      <span className="text-[9.5px] sm:text-[10.5px] font-extrabold text-slate-900 truncate">
+                      <span className="text-[10.5px] sm:text-xs font-extrabold text-slate-900 truncate">
                         {item.price}
                       </span>
                       {item.originalPrice && (
-                        <span className="text-[7.5px] sm:text-[8px] text-slate-400 line-through truncate">
+                        <span className="text-[8px] sm:text-[9px] text-slate-400 line-through truncate">
                           {item.originalPrice}
                         </span>
                       )}
@@ -346,7 +347,7 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
                           handleToggleAddService(item, cat.title);
                         }
                       }}
-                      className={`px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-bold transition-all shadow-2xs flex items-center justify-center gap-0.5 cursor-pointer shrink-0 active:scale-95 ${
+                      className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-[9px] sm:text-[9.5px] font-bold transition-all shadow-2xs flex items-center justify-center gap-0.5 cursor-pointer shrink-0 active:scale-95 ${
                         isAdded
                           ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                           : 'bg-white text-red-600 border border-red-200 hover:bg-red-50'
@@ -355,7 +356,7 @@ const SectionRowCarousel = ({ sec, cat, cartItems, handleToggleAddService, navig
                     >
                       {isAdded ? (
                         <>
-                          <FiCheck className="w-2 h-2" /> Added
+                          <FiCheck className="w-2.5 h-2.5" /> Added
                         </>
                       ) : (
                         <>Add +</>
@@ -387,6 +388,28 @@ const AllServices = () => {
   const [selectedCategorySlug, setSelectedCategorySlug] = useState(
     searchParams.get('category') || 'all'
   );
+
+  // Accordion collapsible state for categories in 'all' view
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+
+  const toggleCategoryCollapse = (slug) => {
+    setCollapsedCategories((prev) => ({
+      ...prev,
+      [slug]: !prev[slug]
+    }));
+  };
+
+  const handleExpandAll = () => {
+    setCollapsedCategories({});
+  };
+
+  const handleCollapseAll = (catalogList) => {
+    const all = {};
+    (catalogList || []).forEach((cat) => {
+      all[cat.slug] = true;
+    });
+    setCollapsedCategories(all);
+  };
 
   const contentTopRef = useRef(null);
 
@@ -908,79 +931,111 @@ const AllServices = () => {
                 RIGHT SERVICE CONTENT AREA
                ========================================================= */}
             <div className="md:col-span-8 lg:col-span-9 space-y-5">
+              {/* Optional Top Controls Bar for 'All' View */}
+              {selectedCategorySlug === 'all' && displayCatalog.length > 1 && (
+                <div className="flex items-center justify-between px-0.5 pb-1 text-xs text-slate-500 font-medium">
+                  <span className="text-[11px] text-slate-500 font-semibold">
+                    {displayCatalog.length} Categories ({grandTotalServices} Services)
+                  </span>
+                  <div className="flex items-center gap-2 text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={handleExpandAll}
+                      className="text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                    >
+                      Expand All
+                    </button>
+                    <span className="text-slate-300">•</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCollapseAll(displayCatalog)}
+                      className="text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+                    >
+                      Collapse All
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {displayCatalog.map((cat) => {
+                const isCollapsed = Boolean(collapsedCategories[cat.slug]);
+
                 return (
-                  <section key={cat.id} className="space-y-3">
-                    {/* Category Header Banner */}
-                    <div className="bg-white rounded-xl border border-slate-200/80 p-2.5 sm:p-3 flex items-center justify-between gap-2.5 shadow-2xs">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-50 border border-slate-200/70 overflow-hidden shrink-0 shadow-2xs">
-                          <img
-                            src={cat.icon}
-                            alt={cat.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = '/cat_images/electrician.jpg';
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <h2 className="text-xs sm:text-sm font-bold font-heading text-slate-900">
-                              {cat.title}
-                            </h2>
-                            {cat.badge && (
-                              <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 uppercase">
-                                {cat.badge}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] sm:text-[10.5px] text-slate-500 font-medium">
-                            {cat.totalServices > 0
-                              ? `${cat.totalServices} services available`
-                              : 'Doorstep service packages'}
-                          </p>
-                        </div>
+                  <section key={cat.id} className="space-y-2">
+                    {/* Sleek Category Heading with Accordion Dropdown (Replaces Bulky Card Banner) */}
+                    <div
+                      onClick={() => toggleCategoryCollapse(cat.slug)}
+                      className="flex items-center justify-between py-1.5 px-0.5 border-b border-slate-200/80 cursor-pointer select-none group transition-colors hover:border-slate-300"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h2 className="text-sm sm:text-base font-extrabold font-heading text-slate-900 group-hover:text-blue-600 transition-colors truncate">
+                          {cat.title}
+                        </h2>
+                        {cat.badge && (
+                          <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 uppercase shrink-0">
+                            {cat.badge}
+                          </span>
+                        )}
+                        {cat.totalServices > 0 && (
+                          <span className="text-[10.5px] font-bold text-slate-400 shrink-0">
+                            ({cat.totalServices})
+                          </span>
+                        )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/user/category/${cat.slug}`)}
-                        className="hidden sm:inline-flex items-center gap-1 text-[10.5px] font-bold text-slate-700 hover:text-blue-600 transition-colors cursor-pointer"
-                      >
-                        <span>Details</span>
-                        <FiChevronRight className="w-3 h-3" />
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/user/category/${cat.slug}`);
+                          }}
+                          className="hidden sm:inline-flex items-center gap-0.5 text-[10.5px] font-bold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+                        >
+                          <span>Explore</span>
+                          <FiChevronRight className="w-3 h-3" />
+                        </button>
+
+                        <div
+                          className={`w-6 h-6 sm:w-6.5 sm:h-6.5 rounded-full bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-transform duration-300 cursor-pointer ${
+                            isCollapsed ? '-rotate-90' : 'rotate-0'
+                          }`}
+                          title={isCollapsed ? 'Expand category' : 'Collapse category'}
+                        >
+                          <FiChevronDown className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Service Sections */}
-                    {cat.sections.length > 0 ? (
-                      <div className="space-y-4">
-                        {cat.sections.map((sec, sIdx) => (
-                          <SectionRowCarousel
-                            key={sIdx}
-                            sec={sec}
-                            cat={cat}
-                            cartItems={cartItems}
-                            handleToggleAddService={handleToggleAddService}
-                            navigate={navigate}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      /* Clean empty state for categories with no services yet */
-                      <div className="bg-white rounded-xl border border-dashed border-slate-200 p-4 text-center">
-                        <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1.5">
-                          <FiPackage className="w-4 h-4" />
+                    {/* Service Sections (Collapsible) */}
+                    {!isCollapsed && (
+                      cat.sections.length > 0 ? (
+                        <div className="space-y-4 pt-1">
+                          {cat.sections.map((sec, sIdx) => (
+                            <SectionRowCarousel
+                              key={sIdx}
+                              sec={sec}
+                              cat={cat}
+                              cartItems={cartItems}
+                              handleToggleAddService={handleToggleAddService}
+                              navigate={navigate}
+                            />
+                          ))}
                         </div>
-                        <h4 className="text-[11.5px] font-bold text-slate-800">
-                          Services coming soon for {cat.title}
-                        </h4>
-                        <p className="text-[10.5px] text-slate-500 max-w-sm mx-auto mt-0.5">
-                          We are actively onboarding verified professionals for this trade.
-                        </p>
-                      </div>
+                      ) : (
+                        /* Clean empty state for categories with no services yet */
+                        <div className="bg-white rounded-xl border border-dashed border-slate-200 p-4 text-center mt-2">
+                          <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1.5">
+                            <FiPackage className="w-4 h-4" />
+                          </div>
+                          <h4 className="text-[11.5px] font-bold text-slate-800">
+                            Services coming soon for {cat.title}
+                          </h4>
+                          <p className="text-[10.5px] text-slate-500 max-w-sm mx-auto mt-0.5">
+                            We are actively onboarding verified professionals for this trade.
+                          </p>
+                        </div>
+                      )
                     )}
                   </section>
                 );
