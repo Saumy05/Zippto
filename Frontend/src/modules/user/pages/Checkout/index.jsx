@@ -1600,7 +1600,10 @@ const Checkout = () => {
         isOpen={showVendorModal}
         onClose={() => {
           setShowVendorModal(false);
-          if (currentStep === 'accepted') {
+          const activeBookingId = bookingRequest?._id || bookingRequest?.id;
+          if (activeBookingId && currentStep !== 'failed') {
+            navigate(`/user/booking-confirmation/${activeBookingId}`, { replace: true });
+          } else if (currentStep === 'accepted') {
             setCurrentStep('payment');
           } else if (currentStep === 'failed') {
             setCurrentStep('details');

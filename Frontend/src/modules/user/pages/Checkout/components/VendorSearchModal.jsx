@@ -22,6 +22,7 @@ const VendorSearchModal = ({ isOpen, onClose, currentStep, acceptedVendor, onRet
         {/* Close/Minimize Button - Top Right */}
         <button
           onClick={onClose}
+          title="Minimize & View Booking Details"
           className="absolute top-4 right-4 z-30 p-2 bg-white/90 rounded-full shadow-sm text-gray-400 hover:text-gray-600 transition-colors hover:bg-white"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -80,11 +81,16 @@ const VendorSearchModal = ({ isOpen, onClose, currentStep, acceptedVendor, onRet
               </p>
             </div>
 
-            {/* Bottom Pill - Now positioned relative to avoid overlap */}
+            {/* Bottom Pill / Action Button */}
             <div className="flex justify-center mt-2">
-              <div className="px-4 py-2 bg-gray-50 rounded-full border border-gray-100 text-[10px] font-black uppercase tracking-tighter text-gray-400">
-                Searching for available providers
-              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-full border border-gray-200 text-[10px] font-black uppercase tracking-wider text-gray-500 hover:text-gray-800 transition-all flex items-center gap-1.5 active:scale-95 shadow-2xs cursor-pointer"
+              >
+                <span>View Booking Details</span>
+                <span className="text-gray-400 font-normal lowercase">• runs in background</span>
+              </button>
             </div>
 
           </div>
