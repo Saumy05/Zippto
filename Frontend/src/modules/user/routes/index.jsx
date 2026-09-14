@@ -55,6 +55,7 @@ const lazyLoad = (importFunc) => {
 
 // Lazy load all user pages for code splitting with error handling
 const UserDashboard = lazyLoad(() => import('../pages/UserDashboard'));
+const AllServices = lazyLoad(() => import('../pages/AllServices'));
 const Home = lazyLoad(() => import('../pages/Home'));
 const Rewards = lazyLoad(() => import('../pages/Rewards'));
 const Account = lazyLoad(() => import('../pages/Account'));
@@ -105,6 +106,7 @@ const UserRoutes = () => {
     '/user/my-bookings',
     '/user/bookings',
     '/user/cart',
+    '/user/services',
     '/user/account',
     '/user/my-plan',
     '/user/wallet',
@@ -141,6 +143,9 @@ const UserRoutes = () => {
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/home-legacy" element={<Home />} />
               <Route path="/native" element={<Native />} />
+              <Route path="/services" element={<AllServices />} />
+              <Route path="/all-services" element={<Navigate to="/user/services" replace />} />
+              <Route path="/categories" element={<Navigate to="/user/services" replace />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/help-support" element={<HelpSupport />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />

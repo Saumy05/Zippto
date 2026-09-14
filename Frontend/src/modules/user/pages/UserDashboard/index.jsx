@@ -19,7 +19,8 @@ import {
   FiStar,
   FiPlus,
   FiCheck,
-  FiPackage
+  FiPackage,
+  FiGrid
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCart } from '../../../../context/CartContext';
@@ -964,22 +965,25 @@ const UserDashboard = () => {
   // Dynamic categories mapped from Admin API with fallback to exploreServices
   const displayCategories = useMemo(() => {
     if (categories && categories.length > 0) {
-      return categories.map((cat) => {
-        const matchedExplore = exploreServices.find(e => e.slug === cat.slug || e.id === cat.id);
-        const matchedMain = mainCategories.find(m => m.slug === cat.slug || m.id === cat.id);
+      return categories
+        .filter(cat => cat.showOnHome !== false)
+        .sort((a, b) => (a.homeOrder || 0) - (b.homeOrder || 0))
+        .map((cat) => {
+          const matchedExplore = exploreServices.find(e => e.slug === cat.slug || e.id === cat.id);
+          const matchedMain = mainCategories.find(m => m.slug === cat.slug || m.id === cat.id);
 
-        return {
-          id: cat.id,
-          slug: cat.slug,
-          title: cat.title,
-          displayTitle: cat.title,
-          image: cat.icon ? toAssetUrl(cat.icon) : (matchedExplore?.image || matchedMain?.image || '/cat_electrician_plumber.png'),
-          badge: cat.badge || null,
-          hasSaleBadge: cat.hasSaleBadge || false,
-          isCombo: matchedExplore?.isCombo || false,
-          subCategories: matchedExplore?.subCategories || matchedMain?.subCategories || []
-        };
-      });
+          return {
+            id: cat.id,
+            slug: cat.slug,
+            title: cat.title,
+            displayTitle: cat.title,
+            image: cat.icon ? toAssetUrl(cat.icon) : (matchedExplore?.image || matchedMain?.image || '/cat_electrician_plumber.png'),
+            badge: cat.badge || null,
+            hasSaleBadge: cat.hasSaleBadge || false,
+            isCombo: matchedExplore?.isCombo || false,
+            subCategories: matchedExplore?.subCategories || matchedMain?.subCategories || []
+          };
+        });
     }
     return exploreServices;
   }, [categories, exploreServices, mainCategories]);
@@ -989,7 +993,8 @@ const UserDashboard = () => {
     'help-support', 'cancellation-policy', 'about-homestr', 'checkout',
     'rewards', 'account', 'my-bookings', 'bookings', 'booking', 'booking-confirmation',
     'settings', 'manage-payment-methods', 'manage-addresses', 'wallet',
-    'my-plan', 'my-rating', 'update-profile', 'notifications'
+    'my-plan', 'my-rating', 'update-profile', 'notifications',
+    'services', 'all-services', 'categories'
   ], []);
 
   // Helper to load category detail view dynamically from DB or fallback registry
@@ -1587,12 +1592,27 @@ const UserDashboard = () => {
              ============================================================= */}
           {homeContent?.isCategoriesVisible !== false && (
             <section className="space-y-3">
-              <h2 className="text-base sm:text-lg font-bold font-heading text-gray-900 tracking-tight">
-                Explore More Services
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-base sm:text-lg font-bold font-heading text-gray-900 tracking-tight">
+                  Explore More Services
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => navigate('/user/services')}
+                  className="text-xs sm:text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors flex items-center gap-1 cursor-pointer group"
+                >
+                  <span>View All</span>
+                  {displayCategories.length > 0 && (
+                    <span className="text-[11px] text-slate-400 group-hover:text-blue-500">
+                      ({displayCategories.length})
+                    </span>
+                  )}
+                  <FiArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </button>
+              </div>
 
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
-                {displayCategories.map((cat, index) => {
+                {displayCategories.slice(0, 9).map((cat, index) => {
                   const pastelColors = [
                     { bg: '#FEFBE8', text: '#854D0E' }, // Yellow
                     { bg: '#FAE8FF', text: '#86198F' }, // Purple
@@ -1651,6 +1671,29 @@ const UserDashboard = () => {
                     </div>
                   );
                 })}
+
+                {/* 10th Card: All Services CTA Card */}
+                {displayCategories.length > 9 && (
+                  <div
+                    onClick={() => navigate('/user/services')}
+                    className="flex flex-col items-center text-center cursor-pointer group select-none relative"
+                  >
+                    <div
+                      className="w-full aspect-square rounded-md border border-dashed border-slate-300 bg-slate-50/80 hover:bg-slate-100 flex flex-col items-center justify-center p-2.5 sm:p-3.5 overflow-hidden group-hover:scale-[1.03] transition-all duration-300 relative text-slate-700 hover:text-blue-600"
+                      style={{
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                      }}
+                    >
+                      <FiGrid className="w-6 h-6 sm:w-7 sm:h-7 mb-1 text-slate-600 group-hover:text-blue-600 group-hover:rotate-6 transition-all" />
+                      <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wide">
+                        View All
+                      </span>
+                    </div>
+                    <h3 className="mt-1.5 text-[11px] sm:text-xs font-bold leading-tight text-center text-slate-700 group-hover:text-blue-600 font-heading">
+                      All Services
+                    </h3>
+                  </div>
+                )}
               </div>
             </section>
           )}
