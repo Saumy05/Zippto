@@ -49,7 +49,7 @@ const VendorSearchModal = ({ isOpen, onClose, currentStep, acceptedVendor, onRet
                 style={{ borderColor: themeColors.brand.teal, animationDuration: '3s', animationDelay: '0.6s' }}></div>
 
               {/* Rotating Scanner Gradient */}
-              <div className="absolute inset-0 rounded-full animate-spin-slow opacity-30"
+              <div className="absolute inset-0 rounded-full animate-spin opacity-30"
                 style={{
                   background: `conic-gradient(transparent 180deg, ${themeColors.brand.teal})`,
                   animationDuration: '4s'

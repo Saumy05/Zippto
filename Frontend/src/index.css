@@ -144,6 +144,10 @@
   animation: floating 6s ease-in-out infinite;
 }
 
+.animate-spin-slow {
+  animation: spin 4s linear infinite;
+}
+
 .animate-stagger-1 { animation-delay: 0.1s; opacity: 0; }
 .animate-stagger-2 { animation-delay: 0.2s; opacity: 0; }
 .animate-stagger-3 { animation-delay: 0.3s; opacity: 0; }
