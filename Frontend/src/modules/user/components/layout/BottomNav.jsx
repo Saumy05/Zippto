@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../../../context/CartContext';
 
 // Icons — outline
-import { FiHome, FiShoppingBag, FiUser } from 'react-icons/fi';
+import { FiHome, FiShoppingBag, FiUser, FiShoppingCart, FiChevronRight } from 'react-icons/fi';
 import { BsCalendar2Check } from 'react-icons/bs';
 
 // Icons — filled
@@ -17,7 +17,8 @@ const BRAND = '#B33A35';
 const BottomNav = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cartCount } = useCart();
+  const { cartItems, cartCount } = useCart();
+  const totalCartPrice = useMemo(() => cartItems.reduce((sum, item) => sum + (item.price || 0), 0), [cartItems]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [prevTab, setPrevTab] = useState(null);
 
@@ -71,15 +72,51 @@ const BottomNav = React.memo(() => {
       className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden"
       style={{ WebkitBackfaceVisibility: 'hidden' }}
     >
-      {/* Safe-area spacer for iOS */}
       <div
         className="w-full"
         style={{
-          background: 'linear-gradient(to top, rgba(255,255,255,1) 60%, rgba(255,255,255,0))',
+          background: '#ffffff',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
-        {/* Floating island pill */}
+      {/* Global floating cart bar — shows on every page when cart has items */}
+      <AnimatePresence>
+        {cartCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className="flex justify-center px-3 pb-1"
+          >
+            <button
+              type="button"
+              onClick={() => navigate('/user/cart')}
+              className="w-full max-w-[320px] sm:max-w-xs bg-slate-900 hover:bg-black text-white px-3.5 py-2.5 rounded-2xl shadow-xl flex items-center justify-between gap-3 cursor-pointer border border-slate-700/50 active:scale-[0.98] transition-all"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded-lg bg-[#B33A35] flex items-center justify-center shrink-0">
+                  <FiShoppingCart className="w-3 h-3 text-white" />
+                </div>
+                <div className="text-left leading-tight min-w-0">
+                  <p className="text-xs font-bold truncate">
+                    {cartCount} {cartCount === 1 ? 'service' : 'services'} in cart
+                  </p>
+                  {totalCartPrice > 0 && (
+                    <p className="text-[10px] text-emerald-400 font-extrabold">₹{totalCartPrice.toLocaleString('en-IN')}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-0.5 text-[11px] font-extrabold text-amber-300 bg-white/10 px-2.5 py-1 rounded-xl shrink-0">
+                <span>View Cart</span>
+                <FiChevronRight className="w-3 h-3" />
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating island pill */}
         <div className="flex justify-center px-3 pb-2 pt-0.5">
           <div
             className="flex items-center justify-around w-full max-w-[320px] sm:max-w-xs rounded-full px-1.5 py-1"

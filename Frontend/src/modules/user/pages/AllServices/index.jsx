@@ -1307,39 +1307,8 @@ const AllServices = () => {
           </div>
         )}
       </main>
-
-      {/* Floating Bottom Cart Bar for Seamless Quick Checkout */}
-      {cartCount > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 z-40 max-w-sm ml-auto animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <button
-            type="button"
-            onClick={() => navigate('/cart')}
-            className="w-full bg-slate-900 hover:bg-black text-white px-4 py-3 rounded-2xl shadow-xl flex items-center justify-between gap-3 cursor-pointer border border-slate-700/50 active:scale-98 transition-all"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-[#B33A35] flex items-center justify-center font-bold text-xs text-white shrink-0">
-                <FiShoppingCart className="w-3.5 h-3.5" />
-              </div>
-              <div className="text-left leading-tight min-w-0">
-                <p className="text-xs font-bold truncate">
-                  {cartCount} {cartCount === 1 ? 'service' : 'services'} in cart
-                </p>
-                {totalCartPrice > 0 && (
-                  <p className="text-[11px] text-emerald-400 font-extrabold">
-                    ₹{totalCartPrice.toLocaleString('en-IN')}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 text-xs font-extrabold text-amber-300 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl shrink-0 transition-colors">
-              <span>View Cart</span>
-              <FiChevronRight className="w-3.5 h-3.5" />
-            </div>
-          </button>
-        </div>
-      )}
     </div>
+
   );
 };
 
