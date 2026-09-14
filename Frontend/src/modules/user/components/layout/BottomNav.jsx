@@ -87,7 +87,7 @@ const BottomNav = React.memo(() => {
               background: 'rgba(255,255,255,0.94)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: '0 6px 24px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.06)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.10)',
             }}
           >
             {navItems.map((item) => {
