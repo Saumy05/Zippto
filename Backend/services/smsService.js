@@ -170,8 +170,8 @@ const sendViaMSG91 = async (phone, otp) => {
  */
 const sendSMS = async (phone, message, otp = '') => {
   try {
-    // 1. Check Mock / Bypass Mode
-    if (process.env.USE_DEFAULT_OTP === 'true' || process.env.NODE_ENV === 'test') {
+    // 1. Check Test Mode
+    if (process.env.NODE_ENV === 'test') {
       console.log(`[SMS MOCK] To: ${phone} | OTP: ${otp || 'N/A'} | Msg: ${message}`);
       return { success: true, isMock: true, message: 'Mock SMS logged successfully' };
     }
