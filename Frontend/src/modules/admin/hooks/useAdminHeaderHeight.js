@@ -2,23 +2,26 @@ import { useState, useEffect } from 'react';
 
 /**
  * Hook to calculate the height of the admin header.
- * Used to add padding-top to admin page content on mobile (fixed header).
+ * Measures the fixed header dynamically across all screen sizes with ResizeObserver.
  */
+const getInitialHeaderHeight = () => {
+  if (typeof window === 'undefined') return 96;
+  return window.innerWidth < 640 ? 72 : 96;
+};
+
 const useAdminHeaderHeight = () => {
-  const [headerHeight, setHeaderHeight] = useState(80);
+  const [headerHeight, setHeaderHeight] = useState(getInitialHeaderHeight);
 
   useEffect(() => {
-    // Desktop layout uses fixed Tailwind padding (lg:pt-24); skip measuring on desktop
-    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-      return;
-    }
-
     const calculateHeight = () => {
-      const header = document.querySelector('header[class*="fixed"][class*="top-0"]') || document.querySelector('header.fixed');
+      const header =
+        document.querySelector('header[class*="fixed"][class*="top-0"]') ||
+        document.querySelector('header.fixed') ||
+        document.querySelector('header');
       if (header) {
         const h = header.offsetHeight;
         if (h > 0) {
-          setHeaderHeight(prev => (Math.abs(prev - h) > 2 ? h : prev));
+          setHeaderHeight(prev => (Math.abs(prev - h) > 1 ? Math.round(h) : prev));
         }
       }
     };
@@ -26,8 +29,26 @@ const useAdminHeaderHeight = () => {
     calculateHeight();
     window.addEventListener('resize', calculateHeight);
 
+    let ro;
+    const header =
+      document.querySelector('header[class*="fixed"][class*="top-0"]') ||
+      document.querySelector('header.fixed') ||
+      document.querySelector('header');
+    if (header && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(entries => {
+        for (const entry of entries) {
+          const h = entry.borderBoxSize?.[0]?.blockSize || entry.contentRect?.height;
+          if (h && h > 0) {
+            setHeaderHeight(prev => (Math.abs(prev - h) > 1 ? Math.round(h) : prev));
+          }
+        }
+      });
+      ro.observe(header);
+    }
+
     return () => {
       window.removeEventListener('resize', calculateHeight);
+      if (ro) ro.disconnect();
     };
   }, []);
 

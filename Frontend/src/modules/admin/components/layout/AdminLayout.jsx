@@ -8,20 +8,25 @@ import useAdminHeaderHeight from '../../hooks/useAdminHeaderHeight';
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const headerHeight = useAdminHeaderHeight();
-  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+  const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
+      setWindowWidth(window.innerWidth);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const isDesktop = windowWidth >= 1024;
+  const isTablet = windowWidth >= 640 && windowWidth < 1024;
+
   // Bottom nav height is 64px (h-16) on mobile
   const bottomNavHeight = 64;
-  const topPadding = headerHeight + 8;
-  const bottomPadding = bottomNavHeight + 8;
+  // Match content padding with layout spacing: mobile p-3 (12px), tablet sm:p-4 (16px), desktop lg:p-6 (24px)
+  const contentGap = isDesktop ? 24 : isTablet ? 16 : 12;
+  const topPadding = headerHeight + contentGap;
+  const bottomPadding = bottomNavHeight + 12;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -33,17 +38,15 @@ const AdminLayout = () => {
         {/* Header */}
         <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
 
-        {/* Page Content - with dynamic padding on mobile; stable Tailwind padding on desktop */}
+        {/* Page Content - responsive clearance for fixed header and bottom nav */}
         <main
-          className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto overflow-x-hidden lg:pb-6 lg:pt-24 scrollbar-admin w-full min-w-0"
-          style={
-            !isDesktop
-              ? {
-                  paddingTop: `${Math.max(topPadding, 80)}px`,
-                  paddingBottom: `calc(${Math.max(bottomPadding, 80)}px + env(safe-area-inset-bottom, 0px))`,
-                }
-              : undefined
-          }
+          className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto overflow-x-hidden pt-[84px] sm:pt-[112px] lg:pt-[120px] lg:pb-6 scrollbar-admin w-full min-w-0"
+          style={{
+            paddingTop: `${topPadding}px`,
+            paddingBottom: !isDesktop
+              ? `calc(${bottomPadding}px + env(safe-area-inset-bottom, 0px))`
+              : undefined,
+          }}
         >
           <div className="w-full max-w-full overflow-x-hidden min-w-0">
             <Suspense

@@ -6,8 +6,6 @@ import {
   FiExternalLink, FiClock, FiTag, FiTrendingUp, FiSave
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import { adminTheme as themeColors } from '../../../../theme';
-import AdminHeader from '../../components/layout/AdminHeader';
 import cmsService from '../../../../services/cmsService';
 
 const BLOG_CATEGORIES = [
@@ -374,10 +372,8 @@ export default function CMSManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      <AdminHeader title="CMS & Content Studio" />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Navigation Tabs */}
         <div className="flex items-center justify-between border-b border-gray-200 bg-white p-2 rounded-2xl shadow-2xs">
           <div className="flex items-center gap-2">
@@ -705,7 +701,7 @@ export default function CMSManagement() {
             )}
           </div>
         )}
-      </main>
+      </div>
 
       {/* ========================================== */}
       {/* 📰 CREATE / EDIT BLOG MODAL */}
