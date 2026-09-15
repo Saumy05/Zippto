@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PATTERN='createRequire'
+FILES=$(git diff --cached --name-only --diff-filter=ACM | tr '\n' ' ')
+
+[ -z "${FILES// }" ] && exit 0
+
+if git diff --cached -U0 -- $FILES | grep -E "^\+.*${PATTERN}" >/dev/null; then
+  echo "❌ Blocked: '${PATTERN}' detected in staged changes."
+  echo "If intentional, commit with: git commit --no-verify (not recommended)"
+  exit 1
+fi
+
+exit 0
