@@ -16,25 +16,15 @@ const sendViaSMSIndiaHub = async (phone, message) => {
   const cleanPhone = formatPhone(phone, true);
   const params = {
     user: process.env.SMS_INDIA_HUB_USERNAME,
-    password: process.env.SMS_INDIA_HUB_API_KEY,
-    username: process.env.SMS_INDIA_HUB_USERNAME,
     apikey: process.env.SMS_INDIA_HUB_API_KEY,
     msisdn: cleanPhone,
     sid: process.env.SMS_INDIA_HUB_SENDER_ID,
     msg: message,
     fl: 0,
     gwid: 2,
+    entityid: process.env.SMS_INDIA_HUB_DLT_ENTITY_ID,
+    templateid: process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID,
   };
-
-  if (process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID) {
-    params.TemplateId = process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID;
-    params.templateid = process.env.SMS_INDIA_HUB_DLT_TEMPLATE_ID;
-  }
-
-  if (process.env.SMS_INDIA_HUB_DLT_ENTITY_ID) {
-    params.EntityId = process.env.SMS_INDIA_HUB_DLT_ENTITY_ID;
-    params.entityid = process.env.SMS_INDIA_HUB_DLT_ENTITY_ID;
-  }
 
   const baseUrl = process.env.SMS_BASE_URL || 'https://cloud.smsindiahub.in/vendorsms/pushsms.aspx';
   console.log(`[SMSIndiaHub] Sending to ${cleanPhone} via ${baseUrl}`);
