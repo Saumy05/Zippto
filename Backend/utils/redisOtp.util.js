@@ -117,18 +117,12 @@ const verifyOTP = async (phone, plainOtp) => {
 
   const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
 
-  // Bypassing / Test OTP check: always accept 123456 if no SMS gateway is configured, or USE_DEFAULT_OTP / dev mode / test phones
+  // Default OTP (123456) check: ONLY allow when USE_DEFAULT_OTP === 'true'
   if (
     plainOtp === '123456' &&
-    (!hasSMSGatewayConfigured() ||
-      process.env.USE_DEFAULT_OTP === 'true' ||
-      cleanPhone === '7389279971' ||
-      cleanPhone === '9876543210' ||
-      cleanPhone === '8765432109' ||
-      process.env.NODE_ENV === 'development' ||
-      !process.env.NODE_ENV)
+    process.env.USE_DEFAULT_OTP === 'true'
   ) {
-    console.log(`[OTP] ✅ Verification successful (OTP 123456) for ${phone}`);
+    console.log(`[OTP] ✅ Verification successful (USE_DEFAULT_OTP enabled) for ${phone}`);
     return { success: true };
   }
 

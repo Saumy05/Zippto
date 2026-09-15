@@ -37,8 +37,11 @@ const sendViaSMSIndiaHub = async (phone, message) => {
   }
 
   const baseUrl = process.env.SMS_BASE_URL || 'https://cloud.smsindiahub.in/vendorsms/pushsms.aspx';
+  console.log(`[SMSIndiaHub] Sending to ${cleanPhone} via ${baseUrl}`);
+  console.log('[SMSIndiaHub] Message:', message);
   const response = await axios.get(baseUrl, { params, timeout: 8000 });
   const data = response.data;
+  console.log('[SMSIndiaHub] Response:', JSON.stringify(data));
 
   let isSuccess = false;
   if (typeof data === 'object' && data !== null) {
