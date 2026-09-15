@@ -13,7 +13,7 @@ const formatPhone = (phone, withCountryCode = false) => {
  * 1. Send SMS via SMS India Hub (DLT Compliant)
  */
 const sendViaSMSIndiaHub = async (phone, message) => {
-  const cleanPhone = formatPhone(phone, false);
+  const cleanPhone = formatPhone(phone, true);
   const params = {
     user: process.env.SMS_INDIA_HUB_USERNAME,
     password: process.env.SMS_INDIA_HUB_API_KEY,
