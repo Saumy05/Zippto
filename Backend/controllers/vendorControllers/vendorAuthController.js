@@ -215,7 +215,7 @@ const register = async (req, res) => {
     }
 
     // verificationToken handling
-    const { name, email, verificationToken, aadhar, pan } = req.body;
+    const { name, email, verificationToken, aadhar, pan, yearsOfExperience, experienceDescription } = req.body;
     let phone = req.body.phone;
 
     if (verificationToken) {
@@ -268,6 +268,14 @@ const register = async (req, res) => {
       otherUrls = uploadedOthers;
     }
 
+    // Upload optional experience certificate
+    let experienceCertificateUrl = req.body.experienceCertificate || '';
+    if (experienceCertificateUrl && experienceCertificateUrl.startsWith('data:')) {
+      const uploadRes = await cloudinaryService.uploadFile(experienceCertificateUrl, { folder: 'vendors/experience' });
+      if (uploadRes.success) experienceCertificateUrl = uploadRes.url;
+      else experienceCertificateUrl = '';
+    }
+
     const vendor = await Vendor.create({
       name: name.trim(),
       email: (email && email.trim()) ? email.trim().toLowerCase() : undefined,
@@ -280,6 +288,11 @@ const register = async (req, res) => {
       },
       pan: { number: pan, document: panUrl },
       otherDocuments: otherUrls,
+      experience: {
+        yearsOfExperience: yearsOfExperience || '',
+        description: experienceDescription || '',
+        certificate: experienceCertificateUrl || ''
+      },
       approvalStatus: VENDOR_STATUS.PENDING,
       isPhoneVerified: true
     });

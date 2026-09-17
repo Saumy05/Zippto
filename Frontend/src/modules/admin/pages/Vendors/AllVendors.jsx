@@ -101,6 +101,11 @@ const AllVendors = () => {
             pan: vendor.pan?.document,
             other: vendor.otherDocuments?.[0]
           },
+          experience: {
+            yearsOfExperience: vendor.experience?.yearsOfExperience || '',
+            description: vendor.experience?.description || '',
+            certificate: vendor.experience?.certificate || ''
+          },
           createdAt: vendor.createdAt,
           isActive: vendor.isActive !== undefined ? vendor.isActive : true
         }));
@@ -667,6 +672,77 @@ const AllVendors = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Experience Details Panel */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Work Experience</label>
+                {(selectedVendor.experience?.yearsOfExperience || selectedVendor.experience?.certificate || selectedVendor.experience?.description) ? (
+                  <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 rounded-full border border-amber-200">Provided</span>
+                ) : (
+                  <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500 rounded-full border border-gray-200">Not Provided</span>
+                )}
+              </div>
+
+              {(selectedVendor.experience?.yearsOfExperience || selectedVendor.experience?.certificate || selectedVendor.experience?.description) ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Years of Experience */}
+                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                      <label className="block text-[11px] font-bold text-amber-600 uppercase tracking-wider mb-1">Years of Experience</label>
+                      <div className="text-sm font-bold text-gray-900">
+                        {selectedVendor.experience?.yearsOfExperience || <span className="text-gray-400 font-normal italic">Not specified</span>}
+                      </div>
+                    </div>
+
+                    {/* Certificate */}
+                    {selectedVendor.experience?.certificate ? (
+                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-2">Trade / ITI Certificate</label>
+                        {selectedVendor.experience.certificate.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                          <img
+                            src={selectedVendor.experience.certificate}
+                            alt="Experience Certificate"
+                            className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-full h-14 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center gap-2">
+                            <FiShield className="w-5 h-5 text-blue-500" />
+                            <span className="text-xs font-semibold text-blue-700">Document / PDF</span>
+                          </div>
+                        )}
+                        <a
+                          href={selectedVendor.experience.certificate}
+                          download
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-bold"
+                        >
+                          <FiDownload className="w-3.5 h-3.5" />
+                          Download Certificate
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-center">
+                        <span className="text-xs text-gray-400 italic">No certificate uploaded</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  {selectedVendor.experience?.description && (
+                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                      <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">Experience Description</label>
+                      <p className="text-sm text-gray-700 leading-relaxed">{selectedVendor.experience.description}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center">
+                  <p className="text-xs text-gray-400 italic">This vendor did not provide work experience details during signup.</p>
+                </div>
+              )}
             </div>
 
             {selectedVendor.approvalStatus === 'pending' && (
