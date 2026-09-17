@@ -76,6 +76,24 @@ const vendorSchema = new mongoose.Schema({
   otherDocuments: [{
     type: String // Cloudinary URLs
   }],
+  // Optional work experience (self-declared at signup)
+  experience: {
+    yearsOfExperience: {
+      type: String,
+      default: '',
+      enum: ['', '<1 year', '1-3 years', '3-5 years', '5+ years']
+    },
+    description: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 500
+    },
+    certificate: {
+      type: String, // Cloudinary URL (Trade License / ITI / Work Letter)
+      default: ''
+    }
+  },
   approvalStatus: {
     type: String,
     enum: Object.values(VENDOR_STATUS),

@@ -30,7 +30,9 @@ const VendorSignup = () => {
     aadhar: '',
     pan: '',
     service: '',
-    documents: []
+    documents: [],
+    yearsOfExperience: '',
+    experienceDescription: ''
   });
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpToken, setOtpToken] = useState('');
@@ -214,7 +216,10 @@ const VendorSignup = () => {
           aadharBackDocument: aadharBackDoc,
           panDocument: panDoc,
           otherDocuments: otherDocs,
-          verificationToken
+          verificationToken,
+          yearsOfExperience: formData.yearsOfExperience || '',
+          experienceDescription: formData.experienceDescription || '',
+          experienceCertificate: formData.documents.find(d => d.type === 'experience')?.url || null
         };
 
         const response = await register(registerData);
@@ -312,7 +317,10 @@ const VendorSignup = () => {
         panDocument: panDoc,
         otherDocuments: otherDocs,
         otp: otpValue,
-        token: otpToken
+        token: otpToken,
+        yearsOfExperience: formData.yearsOfExperience || '',
+        experienceDescription: formData.experienceDescription || '',
+        experienceCertificate: formData.documents.find(d => d.type === 'experience')?.url || null
       };
 
       const response = await register(registerData);
@@ -455,6 +463,90 @@ const VendorSignup = () => {
                         placeholder="ABCDE1234F"
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* Work Experience Section - Optional */}
+                <div className="md:col-span-2 border-2 border-dashed border-gray-200 rounded-2xl p-5 space-y-4 bg-gray-50/40 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-base font-bold text-gray-900">Work Experience</h3>
+                    <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 rounded-full border border-amber-200">Optional</span>
+                    <p className="text-xs text-gray-400 ml-auto hidden sm:block">Helps admin verify your expertise faster</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Years of Experience */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Years of Experience
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={formData.yearsOfExperience}
+                          onChange={(e) => setFormData(p => ({ ...p, yearsOfExperience: e.target.value }))}
+                          className="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-offset-2 transition-all duration-300 outline-none hover:border-gray-400 appearance-none bg-white text-gray-700"
+                          style={{ '--tw-ring-color': brandColor }}
+                        >
+                          <option value="">Select experience level</option>
+                          <option value="<1 year">&lt;1 year (Fresher / Trainee)</option>
+                          <option value="1-3 years">1–3 years</option>
+                          <option value="3-5 years">3–5 years</option>
+                          <option value="5+ years">5+ years (Expert)</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Experience Certificate Upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Trade / ITI Certificate
+                      </label>
+                      {documentPreview.experience ? (
+                        <div className="relative group overflow-hidden rounded-xl h-[46px]">
+                          <div className="w-full h-full bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 px-3">
+                            <FiCheckCircle className="text-green-600 shrink-0" size={16} />
+                            <span className="text-xs text-green-700 font-semibold truncate">Certificate uploaded</span>
+                            <button type="button" onClick={() => removeDocument('experience')} className="ml-auto text-red-400 hover:text-red-600 transition-colors">
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center w-full h-[46px] border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-amber-300 group bg-white relative">
+                          {uploadingDocs.experience ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-xl">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-amber-500"></div>
+                            </div>
+                          ) : null}
+                          <label className="flex items-center gap-2 cursor-pointer w-full h-full justify-center px-3">
+                            <div className="p-1.5 bg-amber-50 text-amber-600 rounded-full">
+                              <FiUpload className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-[11px] text-gray-500 font-semibold">Upload Certificate / License (PDF / Image)</span>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={(e) => handleDocumentUpload(e, 'experience')} disabled={uploadingDocs.experience} />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Experience Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Brief Work Experience Description
+                    </label>
+                    <textarea
+                      value={formData.experienceDescription}
+                      onChange={(e) => setFormData(p => ({ ...p, experienceDescription: e.target.value.slice(0, 250) }))}
+                      rows={2}
+                      placeholder="e.g. Worked as an AC technician at XYZ Service Centre for 3 years. Specialized in split AC repair and gas refilling..."
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-offset-2 transition-all duration-300 outline-none hover:border-gray-400 resize-none text-sm text-gray-700"
+                      style={{ '--tw-ring-color': brandColor }}
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1 text-right">{formData.experienceDescription.length}/250</p>
                   </div>
                 </div>
 
