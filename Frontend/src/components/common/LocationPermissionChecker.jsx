@@ -1,4 +1,4 @@
-// Location Permission Checker Component for Homestr
+// Location Permission Checker Component for Zippto
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import flutterBridge from '../../utils/flutterBridge';

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiCheckCircle, FiUsers, FiShield, FiClock, FiAward, FiHeart, FiGlobe, FiSmile, FiSmartphone } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
-const AboutHomestr = () => {
+const AboutZippto = () => {
   const navigate = useNavigate();
 
   const containerVariants = {
@@ -159,4 +159,4 @@ const AboutHomestr = () => {
   );
 };
 
-export default AboutHomestr;
+export default AboutZippto;

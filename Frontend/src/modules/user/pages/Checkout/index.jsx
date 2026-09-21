@@ -724,7 +724,7 @@ const Checkout = () => {
         amount: orderResponse.data.amount * 100,
         currency: orderResponse.data.currency || 'INR',
         order_id: orderResponse.data.orderId,
-        name: 'Homestr',
+        name: 'Zippto',
         description: `Payment for ${bookingRequest.serviceName || 'service'}`,
         handler: async function (response) {
           try {

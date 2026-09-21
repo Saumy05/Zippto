@@ -355,7 +355,7 @@ const VendorSignup = () => {
           {step === 'details' ? 'Vendor Registration' : 'Verify Identity'}
         </h2>
         <p className="mt-2 text-sm text-gray-600 animate-stagger-1 animate-fade-in">
-          Partner with Homestr and grow your business
+          Partner with Zippto and grow your business
         </p>
       </div>
 
@@ -649,7 +649,7 @@ const VendorSignup = () => {
 
                   <div className="p-4 bg-teal-50 border border-teal-100 rounded-xl mt-4 animate-pulse-subtle">
                     <p className="text-xs text-teal-700 leading-relaxed italic">
-                      "Homestr values trust. Please ensure all documents are clear and valid for faster approval."
+                      "Zippto values trust. Please ensure all documents are clear and valid for faster approval."
                     </p>
                   </div>
                 </div>

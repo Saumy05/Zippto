@@ -101,7 +101,7 @@ const Footer = () => {
               </h3>
               <ul className="space-y-2 text-xs font-semibold text-slate-600">
                 <li>
-                  <Link to="/user/about-homestr" className="hover:text-slate-900 transition-colors">
+                  <Link to="/user/about-zippto" className="hover:text-slate-900 transition-colors">
                     About Us
                   </Link>
                 </li>

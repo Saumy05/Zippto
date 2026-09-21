@@ -990,7 +990,7 @@ const UserDashboard = () => {
 
   const RESERVED_SLUGS = useMemo(() => [
     'login', 'signup', 'dashboard', 'home', 'home-legacy', 'native', 'cart',
-    'help-support', 'cancellation-policy', 'about-homestr', 'checkout',
+    'help-support', 'cancellation-policy', 'about-homestr', 'about-zippto', 'checkout',
     'rewards', 'account', 'my-bookings', 'bookings', 'booking', 'booking-confirmation',
     'settings', 'manage-payment-methods', 'manage-addresses', 'wallet',
     'my-plan', 'my-rating', 'update-profile', 'notifications',

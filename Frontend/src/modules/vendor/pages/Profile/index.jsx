@@ -29,7 +29,7 @@ const Profile = () => {
     { id: 6, label: 'App Language / भाषा', icon: FiGlobe, action: openLanguageModal },
     { id: 7, label: 'Manage Address', icon: FiMapPin, path: '/vendor/address-management' },
     { id: 8, label: 'Settings', icon: FiSettings, path: '/vendor/settings' },
-    { id: 9, label: 'About Homestr', icon: null, customIcon: 'H', path: '/vendor/about-homestr' },
+    { id: 9, label: 'About Zippto', icon: null, customIcon: 'Z', path: '/vendor/about-zippto' },
   ];
 
   const [profile, setProfile] = useState(null);

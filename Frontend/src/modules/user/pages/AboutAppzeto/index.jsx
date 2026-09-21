@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiCheckCircle, FiUsers, FiShield, FiClock, FiAward, FiHeart } from 'react-icons/fi';
 import { themeColors } from '../../../../theme';
 
-const AboutAppzeto = () => {
+const AboutZippto = () => {
   const navigate = useNavigate();
 
   const features = [
@@ -60,7 +60,7 @@ const AboutAppzeto = () => {
             >
               <FiArrowLeft className="w-5 h-5 text-black" />
             </button>
-            <h1 className="text-xl font-bold text-black">About Appzeto</h1>
+            <h1 className="text-xl font-bold text-black">About Zippto</h1>
           </div>
         </div>
       </header>
@@ -73,9 +73,9 @@ const AboutAppzeto = () => {
               background: `linear-gradient(135deg, ${themeColors.button} 0%, ${themeColors.icon} 100%)`,
               boxShadow: '0 4px 20px rgba(0, 166, 166, 0.3)'
             }}>
-            <span className="text-4xl font-bold text-white">A</span>
+            <span className="text-4xl font-bold text-white">Z</span>
           </div>
-          <h2 className="text-2xl font-bold text-black mb-2">Welcome to Appzeto</h2>
+          <h2 className="text-2xl font-bold text-black mb-2">Welcome to Zippto</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
             Your trusted partner for all home and personal care services
           </p>
@@ -86,7 +86,7 @@ const AboutAppzeto = () => {
           <h3 className="text-xl font-bold text-black mb-4">What We Provide</h3>
           <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
             <p className="text-sm text-gray-700 mb-4 leading-relaxed">
-              Appzeto is a comprehensive service platform that connects you with verified, 
+              Zippto is a comprehensive service platform that connects you with verified, 
               professional service providers for all your home and personal care needs. 
               We offer a wide range of services to make your life easier and more convenient.
             </p>
@@ -106,7 +106,7 @@ const AboutAppzeto = () => {
 
         {/* Key Features */}
         <div className="mb-8">
-          <h3 className="text-xl font-bold text-black mb-4">Why Choose Appzeto</h3>
+          <h3 className="text-xl font-bold text-black mb-4">Why Choose Zippto</h3>
           <div className="grid grid-cols-2 gap-4">
             {features.map((feature, index) => (
               <div
@@ -156,7 +156,7 @@ const AboutAppzeto = () => {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-black mb-1">Quality Assurance</h4>
-                  <p className="text-xs text-gray-700">We ensure high-quality service delivery with our Appzeto Cover Promise for your peace of mind.</p>
+                  <p className="text-xs text-gray-700">We ensure high-quality service delivery with our Zippto Cover Promise for your peace of mind.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -197,7 +197,7 @@ const AboutAppzeto = () => {
             </p>
             <div className="space-y-2">
               <p className="text-sm text-gray-600">
-                <span className="font-semibold">Email:</span> support@appzeto.com
+                <span className="font-semibold">Email:</span> support@zippto.in
               </p>
               <p className="text-sm text-gray-600">
                 <span className="font-semibold">Phone:</span> +91 1800-XXX-XXXX
@@ -210,5 +210,5 @@ const AboutAppzeto = () => {
   );
 };
 
-export default AboutAppzeto;
+export default AboutZippto;
 

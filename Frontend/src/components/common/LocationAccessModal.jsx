@@ -30,13 +30,13 @@ const LocationAccessModal = ({
     if (locationDisabled) {
       return {
         title: "LOCATION IS OFF",
-        subtitle: "Please turn on your GPS to continue using Homestr features.",
+        subtitle: "Please turn on your GPS to continue using Zippto features.",
         icon: FiSettings
       };
     }
     return {
       title: "ALLOW GPS LOCATION",
-      subtitle: "Homestr needs your location to show available services and vendors near you.",
+      subtitle: "Zippto needs your location to show available services and vendors near you.",
       icon: FiNavigation
     };
   };

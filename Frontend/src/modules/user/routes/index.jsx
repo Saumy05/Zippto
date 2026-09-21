@@ -149,7 +149,8 @@ const UserRoutes = () => {
               <Route path="/cart" element={<Cart />} />
               <Route path="/help-support" element={<HelpSupport />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />
-              <Route path="/about-homestr" element={<AboutHomestr />} />
+              <Route path="/about-zippto" element={<AboutHomestr />} />
+              <Route path="/about-homestr" element={<Navigate to="/user/about-zippto" replace />} />
 
               {/* Protected routes (auth required for booking & user management) */}
               <Route path="/checkout" element={<ProtectedRoute userType="user"><Checkout /></ProtectedRoute>} />

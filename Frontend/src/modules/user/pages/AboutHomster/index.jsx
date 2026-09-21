@@ -4,7 +4,7 @@ import { FiArrowLeft, FiCheckCircle, FiUsers, FiShield, FiClock, FiAward, FiHear
 import { gsap } from 'gsap';
 import Logo from '../../../../components/common/Logo';
 
-const AboutHomestr = () => {
+const AboutZippto = () => {
   const navigate = useNavigate();
   const containerRef = useRef(null);
 
@@ -176,4 +176,4 @@ const AboutHomestr = () => {
   );
 };
 
-export default AboutHomestr;
+export default AboutZippto;

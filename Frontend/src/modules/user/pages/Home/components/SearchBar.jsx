@@ -57,7 +57,7 @@ const SearchBar = ({ onInputClick }) => {
 
           {/* Gradient Definition */}
           <svg width="0" height="0" className="absolute">
-            <linearGradient id="homestr-search-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="zippto-search-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor={themeColors.brand.teal} />
               <stop offset="50%" stopColor={themeColors.brand.yellow} />
               <stop offset="100%" stopColor={themeColors.brand.orange} />
@@ -68,7 +68,7 @@ const SearchBar = ({ onInputClick }) => {
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
             <FiSearch
               className="w-5 h-5 transition-colors duration-300"
-              style={{ stroke: 'url(#homestr-search-gradient)' }}
+              style={{ stroke: 'url(#zippto-search-gradient)' }}
             />
           </div>
 

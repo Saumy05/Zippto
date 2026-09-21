@@ -114,7 +114,8 @@ const VendorRoutes = () => {
               <Route path="/notifications" element={<ProtectedRoute userType="vendor"><Notifications /></ProtectedRoute>} />
               <Route path="/my-ratings" element={<ProtectedRoute userType="vendor"><MyRatings /></ProtectedRoute>} />
               <Route path="/manage-services" element={<ProtectedRoute userType="vendor"><ManageServices /></ProtectedRoute>} />
-              <Route path="/about-homestr" element={<ProtectedRoute userType="vendor"><AboutHomestr /></ProtectedRoute>} />
+              <Route path="/about-zippto" element={<ProtectedRoute userType="vendor"><AboutHomestr /></ProtectedRoute>} />
+              <Route path="/about-homestr" element={<Navigate to="/vendor/about-zippto" replace />} />
             </Routes>
           </PageTransition>
         </Suspense>

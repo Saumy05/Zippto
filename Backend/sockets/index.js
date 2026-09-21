@@ -18,6 +18,22 @@ const defaultAllowedOrigins = [
   'https://api.homster.in'
 ];
 
+// Dynamically include origins from environment variables
+const envOriginSources = [process.env.SOCKET_CORS_ORIGIN, process.env.FRONTEND_URL];
+envOriginSources.forEach(envSource => {
+  if (envSource) {
+    envSource.split(',').map(url => url.trim()).forEach(origin => {
+      if (origin && !defaultAllowedOrigins.includes(origin)) {
+        defaultAllowedOrigins.push(origin);
+        if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
+          defaultAllowedOrigins.push(`https://${origin}`);
+          defaultAllowedOrigins.push(`http://${origin}`);
+        }
+      }
+    });
+  }
+});
+
 const initializeSocket = (server) => {
   io = new Server(server, {
     pingTimeout: 60000,

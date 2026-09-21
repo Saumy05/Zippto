@@ -463,7 +463,7 @@ const Account = () => {
                 icon={FiInfo}
                 title="About Zippto Home Services"
                 subtitle="Company details, terms & privacy policies"
-                onClick={() => navigate('/user/about-homestr')}
+                onClick={() => navigate('/user/about-zippto')}
                 iconBg="bg-[#0B132B]/10"
                 iconColor="text-[#0B132B]"
               />

@@ -24,7 +24,7 @@
     "upload:services": "node scripts/uploadServiceImages.js"
   },
   "keywords": [
-    "Appzeto",
+    "Zippto",
     "api",
     "express",
     "mongodb"
