@@ -487,3 +487,15 @@ html {
 .pac-item:hover {
   background-color: #f8fafc !important;
 }
+
+/* Centrally hide bottom navigation when mobile virtual keyboard is open */
+body.keyboard-open [data-bottom-nav],
+body.keyboard-open nav[data-bottom-nav],
+body.keyboard-open .bottom-nav-container,
+body.keyboard-open [data-role="bottom-nav"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transform: translateY(100%) !important;
+}

@@ -9,6 +9,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { initializePushNotifications, setupForegroundNotificationHandler } from './services/pushNotificationService';
 import { LocationPermissionChecker, LanguageSelectorModal, ScrollToTop } from './components/common';
+import useKeyboardVisible from './hooks/useKeyboardVisible';
 
 // Global component to strictly limit active toasts to maximum 1 at any time
 const SingleToastEnforcer = () => {
@@ -26,6 +27,9 @@ const SingleToastEnforcer = () => {
 
 
 function App() {
+  // Centrally track mobile keyboard state application-wide
+  useKeyboardVisible();
+
   // Initialize push notifications on app load
   useEffect(() => {
     initializePushNotifications();

@@ -4,11 +4,13 @@ import { FiHome, FiBriefcase, FiUsers, FiUser } from 'react-icons/fi';
 import { HiHome, HiBriefcase, HiUsers, HiUser } from 'react-icons/hi';
 import { FaWallet } from 'react-icons/fa';
 import { vendorTheme as themeColors } from '../../../../theme';
+import useKeyboardVisible from '../../../../hooks/useKeyboardVisible';
 
 const BottomNav = memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const [pendingJobsCount, setPendingJobsCount] = useState(0);
+  const isKeyboardOpen = useKeyboardVisible();
 
   // Load pending jobs count from localStorage
   useEffect(() => {
@@ -63,12 +65,16 @@ const BottomNav = memo(() => {
     (location.pathname.includes('/map') || location.pathname.includes('/alert/'))
   );
 
-  if (shouldHideNav) {
+  if (shouldHideNav || isKeyboardOpen) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center pb-0 md:pb-4">
+    <div
+      data-bottom-nav="true"
+      data-role="bottom-nav"
+      className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none flex justify-center pb-0 md:pb-4 bottom-nav-container"
+    >
       <nav
         className="pointer-events-auto w-full md:max-w-xl bg-white/95 backdrop-blur-md border-t md:border border-slate-200/90 md:rounded-2xl shadow-lg md:shadow-xl transition-all duration-300"
       >

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../../../context/CartContext';
 import { useSettings } from '../../../../context/SettingsContext';
+import useKeyboardVisible from '../../../../hooks/useKeyboardVisible';
 
 // Icons — outline
 import { FiHome, FiShoppingBag, FiUser, FiShoppingCart, FiChevronRight } from 'react-icons/fi';
@@ -32,6 +33,7 @@ const BottomNav = React.memo(() => {
   }, [cartItems, gstPercentage, visitedFee]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [prevTab, setPrevTab] = useState(null);
+  const isKeyboardOpen = useKeyboardVisible();
 
   // Hide when modals are open
   useEffect(() => {
@@ -76,11 +78,13 @@ const BottomNav = React.memo(() => {
     navigate(item.path);
   };
 
-  if (isModalOpen) return null;
+  if (isModalOpen || isKeyboardOpen) return null;
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden"
+      data-bottom-nav="true"
+      data-role="bottom-nav"
+      className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden bottom-nav-container"
       style={{ WebkitBackfaceVisibility: 'hidden' }}
     >
       <div

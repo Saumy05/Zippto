@@ -7,9 +7,11 @@ import {
   FiShoppingBag,
   FiSettings,
 } from "react-icons/fi";
+import useKeyboardVisible from "../../../../hooks/useKeyboardVisible";
 
 const AdminBottomNav = () => {
   const location = useLocation();
+  const isKeyboardOpen = useKeyboardVisible();
 
   const navItems = [
     { path: "/admin/dashboard", icon: FiHome, label: "Home" },
@@ -41,9 +43,13 @@ const AdminBottomNav = () => {
     },
   };
 
+  if (isKeyboardOpen) return null;
+
   const navContent = (
     <nav 
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[9999] shadow-[0_-2px_10px_rgba(0,0,0,0.05)] lg:hidden"
+      data-bottom-nav="true"
+      data-role="bottom-nav"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[9999] shadow-[0_-2px_10px_rgba(0,0,0,0.05)] lg:hidden bottom-nav-container"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
