@@ -96,16 +96,93 @@ const emailWrapper = (content, title, preheader = '') => `
 </html>
 `;
 
+let cachedTransporter = null;
+
 const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: false,
+  if (cachedTransporter) {
+    return cachedTransporter;
+  }
+
+  const host = process.env.EMAIL_HOST || 'smtp.gmail.com';
+  const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
+  const user = process.env.EMAIL_USER;
+  const pass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '');
+  const secure = process.env.EMAIL_SECURE === 'true' || port === 465;
+
+  const transportConfig = {
+    host,
+    port,
+    secure,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+      user,
+      pass
     }
-  });
+  };
+
+  if (host.includes('gmail.com') || process.env.EMAIL_SERVICE === 'gmail') {
+    transportConfig.service = 'gmail';
+  }
+
+  cachedTransporter = nodemailer.createTransport(transportConfig);
+  return cachedTransporter;
+};
+
+/**
+ * Verify SMTP Connection
+ */
+const verifyConnection = async () => {
+  try {
+    const transporter = createTransporter();
+    await transporter.verify();
+    console.log('[EMAIL SERVICE] ✅ SMTP connection verified successfully');
+    return { success: true, message: 'SMTP connection established successfully' };
+  } catch (error) {
+    console.error('[EMAIL SERVICE] ❌ SMTP connection failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Generic Send Email function
+ * @param {Object} options
+ * @param {string|string[]} options.to - Recipient email(s)
+ * @param {string} options.subject - Email subject
+ * @param {string} [options.html] - HTML content
+ * @param {string} [options.text] - Plain text content
+ * @param {string} [options.from] - Custom from header
+ * @param {Array} [options.attachments] - Optional attachments
+ */
+const sendEmail = async ({ to, subject, html, text, from, attachments, cc, bcc }) => {
+  try {
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
+
+    if (!user || !pass) {
+      console.warn('[EMAIL SERVICE] Missing EMAIL_USER or EMAIL_PASS. Email suppressed:', { to, subject });
+      return { success: false, error: 'SMTP credentials not configured' };
+    }
+
+    const transporter = createTransporter();
+    const defaultFrom = process.env.EMAIL_FROM || `Zippto <${user}>`;
+
+    const mailOptions = {
+      from: from || defaultFrom,
+      to,
+      subject,
+      ...(html && { html }),
+      ...(text && { text }),
+      ...(attachments && { attachments }),
+      ...(cc && { cc }),
+      ...(bcc && { bcc })
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL SERVICE] ✅ Email sent to ${to} (MessageId: ${info.messageId})`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('[EMAIL SERVICE] ❌ Failed to send email:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 /**
@@ -387,6 +464,10 @@ const sendDuesPaymentApprovedEmail = async (vendor, amount, balanceAfter) => {
 };
 
 module.exports = {
+  createTransporter,
+  verifyConnection,
+  sendEmail,
+  emailWrapper,
   sendOTPEmail,
   sendWelcomeEmail,
   sendBookingEmails,
