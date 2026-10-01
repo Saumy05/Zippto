@@ -749,6 +749,17 @@ npm test
 npm run test:coverage
 ```
 
+### Security Payload Check
+
+Run the repository malware check before committing configuration changes:
+
+```bash
+cd /path/to/Zippto
+bash .githooks/check-malware.sh
+```
+
+This check blocks the confirmed Vite payload indicators (including obfuscated markers), suspicious hidden whitespace padding/appended code in `Frontend/vite.config.js`, and high-risk runtime markers tied to this incident.
+
 ### Test Structure
 ```
 Backend/tests/
