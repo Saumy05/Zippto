@@ -44,7 +44,7 @@ const getVendorBookings = async (req, res) => {
 
     const query = {
       $or: [
-        { vendorId: vId, status: { $ne: BOOKING_STATUS.AWAITING_PAYMENT } },
+        { vendorId: vId },
         unassignedMatch
       ]
     };
@@ -60,6 +60,7 @@ const getVendorBookings = async (req, res) => {
             BOOKING_STATUS.JOURNEY_STARTED,
             BOOKING_STATUS.VISITED,
             BOOKING_STATUS.IN_PROGRESS,
+            BOOKING_STATUS.AWAITING_PAYMENT,
             BOOKING_STATUS.WORK_DONE,
             'started', 'reached', 'on_the_way' // Supporting minor variants if they exist
           ]
@@ -1283,8 +1284,30 @@ const collectSelfCash = async (req, res) => {
 
     const booking = await Booking.findOne({ _id: id, vendorId }).select('+paymentOtp');
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
-    if (booking.status !== BOOKING_STATUS.WORK_DONE) return res.status(400).json({ success: false, message: 'Work not done yet' });
-    if (booking.paymentOtp !== otp) return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    
+    // EDGE CASE: If already completed
+    if (booking.status === BOOKING_STATUS.COMPLETED && booking.cashCollected) {
+      return res.status(200).json({ success: true, message: 'Cash collection already confirmed' });
+    }
+
+    // Allow both WORK_DONE and AWAITING_PAYMENT
+    const allowedStatuses = [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.AWAITING_PAYMENT];
+    if (!allowedStatuses.includes(booking.status)) {
+      return res.status(400).json({ success: false, message: 'Work not done or bill not generated yet' });
+    }
+
+    // Prevent cash collection if paid online
+    if (booking.paymentStatus === PAYMENT_STATUS.SUCCESS || booking.paymentMethod === 'online' || booking.razorpayPaymentId) {
+      return res.status(400).json({ success: false, message: 'Payment has already been completed online for this booking' });
+    }
+
+    const validOtp = booking.paymentOtp || booking.customerConfirmationOTP;
+    const isPlanBenefitNoExtras = booking.paymentMethod === 'plan_benefit' && otp === '0000';
+    if (!isPlanBenefitNoExtras && validOtp) {
+      if (!otp || (validOtp !== otp && (process.env.NODE_ENV !== 'development' || otp !== '0000'))) {
+        return res.status(400).json({ success: false, message: 'Invalid OTP. Please enter the correct code shared by customer.' });
+      }
+    }
 
     // ── Fetch the VendorBill (single source of truth) ──
     const VendorBill = require('../../models/VendorBill');

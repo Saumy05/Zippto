@@ -28,6 +28,14 @@ const createOrUpdateBill = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'Cannot generate bill for a cancelled booking' });
+    }
+
+    if (booking.paymentStatus === 'success' || booking.cashCollected) {
+      return res.status(400).json({ success: false, message: 'Payment already completed for this booking. Bill cannot be modified.' });
+    }
+
     const { USER_ROLES } = require('../../utils/constants');
 
     // Auth check: Vendor

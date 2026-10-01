@@ -39,8 +39,16 @@ const createPaymentOrder = async (req, res) => {
       });
     }
 
-    // Check if payment already done
-    if (booking.paymentStatus === PAYMENT_STATUS.SUCCESS) {
+    // Check if cancelled
+    if (booking.status === BOOKING_STATUS.CANCELLED) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot make payment for a cancelled booking'
+      });
+    }
+
+    // Check if payment already done (online or cash)
+    if (booking.paymentStatus === PAYMENT_STATUS.SUCCESS || booking.cashCollected || booking.paymentStatus === PAYMENT_STATUS.COLLECTED_BY_VENDOR) {
       return res.status(400).json({
         success: false,
         message: 'Payment already completed for this booking'
@@ -125,6 +133,22 @@ const verifyPaymentWebhook = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
+      });
+    }
+
+    // Check if cancelled
+    if (booking.status === BOOKING_STATUS.CANCELLED) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot process payment for a cancelled booking'
+      });
+    }
+
+    // Check if cash was already collected
+    if (booking.cashCollected || booking.paymentStatus === PAYMENT_STATUS.COLLECTED_BY_VENDOR) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cash has already been collected for this booking. Online payment not allowed.'
       });
     }
 
@@ -524,8 +548,16 @@ const processWalletPayment = async (req, res) => {
       });
     }
 
-    // Check if payment already done
-    if (booking.paymentStatus === PAYMENT_STATUS.SUCCESS) {
+    // Check if cancelled
+    if (booking.status === BOOKING_STATUS.CANCELLED) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot make payment for a cancelled booking'
+      });
+    }
+
+    // Check if payment already done (online or cash)
+    if (booking.paymentStatus === PAYMENT_STATUS.SUCCESS || booking.cashCollected || booking.paymentStatus === PAYMENT_STATUS.COLLECTED_BY_VENDOR) {
       return res.status(400).json({
         success: false,
         message: 'Payment already completed for this booking'
