@@ -9,10 +9,12 @@ import vendorWalletService from '../../../../services/vendorWalletService';
 import { getBookingById } from '../../services/bookingService';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { OtpVerificationModal, ScanAndPayModal } from '../../components/common';
+import { useSocket } from '../../../../context/SocketContext';
 
 const BillingPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const socket = useSocket();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [booking, setBooking] = useState(null);
@@ -139,12 +141,21 @@ const BillingPage = () => {
     window.addEventListener('vendorJobsUpdated', () => handlePaymentReceived({ id }));
     window.addEventListener('vendorNotificationsUpdated', () => handlePaymentReceived({ id }));
 
+    if (socket) {
+      socket.on('booking_updated', handlePaymentReceived);
+      socket.on('payment_success', handlePaymentReceived);
+    }
+
     return () => {
       clearInterval(pollInterval);
       window.removeEventListener('vendorJobsUpdated', () => handlePaymentReceived({ id }));
       window.removeEventListener('vendorNotificationsUpdated', () => handlePaymentReceived({ id }));
+      if (socket) {
+        socket.off('booking_updated', handlePaymentReceived);
+        socket.off('payment_success', handlePaymentReceived);
+      }
     };
-  }, [id, navigate]);
+  }, [id, navigate, socket]);
 
   const fetchData = async () => {
     try {
@@ -565,15 +576,23 @@ const BillingPage = () => {
         setShowOtpModal(true);
         setPaymentMode('cash');
         setOnlinePaymentData(null); // Clear QR data when switching to cash
-        toast.success('OTP sent to customer!');
+        toast.success('Cash OTP code active for customer!');
       } else {
-        toast.error(res.message || 'Failed to send OTP');
+        toast.error(res.message || 'Failed to initiate cash collection');
       }
     } catch (error) {
       console.error('Send OTP error:', error);
       toast.error('Failed to send OTP');
     } finally {
       setOtpLoading(false);
+    }
+  };
+
+  const handleOpenCashModal = async () => {
+    if (isOtpSent || booking?.customerConfirmationOTP || booking?.paymentOtp) {
+      setShowOtpModal(true);
+    } else {
+      await handleSendOTP();
     }
   };
 
@@ -1198,11 +1217,58 @@ const BillingPage = () => {
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-50 px-6 py-4 border-t border-gray-100/50 text-center">
+                <div className="bg-gray-50 px-6 py-4 border-t border-gray-100/50 space-y-4">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center justify-center gap-2">
                     <FiClock className="w-3 h-3" />
-                    Net Earnings will be revealed after completion
+                    Select a payment method to close this job
                   </p>
+
+                  {/* Dual Payment Options in Body */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {/* Option 1: Cash Collection */}
+                    <button
+                      type="button"
+                      onClick={handleOpenCashModal}
+                      disabled={otpLoading || qrLoading}
+                      className="p-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 active:scale-98 transition-all text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                          <FiDollarSign className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-wide">Collect Cash</p>
+                          <p className="text-[11px] text-emerald-100 font-medium">Verify customer 4-digit PIN</p>
+                        </div>
+                      </div>
+                      <FiArrowRight className="w-4 h-4 text-emerald-200" />
+                    </button>
+
+                    {/* Option 2: Collect Online via QR */}
+                    <button
+                      type="button"
+                      onClick={handleOnlinePayment}
+                      disabled={otpLoading || qrLoading}
+                      className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 active:scale-98 transition-all text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                          <MdQrCode className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-wide">Collect via UPI QR</p>
+                          <p className="text-[11px] text-blue-100 font-medium">Customer scans QR code</p>
+                        </div>
+                      </div>
+                      <FiArrowRight className="w-4 h-4 text-blue-200" />
+                    </button>
+                  </div>
+
+                  {/* Realtime Waiting Indicator for User Online Pay */}
+                  <div className="p-3 bg-amber-50 border border-amber-200/60 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs font-medium">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+                    <span>Customer can also pay directly from their app. This page will auto-refresh immediately.</span>
+                  </div>
                 </div>
               )}
 
@@ -1212,7 +1278,7 @@ const BillingPage = () => {
       </div>
 
       {/* Fixed Bottom Navigation for Timeline View */}
-      <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-3">
+      <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-2 sm:gap-3">
         {currentStep === 1 && (
           <button onClick={() => setCurrentStep(2)} className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg">
             Next: Parts <FiArrowRight />
@@ -1260,29 +1326,39 @@ const BillingPage = () => {
           (booking?.status === 'completed' || booking?.paymentStatus === 'success' || booking?.paymentStatus === 'paid') ? (
             <button
               onClick={() => navigate(`/vendor/booking/${id}`)}
-              className="w-full py-4 bg-emerald-600 text-white font-black text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-98 transition-all"
+              className="w-full py-4 bg-emerald-600 text-white font-black text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
             >
               <FiCheckCircle className="w-5 h-5" />
-              <span>Payment Received (Online) — View Booking →</span>
+              <span>Payment Completed — View Booking Details →</span>
             </button>
           ) : (
             <>
               <button
                 onClick={() => setCurrentStep(4)}
                 disabled={submitting || otpLoading}
-                className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl disabled:opacity-50"
+                className="w-20 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl disabled:opacity-50"
               >
                 Back
               </button>
 
-              {/* Online Payment CTA for Step 5 */}
+              {/* Cash Collection CTA */}
+              <button
+                onClick={handleOpenCashModal}
+                disabled={otpLoading || qrLoading}
+                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50 text-xs sm:text-sm cursor-pointer"
+              >
+                <FiDollarSign className="w-4 h-4" />
+                <span>{otpLoading ? 'Loading...' : 'Collect Cash'}</span>
+              </button>
+
+              {/* Online QR CTA */}
               <button
                 onClick={handleOnlinePayment}
                 disabled={otpLoading || qrLoading}
-                className="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 text-sm cursor-pointer"
+                className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50 text-xs sm:text-sm cursor-pointer"
               >
-                <MdQrCode className="w-5 h-5" />
-                <span>{qrLoading ? 'Generating QR...' : 'Collect Online via UPI QR'}</span>
+                <MdQrCode className="w-4 h-4" />
+                <span>{qrLoading ? 'Generating QR...' : 'UPI QR Code'}</span>
               </button>
             </>
           )

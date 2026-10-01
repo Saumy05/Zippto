@@ -335,34 +335,26 @@ export default function BookingDetails() {
 
   const canCollectCash = (booking) => {
     // Hide if already collected or paid online
-    if (booking?.cashCollected || booking?.paymentStatus === 'collected_by_vendor') {
+    if (
+      booking?.cashCollected ||
+      booking?.paymentStatus === 'collected_by_vendor' ||
+      booking?.paymentStatus === 'SUCCESS' ||
+      booking?.paymentStatus === 'success' ||
+      booking?.paymentStatus === 'paid'
+    ) {
       return false;
     }
 
-    // Cash can be collected when booking is completed/work_done and payment was cash/at home
-    const isSelfJob = booking?.assignedTo?.name === 'You (Self)';
-    const validStatus = isSelfJob
-      ? (booking?.status === 'work_done' || booking?.status === 'completed')
-      : booking?.status === 'completed';
+    // Cash / Bill can be handled across visited, in_progress, awaiting_payment, work_done, completed
+    const validStatus = [
+      'visited',
+      'in_progress',
+      'awaiting_payment',
+      'work_done',
+      'completed'
+    ].includes(booking?.status);
 
-    if (!validStatus) return false;
-
-    // CRITICAL FIX: Allow bill preparation for Plan Benefit bookings
-    // Even if base is pre-paid (SUCCESS), vendor must generate final bill (for extras etc.)
-    if (booking?.paymentMethod === 'plan_benefit') {
-      return true;
-    }
-
-    if (booking?.paymentStatus === 'SUCCESS' || booking?.paymentStatus === 'paid') {
-      return false;
-    }
-
-    // IMPORTANT: Only for Cash/Pay at Home methods OR Online if not paid yet.
-    return (
-      booking?.paymentMethod === 'cash' ||
-      booking?.paymentMethod === 'pay_at_home' ||
-      booking?.paymentMethod === 'online'
-    );
+    return validStatus;
   };
 
 
@@ -1191,15 +1183,46 @@ export default function BookingDetails() {
               {(booking.status === 'visited' || booking.status === 'in_progress') && (
                 <button
                   onClick={() => setIsWorkDoneModalOpen(true)}
-                  className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
+                  className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg cursor-pointer"
                   style={{
                     background: 'linear-gradient(135deg, #10B981, #059669)',
                     boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
                   }}
                 >
                   <FiCheckCircle className="w-5 h-5" />
-                  Work Done
+                  <span>Work Done</span>
                 </button>
+              )}
+
+              {/* Awaiting Payment / Work Done -> Prepare Bill / Enter Cash PIN */}
+              {(booking.status === 'awaiting_payment' || booking.status === 'work_done') && (
+                <div className="space-y-2.5">
+                  <button
+                    onClick={() => navigate(`/vendor/booking/${booking.id || id}/billing`)}
+                    className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg cursor-pointer"
+                    style={{
+                      background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+                    }}
+                  >
+                    <FiDollarSign className="w-5 h-5" />
+                    <span>Prepare Bill & Collect Payment</span>
+                  </button>
+
+                  {(booking?.customerConfirmationOTP || booking?.paymentOtp) && (
+                    <button
+                      onClick={() => setIsOtpModalOpen(true)}
+                      className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer"
+                      style={{
+                        background: 'linear-gradient(135deg, #10B981, #059669)',
+                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+                      }}
+                    >
+                      <FiCheckCircle className="w-5 h-5" />
+                      <span>Enter Customer Cash PIN</span>
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}

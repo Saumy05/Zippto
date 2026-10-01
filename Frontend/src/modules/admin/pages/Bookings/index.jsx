@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiSearch, FiCalendar, FiDownload, FiUserCheck,
   FiClock, FiCheckCircle, FiBox, FiTruck, FiXCircle, FiRefreshCw, FiShoppingBag,
-  FiX, FiAlertTriangle, FiPhone, FiStar, FiMapPin, FiUser, FiMessageSquare
+  FiX, FiAlertTriangle, FiPhone, FiStar, FiMapPin, FiUser, FiMessageSquare, FiNavigation
 } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { adminBookingService } from '../../../../services/adminBookingService';
 import { getDashboardStats } from '../../../../services/adminDashboardService';
@@ -26,6 +27,7 @@ const BookingStatsCard = ({ title, count, icon: Icon, colorClass, bgClass }) => 
 );
 
 const Bookings = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -97,7 +99,7 @@ const Bookings = () => {
           setStats({
             pending: (byStatus.pending || 0) + (byStatus.searching || 0) + (byStatus.no_vendors_available || 0),
             confirmed: (byStatus.confirmed || 0) + (byStatus.accepted || 0) + (byStatus.assigned || 0),
-            inProgress: (byStatus.in_progress || 0) + (byStatus.journey_started || 0) + (byStatus.visited || 0) + (byStatus.work_done || 0),
+            inProgress: (byStatus.in_progress || 0) + (byStatus.journey_started || 0) + (byStatus.visited || 0) + (byStatus.awaiting_payment || 0) + (byStatus.work_done || 0),
             completed: byStatus.completed || 0,
             cancelled: (byStatus.cancelled || 0) + (byStatus.rejected || 0),
             total: analyticsRes.data.totalBookings || 0
@@ -226,8 +228,13 @@ const Bookings = () => {
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/60 whitespace-nowrap">Completed</span>;
       case 'cancelled':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200/60 whitespace-nowrap">Cancelled</span>;
+      case 'awaiting_payment':
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200/60 whitespace-nowrap animate-pulse">Awaiting Payment</span>;
       case 'in_progress':
       case 'started':
+      case 'journey_started':
+      case 'visited':
+      case 'work_done':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200/60 whitespace-nowrap">In Progress</span>;
       case 'accepted':
       case 'assigned':
@@ -279,6 +286,7 @@ const Bookings = () => {
                 { value: 'no_vendors', label: 'Needs Partner (Unassigned)' },
                 { value: 'accepted', label: 'Assigned' },
                 { value: 'in_progress', label: 'In Progress' },
+                { value: 'awaiting_payment', label: 'Awaiting Payment' },
                 { value: 'completed', label: 'Completed' },
                 { value: 'cancelled', label: 'Cancelled' }
               ]}
@@ -343,7 +351,13 @@ const Bookings = () => {
                   return (
                     <tr key={booking._id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-3 py-2 whitespace-nowrap align-middle">
-                        <span className="font-mono font-semibold text-slate-900 text-xs tracking-tight">#{booking.bookingNumber || booking._id.slice(-6).toUpperCase()}</span>
+                        <button
+                          onClick={() => navigate(`/admin/bookings/tracking?orderId=${booking._id}`)}
+                          className="font-mono font-semibold text-slate-900 hover:text-blue-600 text-xs tracking-tight transition-colors cursor-pointer text-left"
+                          title="Click to Live Track"
+                        >
+                          #{booking.bookingNumber || booking._id.slice(-6).toUpperCase()}
+                        </button>
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap align-middle">
                         <div className="leading-tight">
@@ -387,6 +401,15 @@ const Bookings = () => {
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap align-middle text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => navigate(`/admin/bookings/tracking?orderId=${booking._id}`)}
+                            className="px-2 py-1 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-600 text-[11px] font-semibold flex items-center gap-1 border border-blue-100 transition-all cursor-pointer shadow-2xs"
+                            title="Live Tracking & Details"
+                          >
+                            <FiNavigation className="w-3 h-3" />
+                            <span>Live Track</span>
+                          </button>
+
                           <button
                             onClick={() => {
                               setSelectedBookingForChat(booking);

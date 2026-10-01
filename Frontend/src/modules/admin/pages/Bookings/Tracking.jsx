@@ -6,7 +6,7 @@ import {
   FiUser, FiPhone, FiCheck, FiShield, FiAlertCircle, FiTrendingUp,
   FiLayers, FiChevronRight, FiNavigation, FiCalendar, FiActivity, FiX
 } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { adminBookingService } from '../../../../services/adminBookingService';
 import { toast } from 'react-hot-toast';
 import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
@@ -38,6 +38,8 @@ const ServiceIcon = ({ iconUrl, title }) => {
 
 const Tracking = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const targetOrderId = searchParams.get('orderId') || searchParams.get('id');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -73,8 +75,15 @@ const Tracking = () => {
         const fetched = res.data || [];
         setBookings(fetched);
 
-        // Keep existing selected order updated or auto-select first order
+        // Select target order from URL query or keep existing / select first
         setSelectedOrder(prev => {
+          if (targetOrderId) {
+            const matched = fetched.find(b => String(b._id) === String(targetOrderId) || String(b.bookingNumber) === String(targetOrderId));
+            if (matched) {
+              setMobileDetailOpen(true);
+              return matched;
+            }
+          }
           if (!prev && fetched.length > 0) return fetched[0];
           if (prev) {
             const updated = fetched.find(b => b._id === prev._id);
@@ -109,7 +118,7 @@ const Tracking = () => {
   const stats = useMemo(() => {
     const active = bookings.filter(b => !['completed', 'cancelled', 'rejected'].includes(b.status)).length;
     const enRoute = bookings.filter(b => ['journey_started', 'visited'].includes(b.status)).length;
-    const inProgress = bookings.filter(b => ['in_progress', 'work_done'].includes(b.status)).length;
+    const inProgress = bookings.filter(b => ['in_progress', 'awaiting_payment', 'work_done'].includes(b.status)).length;
     const completedToday = bookings.filter(b => {
       if (b.status !== 'completed') return false;
       const d = new Date(b.completedAt || b.updatedAt);
@@ -126,7 +135,7 @@ const Tracking = () => {
       if (statusFilter === 'ALL') return true;
       if (statusFilter === 'ACTIVE') return !['completed', 'cancelled', 'rejected'].includes(b.status);
       if (statusFilter === 'EN_ROUTE') return ['journey_started', 'visited'].includes(b.status);
-      if (statusFilter === 'IN_PROGRESS') return ['in_progress', 'work_done'].includes(b.status);
+      if (statusFilter === 'IN_PROGRESS') return ['in_progress', 'awaiting_payment', 'work_done'].includes(b.status);
       if (statusFilter === 'CONFIRMED') return ['confirmed', 'accepted', 'assigned'].includes(b.status);
       if (statusFilter === 'COMPLETED') return b.status === 'completed';
       if (statusFilter === 'CANCELLED') return ['cancelled', 'rejected'].includes(b.status);
@@ -153,6 +162,7 @@ const Tracking = () => {
       case 'journey_started': return 2;
       case 'visited':
       case 'in_progress': return 3;
+      case 'awaiting_payment':
       case 'work_done': return 4;
       case 'completed': return 5;
       case 'cancelled':
@@ -163,6 +173,12 @@ const Tracking = () => {
 
   const getStatusBadge = (status) => {
     switch (status) {
+      case 'awaiting_payment':
+        return {
+          label: 'Awaiting Payment',
+          bg: 'bg-amber-50 text-amber-700 border-amber-200',
+          dot: 'bg-amber-600 animate-ping'
+        };
       case 'in_progress':
         return {
           label: 'In Progress',
