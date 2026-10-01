@@ -139,6 +139,28 @@ exports.initiateCashCollection = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'Cannot collect cash for a cancelled booking' });
+    }
+
+    if (booking.paymentStatus === PAYMENT_STATUS.SUCCESS || booking.paymentMethod === 'online' || booking.razorpayPaymentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'This booking has already been paid online. Cash collection is not allowed.'
+      });
+    }
+
+    // Check if vendor wallet is blocked due to cash limit
+    if (booking.vendorId) {
+      const vendorCheck = await Vendor.findById(booking.vendorId).lean();
+      if (vendorCheck?.wallet?.isBlocked) {
+        return res.status(403).json({
+          success: false,
+          message: `Cash collection blocked: ${vendorCheck.wallet.blockReason || 'Cash limit exceeded. Please settle dues with admin.'}`
+        });
+      }
+    }
+
     // Allow cash, pay_at_home, online (if user changes mind), AND plan_benefit (for final bill flow)
     const allowedMethods = ['cash', 'pay_at_home', 'plan_benefit', 'online'];
     if (!allowedMethods.includes(booking.paymentMethod)) {
@@ -257,6 +279,25 @@ exports.confirmCashCollection = async (req, res) => {
     // EDGE CASE: Cancelled booking
     if (booking.status === 'cancelled') {
       return res.status(400).json({ success: false, message: 'Cannot collect cash for a cancelled booking' });
+    }
+
+    // EDGE CASE: Double-payment prevention - if already paid online
+    if (booking.paymentStatus === PAYMENT_STATUS.SUCCESS || booking.paymentMethod === 'online' || booking.razorpayPaymentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'This booking has already been paid online. Cash collection is not allowed.'
+      });
+    }
+
+    // EDGE CASE: Vendor blocked check
+    if (booking.vendorId) {
+      const vendorCheck = await Vendor.findById(booking.vendorId).lean();
+      if (vendorCheck?.wallet?.isBlocked) {
+        return res.status(403).json({
+          success: false,
+          message: `Cash collection blocked: ${vendorCheck.wallet.blockReason || 'Cash limit exceeded. Please settle dues with admin.'}`
+        });
+      }
     }
 
     // EDGE CASE: Authorization check - only assigned vendor or admin can confirm
@@ -542,8 +583,9 @@ exports.verifyOnlinePayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No online payment initiated for this booking' });
     }
 
-    // Only allow if status is WORK_DONE or already COMPLETED (idempotency)
-    if (booking.status !== BOOKING_STATUS.WORK_DONE && booking.status !== BOOKING_STATUS.COMPLETED) {
+    // Only allow if status is WORK_DONE, AWAITING_PAYMENT, or already COMPLETED (idempotency)
+    const allowedVerificationStatuses = [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.AWAITING_PAYMENT, BOOKING_STATUS.COMPLETED];
+    if (!allowedVerificationStatuses.includes(booking.status)) {
       return res.status(400).json({ success: false, message: `Cannot verify payment for booking in ${booking.status} status` });
     }
 
@@ -704,6 +746,10 @@ exports.confirmManualOnlinePayment = async (req, res) => {
     // prevent race conditions
     if (booking.status === BOOKING_STATUS.COMPLETED) {
       return res.status(400).json({ success: false, message: 'Booking already completed' });
+    }
+
+    if (booking.cashCollected || booking.paymentStatus === PAYMENT_STATUS.COLLECTED_BY_VENDOR) {
+      return res.status(400).json({ success: false, message: 'Cash has already been collected for this booking. Online payment not allowed.' });
     }
 
     console.log(`[Manual QR Confirm] Finalizing booking ${booking.bookingNumber} manually`);
