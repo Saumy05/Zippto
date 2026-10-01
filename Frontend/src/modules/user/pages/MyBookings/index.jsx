@@ -10,7 +10,10 @@ import {
   FiCalendar,
   FiChevronRight,
   FiTag,
-  FiZap
+  FiZap,
+  FiNavigation,
+  FiCreditCard,
+  FiCompass
 } from 'react-icons/fi';
 import { HiSparkles } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
@@ -40,7 +43,17 @@ const MyBookings = () => {
         if (!isBackground) setLoading(true);
         const params = {};
         if (filter !== 'all') {
-          params.status = filter;
+          if (filter === 'confirmed') {
+            params.status = 'confirmed,assigned,accepted';
+          } else if (filter === 'in-progress') {
+            params.status = 'assigned,accepted,started,journey_started,visited,in_progress,awaiting_payment,work_done';
+          } else if (filter === 'completed') {
+            params.status = 'completed';
+          } else if (filter === 'cancelled') {
+            params.status = 'cancelled,rejected';
+          } else {
+            params.status = filter;
+          }
         }
         const response = await bookingService.getUserBookings(params);
         if (isMounted) {
@@ -78,73 +91,102 @@ const MyBookings = () => {
   }, [filter]);
 
   const getStatusIcon = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'confirmed':
+        return <FiCheckCircle className="w-3.5 h-3.5" />;
+      case 'assigned':
+      case 'accepted':
         return <FiCheckCircle className="w-3.5 h-3.5" />;
       case 'in_progress':
       case 'in-progress':
         return <FiLoader className="w-3.5 h-3.5 animate-spin" />;
       case 'journey_started':
+      case 'started':
       case 'visited':
         return <FiMapPin className="w-3.5 h-3.5" />;
+      case 'awaiting_payment':
+      case 'work_done':
+        return <FiClock className="w-3.5 h-3.5" />;
       case 'completed':
         return <FiCheckCircle className="w-3.5 h-3.5" />;
       case 'cancelled':
       case 'rejected':
         return <FiXCircle className="w-3.5 h-3.5" />;
-      case 'awaiting_payment':
+      case 'searching':
+      case 'requested':
       default:
-        return <FiClock className="w-3.5 h-3.5" />;
+        return <FiZap className="w-3.5 h-3.5" />;
     }
   };
 
   const getStatusBorderColor = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'confirmed': return 'border-l-emerald-500';
+      case 'assigned':
+      case 'accepted': return 'border-l-blue-500';
       case 'in_progress':
-      case 'in-progress':
+      case 'in-progress': return 'border-l-purple-500';
       case 'journey_started':
-      case 'visited':
-        return 'border-l-blue-500';
+      case 'started': return 'border-l-amber-500';
+      case 'visited': return 'border-l-teal-500';
+      case 'awaiting_payment': return 'border-l-orange-500';
+      case 'work_done': return 'border-l-emerald-500';
       case 'completed': return 'border-l-[#0B132B]';
       case 'cancelled':
       case 'rejected': return 'border-l-rose-500';
-      case 'awaiting_payment': return 'border-l-amber-500';
       default: return 'border-l-slate-300';
     }
   };
 
   const getStatusBadgeStyle = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'confirmed':
         return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'assigned':
+      case 'accepted':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 'journey_started':
+      case 'started':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'visited':
+        return 'bg-teal-50 text-teal-700 border-teal-200';
       case 'in_progress':
       case 'in-progress':
-      case 'journey_started':
-      case 'visited':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 'awaiting_payment':
+        return 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse';
+      case 'work_done':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'completed':
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-slate-100 text-slate-700 border-slate-200';
       case 'cancelled':
       case 'rejected':
-        return 'bg-red-50 text-red-700 border-red-200';
-      case 'awaiting_payment':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+      case 'searching':
+      case 'requested':
+        return 'bg-teal-50 text-teal-700 border-teal-200';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-slate-50 text-slate-700 border-slate-200';
     }
   };
 
   const getStatusLabel = (status) => {
     if (!status) return 'Unknown';
-    switch (status) {
+    switch (status?.toLowerCase()) {
+      case 'confirmed': return 'Confirmed';
+      case 'assigned':
+      case 'accepted': return 'Expert Assigned';
       case 'in_progress':
       case 'in-progress':
         return 'In Progress';
-      case 'journey_started': return 'On The Way';
+      case 'journey_started':
+      case 'started': return 'On The Way';
       case 'visited': return 'Arrived';
-      case 'awaiting_payment': return 'Awaiting Payment';
-      case 'work_done': return 'Work Completed';
+      case 'awaiting_payment': return 'Bill Ready • Pay Now';
+      case 'work_done': return 'Work Done';
+      case 'completed': return 'Completed';
+      case 'searching': return 'Finding Expert';
+      case 'requested': return 'Requested';
       default: return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
     }
   };
@@ -377,17 +419,57 @@ const MyBookings = () => {
                       </div>
                     </div>
 
-                    {/* Bottom Row: Action Buttons (height 30-34px, rounded-md, text-xs font-semibold) */}
-                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--border,#E5E7EB)]">
+                    {/* Bottom Row: Action Buttons */}
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border,#E5E7EB)]">
+                      {/* Contextual Quick Action */}
+                      {(booking.status === 'awaiting_payment' || (booking.status === 'work_done' && !booking.cashCollected && booking.paymentStatus !== 'paid' && booking.paymentStatus !== 'success')) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/user/booking/${booking._id || booking.id}`);
+                          }}
+                          className="h-[32px] px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 animate-pulse"
+                        >
+                          <FiCreditCard className="w-3.5 h-3.5" />
+                          <span>Pay Online / PIN</span>
+                        </button>
+                      )}
+
+                      {(booking.status === 'journey_started' || booking.status === 'started') && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/user/booking/${booking._id || booking.id}/track`);
+                          }}
+                          className="h-[32px] px-3 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                        >
+                          <FiNavigation className="w-3.5 h-3.5" />
+                          <span>Track Live</span>
+                        </button>
+                      )}
+
+                      {(booking.status === 'searching' || booking.status === 'requested') && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/user/booking-confirmation/${booking._id || booking.id}`);
+                          }}
+                          className="h-[32px] px-3 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                        >
+                          <FiCompass className="w-3.5 h-3.5" />
+                          <span>Live Radar</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleBookingClick(booking);
                         }}
-                        className="h-[32px] px-3 rounded-md bg-[#B33A35] hover:bg-[#9E2E2A] text-white text-xs font-semibold transition-colors flex items-center gap-1 shadow-xs active:scale-95"
+                        className="h-[32px] px-3 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition-colors flex items-center gap-1 border border-slate-200/80 active:scale-95"
                       >
                         <span>View Details</span>
-                        <FiChevronRight className="w-3.5 h-3.5" />
+                        <FiChevronRight className="w-3.5 h-3.5 text-slate-500" />
                       </button>
                     </div>
                   </div>

@@ -19,6 +19,7 @@ import {
 import { bookingService } from '../../../../services/bookingService';
 import NotificationBell from '../../components/common/NotificationBell';
 import ConfirmDialog from '../../../../components/common/ConfirmDialog';
+import { useSocket } from '../../../../context/SocketContext';
 
 // Inline Searching Animation Component
 const SearchingAnimation = () => {
@@ -94,74 +95,82 @@ const BookingConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
+  const socket = useSocket();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(!location.state?.noVendorsFound); // Respect passed state
   const [confirmDialog, setConfirmDialog] = useState(false);
 
-  useEffect(() => {
-    const loadBooking = async () => {
-      try {
-        setLoading(true);
-        const response = await bookingService.getById(id);
-        if (response.success) {
-          const data = { ...response.data };
-          // Calculate notional display values for plan_benefit
-          if (data.paymentMethod === 'plan_benefit') {
-            if (!data.tax) data.tax = (data.basePrice || 0) * 0.18;
-            if (!data.visitingCharges && !data.visitationFee) data.visitingCharges = 49;
-          }
-          setBooking(data);
+  const fetchBooking = async (showLoading = false) => {
+    try {
+      if (showLoading) setLoading(true);
+      const response = await bookingService.getById(id);
+      if (response.success) {
+        const data = { ...response.data };
+        // Calculate notional display values for plan_benefit
+        if (data.paymentMethod === 'plan_benefit') {
+          if (!data.tax) data.tax = (data.basePrice || 0) * 0.18;
+          if (!data.visitingCharges && !data.visitationFee) data.visitingCharges = 49;
+        }
+        setBooking(data);
 
-          // Check if vendor is already assigned
-          const currentStatus = data.status?.toLowerCase();
-          if (data.vendorId || (currentStatus !== 'requested' && currentStatus !== 'searching')) {
-            setIsSearching(false);
-          }
-        } else {
+        // Check if vendor is already assigned
+        const currentStatus = data.status?.toLowerCase();
+        if (data.vendorId || (currentStatus !== 'requested' && currentStatus !== 'searching')) {
+          setIsSearching(false);
+        }
+      } else {
+        if (showLoading) {
           toast.error(response.message || 'Booking not found');
           navigate('/user/my-bookings');
         }
-      } catch (error) {
+      }
+    } catch (error) {
+      if (showLoading) {
         toast.error('Failed to load booking details');
         navigate('/user/my-bookings');
-      } finally {
-        setLoading(false);
+      }
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchBooking(true);
+    }
+  }, [id]);
+
+  // Socket listener for instant vendor assignment or status updates
+  useEffect(() => {
+    if (!socket || !id) return;
+
+    const handleSocketUpdate = (data) => {
+      const updatedBookingId = data?.bookingId || data?._id || data?.id;
+      if (!updatedBookingId || String(updatedBookingId) === String(id)) {
+        fetchBooking(false);
       }
     };
 
-    if (id) {
-      loadBooking();
-    }
-  }, [id, navigate]);
+    socket.on('booking_updated', handleSocketUpdate);
+    socket.on('vendor_assigned', handleSocketUpdate);
+    socket.on('booking_accepted', handleSocketUpdate);
+    socket.on('notification', handleSocketUpdate);
 
-  // Poll for vendor acceptance
+    return () => {
+      socket.off('booking_updated', handleSocketUpdate);
+      socket.off('vendor_assigned', handleSocketUpdate);
+      socket.off('booking_accepted', handleSocketUpdate);
+      socket.off('notification', handleSocketUpdate);
+    };
+  }, [socket, id]);
+
+  // Backup poll for vendor acceptance
   useEffect(() => {
     if (!isSearching || !id) return;
 
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await bookingService.getById(id);
-        if (response.success) {
-          const updatedBooking = { ...response.data };
-
-          // Calculate notional display values for plan_benefit
-          if (updatedBooking.paymentMethod === 'plan_benefit') {
-            if (!updatedBooking.tax) updatedBooking.tax = (updatedBooking.basePrice || 0) * 0.18;
-            if (!updatedBooking.visitingCharges && !updatedBooking.visitationFee) updatedBooking.visitingCharges = 49;
-          }
-
-          setBooking(updatedBooking);
-          // If vendor accepted or status changed
-          const currentStatus = updatedBooking.status?.toLowerCase();
-          if (updatedBooking.vendorId || (currentStatus !== 'requested' && currentStatus !== 'searching')) {
-            setIsSearching(false);
-            clearInterval(pollInterval);
-          }
-        }
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
+    const pollInterval = setInterval(() => {
+      fetchBooking(false);
     }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(pollInterval);

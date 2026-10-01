@@ -275,48 +275,51 @@ const Notifications = () => {
           ) : (
             /* NOTIFICATIONS LIST */
             <div className="space-y-3">
-              {filteredNotifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  className={`bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-all relative group flex items-start gap-3.5 ${
-                    !notif.read ? 'border-l-4 border-l-[#0B132B]' : ''
-                  }`}
-                >
-                  <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200/80">
-                    {getNotificationIcon(notif.type)}
-                  </div>
+              {filteredNotifications.map((notif) => {
+                const targetBookingId = notif.bookingId || notif.data?.bookingId || notif.metadata?.bookingId || notif.data?.id;
+                const isWallet = notif.action === 'view_wallet' || notif.type?.includes('wallet');
 
-                  <div className="flex-1 min-w-0 pr-6 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className={`text-sm text-slate-900 leading-snug ${!notif.read ? 'font-black' : 'font-extrabold'}`}>
-                        {notif.title}
-                      </h4>
+                return (
+                  <div
+                    key={notif.id}
+                    onClick={() => {
+                      if (!notif.read) handleMarkAsRead(notif.id);
+                      if (targetBookingId) {
+                        navigate(`/user/booking/${targetBookingId}`);
+                      } else if (isWallet) {
+                        navigate('/user/wallet');
+                      }
+                    }}
+                    className={`bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-all relative group flex items-start gap-3.5 cursor-pointer ${
+                      !notif.read ? 'border-l-4 border-l-[#0B132B]' : ''
+                    }`}
+                  >
+                    <div className="w-11 h-11 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-200/80">
+                      {getNotificationIcon(notif.type)}
                     </div>
 
-                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                      {notif.message}
-                    </p>
+                    <div className="flex-1 min-w-0 pr-6 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className={`text-sm text-slate-900 leading-snug ${!notif.read ? 'font-black' : 'font-extrabold'}`}>
+                          {notif.title}
+                        </h4>
+                      </div>
 
-                    <div className="flex items-center justify-between pt-1 text-[11px] font-bold text-slate-400">
-                      <span>{notif.time || 'Recently'}</span>
+                      <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                        {notif.message}
+                      </p>
 
-                      {notif.action && (
-                        <button
-                          onClick={() => {
-                            if (notif.action === 'view_booking') {
-                              navigate(`/user/booking/${notif.bookingId}`);
-                            } else if (notif.action === 'view_wallet') {
-                              navigate('/user/wallet');
-                            }
-                          }}
-                          className="text-xs font-extrabold text-[#0B132B] hover:text-amber-600 flex items-center gap-0.5"
-                        >
-                          <span>Details</span>
-                          <FiChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      <div className="flex items-center justify-between pt-1 text-[11px] font-bold text-slate-400">
+                        <span>{notif.time || 'Recently'}</span>
+
+                        {(targetBookingId || isWallet) && (
+                          <span className="text-xs font-extrabold text-[#0B132B] group-hover:text-amber-600 flex items-center gap-0.5">
+                            <span>{targetBookingId ? 'View Booking' : 'View Wallet'}</span>
+                            <FiChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
                   {/* Actions */}
                   <div className="absolute top-4 right-4 flex items-center gap-1">
@@ -338,7 +341,8 @@ const Notifications = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
         </main>

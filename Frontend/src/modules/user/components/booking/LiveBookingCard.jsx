@@ -33,7 +33,20 @@ const LiveBookingCard = ({ hasBottomNav }) => {
   // Status mapping for UI
   const getStatusInfo = (status) => {
     switch (status?.toUpperCase()) {
+      case 'CONFIRMED':
+        return { 
+          badge: 'Confirmed',
+          label: 'Booking Confirmed', 
+          icon: FiCheckCircle, 
+          gradient: 'from-blue-600 to-indigo-600',
+          shadow: 'shadow-blue-500/20',
+          bgLight: 'bg-blue-50 text-blue-700 border-blue-200/60',
+          sub: 'Technician dispatching soon',
+          pulse: false,
+          progressColor: 'bg-gradient-to-r from-blue-500 via-indigo-400 to-blue-600'
+        };
       case 'ASSIGNED':
+      case 'ACCEPTED':
         return { 
           badge: 'Assigned',
           label: 'Expert Assigned', 
@@ -81,6 +94,18 @@ const LiveBookingCard = ({ hasBottomNav }) => {
           sub: 'Repairs underway',
           pulse: true,
           progressColor: 'bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600'
+        };
+      case 'AWAITING_PAYMENT':
+        return { 
+          badge: 'Pay Bill',
+          label: 'Bill Ready • Pay Now', 
+          icon: FiCheckCircle, 
+          gradient: 'from-amber-500 to-orange-600',
+          shadow: 'shadow-orange-500/20',
+          bgLight: 'bg-amber-50 text-amber-700 border-amber-200/60',
+          sub: 'Tap to pay online or share PIN',
+          pulse: true,
+          progressColor: 'bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600'
         };
       case 'WORK_DONE':
         return { 
@@ -144,7 +169,7 @@ const LiveBookingCard = ({ hasBottomNav }) => {
         const ongoing = res.data.find(b => {
           const s = b.status?.toUpperCase();
           if (s === 'WORK_DONE' && b.rating) return false;
-          return ['ASSIGNED', 'STARTED', 'JOURNEY_STARTED', 'VISITED', 'IN_PROGRESS', 'WORK_DONE', 'SEARCHING', 'REQUESTED'].includes(s);
+          return ['CONFIRMED', 'ASSIGNED', 'ACCEPTED', 'STARTED', 'JOURNEY_STARTED', 'VISITED', 'IN_PROGRESS', 'AWAITING_PAYMENT', 'WORK_DONE', 'SEARCHING', 'REQUESTED'].includes(s);
         });
         setActiveBooking(ongoing || null);
       } else {
@@ -202,7 +227,7 @@ const LiveBookingCard = ({ hasBottomNav }) => {
   if (!statusInfo) return null;
 
   const Icon = statusInfo.icon;
-  const isWorkDonePendingPay = activeBooking.status?.toUpperCase() === 'WORK_DONE' && !activeBooking.cashCollected;
+  const isWorkDonePendingPay = (activeBooking.status?.toUpperCase() === 'WORK_DONE' || activeBooking.status?.toUpperCase() === 'AWAITING_PAYMENT') && !activeBooking.cashCollected && activeBooking.paymentStatus !== 'paid' && activeBooking.paymentStatus !== 'success';
 
   return (
     <AnimatePresence>

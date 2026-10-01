@@ -284,11 +284,14 @@ const BookingTrack = () => {
       socket.on('live_location_update', handleLocationUpdate);
       socket.on('booking_updated', handleBookingUpdate);
       socket.on('bill_generated_pay_online', handleBookingUpdate);
+      socket.on('payment_success', handleBookingUpdate);
       socket.on('notification', handleBookingUpdate);
 
       return () => {
         socket.off('live_location_update', handleLocationUpdate);
         socket.off('booking_updated', handleBookingUpdate);
+        socket.off('bill_generated_pay_online', handleBookingUpdate);
+        socket.off('payment_success', handleBookingUpdate);
         socket.off('notification', handleBookingUpdate);
       };
     }
@@ -877,7 +880,7 @@ const BookingTrack = () => {
         )}
 
         {/* Waiting for Vendor to initiate Payment */}
-        {!booking?.customerConfirmationOTP && booking?.status?.toLowerCase() === 'work_done' && !booking?.cashCollected && (
+        {!booking?.customerConfirmationOTP && !booking?.paymentOtp && ['work_done', 'awaiting_payment'].includes(booking?.status?.toLowerCase()) && !booking?.cashCollected && (
           <div className="bg-white rounded-2xl p-4 shadow-lg border border-teal-100 mb-4 flex items-center gap-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 bg-teal-50 rounded-full -translate-y-10 translate-x-10 blur-2xl"></div>
             <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center shrink-0 border border-teal-100">
@@ -890,72 +893,106 @@ const BookingTrack = () => {
           </div>
         )}
 
-        {/* Final Payment Card - Show when work is done AND bill is finalized (OTP exists) */}
-        {(booking?.customerConfirmationOTP || booking?.paymentStatus === 'success') && booking?.status?.toLowerCase() === 'work_done' && !booking?.cashCollected && (
+        {/* Final Payment Card - Show when bill is finalized (OTP exists) or status is awaiting_payment / work_done */}
+        {(booking?.customerConfirmationOTP || booking?.paymentOtp || booking?.paymentStatus === 'success' || booking?.paymentStatus === 'paid' || booking?.status?.toLowerCase() === 'awaiting_payment') && ['work_done', 'awaiting_payment', 'visited', 'in_progress'].includes(booking?.status?.toLowerCase()) && !booking?.cashCollected && (
           <div
-            onClick={() => setShowPaymentModal(true)}
-            className={`mb-4 relative overflow-hidden rounded-2xl p-5 shadow-lg cursor-pointer active:scale-[0.98] transition-all ${booking?.paymentStatus === 'success'
+            className={`mb-4 relative overflow-hidden rounded-2xl p-5 shadow-lg transition-all ${['success', 'paid'].includes(booking?.paymentStatus?.toLowerCase())
               ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700'
-              : 'bg-gradient-to-br from-orange-500 via-orange-600 to-red-600'
+              : 'bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white border border-teal-500/30'
               }`}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 blur-2xl pointer-events-none"></div>
             <div className="relative z-10 flex flex-col items-center">
-              <div className="flex items-center gap-3 w-full mb-5">
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
-                  {booking?.paymentStatus === 'success' ? (
-                    <FiCheckCircle className="w-5 h-5 text-white" />
-                  ) : (
-                    <FiDollarSign className="w-5 h-5 text-white" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest">
-                    {booking?.paymentStatus === 'success' ? 'Payment Received' : 'Final Payment'}
-                  </p>
-                  <p className="text-white text-xs font-medium">
-                    {booking?.paymentStatus === 'success' ? 'Verified Successfully' : `Service amount: ₹${(booking?.finalAmount || 0).toLocaleString()}`}
-                  </p>
-                </div>
-              </div>
-
-              {booking?.paymentStatus !== 'success' ? (
-                <>
-                  <button
-                    onClick={handleOnlinePayment}
-                    className="w-full py-4 bg-white text-orange-600 rounded-xl font-black text-sm shadow-xl hover:bg-orange-50 active:scale-95 transition-all flex items-center justify-center gap-2"
-                  >
-                    <FiDollarSign className="w-4 h-4" />
-                    Pay Online Now
-                  </button>
-
-                  <div className="mt-6 flex flex-col items-center w-full">
-                    <p className="text-[9px] font-black text-white/60 uppercase tracking-[0.3em] mb-3">Payment Verification OTP</p>
-                    <div className="flex justify-center gap-2.5">
-                      {String(booking?.customerConfirmationOTP || booking?.paymentOtp || '0000').split('').map((digit, idx) => (
-                        <div
-                          key={idx}
-                          className="w-10 h-12 bg-white/15 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20 shadow-md"
-                        >
-                          <span className="text-xl font-black text-white">{digit}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-4 text-[9px] text-white/70 text-center font-medium bg-black/10 px-4 py-1.5 rounded-full">
-                      Share with professional to verify service completion
+              <div className="flex items-center justify-between w-full mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
+                    {['success', 'paid'].includes(booking?.paymentStatus?.toLowerCase()) ? (
+                      <FiCheckCircle className="w-5 h-5 text-white" />
+                    ) : (
+                      <FiDollarSign className="w-5 h-5 text-emerald-400" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                      {['success', 'paid'].includes(booking?.paymentStatus?.toLowerCase()) ? 'Payment Received' : 'Bill Generated'}
+                    </p>
+                    <p className="text-white text-xs font-medium">
+                      {['success', 'paid'].includes(booking?.paymentStatus?.toLowerCase())
+                        ? 'Verified Successfully'
+                        : `Payable: ₹${(booking?.finalAmount || booking?.totalAmount || 0).toLocaleString()}`}
                     </p>
                   </div>
+                </div>
+
+                {!['success', 'paid'].includes(booking?.paymentStatus?.toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentModal(true)}
+                    className="text-xs font-bold text-teal-300 hover:text-teal-200 underline cursor-pointer"
+                  >
+                    View Bill
+                  </button>
+                )}
+              </div>
+
+              {!['success', 'paid'].includes(booking?.paymentStatus?.toLowerCase()) ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleOnlinePayment}
+                    disabled={paying}
+                    className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {paying ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Processing Payment...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FiDollarSign className="w-4 h-4" />
+                        <span>Pay Online Now (UPI / Cards)</span>
+                      </>
+                    )}
+                  </button>
+
+                  {(booking?.customerConfirmationOTP || booking?.paymentOtp) && (
+                    <div className="mt-4 flex flex-col items-center w-full bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/15">
+                      <div className="flex items-center justify-between w-full mb-1.5">
+                        <p className="text-[10px] font-black text-amber-300 uppercase tracking-wider">Cash Verification PIN</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const otp = booking?.customerConfirmationOTP || booking?.paymentOtp;
+                            navigator.clipboard.writeText(otp);
+                            toast.success('Code copied!');
+                          }}
+                          className="text-[10px] font-bold text-teal-300 hover:underline cursor-pointer"
+                        >
+                          Copy
+                        </button>
+                      </div>
+
+                      <div className="flex justify-center gap-2.5 my-1">
+                        {String(booking?.customerConfirmationOTP || booking?.paymentOtp || '0000').split('').map((digit, idx) => (
+                          <div
+                            key={idx}
+                            className="w-10 h-11 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-md"
+                          >
+                            <span className="text-xl font-black text-white font-mono">{digit}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-2 text-[9px] text-slate-300 text-center font-medium">
+                        Share with professional <strong>only if</strong> paying cash
+                      </p>
+                    </div>
+                  )}
                 </>
               ) : (
-                <div className="w-full py-4 bg-white/10 backdrop-blur-md text-white rounded-xl font-bold text-sm border border-white/20 flex items-center justify-center gap-2">
+                <div className="w-full py-3.5 bg-white/10 backdrop-blur-md text-white rounded-xl font-bold text-sm border border-white/20 flex items-center justify-center gap-2">
                   <FiCheckCircle className="w-4 h-4 text-green-200" />
-                  Booking Completed
+                  Booking Completed & Paid
                 </div>
-              )}
-
-              {booking?.paymentStatus !== 'success' && (
-                <p className="mt-4 text-[10px] text-white/70 text-center font-medium">
-                  Professional will mark as completed upon digital payment verification.
-                </p>
               )}
             </div>
           </div>
@@ -1025,6 +1062,7 @@ const BookingTrack = () => {
         onClose={() => setShowPaymentModal(false)}
         booking={booking}
         onPayOnline={handleOnlinePayment}
+        onOpenChat={() => setIsChatOpen(true)}
       />
 
       <ChatDrawerModal
@@ -1038,3 +1076,4 @@ const BookingTrack = () => {
 };
 
 export default BookingTrack;
+

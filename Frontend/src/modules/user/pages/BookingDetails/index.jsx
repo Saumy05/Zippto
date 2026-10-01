@@ -1029,7 +1029,119 @@ const BookingDetails = () => {
             </div>
           </div>
 
-          {/* 5. ITEMIZED ORDER & BILL BREAKDOWN */}
+          {/* 5. LIVE BILL & PAYMENT ACTION CARD (When Bill is Generated or Payment Pending) */}
+          {(!isCancelled && !isPaid && (booking.customerConfirmationOTP || booking.paymentOtp || booking.status === 'awaiting_payment' || booking.status === 'work_done' || booking.billGenerated)) ? (
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 rounded-3xl p-5 text-white shadow-xl border border-teal-500/30 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="flex items-center justify-between mb-3.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                    Bill Generated • Payment Ready
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-300 bg-white/10 px-2.5 py-1 rounded-full border border-white/10">
+                  Instant Verification
+                </span>
+              </div>
+
+              <div className="flex justify-between items-baseline mb-4">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Payable Amount</p>
+                  <p className="text-3xl font-black text-white font-mono tracking-tight">
+                    ₹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(true)}
+                  className="text-xs font-bold text-teal-300 hover:text-teal-200 underline underline-offset-4 cursor-pointer"
+                >
+                  View Full Bill →
+                </button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleOnlinePayment}
+                  disabled={paying}
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {paying ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Processing Payment...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiDollarSign className="w-4 h-4" />
+                      <span>Pay Online Securely (UPI / Cards)</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Cash Payment Option with OTP */}
+                {(booking.customerConfirmationOTP || booking.paymentOtp) && (
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300">
+                        Cash Verification Code
+                      </p>
+                      <p className="text-[11px] text-slate-300 font-medium truncate">
+                        Share with expert <strong>only if</strong> paying cash
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="bg-white/20 px-3 py-1.5 rounded-xl border border-white/30 text-center font-mono font-black text-lg text-white tracking-widest shadow-inner">
+                        {booking.customerConfirmationOTP || booking.paymentOtp}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const otp = booking.customerConfirmationOTP || booking.paymentOtp;
+                          navigator.clipboard.writeText(otp);
+                          toast.success('Code copied to clipboard!');
+                        }}
+                        className="p-2 bg-white/15 hover:bg-white/25 rounded-xl text-white transition-colors cursor-pointer"
+                        title="Copy OTP"
+                      >
+                        <FiCopy className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : isPaid ? (
+            <div className="bg-emerald-50 rounded-3xl p-4 border border-emerald-200 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <FiCheckCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-emerald-950 uppercase tracking-wide">
+                    Payment Verified & Closed
+                  </h3>
+                  <p className="text-[11px] text-emerald-700 font-medium">
+                    Total paid: ₹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(true)}
+                className="text-xs font-bold text-emerald-800 hover:text-emerald-900 bg-white px-3 py-1.5 rounded-xl border border-emerald-200 shadow-2xs cursor-pointer active:scale-95"
+              >
+                View Invoice
+              </button>
+            </div>
+          ) : null}
+
+          {/* 6. ITEMIZED ORDER & BILL BREAKDOWN */}
           <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/80 overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2">
@@ -1108,6 +1220,12 @@ const BookingDetails = () => {
                       <span className="font-mono">₹{((parseFloat(p.price) || 0) * (parseFloat(p.quantity) || 1)).toFixed(2)}</span>
                     </div>
                   ))}
+                  {customItems.map((c, i) => (
+                    <div key={i} className="flex justify-between text-xs font-semibold text-slate-700">
+                      <span>{c.name || 'Custom Item'} <span className="text-slate-400">x{c.quantity}</span></span>
+                      <span className="font-mono">₹{((parseFloat(c.price) || 0) * (parseFloat(c.quantity) || 1)).toFixed(2)}</span>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -1147,11 +1265,11 @@ const BookingDetails = () => {
             <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Payment Status</span>
               <span className={`px-2.5 py-1 rounded-xl text-xs font-extrabold uppercase ${
-                ['success', 'collected_by_vendor', 'paid'].includes((booking.paymentStatus || '').toLowerCase())
+                isPaid
                   ? 'bg-emerald-100 text-emerald-800'
                   : 'bg-amber-100 text-amber-800'
               }`}>
-                {['success', 'collected_by_vendor', 'paid'].includes((booking.paymentStatus || '').toLowerCase())
+                {isPaid
                   ? '✓ Paid'
                   : booking.paymentMethod === 'plan_benefit'
                   ? 'Plan Covered'
@@ -1160,7 +1278,7 @@ const BookingDetails = () => {
             </div>
           </div>
 
-          {/* 6. ACTION & SUPPORT CLUSTER */}
+          {/* 7. ACTION & SUPPORT CLUSTER */}
           <div className="grid grid-cols-2 gap-3 pt-2">
             <a
               href={`tel:${supportInfo.phone}`}
@@ -1214,7 +1332,9 @@ const BookingDetails = () => {
           onClose={() => setShowPaymentModal(false)}
           booking={booking}
           onPayOnline={handleOnlinePayment}
+          onOpenChat={() => setIsChatOpen(true)}
         />
+
 
         {/* Cancellation Confirmation Dialog */}
         <ConfirmDialog
