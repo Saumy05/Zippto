@@ -1,3 +1,4 @@
+const { payableAfterCoupon } = require('../../services/couponService');
 const VendorBill = require('../../models/VendorBill');
 const Booking = require('../../models/Booking');
 const VendorServiceCatalog = require('../../models/VendorServiceCatalog');
@@ -258,8 +259,10 @@ const createOrUpdateBill = async (req, res) => {
     // ═══════════════════════════════════════
     // 8. UPDATE BOOKING & TRIGGER PAY ONLINE FOR USER
     // ═══════════════════════════════════════
-    booking.finalAmount = grandTotal;
-    booking.userPayableAmount = grandTotal;
+    // Customer pays the bill minus any coupon applied at booking (the bill itself stays at full value for vendor earnings)
+    const payableTotal = payableAfterCoupon(booking, grandTotal);
+    booking.finalAmount = payableTotal;
+    booking.userPayableAmount = payableTotal;
     booking.vendorBillId = bill._id;
 
     // Always issue a fresh payment OTP with the bill: any previous customerConfirmationOTP is the

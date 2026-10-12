@@ -1,4 +1,8 @@
+const mongoose = require('mongoose');
 const Coupon = require('../../models/Coupon');
+const CouponRedemption = require('../../models/CouponRedemption');
+const City = require('../../models/City');
+const { validateCoupon, CouponError } = require('../../services/couponService');
 
 /**
  * Validate and apply coupon code for cart
@@ -6,84 +10,14 @@ const Coupon = require('../../models/Coupon');
  */
 const applyCoupon = async (req, res) => {
   try {
-    const { code, cartAmount, cityId } = req.body;
-
-    if (!code) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a coupon code'
-      });
-    }
-
-    const coupon = await Coupon.findOne({
-      code: code.trim().toUpperCase(),
-      status: 'active'
+    const { code, cartAmount, cityId, city } = req.body;
+    const { coupon, discountAmount } = await validateCoupon({
+      code,
+      amount: cartAmount,
+      userId: req.user.id,
+      cityId,
+      cityName: city
     });
-
-    if (!coupon) {
-      return res.status(404).json({
-        success: false,
-        message: 'Invalid or expired coupon code'
-      });
-    }
-
-    // Check expiry
-    const now = new Date();
-    if (coupon.validFrom && now < new Date(coupon.validFrom)) {
-      return res.status(400).json({
-        success: false,
-        message: 'This coupon is not active yet'
-      });
-    }
-
-    if (coupon.validUntil && now > new Date(coupon.validUntil)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Coupon code has expired'
-      });
-    }
-
-    // Check usage limits
-    if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
-      return res.status(400).json({
-        success: false,
-        message: 'Coupon limit reached'
-      });
-    }
-
-    // Check minimum order value
-    const amount = Number(cartAmount) || 0;
-    if (amount < coupon.minOrderValue) {
-      return res.status(400).json({
-        success: false,
-        message: `Minimum order value of ₹${coupon.minOrderValue} required for this coupon`
-      });
-    }
-
-    // Check city restrictions if specified
-    if (coupon.cityIds && coupon.cityIds.length > 0 && cityId) {
-      const cityMatched = coupon.cityIds.some(id => id.toString() === cityId.toString());
-      if (!cityMatched) {
-        return res.status(400).json({
-          success: false,
-          message: 'Coupon is not valid in your selected city'
-        });
-      }
-    }
-
-    // Calculate discount amount
-    let discountAmount = 0;
-    if (coupon.discountType === 'percentage') {
-      discountAmount = (amount * coupon.discountValue) / 100;
-      if (coupon.maxDiscount !== null && discountAmount > coupon.maxDiscount) {
-        discountAmount = coupon.maxDiscount;
-      }
-    } else {
-      discountAmount = coupon.discountValue;
-    }
-
-    // Cap discount at total cart amount
-    discountAmount = Math.min(discountAmount, amount);
 
     res.status(200).json({
       success: true,
@@ -92,11 +26,14 @@ const applyCoupon = async (req, res) => {
         code: coupon.code,
         discountType: coupon.discountType,
         discountValue: coupon.discountValue,
-        discountAmount: Math.round(discountAmount * 100) / 100,
+        discountAmount,
         description: coupon.description
       }
     });
   } catch (error) {
+    if (error instanceof CouponError) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
     console.error('Apply coupon error:', error);
     res.status(500).json({
       success: false,
@@ -111,30 +48,42 @@ const applyCoupon = async (req, res) => {
  */
 const getPublicCoupons = async (req, res) => {
   try {
-    const { cityId } = req.query;
+    const { cityId, city } = req.query;
     const now = new Date();
 
-    const query = {
+    // Only coupons that are currently live per the admin's configuration
+    const coupons = await Coupon.find({
       status: 'active',
       validFrom: { $lte: now },
       validUntil: { $gte: now }
-    };
-
-    if (cityId) {
-      query.$or = [
-        { cityIds: { $size: 0 } },
-        { cityIds: cityId }
-      ];
-    }
-
-    const coupons = await Coupon.find(query)
-      .select('code description discountType discountValue maxDiscount minOrderValue validUntil')
+    })
+      .select('code description discountType discountValue maxDiscount minOrderValue validUntil usageLimit usedCount perUserLimit cityIds')
       .sort({ createdAt: -1 })
       .lean();
 
+    // Resolve the customer's city once; city-restricted coupons are hidden unless it matches
+    let resolvedCityId = cityId;
+    if (!resolvedCityId && city) {
+      const found = await City.findOne({ name: new RegExp(`^${String(city).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }).select('_id').lean();
+      resolvedCityId = found?._id;
+    }
+
+    // How many times this customer already used each coupon
+    const usage = await CouponRedemption.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(req.user.id), released: false, couponId: { $in: coupons.map((c) => c._id) } } },
+      { $group: { _id: '$couponId', count: { $sum: 1 } } }
+    ]);
+    const usedByUser = new Map(usage.map((u) => [String(u._id), u.count]));
+
+    const available = coupons
+      .filter((c) => c.usageLimit === null || c.usageLimit === undefined || c.usedCount < c.usageLimit)
+      .filter((c) => (usedByUser.get(String(c._id)) || 0) < (c.perUserLimit || 1))
+      .filter((c) => !c.cityIds?.length || (resolvedCityId && c.cityIds.some((id) => String(id) === String(resolvedCityId))))
+      .map(({ usageLimit, usedCount, perUserLimit, cityIds, ...publicFields }) => publicFields);
+
     res.status(200).json({
       success: true,
-      coupons
+      coupons: available
     });
   } catch (error) {
     console.error('Get public coupons error:', error);

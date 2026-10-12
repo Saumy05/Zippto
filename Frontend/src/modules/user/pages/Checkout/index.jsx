@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { FiArrowLeft, FiShoppingCart, FiTrash2, FiMinus, FiPlus, FiPhone, FiHome, FiClock, FiEdit2, FiCheckCircle, FiInfo } from 'react-icons/fi';
+import { FiArrowLeft, FiShoppingCart, FiTrash2, FiMinus, FiPlus, FiPhone, FiHome, FiClock, FiEdit2, FiCheckCircle, FiInfo, FiTag, FiX } from 'react-icons/fi';
 import { MdStar } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../../theme';
@@ -12,10 +12,11 @@ import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
 import { cartService } from '../../../../services/cartService';
 import { configService } from '../../../../services/configService';
+import { couponService } from '../../../../services/couponService';
+import { useSettings } from '../../../../context/SettingsContext';
 import { getPlans } from '../../services/planService';
 import { userAuthService } from '../../../../services/authService';
 import { useCart } from '../../../../context/CartContext';
-import walletService from '../../../../services/walletService';
 import LiveBookingCard from '../../components/booking/LiveBookingCard';
 
 const toAssetUrl = (url) => {
@@ -47,8 +48,12 @@ const Checkout = () => {
   const [showContactModal, setShowContactModal] = useState(false);
 
   // Wallet Application State
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [useWallet, setUseWallet] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [coupon, setCoupon] = useState(null); // { code, discountAmount, appliedOn }
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const { settings: platformSettings } = useSettings();
+  const isVisitingWaived = platformSettings?.isVisitingChargesWaiverEnabled === true;
 
   // New state for vendor search flow
   const [currentStep, setCurrentStep] = useState('details'); // 'details' | 'searching' | 'waiting' | 'accepted' | 'payment'
@@ -179,16 +184,6 @@ const Checkout = () => {
             }
             setCartItems(items);
           }
-        }
-
-        // Fetch User Wallet Balance
-        try {
-          const walletRes = await walletService.getBalance();
-          if (walletRes.success && walletRes.data) {
-            setWalletBalance(walletRes.data.balance || 0);
-          }
-        } catch (wErr) {
-          // Non-blocking wallet fetch
         }
       } catch (error) {
         console.error('Failed to load checkout data', error);
@@ -380,6 +375,7 @@ const Checkout = () => {
         },
 
         paymentMethod: 'online',
+        couponCode: couponDiscount > 0 ? coupon.code : undefined,
         bookedItems: bookedItemsData
       });
 
@@ -593,6 +589,7 @@ const Checkout = () => {
         timeSlot: timeSlotObj,
         // userNotes: null, // Removed per request
         paymentMethod: amountToPay === 0 ? 'plan_benefit' : 'pay_at_home',
+        couponCode: couponDiscount > 0 ? coupon.code : undefined,
         amount: amountToPay,
 
         // Pass Full Breakdown to Backend
@@ -1040,6 +1037,36 @@ const Checkout = () => {
     return sum + original;
   }, 0);
 
+  const couponCity = addressDetails?.city;
+  useEffect(() => {
+    if (cartItems.length === 0) return;
+    let cancelled = false;
+    couponService.getAvailable({ city: couponCity })
+      .then((res) => { if (!cancelled && res.success) setAvailableCoupons(res.coupons || []); })
+      .catch(() => { if (!cancelled) setAvailableCoupons([]); });
+    return () => { cancelled = true; };
+  }, [cartItems.length, couponCity]);
+
+  const handleApplyCoupon = async (presetCode) => {
+    const code = (typeof presetCode === 'string' ? presetCode : couponInput).trim();
+    if (!code) return;
+    try {
+      setCouponLoading(true);
+      const res = await couponService.apply({ code, cartAmount: itemTotal, city: addressDetails?.city });
+      if (res.success) {
+        setCoupon({ code: res.coupon.code, discountAmount: res.coupon.discountAmount, appliedOn: itemTotal });
+        toast.success(`${res.coupon.code} applied — you save ₹${res.coupon.discountAmount}`);
+      }
+    } catch (err) {
+      setCoupon(null);
+      toast.error(err.response?.data?.message || 'Could not apply coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => { setCoupon(null); setCouponInput(''); };
+
   const savings = totalOriginalPrice - itemTotal;
   const taxesAndFee = Math.round((itemTotal * gstPercentage) / 100);
   // Visited fee logic: if Total is 0 (All free), user might still pay visited fee?
@@ -1048,19 +1075,18 @@ const Checkout = () => {
   // I'll set visitedFee to 0 if itemTotal is 0?
   // Configurable?
   // Assuming "Free under plan" means NO Payment.
-  const finalVisitedFee = itemTotal === 0 ? 0 : visitedFee;
+  const finalVisitedFee = (itemTotal === 0 || isVisitingWaived) ? 0 : visitedFee;
 
-  const rawTotalAmount = itemTotal + taxesAndFee + finalVisitedFee;
-  const appliedWalletDiscount = (useWallet && walletBalance > 0 && rawTotalAmount > 0)
-    ? Math.min(walletBalance, rawTotalAmount)
-    : 0;
-  const totalAmount = Math.max(0, rawTotalAmount - appliedWalletDiscount);
+  // A coupon is priced against the service subtotal; if the cart changed since it was applied, it no longer counts
+  const couponDiscount = coupon && coupon.appliedOn === itemTotal ? coupon.discountAmount : 0;
+  const rawTotalAmount = Math.max(0, itemTotal + taxesAndFee + finalVisitedFee - couponDiscount);
+  const totalAmount = rawTotalAmount;
   const amountToPay = totalAmount;
 
   // Helper for Free Plan Full Breakdown Display
   // If the booking is free, we still want to show what the Tax/Fee WOULD have been
   const displayTax = rawTotalAmount === 0 ? Math.round((totalOriginalPrice * gstPercentage) / 100) : taxesAndFee;
-  const displayFee = rawTotalAmount === 0 ? visitedFee : finalVisitedFee;
+  const displayFee = rawTotalAmount === 0 ? (isVisitingWaived ? 0 : visitedFee) : finalVisitedFee;
   const displaySavings = rawTotalAmount === 0 ? (totalOriginalPrice + displayTax + displayFee) : savings;
 
   // Date and time slot helper functions
@@ -1379,25 +1405,53 @@ const Checkout = () => {
               </div>
             )}
 
-            {/* Zippto Wallet Balance Application Card */}
-            {walletBalance > 0 && rawTotalAmount > 0 && (
-              <div className="bg-gradient-to-r from-amber-50 to-amber-100/60 border border-amber-200/80 rounded-xl p-3.5 my-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="useWalletBalance"
-                    checked={useWallet}
-                    onChange={(e) => setUseWallet(e.target.checked)}
-                    className="w-4 h-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500 cursor-pointer"
-                  />
-                  <label htmlFor="useWalletBalance" className="text-xs font-semibold text-slate-800 cursor-pointer">
-                    Use Zippto Wallet (<span className="text-amber-700 font-bold">₹{walletBalance.toLocaleString('en-IN')}</span> available)
-                  </label>
-                </div>
-                {useWallet && (
-                  <span className="text-xs font-black text-amber-800 bg-amber-200/80 px-2 py-0.5 rounded-md">
-                    -₹{appliedWalletDiscount.toLocaleString('en-IN')}
-                  </span>
+            {/* Coupon */}
+            {itemTotal > 0 && (
+              <div className="pt-1">
+                {couponDiscount > 0 ? (
+                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                    <span className="flex items-center gap-1.5 text-sm font-bold text-emerald-700"><FiTag className="w-4 h-4" />{coupon.code} applied</span>
+                    <span className="flex items-center gap-2 text-sm font-bold text-emerald-700">
+                      −₹{couponDiscount.toLocaleString('en-IN')}
+                      <button type="button" onClick={handleRemoveCoupon} aria-label="Remove coupon"><FiX className="w-4 h-4" /></button>
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      placeholder="Have a coupon code?"
+                      className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-teal-500 uppercase"
+                    />
+                    <button type="button" onClick={() => handleApplyCoupon()} disabled={couponLoading || !couponInput.trim()}
+                      className="px-4 py-2 text-sm font-bold rounded-xl bg-slate-900 text-white disabled:opacity-40">
+                      {couponLoading ? '…' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+                {couponDiscount === 0 && availableCoupons.length > 0 && (
+                  <div className="mt-2 space-y-1.5">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Available offers</p>
+                    {availableCoupons.map((c) => {
+                      const shortBy = Math.max(0, (c.minOrderValue || 0) - itemTotal);
+                      const label = c.discountType === 'percentage'
+                        ? `${c.discountValue}% off${c.maxDiscount ? ` up to ₹${c.maxDiscount}` : ''}`
+                        : `₹${c.discountValue} off`;
+                      return (
+                        <div key={c.code} className={`flex items-center justify-between gap-2 border border-dashed rounded-xl px-3 py-2 ${shortBy > 0 ? 'border-slate-200 opacity-60' : 'border-teal-300 bg-teal-50/40'}`}>
+                          <div className="min-w-0">
+                            <p className="text-sm font-black font-mono text-slate-900">{c.code} <span className="font-sans font-semibold text-teal-700">· {label}</span></p>
+                            <p className="text-[11px] text-slate-500 truncate">
+                              {shortBy > 0 ? `Add ₹${shortBy} more to use this` : (c.description || (c.minOrderValue ? `Min order ₹${c.minOrderValue}` : 'Tap apply to use'))}
+                            </p>
+                          </div>
+                          <button type="button" disabled={shortBy > 0 || couponLoading} onClick={() => handleApplyCoupon(c.code)}
+                            className="text-xs font-bold text-teal-700 disabled:text-slate-400 shrink-0">Apply</button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}

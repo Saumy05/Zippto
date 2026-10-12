@@ -3,6 +3,7 @@ const Booking = require('../../models/Booking');
 const { validationResult } = require('express-validator');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
+const { releaseRedemptionForBooking, payableAfterCoupon } = require('../../services/couponService');
 const { sendNotificationToUser, sendNotificationToVendor } = require('../../services/firebaseAdmin');
 
 /**
@@ -664,6 +665,11 @@ const updateBookingStatus = async (req, res) => {
 
     await booking.save();
 
+    // A cancelled/rejected booking never used its coupon: give the use back to the customer
+    if (booking.couponCode && [BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REJECTED].includes(booking.status)) {
+      await releaseRedemptionForBooking(booking._id).catch((e) => console.error('[VendorCancel] Coupon release failed:', e.message));
+    }
+
     // Send notification
     if (status === BOOKING_STATUS.COMPLETED) {
       await createNotification({
@@ -1161,8 +1167,9 @@ const completeSelfJob = async (req, res) => {
     // ═══════════════════════════════════════════
 
     booking.status = BOOKING_STATUS.WORK_DONE;
-    booking.finalAmount = grandTotal;
-    booking.userPayableAmount = grandTotal; // Ensure consistency
+    const payableTotal = payableAfterCoupon(booking, grandTotal); // bill total minus coupon applied at booking
+    booking.finalAmount = payableTotal;
+    booking.userPayableAmount = payableTotal; // Ensure consistency
     booking.vendorBillId = bill._id;
 
     // Reuse existing Payment OTP for cash collection or generate new one
@@ -1299,18 +1306,18 @@ const getVendorRatings = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Fetch bookings where rating is not null
-    const bookings = await Booking.find({ vendorId, rating: { $ne: null } })
+    const bookings = await Booking.find({ vendorId, rating: { $ne: null }, reviewHidden: { $ne: true } })
       .populate('userId', 'name profilePhoto')
       .populate('serviceId', 'title iconUrl')
       .sort({ reviewedAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
-    const total = await Booking.countDocuments({ vendorId, rating: { $ne: null } });
+    const total = await Booking.countDocuments({ vendorId, rating: { $ne: null }, reviewHidden: { $ne: true } });
 
     // Calculate average rating
     const stats = await Booking.aggregate([
-      { $match: { vendorId: new mongoose.Types.ObjectId(vendorId), rating: { $ne: null } } },
+      { $match: { vendorId: new mongoose.Types.ObjectId(vendorId), rating: { $ne: null }, reviewHidden: { $ne: true } } },
       {
         $group: {
           _id: null,

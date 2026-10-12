@@ -1,4 +1,6 @@
 const crypto = require('crypto');
+const { getPlatformFlags } = require('../../utils/platformSettings');
+const { payableAfterCoupon } = require('../../services/couponService');
 const Booking = require('../../models/Booking');
 const Vendor = require('../../models/Vendor');
 const Transaction = require('../../models/Transaction');
@@ -125,8 +127,8 @@ exports.initiateOnlineCollection = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid payment amount' });
     }
     if (parsedTotal !== undefined) {
-      booking.finalAmount = parsedTotal;
-      booking.userPayableAmount = parsedTotal;
+      booking.finalAmount = payableAfterCoupon(booking, parsedTotal);
+      booking.userPayableAmount = booking.finalAmount;
     }
 
     if (!booking.finalAmount || booking.finalAmount <= 0) {
@@ -291,9 +293,9 @@ exports.initiateCashCollection = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid payment amount' });
     }
     if (parsedCashTotal !== undefined) {
-      booking.finalAmount = parsedCashTotal;
+      booking.finalAmount = payableAfterCoupon(booking, parsedCashTotal);
       // Assuming no partial payment has been made yet (as status is pending/work_done)
-      booking.userPayableAmount = parsedCashTotal;
+      booking.userPayableAmount = booking.finalAmount;
     }
 
     // Store extra items for proper commission calculation
@@ -551,7 +553,7 @@ exports.confirmCashCollection = async (req, res) => {
 
       if (bill) {
         vendorEarning = Number(bill.vendorTotalEarning) || 0;
-        grandTotal = Number(bill.grandTotal) || 0;
+        grandTotal = payableAfterCoupon(booking, Number(bill.grandTotal) || 0); // cash actually collected after coupon
 
         // Sync booking fields from bill to ensure data consistency
         booking.basePrice = bill.originalServiceBase;
@@ -615,7 +617,7 @@ exports.confirmCashCollection = async (req, res) => {
           const cashLimit = vendor.wallet?.cashLimit || 10000;
           const netOwed = newDues - (vendor.wallet?.earnings || 0);
 
-          if (netOwed > cashLimit && !vendor.wallet?.isBlocked) {
+          if (netOwed > cashLimit && !vendor.wallet?.isBlocked && (await getPlatformFlags()).isAutoCodBlockingEnabled !== false) {
             await Vendor.findByIdAndUpdate(
               vendorId,
               {
@@ -819,13 +821,13 @@ const finalizeOnlinePayment = async (booking, { paymentId, razorpayPaymentId, me
   let grandTotal;
   if (bill) {
     vendorEarning = Number(bill.vendorTotalEarning) || 0;
-    grandTotal = Number(bill.grandTotal) || 0;
+    grandTotal = payableAfterCoupon(booking, Number(bill.grandTotal) || 0);
     Object.assign(set, {
       basePrice: bill.originalServiceBase,
       tax: (bill.originalGST || 0) + (bill.vendorServiceGST || 0) + (bill.partsGST || 0),
       visitingCharges: bill.visitingCharges,
-      finalAmount: bill.grandTotal,
-      userPayableAmount: bill.grandTotal
+      finalAmount: grandTotal,
+      userPayableAmount: grandTotal
     });
   } else {
     grandTotal = Number(booking.finalAmount) || 0;
@@ -966,7 +968,7 @@ exports.verifyOnlinePayment = async (req, res) => {
     // The captured amount (paise) must cover the current bill; a QR for a stale/lower amount must not settle it.
     const VendorBill = require('../../models/VendorBill');
     const bill = await VendorBill.findOne({ bookingId: booking._id }).lean();
-    const expectedPaise = Math.round((Number(bill?.grandTotal) || Number(booking.finalAmount) || 0) * 100);
+    const expectedPaise = Math.round((bill ? payableAfterCoupon(booking, Number(bill.grandTotal) || 0) : (Number(booking.finalAmount) || 0)) * 100);
     const capturedPayment = captured.find(p => Number(p.amount) >= expectedPaise);
 
     if (!capturedPayment) {
