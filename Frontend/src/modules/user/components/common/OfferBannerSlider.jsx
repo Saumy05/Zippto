@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FiChevronLeft, FiChevronRight, FiArrowRight } from 'react-icons/fi';
-import { toast } from 'react-hot-toast';
 
 export const toAssetUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
@@ -13,25 +12,25 @@ export const toAssetUrl = (url) => {
   return url;
 };
 
-// Fallback 3 real high-res photography banners if database has no active banners configured
+// 3 Bespoke, high-resolution photography banners (technician/action on right, clean text space on left)
 const DEFAULT_BANNERS = [
   {
     id: 'def-bnr-1',
-    imageUrl: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1200&auto=format&fit=crop&q=80',
+    imageUrl: '/banners/banner_electrician.jpg',
     text: 'Certified Electricians • Instant Fixes & Repairs from ₹99',
     badge: 'TOP RATED',
     slug: 'electrician'
   },
   {
     id: 'def-bnr-2',
-    imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=1200&auto=format&fit=crop&q=80',
+    imageUrl: '/banners/banner_ac.jpg',
     text: 'Beat The Heat • AC Deep Cleaning & Servicing from ₹499',
     badge: 'SUMMER SPECIAL',
     slug: 'ac-appliance-repair'
   },
   {
     id: 'def-bnr-3',
-    imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1200&auto=format&fit=crop&q=80',
+    imageUrl: '/banners/banner_cleaning.jpg',
     text: 'Sparkling Clean Homes • Intense Deep Cleaning & Sanitization',
     badge: 'POPULAR',
     slug: 'cleaning-service'
@@ -112,10 +111,10 @@ const OfferBannerSlider = ({ banners = [], onBannerClick }) => {
       <div
         className="w-full relative overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/90 bg-slate-900 shadow-xs"
         style={{
-          // Responsive aspect ratio: compact on mobile to keep categories above fold
-          aspectRatio: '21 / 9',
-          minHeight: '150px',
-          maxHeight: '260px'
+          // Responsive aspect ratio: balanced height to keep categories above fold while showing full subjects
+          aspectRatio: '16 / 8.5',
+          minHeight: '160px',
+          maxHeight: '270px'
         }}
       >
         {/* Sliding Flex Track */}
@@ -131,47 +130,47 @@ const OfferBannerSlider = ({ banners = [], onBannerClick }) => {
               <div
                 key={banner.id || banner._id || index}
                 onClick={() => onBannerClick && onBannerClick(banner)}
-                className="w-full h-full flex-shrink-0 relative cursor-pointer overflow-hidden"
+                className="w-full h-full flex-shrink-0 relative cursor-pointer overflow-hidden bg-slate-100"
               >
-                {/* Background Image */}
+                {/* Background Image: Crisp, vibrant, right-aligned to showcase the technician */}
                 <img
                   src={imageSrc}
                   alt={banner.text || `Promotion ${index + 1}`}
-                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out hover:scale-[1.02]"
+                  className="w-full h-full object-cover object-right sm:object-center transition-transform duration-700 ease-out group-hover:scale-[1.01]"
                   loading={index === 0 ? 'eager' : 'lazy'}
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = '/cat_images/electrician.jpg';
+                    e.target.src = '/banners/banner_electrician.jpg';
                   }}
                 />
 
-                {/* Left Gradient Overlay to guarantee text readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent pointer-events-none" />
+                {/* Soft, gentle left-gradient to make text pop without dimming or muddying the image */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/15 to-transparent pointer-events-none" />
 
-                {/* Banner Content Overlay */}
+                {/* Banner Content Overlay - Kept strictly to the left 60% */}
                 <div className="absolute inset-0 flex flex-col justify-between p-3.5 sm:p-5 md:p-6 z-10 text-white pointer-events-none">
                   {/* Top Badge */}
                   <div className="flex items-center gap-1.5">
-                    <span className="inline-flex items-center gap-1 bg-red-600/90 text-white font-extrabold text-[9px] sm:text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full shadow-xs">
+                    <span className="inline-flex items-center gap-1 bg-[#B33A35] text-white font-extrabold text-[9px] sm:text-[10px] tracking-wider uppercase px-2.5 py-0.5 rounded-full shadow-sm">
                       {badgeText}
                     </span>
-                    <span className="text-[10px] sm:text-[11px] font-bold text-white/80 tracking-wide uppercase hidden xs:inline">
+                    <span className="text-[10px] sm:text-[11px] font-bold text-white/95 tracking-wide uppercase px-2 py-0.5 rounded-full bg-black/35 backdrop-blur-xs border border-white/10 hidden xs:inline">
                       Zippto Verified
                     </span>
                   </div>
 
                   {/* Main Headline & CTA */}
-                  <div className="max-w-[75%] sm:max-w-md space-y-1.5 sm:space-y-2">
+                  <div className="max-w-[62%] sm:max-w-sm space-y-1.5 sm:space-y-2">
                     {banner.text && (
-                      <h3 className="text-xs sm:text-base md:text-lg font-black text-white leading-snug tracking-tight drop-shadow-xs line-clamp-2 font-heading">
+                      <h3 className="text-xs sm:text-base md:text-lg font-black text-white leading-snug tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] line-clamp-2 font-heading">
                         {banner.text}
                       </h3>
                     )}
 
                     <div className="pt-0.5">
-                      <span className="inline-flex items-center gap-1 bg-white text-slate-900 font-extrabold text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-md sm:rounded-lg shadow-sm hover:bg-slate-100 transition-all pointer-events-auto">
+                      <span className="inline-flex items-center gap-1.5 bg-white text-slate-900 font-extrabold text-[10px] sm:text-xs px-3 py-1.5 rounded-md sm:rounded-lg shadow-md hover:bg-slate-100 active:scale-95 transition-all pointer-events-auto cursor-pointer">
                         <span>Book Now</span>
-                        <FiArrowRight className="w-3 h-3 text-red-600" />
+                        <FiArrowRight className="w-3.5 h-3.5 text-[#B33A35]" />
                       </span>
                     </div>
                   </div>
