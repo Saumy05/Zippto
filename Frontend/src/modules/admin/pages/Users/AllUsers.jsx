@@ -20,14 +20,24 @@ import {
   FiDollarSign
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 import { adminUserService } from '../../../../services/adminUserService';
 import { CustomSelect } from '../../../../components/common';
 import Modal from '../UserCategories/components/Modal';
 
 const AllUsers = () => {
+  const [searchParams] = useSearchParams();
+  const urlSearch = searchParams.get('search') || '';
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(urlSearch);
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q !== null && q !== search) {
+      setSearch(q);
+    }
+  }, [searchParams]);
   const [statusFilter, setStatusFilter] = useState('all'); // all, active, inactive
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);

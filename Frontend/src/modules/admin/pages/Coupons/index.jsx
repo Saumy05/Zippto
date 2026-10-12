@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiTag } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiTag, FiSearch } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 import couponService from '../../services/couponService';
 import { cityService } from '../../services/cityService';
 
@@ -25,6 +26,13 @@ const Coupons = () => {
   const [coupons, setCoupons] = useState([]);
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q !== null) setSearchTerm(q);
+  }, [searchParams]);
   const [form, setForm] = useState(null); // null = closed, object = open
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -111,19 +119,48 @@ const Coupons = () => {
     }
   };
 
+  const displayedCoupons = useMemo(() => {
+    if (!searchTerm.trim()) return coupons;
+    const q = searchTerm.toLowerCase();
+    return coupons.filter((c) =>
+      (c.code || '').toLowerCase().includes(q) ||
+      (c.description || '').toLowerCase().includes(q)
+    );
+  }, [coupons, searchTerm]);
+
   const input = 'w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-500 bg-white';
   const label = 'block text-xs font-bold text-gray-700 mb-1';
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-black text-gray-900 flex items-center gap-2"><FiTag /> Coupons</h1>
           <p className="text-xs text-gray-500">Discount codes customers can apply at checkout.</p>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold">
-          <FiPlus /> New Coupon
-        </button>
+        <div className="flex items-center gap-2.5">
+          <div className="relative min-w-[200px] max-w-xs flex-1">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search coupon code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white outline-none focus:border-blue-500"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <FiX className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <button onClick={openCreate} className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shrink-0">
+            <FiPlus /> New Coupon
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 overflow-x-auto">
@@ -138,9 +175,9 @@ const Coupons = () => {
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
-            ) : coupons.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No coupons yet</td></tr>
-            ) : coupons.map((c) => {
+            ) : displayedCoupons.length === 0 ? (
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No coupons found</td></tr>
+            ) : displayedCoupons.map((c) => {
               const st = effectiveStatus(c);
               return (
                 <tr key={c._id}>

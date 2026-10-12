@@ -5,7 +5,7 @@ import {
   FiClock, FiCheckCircle, FiBox, FiTruck, FiXCircle, FiRefreshCw, FiShoppingBag,
   FiX, FiAlertTriangle, FiPhone, FiStar, FiMapPin, FiUser, FiMessageSquare, FiNavigation
 } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { adminBookingService } from '../../../../services/adminBookingService';
 import { getDashboardStats } from '../../../../services/adminDashboardService';
@@ -28,11 +28,20 @@ const BookingStatsCard = ({ title, count, icon: Icon, colorClass, bgClass }) => 
 
 const Bookings = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlSearch = searchParams.get('search') || '';
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(urlSearch);
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q !== null && q !== search) {
+      setSearch(q);
+    }
+  }, [searchParams]);
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');

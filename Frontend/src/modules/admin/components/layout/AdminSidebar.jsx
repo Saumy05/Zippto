@@ -19,7 +19,8 @@ import {
   FiShield,
   FiUser,
   FiTag,
-  FiLifeBuoy
+  FiLifeBuoy,
+  FiSearch
 } from "react-icons/fi";
 import dashboardService from "../../services/dashboardService";
 
@@ -203,6 +204,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [expandedItems, setExpandedItems] = useState({});
+  const [menuQuery, setMenuQuery] = useState("");
   const [adminUser, setAdminUser] = useState({ name: "Admin", email: "", role: "admin" });
   const [counts, setCounts] = useState({
     bookings: 0,
@@ -223,6 +225,31 @@ const AdminSidebar = ({ isOpen, onClose }) => {
       }))
       .filter((sec) => sec.items.length > 0);
   }, [adminUser.role]);
+
+  // Sidebar search filters the menu only: a parent match keeps all its children, a child match keeps just that child
+  const displaySections = useMemo(() => {
+    const q = menuQuery.trim().toLowerCase();
+    if (!q) return visibleSections;
+    return visibleSections
+      .map((sec) => ({
+        ...sec,
+        items: sec.items
+          .map((item) => {
+            if (item.label.toLowerCase().includes(q) || sec.section.toLowerCase().includes(q)) return item;
+            const children = (item.children || []).filter((c) => c.label.toLowerCase().includes(q));
+            return children.length > 0 ? { ...item, children } : null;
+          })
+          .filter(Boolean)
+      }))
+      .filter((sec) => sec.items.length > 0);
+  }, [visibleSections, menuQuery]);
+
+  // While filtering, keep to one open group: the one the user last opened if still shown, else the first match
+  const filterOpenId = useMemo(() => {
+    if (!menuQuery.trim()) return null;
+    const withChildren = displaySections.flatMap((sec) => sec.items).filter((i) => i.children?.length);
+    return (withChildren.find((i) => expandedItems[i.id]) || withChildren[0])?.id ?? null;
+  }, [menuQuery, displaySections, expandedItems]);
 
   // Load admin user metadata
   useEffect(() => {
@@ -441,9 +468,40 @@ const AdminSidebar = ({ isOpen, onClose }) => {
         </button>
       </div>
 
+      {/* Sidebar menu filter (searches menu items only; global search lives in the header) */}
+      <div className="px-3.5 pt-3 pb-1">
+        <div className="relative">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={menuQuery}
+            onChange={(e) => setMenuQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setMenuQuery("");
+            }}
+            placeholder="Filter menu..."
+            aria-label="Filter sidebar menu"
+            className="w-full pl-9 pr-8 py-2 bg-slate-800/80 text-slate-200 placeholder-slate-500 rounded-xl border border-slate-700/60 focus:border-blue-500/60 focus:outline-none text-xs font-medium"
+          />
+          {menuQuery && (
+            <button
+              type="button"
+              onClick={() => setMenuQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white cursor-pointer"
+              aria-label="Clear menu filter"
+            >
+              <FiX className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Scrollable Navigation Body (Spacious & Clean Layout) */}
-      <nav className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6 custom-scrollbar scrollbar-hide overscroll-contain pb-28 lg:pb-32">
-        {visibleSections.map((sec, secIdx) => (
+      <nav className="flex-1 overflow-y-auto px-3.5 py-3 space-y-6 custom-scrollbar scrollbar-hide overscroll-contain pb-28 lg:pb-32">
+        {menuQuery.trim() && displaySections.length === 0 && (
+          <p className="px-3.5 py-6 text-center text-xs text-slate-400">No menu items match "{menuQuery}"</p>
+        )}
+        {displaySections.map((sec, secIdx) => (
           <div key={secIdx} className="space-y-1.5">
             {/* Section Categorization Header */}
             <div className="text-[10.5px] font-bold text-slate-400/90 uppercase tracking-wider px-3.5 pt-1 pb-1">
@@ -454,7 +512,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
             <div className="space-y-1">
               {sec.items.map((item) => {
                 const hasChildren = item.children && item.children.length > 0;
-                const isExpanded = !!expandedItems[item.id];
+                const isExpanded = menuQuery.trim() ? item.id === filterOpenId : !!expandedItems[item.id];
                 const active = isItemActive(item.to, item.children);
                 const Icon = item.Icon || FiHome;
 
