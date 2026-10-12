@@ -60,6 +60,7 @@ const Notifications = () => {
   const handleMarkAsRead = async (id) => {
     try {
       await markAsRead(id);
+      window.dispatchEvent(new Event('userNotificationsChanged'));
       setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, read: true } : n)
       );
@@ -71,6 +72,7 @@ const Notifications = () => {
   const handleMarkAllRead = async () => {
     try {
       await markAllAsRead();
+      window.dispatchEvent(new Event('userNotificationsChanged'));
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       toast.success('All marked as read');
     } catch (error) {
@@ -82,6 +84,7 @@ const Notifications = () => {
     e.stopPropagation();
     try {
       await deleteNotification(id);
+      window.dispatchEvent(new Event('userNotificationsChanged'));
       setNotifications(prev => prev.filter(n => n.id !== id));
       toast.success('Notification removed');
     } catch (error) {
@@ -92,6 +95,7 @@ const Notifications = () => {
   const confirmClearAll = async () => {
     try {
       await deleteAllNotifications();
+      window.dispatchEvent(new Event('userNotificationsChanged'));
       setNotifications([]);
       toast.success('All notifications cleared');
       setShowClearConfirm(false);

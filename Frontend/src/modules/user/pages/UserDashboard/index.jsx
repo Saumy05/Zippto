@@ -27,6 +27,7 @@ import { useCart } from '../../../../context/CartContext';
 import { useCity } from '../../../../context/CityContext';
 import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 import { publicCatalogService } from '../../../../services/catalogService';
+import { getUnreadCount } from '../../services/notificationService';
 import CitySelectorModal from '../../components/common/CitySelectorModal';
 import OfferBannerSlider from '../../components/common/OfferBannerSlider';
 
@@ -233,6 +234,30 @@ const UserDashboard = () => {
   }, [token]);
 
   const isLoggedIn = Boolean(token && storedUser);
+
+  // Real unread notification count for the header bell (refreshes on poll, focus and read/delete events)
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setUnreadCount(0);
+      return undefined;
+    }
+    let cancelled = false;
+    const refreshUnread = async () => {
+      const count = await getUnreadCount();
+      if (!cancelled) setUnreadCount(Number(count) || 0);
+    };
+    refreshUnread();
+    const interval = setInterval(refreshUnread, 60000);
+    window.addEventListener('userNotificationsChanged', refreshUnread);
+    window.addEventListener('focus', refreshUnread);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener('userNotificationsChanged', refreshUnread);
+      window.removeEventListener('focus', refreshUnread);
+    };
+  }, [isLoggedIn]);
   const userName = storedUser?.name || storedUser?.fullName || '';
   const userCity = storedUser?.city || 'Gondia, Maharashtra';
   const walletBalance = storedUser?.wallet?.balance ?? storedUser?.walletBalance ?? 0;
@@ -1333,16 +1358,18 @@ const UserDashboard = () => {
               <FiSearch className="w-4 h-4" />
             </button>
 
-            {/* Circular Notification Bell with Red Badge Matching Image */}
+            {/* Circular Notification Bell with live unread badge */}
             <Link
               to="/user/notifications"
               className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors shadow-2xs active:scale-95"
               aria-label="Notifications"
             >
               <FiBell className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 bg-[#D32F2F] text-white font-bold text-[9px] min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-0.5 shadow-xs ring-2 ring-white">
-                24
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#D32F2F] text-white font-bold text-[9px] min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-0.5 shadow-xs ring-2 ring-white">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
 
             {isLoggedIn ? (
