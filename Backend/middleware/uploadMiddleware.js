@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
+const { isCloudinaryConfigured } = require('../services/gatewayCredentials');
 
 // Ensure local uploads directory exists
 const uploadsDir = path.join(__dirname, '../uploads');
@@ -38,14 +39,19 @@ const cloudinaryStorage = new CloudinaryStorage({
   }
 });
 
-const isCloudinaryConfigured = Boolean(
-  process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_SECRET
-);
-
-// Use Cloudinary if keys exist, otherwise fallback to local disk
-const activeStorage = isCloudinaryConfigured ? cloudinaryStorage : diskStorage;
+// Chosen per upload (not at boot) so admin-entered Cloudinary keys take effect without a restart.
+// Cloudinary is used whenever keys exist (admin settings override .env); otherwise local disk.
+const activeStorage = {
+  _handleFile(req, file, cb) {
+    const target = isCloudinaryConfigured() ? cloudinaryStorage : diskStorage;
+    file._storageEngine = target;
+    target._handleFile(req, file, cb);
+  },
+  _removeFile(req, file, cb) {
+    const target = file._storageEngine || diskStorage;
+    target._removeFile(req, file, cb);
+  }
+};
 
 // File filter - only images
 const imageFilter = (req, file, cb) => {

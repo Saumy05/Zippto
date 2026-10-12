@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import flutterBridge from '../../utils/flutterBridge';
 import { detectAndStoreAddress } from '../../utils/detectAddress';
 import LocationAccessModal from './LocationAccessModal';
+import { useSettings } from '../../context/SettingsContext';
 
 // Location is only needed in the customer and partner apps (not admin / marketing pages).
 const getScope = (pathname) => {
@@ -27,6 +28,10 @@ const getPermissionState = async () => {
 export const LocationPermissionChecker = () => {
     const { pathname } = useLocation();
     const scope = getScope(pathname);
+    const { settings } = useSettings();
+    // Admin toggle: customers skip the GPS prompt and use the saved/default address.
+    // Vendors always need live GPS to receive jobs, so the toggle never applies to them.
+    const defaultLocationMode = settings?.isDefaultLocationModeEnabled === true && scope === 'user';
     const [modal, setModal] = useState({ open: false, locationDisabled: false });
     const startedRef = useRef(false);
 
@@ -65,7 +70,7 @@ export const LocationPermissionChecker = () => {
 
     // Ask once per session, the first time the user lands in the customer/partner app.
     useEffect(() => {
-        if (!scope || startedRef.current) return undefined;
+        if (!scope || defaultLocationMode || startedRef.current) return undefined;
         try {
             if (sessionStorage.getItem(SESSION_KEY) === 'true') return undefined;
         } catch (e) { /* ignore */ }
@@ -81,14 +86,14 @@ export const LocationPermissionChecker = () => {
             // StrictMode re-mount: allow the effect to schedule again
             startedRef.current = false;
         };
-    }, [scope, checkPermission]);
+    }, [scope, defaultLocationMode, checkPermission]);
 
     // Global listener for manual triggers (see utils/locationTrigger.js)
     useEffect(() => {
-        const handleManualTrigger = () => checkPermission({ manual: true });
+        const handleManualTrigger = () => { if (!defaultLocationMode) checkPermission({ manual: true }); };
         window.addEventListener('requestLocationPrompt', handleManualTrigger);
         return () => window.removeEventListener('requestLocationPrompt', handleManualTrigger);
-    }, [checkPermission]);
+    }, [defaultLocationMode, checkPermission]);
 
     return (
         <LocationAccessModal

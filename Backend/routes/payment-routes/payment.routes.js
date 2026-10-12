@@ -3,6 +3,11 @@ const router = express.Router();
 const { body } = require('express-validator');
 const { authenticate } = require('../../middleware/authMiddleware');
 const { isUser } = require('../../middleware/roleMiddleware');
+const { requireFlag } = require('../../utils/platformSettings');
+
+const onlineEnabled = requireFlag('isOnlinePaymentEnabled', 'Online payments are currently disabled');
+const walletEnabled = requireFlag('isWalletPaymentEnabled', 'Wallet payments are currently disabled');
+const cashEnabled = requireFlag('isCashPaymentEnabled', 'Pay at home / cash payments are currently disabled');
 const {
   createPaymentOrder,
   verifyPaymentWebhook,
@@ -40,11 +45,11 @@ const refundValidation = [
 // Server-to-Server Razorpay Webhook
 router.post('/webhook', handleRazorpayWebhook);
 
-router.post('/create-order', authenticate, isUser, createOrderValidation, createPaymentOrder);
+router.post('/create-order', authenticate, isUser, onlineEnabled, createOrderValidation, createPaymentOrder);
 router.post('/verify', authenticate, isUser, verifyPaymentValidation, verifyPaymentWebhook);
-router.post('/wallet', authenticate, isUser, walletPaymentValidation, processWalletPayment);
+router.post('/wallet', authenticate, isUser, walletEnabled, walletPaymentValidation, processWalletPayment);
 router.post('/refund', authenticate, isUser, refundValidation, processRefund);
-router.post('/pay-at-home', authenticate, isUser, walletPaymentValidation, confirmPayAtHome);
+router.post('/pay-at-home', authenticate, isUser, cashEnabled, walletPaymentValidation, confirmPayAtHome);
 router.get('/history', authenticate, isUser, getPaymentHistory);
 router.post('/plan/create-order', authenticate, isUser, createPlanOrder);
 router.post('/plan/verify', authenticate, isUser, verifyPlanPayment);

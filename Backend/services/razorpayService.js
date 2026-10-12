@@ -1,33 +1,42 @@
 const Razorpay = require('razorpay');
 
-// Initialize Razorpay with validation
-let razorpay;
-let isTestMode = true;
+const { getRazorpayCredentials } = require('./gatewayCredentials');
 
-try {
-  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    console.error('⚠️  Razorpay credentials missing in .env file');
-  } else {
-    razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET
-    });
+// Client is built lazily from the current credentials (admin settings override .env)
+// and rebuilt automatically whenever the key pair changes.
+let clientCache = { keyId: null, keySecret: null, client: null };
 
-    // Check if we are in test or live mode
-    isTestMode = process.env.RAZORPAY_KEY_ID.startsWith('rzp_test');
-    console.log(`✅ Razorpay initialized in ${isTestMode ? 'TEST' : 'LIVE'} mode`);
-
-    // MERCHANT_UPI_ID check removed as requested
+const getClient = () => {
+  const { keyId, keySecret } = getRazorpayCredentials();
+  if (!keyId || !keySecret) {
+    clientCache = { keyId: null, keySecret: null, client: null };
+    return null;
   }
-} catch (error) {
-  console.error('❌ Failed to initialize Razorpay:', error.message);
-}
+  if (clientCache.client && clientCache.keyId === keyId && clientCache.keySecret === keySecret) {
+    return clientCache.client;
+  }
+  try {
+    const client = new Razorpay({ key_id: keyId, key_secret: keySecret });
+    clientCache = { keyId, keySecret, client };
+    console.log(`✅ Razorpay initialized in ${keyId.startsWith('rzp_test') ? 'TEST' : 'LIVE'} mode`);
+    return client;
+  } catch (error) {
+    console.error('❌ Failed to initialize Razorpay:', error.message);
+    return null;
+  }
+};
+
+const basicAuthHeader = () => {
+  const { keyId, keySecret } = getRazorpayCredentials();
+  return Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+};
 
 /**
  * Create Razorpay order
  */
 const createOrder = async (amount, currency = 'INR', receipt = null, notes = {}) => {
   try {
+    const razorpay = getClient();
     if (!razorpay) {
       console.log('⚠️ Razorpay credentials not found. Creating sandbox test order for development.');
       const mockOrderId = `order_mock_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
@@ -91,12 +100,13 @@ const createOrder = async (amount, currency = 'INR', receipt = null, notes = {})
  * Verify payment signature
  */
 const verifyPayment = (razorpay_order_id, razorpay_payment_id, razorpay_signature) => {
-  if (razorpay_order_id?.startsWith('order_mock_') || !process.env.RAZORPAY_KEY_SECRET) {
+  const { keySecret } = getRazorpayCredentials();
+  if (razorpay_order_id?.startsWith('order_mock_') || !keySecret) {
     return true; // Mock verification in development
   }
 
   const crypto = require('crypto');
-  const secret = process.env.RAZORPAY_KEY_SECRET;
+  const secret = keySecret;
 
   const generated_signature = crypto
     .createHmac('sha256', secret)
@@ -111,6 +121,8 @@ const verifyPayment = (razorpay_order_id, razorpay_payment_id, razorpay_signatur
  */
 const getPaymentDetails = async (paymentId) => {
   try {
+    const razorpay = getClient();
+    if (!razorpay) return { success: false, error: 'Razorpay not initialized' };
     const payment = await razorpay.payments.fetch(paymentId);
     return {
       success: true,
@@ -130,6 +142,8 @@ const getPaymentDetails = async (paymentId) => {
  */
 const refundPayment = async (paymentId, amount = null, notes = {}) => {
   try {
+    const razorpay = getClient();
+    if (!razorpay) return { success: false, error: 'Razorpay not initialized' };
     const refundOptions = {
       payment_id: paymentId,
       notes
@@ -161,12 +175,13 @@ const createQRCode = async (amount, bookingNumber, notes = {}) => {
   try {
     // Manual UPI QR block removed as requested
     
+    const razorpay = getClient();
     if (!razorpay) {
       return { success: false, error: 'Razorpay not initialized' };
     }
 
     const axios = require('axios');
-    const auth = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64');
+    const auth = basicAuthHeader();
 
     const payload = {
       type: 'upi_qr',
@@ -254,6 +269,7 @@ const createQRCode = async (amount, bookingNumber, notes = {}) => {
  */
 const getQRCodePayments = async (id) => {
   try {
+    const razorpay = getClient();
     if (!razorpay) {
       return { success: false, error: 'Razorpay not initialized' };
     }
@@ -261,7 +277,7 @@ const getQRCodePayments = async (id) => {
     // Manual UPI check removed as requested
     if (id && (id.startsWith('plink_'))) {
       const axios = require('axios');
-      const auth = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64');
+      const auth = basicAuthHeader();
 
       try {
         const response = await axios.get(`https://api.razorpay.com/v1/payment_links/${id}`, {
@@ -311,6 +327,7 @@ module.exports = {
   refundPayment,
   createQRCode,
   getQRCodePayments,
-  isTestMode: () => isTestMode
+  isTestMode: () => (getRazorpayCredentials().keyId || '').startsWith('rzp_test'),
+  getPublicKeyId: () => getRazorpayCredentials().keyId || ''
 };
 

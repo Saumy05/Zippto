@@ -6,7 +6,7 @@ import {
   FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, 
   FiEdit, FiLock, FiUnlock, FiX, FiGlobe, FiCheck, FiSearch, FiChevronDown, 
   FiGift, FiToggleRight, FiToggleLeft, FiBell, FiBriefcase, FiCreditCard, FiCpu, FiCheckCircle, FiXCircle,
-  FiArrowLeft, FiSliders
+  FiArrowLeft, FiSliders, FiKey
 } from 'react-icons/fi';
 import { getSettings, updateSettings, updateAdminProfile, getAdminProfile, getAllAdmins, createAdmin, deleteAdmin, updateAdminDetails, toggleAdminStatus } from '../../services/settingsService';
 import { cityService } from '../../services/cityService';
@@ -750,6 +750,22 @@ const AdminSettings = () => {
             </div>
             <h3 className="text-sm font-bold text-gray-900 group-hover:text-rose-600 transition-colors">Customization Settings</h3>
             <p className="text-xs text-gray-500 leading-snug mt-1">Centrally toggle off or customize platform modules & features</p>
+          </div>
+        </div>
+      )}
+
+      {/* Payment & Storage Keys Card - Super Admin Only */}
+      {isSuperAdmin && (
+        <div
+          onClick={() => navigate('/admin/integrations')}
+          className="bg-white p-4 rounded-xl shadow-2xs border border-gray-100 hover:border-violet-200 hover:shadow-xs transition-all cursor-pointer group flex flex-col justify-between"
+        >
+          <div>
+            <div className="w-8.5 h-8.5 bg-violet-50 group-hover:bg-violet-100 rounded-lg flex items-center justify-center mb-2.5 transition-colors">
+              <FiKey className="w-4 h-4 text-violet-600" />
+            </div>
+            <h3 className="text-sm font-bold text-gray-900 group-hover:text-violet-600 transition-colors">Payment & Storage Keys</h3>
+            <p className="text-xs text-gray-500 leading-snug mt-1">Razorpay and Cloudinary credentials, applied instantly</p>
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 const Vendor = require('../../models/Vendor');
+const { getPlatformFlags } = require('../../utils/platformSettings');
 const Transaction = require('../../models/Transaction');
 const Settlement = require('../../models/Settlement');
 const Withdrawal = require('../../models/Withdrawal');
@@ -207,11 +208,15 @@ const recordCashCollection = async (req, res) => {
     };
 
     if (netOwed > cashLimit) {
-      updateQuery.$set = {
-        'wallet.isBlocked': true,
-        'wallet.blockedAt': new Date(),
-        'wallet.blockReason': `Cash limit exceeded. Net owed: ₹${netOwed.toFixed(2)}, Limit: ₹${cashLimit}`
-      };
+      // Admin toggle: when auto-blocking is off the admin is still alerted, but the vendor is not blocked
+      const { isAutoCodBlockingEnabled } = await getPlatformFlags();
+      if (isAutoCodBlockingEnabled !== false) {
+        updateQuery.$set = {
+          'wallet.isBlocked': true,
+          'wallet.blockedAt': new Date(),
+          'wallet.blockReason': `Cash limit exceeded. Net owed: ₹${netOwed.toFixed(2)}, Limit: ₹${cashLimit}`
+        };
+      }
 
       // Notify admins
       try {

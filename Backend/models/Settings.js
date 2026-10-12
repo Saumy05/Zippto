@@ -133,6 +133,10 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     default: 'Zippto'
   },
+  companyLogo: {
+    type: String,
+    default: '/zippto_logo.png'
+  },
   companyGSTIN: {
     type: String,
     default: ''
@@ -211,6 +215,25 @@ const settingsSchema = new mongoose.Schema({
     default: true
   },
   isB2BEnabled: {
+    type: Boolean,
+    default: true
+  },
+  isWalletPaymentEnabled: {
+    type: Boolean,
+    default: true
+  },
+  // Waive the visiting/inspection charge on every new booking
+  isVisitingChargesWaiverEnabled: {
+    type: Boolean,
+    default: false
+  },
+  // Skip the GPS permission prompt; apps fall back to the saved/default address
+  isDefaultLocationModeEnabled: {
+    type: Boolean,
+    default: false
+  },
+  // Block pay-at-home/cash bookings for users with unpaid dues (wallet.penalty > 0)
+  isAutoCodBlockingEnabled: {
     type: Boolean,
     default: true
   },

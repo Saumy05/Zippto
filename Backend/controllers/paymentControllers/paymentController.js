@@ -8,7 +8,8 @@ const Settings = require('../../models/Settings');
 const Plan = require('../../models/Plan');
 const { validationResult } = require('express-validator');
 const { PAYMENT_STATUS, BOOKING_STATUS } = require('../../utils/constants');
-const { createOrder, verifyPayment, refundPayment } = require('../../services/razorpayService');
+const { createOrder, verifyPayment, refundPayment, getPublicKeyId } = require('../../services/razorpayService');
+const { getRazorpayCredentials } = require('../../services/gatewayCredentials');
 const { createNotification } = require('../notificationControllers/notificationController');
 const { recordBookingEarning } = require('../../services/earningTrackerService');
 const { refundOrphanPayment } = require('../../services/orphanPaymentRefundService');
@@ -133,7 +134,7 @@ const createPaymentOrder = async (req, res) => {
         orderId: orderResult.orderId,
         amount: orderResult.amount / 100, // Convert back to rupees
         currency: orderResult.currency,
-        key: process.env.RAZORPAY_KEY_ID || '',
+        key: getPublicKeyId(),
         isMock: !!orderResult.isMock,
         bookingId: booking._id
       }
@@ -374,16 +375,7 @@ const handleRazorpayWebhook = async (req, res) => {
     }
 
     // Get Webhook Secret from ENV or DB Settings
-    let webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      // Settings has no getSettings() helper; read the global document directly (non-fatal if missing)
-      try {
-        const settings = await Settings.findOne({ type: 'global' }).lean();
-        webhookSecret = settings?.razorpayWebhookSecret;
-      } catch (settingsErr) {
-        console.error('[Webhook] Could not load settings for webhook secret:', settingsErr.message);
-      }
-    }
+    const webhookSecret = getRazorpayCredentials().webhookSecret;
 
     if (!webhookSecret) {
       if (process.env.NODE_ENV === 'production') {
@@ -1082,7 +1074,7 @@ const createPlanOrder = async (req, res) => {
       data: {
         orderId: orderResult.orderId,
         amount: orderResult.amount / 100,
-        key: process.env.RAZORPAY_KEY_ID
+        key: getPublicKeyId()
       }
     });
   } catch (error) {

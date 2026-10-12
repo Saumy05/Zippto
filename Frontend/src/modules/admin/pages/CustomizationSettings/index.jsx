@@ -125,7 +125,7 @@ const CustomizationSettings = () => {
     return <LogoLoader />;
   }
 
-  // Toggle Configuration Registry - 3 Essential Platform Toggles
+  // Toggle Configuration Registry
   const toggleCards = [
     {
       key: 'isReferralEnabled',
@@ -142,6 +142,36 @@ const CustomizationSettings = () => {
       key: 'isChatEnabled',
       title: 'In-App Chat Messaging',
       description: 'Controls live customer-technician in-app chat modal during active jobs.'
+    },
+    {
+      key: 'isOnlinePaymentEnabled',
+      title: 'Online Payments',
+      description: 'Allow UPI / card / net-banking payments. When off, customers can only pay by cash or wallet.'
+    },
+    {
+      key: 'isCashPaymentEnabled',
+      title: 'Cash Payments',
+      description: 'Allow vendors to collect cash after the job. When off, customers must pay online or from wallet.'
+    },
+    {
+      key: 'isWalletPaymentEnabled',
+      title: 'Wallet Payments',
+      description: 'Allow customers to pay bookings using their Zippto wallet balance.'
+    },
+    {
+      key: 'isVisitingChargesWaiverEnabled',
+      title: 'Waive Visiting Charges',
+      description: 'Set the visiting / inspection charge to ₹0 on every new booking (promotions).'
+    },
+    {
+      key: 'isDefaultLocationModeEnabled',
+      title: 'Default Location Mode',
+      description: 'Stop asking for GPS permission; the apps use the saved address instead.'
+    },
+    {
+      key: 'isAutoCodBlockingEnabled',
+      title: 'Auto-Block Vendors Over Cash Limit',
+      description: 'Automatically block a vendor from new jobs when cash owed exceeds their cash limit.'
     }
   ];
 
@@ -182,7 +212,7 @@ const CustomizationSettings = () => {
             <span>Manage All Toggles Here</span>
           </div>
           <div className="text-[10px] font-bold px-2.5 py-0.5 bg-gray-100 text-gray-700 rounded-full border border-gray-200/60">
-            {Object.values(toggles).filter(Boolean).length} / {toggleCards.length} Enabled
+            {toggleCards.filter(c => toggles[c.key]).length} / {toggleCards.length} Enabled
           </div>
         </div>
 

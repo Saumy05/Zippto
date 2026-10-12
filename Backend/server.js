@@ -13,7 +13,7 @@ const rateLimiter = require('./middleware/rateLimiter');
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Connect to database
-connectDB();
+connectDB().then(() => require('./services/gatewayCredentials').refreshGatewayCredentials()).catch((e) => console.error('[Boot] Gateway credential load failed:', e.message));
 
 // Initialize Redis (if enabled)
 const { initRedis } = require('./services/redisService');

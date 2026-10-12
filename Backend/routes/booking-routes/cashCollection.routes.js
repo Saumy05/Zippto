@@ -12,11 +12,13 @@ const {
 } = require('../../controllers/bookingControllers/cashCollectionController');
 
 // All routes require authentication
+const { requireFlag } = require('../../utils/platformSettings');
+
 router.use(authenticate);
 
 // Vendor Partner routes
-router.post('/:id/initiate', initiateCashCollection);
-router.post('/:id/initiate-online', initiateOnlineCollection);
+router.post('/:id/initiate', requireFlag('isCashPaymentEnabled', 'Cash payments are currently disabled'), initiateCashCollection);
+router.post('/:id/initiate-online', requireFlag('isOnlinePaymentEnabled', 'Online payments are currently disabled'), initiateOnlineCollection);
 router.post('/:id/confirm', confirmCashCollection);
 
 // Explicit verification route
