@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+  // Optional business details printed on GST invoices (only used when the admin enables B2B)
+  businessProfile: {
+    businessName: { type: String, trim: true, default: '' },
+    gstin: { type: String, trim: true, uppercase: true, default: '' }
+  },
   name: {
     type: String,
     required: [true, 'Please provide a name'],

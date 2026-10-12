@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../../theme';
 import { userAuthService } from '../../../../services/authService';
 import flutterBridge from '../../../../utils/flutterBridge';
+import { useSettings } from '../../../../context/SettingsContext';
 
 import { z } from "zod";
 
@@ -17,6 +18,9 @@ const profileSchema = z.object({
 
 const UpdateProfile = () => {
   const navigate = useNavigate();
+  const { settings: platformSettings } = useSettings();
+  const isB2BEnabled = platformSettings?.isB2BEnabled !== false;
+  const [business, setBusiness] = useState({ businessName: '', gstin: '' });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -75,6 +79,7 @@ const UpdateProfile = () => {
         const response = await userAuthService.getProfile();
         if (response.success && response.user) {
           const user = response.user;
+          setBusiness({ businessName: user.businessProfile?.businessName || '', gstin: user.businessProfile?.gstin || '' });
           setFormData({
             name: user.name || '',
             email: user.email || '',
@@ -174,6 +179,16 @@ const UpdateProfile = () => {
       return;
     }
 
+    const gstin = business.gstin.trim().toUpperCase();
+    if (isB2BEnabled && gstin && !/^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)) {
+      toast.error('Please enter a valid 15-character GSTIN');
+      return;
+    }
+    if (isB2BEnabled && gstin && !business.businessName.trim()) {
+      toast.error('Business name is required with a GSTIN');
+      return;
+    }
+
     setIsSaving(true);
     setUploading(true);
     try {
@@ -195,7 +210,8 @@ const UpdateProfile = () => {
       const response = await userAuthService.updateProfile({
         name: formData.name.trim(),
         email: formData.email.trim() || null,
-        profilePhoto: photoUrl
+        profilePhoto: photoUrl,
+        ...(isB2BEnabled ? { businessProfile: { businessName: business.businessName.trim(), gstin } } : {})
       });
 
       if (response.success) {
@@ -382,6 +398,31 @@ const UpdateProfile = () => {
             </div>
           </div>
         </div>
+
+        {/* Business details for GST invoices (only when the admin has enabled B2B) */}
+        {isB2BEnabled && (
+          <div className="bg-white rounded-2xl p-5 border border-gray-200 mt-4 space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900">Business details (optional)</h3>
+              <p className="text-xs text-gray-500">Add your GSTIN to get GST invoices in your company's name. It applies to invoices issued from now on.</p>
+            </div>
+            <input
+              type="text"
+              value={business.businessName}
+              onChange={(e) => setBusiness((b) => ({ ...b, businessName: e.target.value }))}
+              placeholder="Business / company name"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none"
+            />
+            <input
+              type="text"
+              value={business.gstin}
+              maxLength={15}
+              onChange={(e) => setBusiness((b) => ({ ...b, gstin: e.target.value.toUpperCase() }))}
+              placeholder="GSTIN (15 characters)"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none font-mono"
+            />
+          </div>
+        )}
 
         {/* Save Button */}
         <div className="mt-6">

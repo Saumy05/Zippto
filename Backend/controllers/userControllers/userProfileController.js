@@ -41,6 +41,7 @@ const getProfile = async (req, res) => {
         addresses: user.addresses || [],
         plans: user.plans || {},
         settings: user.settings || {},
+        businessProfile: user.businessProfile || { businessName: '', gstin: '' },
         wallet: user.wallet || { balance: 0 },
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
@@ -70,7 +71,7 @@ const updateProfile = async (req, res) => {
     }
 
     const userId = req.user.id;
-    const { name, email, addresses, profilePhoto, settings } = req.body;
+    const { name, email, addresses, profilePhoto, settings, businessProfile } = req.body;
 
     console.log('[Profile Update] Request for user:', userId);
     console.log('[Profile Update] Data received:', { name, email, profilePhoto: profilePhoto ? 'provided' : 'not provided' });
@@ -126,6 +127,24 @@ const updateProfile = async (req, res) => {
       updateData.addresses = addresses.slice(-1); // Only save the last one
     }
 
+    // Business (B2B) details for GST invoices
+    if (businessProfile !== undefined) {
+      const platform = await Settings.findOne({ type: 'global' }).select('isB2BEnabled').lean();
+      if (platform && platform.isB2BEnabled === false) {
+        return res.status(403).json({ success: false, code: 'FEATURE_DISABLED', message: 'Business invoices are currently unavailable' });
+      }
+      const gstin = String(businessProfile?.gstin || '').trim().toUpperCase();
+      const businessName = String(businessProfile?.businessName || '').trim();
+      if (gstin && !/^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)) {
+        return res.status(400).json({ success: false, message: 'Please enter a valid 15-character GSTIN' });
+      }
+      if (gstin && !businessName) {
+        return res.status(400).json({ success: false, message: 'Business name is required with a GSTIN' });
+      }
+      updateData['businessProfile.gstin'] = gstin;
+      updateData['businessProfile.businessName'] = businessName;
+    }
+
     // Update settings
     if (settings) {
       if (settings.notifications !== undefined) {
@@ -161,6 +180,7 @@ const updateProfile = async (req, res) => {
         addresses: updatedUser.addresses || [],
         plans: updatedUser.plans || {},
         settings: updatedUser.settings || {},
+        businessProfile: updatedUser.businessProfile || { businessName: '', gstin: '' },
         wallet: updatedUser.wallet || { balance: 0 }
       }
     });

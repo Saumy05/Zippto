@@ -410,6 +410,16 @@ const Bookings = () => {
                             <span>Live Track</span>
                           </button>
 
+                          {['success', 'collected_by_vendor'].includes(String(booking.paymentStatus || '').toLowerCase()) && (
+                            <button
+                              onClick={() => navigate(`/admin/bookings/${booking._id}/invoice`)}
+                              className="px-2 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold flex items-center gap-1 border border-emerald-100 transition-all cursor-pointer shadow-2xs"
+                              title="View tax invoice"
+                            >
+                              <span>Invoice</span>
+                            </button>
+                          )}
+
                           <button
                             onClick={() => {
                               setSelectedBookingForChat(booking);

@@ -7,6 +7,7 @@ const {
   getAllBookings,
   getBookingById,
   cancelBooking,
+  getBookingInvoice,
   getBookingAnalytics,
   getAvailableVendorsForBooking,
   assignVendorToBooking
@@ -25,6 +26,7 @@ const assignVendorValidation = [
 // Routes
 router.get('/bookings', authenticate, isAdmin, getAllBookings);
 router.get('/bookings/analytics', authenticate, isAdmin, getBookingAnalytics);
+router.get('/bookings/:id/invoice', authenticate, isAdmin, getBookingInvoice);
 router.get('/bookings/:id', authenticate, isAdmin, getBookingById);
 router.get('/bookings/:id/available-vendors', authenticate, isAdmin, getAvailableVendorsForBooking);
 router.post('/bookings/:id/assign-vendor', authenticate, isAdmin, assignVendorValidation, assignVendorToBooking);

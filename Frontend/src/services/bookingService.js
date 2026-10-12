@@ -32,6 +32,12 @@ export const bookingService = {
     return response.data;
   },
 
+  // Tax invoice for a paid booking (issued on first request)
+  getInvoice: async (id) => {
+    const response = await api.get(`/users/bookings/${id}/invoice`);
+    return response.data;
+  },
+
   // Cancel booking
   cancel: async (id, cancellationReason) => {
     const response = await api.post(`/users/bookings/${id}/cancel`, { cancellationReason });
