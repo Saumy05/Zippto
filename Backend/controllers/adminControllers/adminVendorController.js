@@ -4,6 +4,7 @@ const VendorBill = require('../../models/VendorBill');
 const { validationResult } = require('express-validator');
 const { VENDOR_STATUS, BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
+const { getCityScope, vendorScope, bookingScope, vendorInScope, notFound } = require('../../utils/cityScope');
 
 /**
  * Get all vendors with filters and pagination
@@ -18,8 +19,9 @@ const getAllVendors = async (req, res) => {
       limit = 20
     } = req.query;
 
-    // Build query
-    const query = {};
+    // Build query (city-scoped admins only see vendors from their city)
+    const scope = await getCityScope(req);
+    const query = { ...vendorScope(scope) };
 
     if (approvalStatus) {
       query.approvalStatus = approvalStatus;
@@ -78,8 +80,9 @@ const getVendorDetails = async (req, res) => {
     const { id } = req.params;
 
     const vendor = await Vendor.findById(id).select('-password');
+    const scope = await getCityScope(req);
 
-    if (!vendor) {
+    if (!vendor || !vendorInScope(scope, vendor)) {
       return res.status(404).json({
         success: false,
         message: 'Vendor not found'
@@ -141,8 +144,9 @@ const approveVendor = async (req, res) => {
     const { id } = req.params;
 
     const vendor = await Vendor.findById(id);
+    const scope = await getCityScope(req);
 
-    if (!vendor) {
+    if (!vendor || !vendorInScope(scope, vendor)) {
       return res.status(404).json({
         success: false,
         message: 'Vendor not found'
@@ -195,8 +199,9 @@ const rejectVendor = async (req, res) => {
     const { reason } = req.body;
 
     const vendor = await Vendor.findById(id);
+    const scope = await getCityScope(req);
 
-    if (!vendor) {
+    if (!vendor || !vendorInScope(scope, vendor)) {
       return res.status(404).json({
         success: false,
         message: 'Vendor not found'
@@ -239,8 +244,9 @@ const suspendVendor = async (req, res) => {
     const { id } = req.params;
 
     const vendor = await Vendor.findById(id);
+    const scope = await getCityScope(req);
 
-    if (!vendor) {
+    if (!vendor || !vendorInScope(scope, vendor)) {
       return res.status(404).json({
         success: false,
         message: 'Vendor not found'
@@ -272,6 +278,12 @@ const getVendorBookings = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, page = 1, limit = 20 } = req.query;
+
+    const scope = await getCityScope(req);
+    if (scope) {
+      const owner = await Vendor.findById(id).select('address');
+      if (!owner || !vendorInScope(scope, owner)) return notFound(res, 'Vendor');
+    }
 
     // Build query
     const query = { vendorId: id };
@@ -318,6 +330,12 @@ const getVendorEarnings = async (req, res) => {
   try {
     const { id } = req.params;
     const { startDate, endDate } = req.query;
+
+    const scope = await getCityScope(req);
+    if (scope) {
+      const owner = await Vendor.findById(id).select('address');
+      if (!owner || !vendorInScope(scope, owner)) return notFound(res, 'Vendor');
+    }
 
     // Get earnings from VendorBill (single source of truth)
     const billQuery = {
@@ -369,7 +387,8 @@ const getAllVendorBookings = async (req, res) => {
   try {
     const { status, page = 1, limit = 20, search } = req.query;
 
-    const query = { vendorId: { $exists: true, $ne: null } };
+    const scope = await getCityScope(req);
+    const query = { vendorId: { $exists: true, $ne: null }, ...bookingScope(scope) };
     if (status) {
       query.status = status;
     }
@@ -426,8 +445,10 @@ const getAllVendorBookings = async (req, res) => {
 const getVendorPaymentsSummary = async (req, res) => {
   try {
     // Return vendors with their wallet balances and earnings
+    const scope = await getCityScope(req);
     const vendors = await Vendor.find({
-      'wallet.balance': { $exists: true }
+      'wallet.balance': { $exists: true },
+      ...vendorScope(scope)
     })
       .select('name businessName phone wallet email approvalStatus')
       .sort({ 'wallet.balance': -1 });
@@ -454,8 +475,9 @@ const toggleVendorStatus = async (req, res) => {
     const { isActive } = req.body; // Expecting { isActive: true/false }
 
     const vendor = await Vendor.findById(id);
+    const scope = await getCityScope(req);
 
-    if (!vendor) {
+    if (!vendor || !vendorInScope(scope, vendor)) {
       return res.status(404).json({
         success: false,
         message: 'Vendor not found'
@@ -489,6 +511,12 @@ const deleteVendor = async (req, res) => {
   try {
     const { id } = req.params;
 
+    const scope = await getCityScope(req);
+    if (scope) {
+      const existing = await Vendor.findById(id).select('address');
+      if (!existing || !vendorInScope(scope, existing)) return notFound(res, 'Vendor');
+    }
+
     const vendor = await Vendor.findByIdAndDelete(id);
 
     if (!vendor) {
@@ -518,8 +546,9 @@ const updateVendor = async (req, res) => {
   try {
     const { id } = req.params;
     const vendor = await Vendor.findById(id);
+    const scope = await getCityScope(req);
 
-    if (!vendor) {
+    if (!vendor || !vendorInScope(scope, vendor)) {
       return res.status(404).json({
         success: false,
         message: 'Vendor not found'

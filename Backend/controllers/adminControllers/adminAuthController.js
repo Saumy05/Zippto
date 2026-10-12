@@ -31,14 +31,12 @@ const login = async (req, res) => {
     const cleanPhone = identifier.replace(/\D/g, '').slice(-10);
     const phoneConditions = cleanPhone ? [{ phone: cleanPhone }, { phone: `+91${cleanPhone}` }] : [];
 
-    // Find admin by email or phone
+    // Find admin by the exact identifier (email or phone) provided by the caller.
+    // Do NOT include unrelated hardcoded emails — that caused any login to resolve to a super admin.
     let admin = await Admin.findOne({
       $or: [
         { email: identifier.toLowerCase() },
-        ...phoneConditions,
-        { email: 'admin@admin.com' },
-        { email: 'admin@zippto.com' },
-        { email: 'admin@appzeto.com' }
+        ...phoneConditions
       ]
     }).select('+password');
 

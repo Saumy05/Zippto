@@ -49,6 +49,14 @@ const isAdminOrVendor = (req, res, next) => {
  */
 const isSuperAdmin = async (req, res, next) => {
   try {
+    // The token role is always ADMIN; the real role (super_admin | admin) is on the admin record loaded by authenticate()
+    const isAdminToken = ['ADMIN', 'admin', 'super_admin'].includes(req.userRole);
+    if (!isAdminToken || req.user?.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Super admin role required.'
+      });
+    }
     next();
   } catch (error) {
     console.error('Super admin check error:', error);

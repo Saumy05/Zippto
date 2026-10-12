@@ -1,5 +1,6 @@
 const Ticket = require('../../models/Ticket');
 const User = require('../../models/User');
+const { getCityScope, userInScope, scopedUserIds } = require('../../utils/cityScope');
 
 /**
  * Get all support tickets / disputes (Admin)
@@ -9,6 +10,8 @@ const getAllTickets = async (req, res) => {
   try {
     const { status, priority, category } = req.query;
     const query = {};
+    const scope = await getCityScope(req);
+    if (scope) query.userId = { $in: await scopedUserIds(scope) };
     if (status) query.status = status;
     if (priority) query.priority = priority;
     if (category) query.category = category;
@@ -42,6 +45,13 @@ const updateTicketStatus = async (req, res) => {
     const { status, adminNotes, priority, refundStatus } = req.body;
 
     const ticket = await Ticket.findById(id);
+    const scope = await getCityScope(req);
+    if (ticket && scope) {
+      const owner = await User.findById(ticket.userId).select('addresses');
+      if (!userInScope(scope, owner)) {
+        return res.status(404).json({ success: false, message: 'Ticket not found.' });
+      }
+    }
     if (!ticket) {
       return res.status(404).json({
         success: false,

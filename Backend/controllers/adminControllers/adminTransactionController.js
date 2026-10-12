@@ -4,6 +4,33 @@ const VendorBill = require('../../models/VendorBill');
 const User = require('../../models/User');
 const Vendor = require('../../models/Vendor');
 const PlatformEarning = require('../../models/PlatformEarning');
+const { getCityScope, bookingScope, scopedUserIds, scopedVendorIds } = require('../../utils/cityScope');
+
+// Platform-wide revenue is a finance view: city-scoped admins cannot open it
+const denyIfScoped = (scope, res) => {
+  if (!scope) return false;
+  res.status(403).json({ success: false, message: 'Platform revenue is only available to super admins' });
+  return true;
+};
+
+// Limits transactions to those tied to the admin's city (via the user, the vendor or the booking)
+const transactionScopeFilter = async (scope) => {
+  if (!scope) return {};
+  const [userIds, vendorIds, bookings] = await Promise.all([
+    scopedUserIds(scope),
+    scopedVendorIds(scope),
+    Booking.find(bookingScope(scope)).select('_id').lean()
+  ]);
+  return {
+    $and: [{
+      $or: [
+        { userId: { $in: userIds } },
+        { vendorId: { $in: vendorIds } },
+        { bookingId: { $in: bookings.map((b) => b._id) } }
+      ]
+    }]
+  };
+};
 
 /**
  * Get all transactions with pagination and filtering
@@ -11,9 +38,11 @@ const PlatformEarning = require('../../models/PlatformEarning');
 const getAllTransactions = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status, type, entity } = req.query;
+    const scope = await getCityScope(req);
 
     // --- SPECIAL HANDLING FOR ADMIN REVENUE (Extract from Bookings) ---
     if (entity === 'admin') {
+      if (denyIfScoped(scope, res)) return;
       const skip = (parseInt(page) - 1) * parseInt(limit);
 
       // Build query for Bookings
@@ -130,7 +159,7 @@ const getAllTransactions = async (req, res) => {
 
     // --- STANDARD LOGIC FOR OTHERS (User, Vendor, All) ---
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    let query = {};
+    let query = { ...(await transactionScopeFilter(scope)) };
 
     // Apply status filter
     if (status && status !== 'all') {
@@ -229,9 +258,11 @@ const getAllTransactions = async (req, res) => {
 const getTransactionStats = async (req, res) => {
   try {
     const { entity } = req.query;
+    const scope = await getCityScope(req);
 
     // --- SPECIAL HANDLING FOR ADMIN REVENUE (Extract from Bookings) ---
     if (entity === 'admin') {
+      if (denyIfScoped(scope, res)) return;
       const stats = await PlatformEarning.aggregate([
         {
           $group: {
@@ -261,7 +292,8 @@ const getTransactionStats = async (req, res) => {
     // --- STANDARD LOGIC FOR OTHERS ---
     let matchQuery = {
       status: 'completed',
-      type: { $in: ['credit', 'debit', 'refund', 'commission', 'cash_collected', 'payment'] }
+      type: { $in: ['credit', 'debit', 'refund', 'commission', 'cash_collected', 'payment'] },
+      ...(await transactionScopeFilter(scope))
     };
 
     // Apply entity filter

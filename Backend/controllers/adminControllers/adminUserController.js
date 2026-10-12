@@ -1,6 +1,7 @@
 const User = require('../../models/User');
 const Booking = require('../../models/Booking');
 const { validationResult } = require('express-validator');
+const { getCityScope, userScope, bookingScope, userInScope, notFound } = require('../../utils/cityScope');
 
 /**
  * Get all users with filters and pagination
@@ -16,8 +17,9 @@ const getAllUsers = async (req, res) => {
       limit = 20
     } = req.query;
 
-    // Build query
-    const query = {};
+    // Build query (city-scoped admins only see users from their city)
+    const scope = await getCityScope(req);
+    const query = { ...userScope(scope) };
 
     if (isActive !== undefined) {
       query.isActive = isActive === 'true';
@@ -78,8 +80,9 @@ const getUserDetails = async (req, res) => {
     const { id } = req.params;
 
     const user = await User.findById(id).select('-password');
+    const scope = await getCityScope(req);
 
-    if (!user) {
+    if (!user || !userInScope(scope, user)) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
@@ -142,8 +145,9 @@ const toggleUserStatus = async (req, res) => {
     const { isActive } = req.body;
 
     const user = await User.findById(id);
+    const scope = await getCityScope(req);
 
-    if (!user) {
+    if (!user || !userInScope(scope, user)) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
@@ -175,8 +179,9 @@ const deleteUser = async (req, res) => {
     const { id } = req.params;
 
     const user = await User.findById(id);
+    const scope = await getCityScope(req);
 
-    if (!user) {
+    if (!user || !userInScope(scope, user)) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
@@ -207,6 +212,12 @@ const getUserBookings = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, page = 1, limit = 20 } = req.query;
+
+    const scope = await getCityScope(req);
+    if (scope) {
+      const owner = await User.findById(id).select('addresses');
+      if (!owner || !userInScope(scope, owner)) return notFound(res, 'User');
+    }
 
     // Build query
     const query = { userId: id };
@@ -253,9 +264,10 @@ const getUserWalletTransactions = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user = await User.findById(id).select('wallet');
+    const user = await User.findById(id).select('wallet addresses');
+    const scope = await getCityScope(req);
 
-    if (!user) {
+    if (!user || !userInScope(scope, user)) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
@@ -295,7 +307,8 @@ const getAllUserBookings = async (req, res) => {
   try {
     const { status, page = 1, limit = 20, search } = req.query;
 
-    const query = {};
+    const scope = await getCityScope(req);
+    const query = { ...bookingScope(scope) };
 
     if (status) {
       query.status = status;
@@ -352,8 +365,9 @@ const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id);
+    const scope = await getCityScope(req);
 
-    if (!user) {
+    if (!user || !userInScope(scope, user)) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
