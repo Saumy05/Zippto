@@ -364,9 +364,10 @@ const SectionRowCarousel = ({
           className="flex items-stretch gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1"
         >
           {sec.items.map((item) => {
-            const isAdded = cartItems.some(
+            const cartItem = cartItems.find(
               (ci) => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
             );
+            const isAdded = !!cartItem;
 
             return (
               <div
