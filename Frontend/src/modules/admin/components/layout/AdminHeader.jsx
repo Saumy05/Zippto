@@ -213,6 +213,20 @@ const ROUTE_DEFINITIONS = [
     categoryPath: '/admin/plans'
   },
   {
+    path: '/admin/coupons',
+    title: 'Coupons',
+    description: 'Create and manage discount codes for customers',
+    category: 'System Config',
+    categoryPath: '/admin/coupons'
+  },
+  {
+    path: '/admin/tickets',
+    title: 'Support Tickets',
+    description: 'Resolve customer issues and approve refund disputes',
+    category: 'System Config',
+    categoryPath: '/admin/tickets'
+  },
+  {
     path: '/admin/reviews',
     title: 'Customer & Partner Reviews',
     description: 'Audit customer feedback, ratings, and moderate public reviews',

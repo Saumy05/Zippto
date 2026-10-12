@@ -24,6 +24,10 @@ const Notifications = lazy(() => import('../pages/Notifications'));
 const Plans = lazy(() => import('../pages/Plans/Plans'));
 const Settlements = lazy(() => import('../pages/Settlements'));
 const Reviews = lazy(() => import('../pages/Reviews'));
+const Integrations = lazy(() => import('../pages/Integrations'));
+const AdminInvoicePage = lazy(() => import('../pages/Bookings/InvoicePage'));
+const Coupons = lazy(() => import('../pages/Coupons'));
+const Tickets = lazy(() => import('../pages/Tickets'));
 const CMS = lazy(() => import('../pages/CMS'));
 const CustomizationSettings = lazy(() => import('../pages/CustomizationSettings'));
 
@@ -56,6 +60,7 @@ const AdminRoutes = () => {
           <Route path="users/*" element={<Users />} />
           <Route path="vendors/*" element={<Vendors />} />
           <Route path="bookings" element={<Bookings />} />
+          <Route path="bookings/:id/invoice" element={<AdminInvoicePage />} />
           <Route path="bookings/tracking" element={<BookingTracking />} />
           <Route path="bookings/notifications" element={<BookingNotifications />} />
           <Route path="user-categories/*" element={<UserCategories />} />
@@ -64,6 +69,9 @@ const AdminRoutes = () => {
           <Route path="notifications/*" element={<Notifications />} />
           <Route path="plans" element={<Plans />} />
           <Route path="reviews" element={<Reviews />} />
+          <Route path="integrations" element={<Integrations />} />
+          <Route path="coupons" element={<Coupons />} />
+          <Route path="tickets" element={<Tickets />} />
           <Route path="cms" element={<CMS />} />
           <Route path="settlements/*" element={<Settlements />} />
           <Route path="settings/*" element={<Settings />} />

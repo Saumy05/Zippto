@@ -17,7 +17,9 @@ import {
   FiStar,
   FiSliders,
   FiShield,
-  FiUser
+  FiUser,
+  FiTag,
+  FiLifeBuoy
 } from "react-icons/fi";
 import dashboardService from "../../services/dashboardService";
 
@@ -89,6 +91,7 @@ const navSections = [
     items: [
       {
         id: "settlements",
+        superOnly: true,
         label: "Settlements & Dues",
         to: "/admin/settlements",
         Icon: FiDollarSign,
@@ -102,6 +105,7 @@ const navSections = [
       },
       {
         id: "payments",
+        superOnly: true,
         label: "Payments & Ledger",
         to: "/admin/payments",
         Icon: FiDollarSign,
@@ -115,17 +119,21 @@ const navSections = [
       },
       {
         id: "reports",
+        superOnly: true,
         label: "Analytics & Reports",
         to: "/admin/reports",
         Icon: FiFileText,
         children: [
           { label: "Revenue Report", to: "/admin/reports/revenue" },
           { label: "Booking Report", to: "/admin/reports/bookings" },
-          { label: "Partner Reports", to: "/admin/reports/vendors" }
+          { label: "Partner Reports", to: "/admin/reports/vendors" },
+          { label: "Customer Report", to: "/admin/reports/customers" },
+          { label: "Payment Report", to: "/admin/reports/payments" }
         ]
       },
       {
         id: "plans",
+        superOnly: true,
         label: "Subscription Plans",
         to: "/admin/plans",
         Icon: FiPackage
@@ -147,7 +155,26 @@ const navSections = [
         ]
       },
       {
+        id: "cms",
+        label: "CMS & Blogs",
+        to: "/admin/cms",
+        Icon: FiFileText
+      },
+      {
+        id: "coupons",
+        label: "Coupons",
+        to: "/admin/coupons",
+        Icon: FiTag
+      },
+      {
+        id: "tickets",
+        label: "Support Tickets",
+        to: "/admin/tickets",
+        Icon: FiLifeBuoy
+      },
+      {
         id: "reviews",
+        superOnly: true,
         label: "Ratings & Reviews",
         to: "/admin/reviews",
         Icon: FiStar
@@ -159,12 +186,13 @@ const navSections = [
         Icon: FiSettings,
         children: [
           { label: "Profile Settings",         to: "/admin/settings/profile" },
-          { label: "Financial Info",            to: "/admin/settings/general" },
-          { label: "Customization Settings",    to: "/admin/settings/customization" },
-          { label: "Contact & Support",         to: "/admin/settings/system" },
-          { label: "City Management",           to: "/admin/settings/cities" },
+          { label: "Financial Info",            to: "/admin/settings/general", superOnly: true },
+          { label: "Customization Settings",    to: "/admin/settings/customization", superOnly: true },
+          { label: "Payment & Storage Keys",    to: "/admin/integrations", superOnly: true },
+          { label: "Contact & Support",         to: "/admin/settings/system", superOnly: true },
+          { label: "City Management",           to: "/admin/settings/cities", superOnly: true },
           { label: "Languages & Localization",  to: "/admin/settings/languages" },
-          { label: "Manage Admins",             to: "/admin/settings/admins" }
+          { label: "Manage Admins",             to: "/admin/settings/admins", superOnly: true }
         ]
       }
     ]
@@ -182,6 +210,19 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     withdrawals: 0,
     pendingSettlements: 0
   });
+
+  // Regular admins only see the modules they are allowed to use (the API enforces the same rules)
+  const visibleSections = useMemo(() => {
+    const isSuper = adminUser.role === "super_admin";
+    return navSections
+      .map((sec) => ({
+        ...sec,
+        items: sec.items
+          .filter((item) => isSuper || !item.superOnly)
+          .map((item) => (item.children ? { ...item, children: item.children.filter((c) => isSuper || !c.superOnly) } : item))
+      }))
+      .filter((sec) => sec.items.length > 0);
+  }, [adminUser.role]);
 
   // Load admin user metadata
   useEffect(() => {
@@ -402,7 +443,7 @@ const AdminSidebar = ({ isOpen, onClose }) => {
 
       {/* Scrollable Navigation Body (Spacious & Clean Layout) */}
       <nav className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6 custom-scrollbar scrollbar-hide overscroll-contain pb-28 lg:pb-32">
-        {navSections.map((sec, secIdx) => (
+        {visibleSections.map((sec, secIdx) => (
           <div key={secIdx} className="space-y-1.5">
             {/* Section Categorization Header */}
             <div className="text-[10.5px] font-bold text-slate-400/90 uppercase tracking-wider px-3.5 pt-1 pb-1">

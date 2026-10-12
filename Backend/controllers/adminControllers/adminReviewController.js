@@ -109,6 +109,24 @@ exports.updateReviewStatus = async (req, res) => {
       });
     }
 
+    // Keep the vendor-facing numbers in step with moderation
+    try {
+      const Booking = require('../../models/Booking');
+      const Vendor = require('../../models/Vendor');
+      await Booking.updateOne({ _id: review.bookingId }, { $set: { reviewHidden: status !== 'active' } });
+      if (review.vendorId) {
+        const [agg] = await Booking.aggregate([
+          { $match: { vendorId: review.vendorId, rating: { $ne: null }, reviewHidden: { $ne: true } } },
+          { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } }
+        ]);
+        await Vendor.updateOne({ _id: review.vendorId }, {
+          $set: { rating: agg ? Number(agg.avg.toFixed(2)) : 0, totalReviews: agg ? agg.count : 0 }
+        });
+      }
+    } catch (syncErr) {
+      console.error('Review moderation sync failed:', syncErr);
+    }
+
     res.status(200).json({
       success: true,
       message: `Review status updated to ${status}`,

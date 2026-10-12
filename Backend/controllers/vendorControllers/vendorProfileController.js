@@ -19,7 +19,7 @@ const getProfile = async (req, res) => {
 
     // Dynamically calculate average rating and reviews from actual rated bookings
     const [ratingData] = await Booking.aggregate([
-      { $match: { vendorId: new mongoose.Types.ObjectId(vendorId), rating: { $ne: null } } },
+      { $match: { vendorId: new mongoose.Types.ObjectId(vendorId), rating: { $ne: null }, reviewHidden: { $ne: true } } },
       { $group: { _id: null, avgRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
     ]);
     const totalReviews = ratingData ? ratingData.totalReviews : (vendor.totalReviews || 0);

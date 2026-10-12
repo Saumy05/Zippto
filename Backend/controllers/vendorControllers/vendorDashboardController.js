@@ -77,7 +77,7 @@ const getDashboardStats = async (req, res) => {
             ],
             // Average Rating and Total Reviews
             rating: [
-              { $match: { vendorId: vId, rating: { $ne: null } } },
+              { $match: { vendorId: vId, rating: { $ne: null }, reviewHidden: { $ne: true } } },
               { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } }
             ],
             // Recent Bookings List (Optimized Projection)

@@ -25,6 +25,7 @@ import CardShell from '../UserCategories/components/CardShell';
 import RevenueReport from './RevenueReport';
 import BookingReport from './BookingReport';
 import VendorReport from './VendorReport';
+import CustomerReport from './CustomerReport';
 
 const ReportsOverview = () => {
   const [loading, setLoading] = useState(true);
@@ -287,6 +288,7 @@ const Reports = () => {
       case 'revenue': return 'Revenue Report';
       case 'bookings': return 'Booking Report';
       case 'vendors': return 'Vendor Report';
+      case 'customers': return 'Customer Report';
       default: return 'Analytics & Reports';
     }
   };
@@ -296,6 +298,8 @@ const Reports = () => {
     { name: 'Revenue', path: '/admin/reports/revenue', icon: FiDollarSign },
     { name: 'Bookings', path: '/admin/reports/bookings', icon: FiShoppingBag },
     { name: 'Vendors', path: '/admin/reports/vendors', icon: FiUsers },
+    { name: 'Customers', path: '/admin/reports/customers', icon: FiUsers },
+    { name: 'Payments', path: '/admin/payments/reports', icon: FiDollarSign },
   ];
 
   const isTabActive = (tab) => {
@@ -310,6 +314,9 @@ const Reports = () => {
         <Route path="revenue" element={<RevenueReport />} />
         <Route path="bookings" element={<BookingReport />} />
         <Route path="vendors" element={<VendorReport />} />
+        <Route path="customers" element={<CustomerReport />} />
+        {/* Payment reports (GST, TDS, COD, transactions) live under Payments */}
+        <Route path="payments" element={<Navigate to="/admin/payments/reports" replace />} />
       </Routes>
     </div>
   );
