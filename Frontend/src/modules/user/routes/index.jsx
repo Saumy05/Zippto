@@ -75,6 +75,7 @@ const PlanDetails = lazyLoad(() => import('../pages/MyPlan/PlanDetails'));
 const MyRating = lazyLoad(() => import('../pages/MyRating'));
 const AboutHomestr = lazyLoad(() => import('../pages/AboutHomster'));
 const UpdateProfile = lazyLoad(() => import('../pages/UpdateProfile'));
+const Invoice = lazyLoad(() => import('../pages/Invoice'));
 const Login = lazyLoad(() => import('../pages/login'));
 const Signup = lazyLoad(() => import('../pages/signup'));
 const Notifications = lazyLoad(() => import('../pages/Notifications'));
@@ -161,6 +162,7 @@ const UserRoutes = () => {
               <Route path="/booking" element={<Navigate to="/user/my-bookings" replace />} />
               <Route path="/booking/:id" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
               <Route path="/booking/:id/chat" element={<ProtectedRoute userType="user"><BookingDetails /></ProtectedRoute>} />
+              <Route path="/booking/:id/invoice" element={<ProtectedRoute userType="user"><Invoice /></ProtectedRoute>} />
               <Route path="/booking/:id/track" element={<ProtectedRoute userType="user"><BookingTrack /></ProtectedRoute>} />
               <Route path="/booking-confirmation/:id" element={<ProtectedRoute userType="user"><BookingConfirmation /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute userType="user"><Settings /></ProtectedRoute>} />

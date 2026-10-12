@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { FiCheckCircle, FiShield, FiAlertCircle, FiPackage, FiX, FiInfo, FiCopy, FiCheck, FiMessageSquare, FiPhone, FiCreditCard } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { configService } from '../../../../services/configService';
+import walletService from '../../../../services/walletService';
+import paymentService from '../../../../services/paymentService';
 import { toast } from 'react-hot-toast';
 
-const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline, onOpenChat }) => {
+const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline, onOpenChat, onWalletPaid }) => {
   const [isOnlinePaymentEnabled, setIsOnlinePaymentEnabled] = useState(true);
+  const [isCashPaymentEnabled, setIsCashPaymentEnabled] = useState(true);
+  const [isWalletPaymentEnabled, setIsWalletPaymentEnabled] = useState(true);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [walletPaying, setWalletPaying] = useState(false);
   const [configLoading, setConfigLoading] = useState(true);
   const [copiedOtp, setCopiedOtp] = useState(false);
 
@@ -15,6 +21,8 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline, onOpe
         const res = await configService.getSettings();
         if (res.success && res.settings) {
           setIsOnlinePaymentEnabled(res.settings.isOnlinePaymentEnabled !== false);
+          setIsCashPaymentEnabled(res.settings.isCashPaymentEnabled !== false);
+          setIsWalletPaymentEnabled(res.settings.isWalletPaymentEnabled !== false);
         }
       } catch (error) {
         console.error('Error fetching payment config:', error);
@@ -23,8 +31,18 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline, onOpe
       }
     };
 
+    const fetchWallet = async () => {
+      try {
+        const res = await walletService.getBalance();
+        if (res.success && res.data) setWalletBalance(Number(res.data.balance) || 0);
+      } catch (error) {
+        // Wallet option simply stays hidden if the balance cannot be loaded
+      }
+    };
+
     if (isOpen) {
       fetchConfig();
+      fetchWallet();
     }
   }, [isOpen]);
 
@@ -99,6 +117,28 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline, onOpe
     setCopiedOtp(true);
     toast.success('Code copied to clipboard!');
     setTimeout(() => setCopiedOtp(false), 2500);
+  };
+
+  const payableAmount = Number(booking.finalAmount) || 0;
+  const canPayWithWallet = isWalletPaymentEnabled && payableAmount > 0 && walletBalance >= payableAmount;
+
+  const handleWalletPay = async () => {
+    if (walletPaying) return;
+    try {
+      setWalletPaying(true);
+      const res = await paymentService.processWalletPayment(booking._id || booking.id);
+      if (res.success) {
+        toast.success('Paid from your Zippto wallet');
+        if (onWalletPaid) await onWalletPaid();
+        onClose();
+      } else {
+        toast.error(res.message || 'Wallet payment failed');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Wallet payment failed');
+    } finally {
+      setWalletPaying(false);
+    }
   };
 
   const isPaid = ['success', 'paid', 'collected_by_vendor'].includes((booking.paymentStatus || '').toLowerCase()) || booking.cashCollected;
@@ -299,8 +339,20 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline, onOpe
                     </button>
                   )}
 
+                  {/* Option: Pay from Zippto wallet (only when the balance covers the full bill) */}
+                  {canPayWithWallet && (
+                    <button
+                      onClick={handleWalletPay}
+                      disabled={walletPaying}
+                      className="w-full mt-3 py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <FiCreditCard className="w-4 h-4" />
+                      <span>{walletPaying ? 'Paying…' : `Pay from Zippto Wallet (₹${walletBalance.toLocaleString('en-IN')} available)`}</span>
+                    </button>
+                  )}
+
                   {/* Option B: Cash Collection OTP */}
-                  {otpValue && (
+                  {otpValue && isCashPaymentEnabled && (
                     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center mt-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">

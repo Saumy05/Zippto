@@ -1062,6 +1062,7 @@ const BookingTrack = () => {
         onClose={() => setShowPaymentModal(false)}
         booking={booking}
         onPayOnline={handleOnlinePayment}
+        onWalletPaid={() => refreshBooking()}
         onOpenChat={() => setIsChatOpen(true)}
       />
 

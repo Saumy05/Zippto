@@ -10,6 +10,10 @@ const { validationResult } = require('express-validator');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
 const { sendNotificationToUser, sendNotificationToVendor } = require('../../services/firebaseAdmin');
+const { getPlatformFlags } = require('../../utils/platformSettings');
+const CouponRedemption = require('../../models/CouponRedemption');
+const { getInvoiceForBooking, InvoiceError } = require('../../services/invoiceService');
+const { validateCoupon, claimCoupon, releaseCouponClaim, releaseRedemptionForBooking, CouponError } = require('../../services/couponService');
 
 /**
  * Create a new booking
@@ -48,7 +52,8 @@ const createBooking = async (req, res) => {
       categoryIcon: reqCategoryIcon,
       brandName: reqBrandName,
       brandIcon: reqBrandIcon,
-      bookingType // Extract bookingType
+      bookingType, // Extract bookingType
+      couponCode: reqCouponCode
     } = req.body;
 
     let visitingCharges = reqVisitingCharges !== undefined ? reqVisitingCharges : (reqVisitationFee || 0);
@@ -120,6 +125,16 @@ const createBooking = async (req, res) => {
 
     // Check for Pending Penalty
     const pendingPenalty = user.wallet?.penalty || 0;
+
+    // Admin-controlled platform flags (payment toggles, visiting-charge waiver)
+    const flags = await getPlatformFlags();
+    // 'pay_at_home' means "pay after the service" (online or cash-with-OTP), so it is only
+    // unavailable when the admin has switched off every way of paying.
+    const noPaymentOptionLeft = flags.isOnlinePaymentEnabled === false && flags.isCashPaymentEnabled === false;
+    if (noPaymentOptionLeft || (paymentMethod === 'online' && flags.isOnlinePaymentEnabled === false)) {
+      return res.status(403).json({ success: false, code: 'FEATURE_DISABLED', message: 'Bookings are temporarily unavailable because payments are disabled.' });
+    }
+    let waivedVisitingCharges = 0;
 
     // --- MOVE VENDOR SEARCH UP HERE ---
     // Find nearby vendors using location service
@@ -238,6 +253,12 @@ const createBooking = async (req, res) => {
         visitingCharges = categoryVisitingFee;
       }
 
+      // Admin toggle: waive the visiting charge entirely
+      if (flags.isVisitingChargesWaiverEnabled && visitingCharges > 0) {
+        waivedVisitingCharges = Number(visitingCharges) || 0;
+        visitingCharges = 0;
+      }
+
       if (amount && amount > 0) {
         // Use amount from frontend breakdown
         if (reqBasePrice !== undefined && reqTax !== undefined) {
@@ -247,10 +268,11 @@ const createBooking = async (req, res) => {
           finalAmount = (basePrice - discount + tax + visitingCharges) + pendingPenalty;
         } else {
           // Backward compatibility: Reverse calculate
-          basePrice = Math.round((amount - visitingCharges) / 1.18);
-          tax = Math.max(0, amount - basePrice - visitingCharges);
+          const payableAmount = amount - waivedVisitingCharges;
+          basePrice = Math.round((payableAmount - visitingCharges) / 1.18);
+          tax = Math.max(0, payableAmount - basePrice - visitingCharges);
           discount = 0;
-          finalAmount = amount + pendingPenalty;
+          finalAmount = payableAmount + pendingPenalty;
         }
       } else {
         // Fallback to service pricing (if no amount sent)
@@ -265,6 +287,30 @@ const createBooking = async (req, res) => {
     // They are computed ONLY at bill generation (completeSelfJob) and stored in VendorBill.
     // This prevents inconsistency between Booking and VendorBill.
     console.log(`[CreateBooking] Payment=${paymentMethod}, FinalAmount=${finalAmount}, Penalty=${pendingPenalty}`);
+
+    // Coupon: validated and priced on the server (the client total is never trusted)
+    let appliedCoupon = null;
+    let couponDiscount = 0;
+    if (reqCouponCode && !usePlanBenefits) {
+      try {
+        const { coupon, discountAmount } = await validateCoupon({
+          code: reqCouponCode,
+          amount: Math.max(0, basePrice - discount),
+          userId,
+          cityName: address?.city
+        });
+        // Take one use now (atomic against the usage limit), before any wallet/penalty side effects
+        if (!(await claimCoupon(coupon._id))) throw new CouponError('Coupon limit reached');
+        appliedCoupon = coupon;
+        couponDiscount = discountAmount;
+        finalAmount = Math.max(0, finalAmount - couponDiscount);
+      } catch (couponErr) {
+        if (couponErr instanceof CouponError) {
+          return res.status(couponErr.status).json({ success: false, code: 'COUPON_INVALID', message: couponErr.message });
+        }
+        throw couponErr;
+      }
+    }
 
     // Clear penalty from user wallet if we charged it
     if (pendingPenalty > 0) {
@@ -314,7 +360,11 @@ const createBooking = async (req, res) => {
       brandIcon = formattedBookedItems[0].brandIcon || null;
     }
 
-    const booking = await Booking.create({
+    let booking;
+    try {
+    booking = await Booking.create({
+      couponCode: appliedCoupon ? appliedCoupon.code : null,
+      couponDiscount,
       bookingNumber,
       userId,
       vendorId: null, // Will be assigned when vendor accepts
@@ -361,6 +411,20 @@ const createBooking = async (req, res) => {
       paymentStatus: bookingPaymentStatus
       // notifiedVendors will be set after wave sorting
     });
+    } catch (createErr) {
+      if (appliedCoupon) await releaseCouponClaim(appliedCoupon._id).catch(() => {});
+      throw createErr;
+    }
+
+    if (appliedCoupon) {
+      await CouponRedemption.create({
+        couponId: appliedCoupon._id,
+        userId,
+        bookingId: booking._id,
+        code: appliedCoupon.code,
+        discountAmount: couponDiscount
+      }).catch((e) => console.error('[CreateBooking] Coupon redemption log failed:', e.message));
+    }
 
     // --- IMMEDIATE RESPONSE ---
     // Send immediate response to the client. All subsequent operations will run in the background.
@@ -926,6 +990,7 @@ const cancelBooking = async (req, res) => {
     booking.cancellationReason = cancellationReason || 'Cancelled by user';
 
     await booking.save();
+    if (booking.couponCode) await releaseRedemptionForBooking(booking._id).catch((e) => console.error('[Cancel] Coupon release failed:', e.message));
 
     // Send notification to user
     await createNotification({
@@ -1218,7 +1283,25 @@ const getUserRatings = async (req, res) => {
   }
 };
 
+/**
+ * Tax invoice for a paid booking
+ * GET /api/users/bookings/:id/invoice
+ */
+const getBookingInvoice = async (req, res) => {
+  try {
+    const invoice = await getInvoiceForBooking(req.params.id, { userId: req.user.id });
+    res.status(200).json({ success: true, data: invoice });
+  } catch (error) {
+    if (error instanceof InvoiceError) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    console.error('Get invoice error:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate invoice' });
+  }
+};
+
 module.exports = {
+  getBookingInvoice,
   createBooking,
   getUserBookings,
   getBookingById,

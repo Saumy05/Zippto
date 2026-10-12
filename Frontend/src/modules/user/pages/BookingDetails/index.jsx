@@ -43,6 +43,8 @@ import {
 import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
 import { bookingService } from '../../../../services/bookingService';
 import { paymentService } from '../../../../services/paymentService';
+import walletService from '../../../../services/walletService';
+import { useSettings } from '../../../../context/SettingsContext';
 import { cartService } from '../../../../services/cartService';
 import RatingModal from '../../components/booking/RatingModal';
 import PaymentVerificationModal from '../../components/booking/PaymentVerificationModal';
@@ -94,6 +96,8 @@ const BookingDetails = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(Boolean(location.pathname?.endsWith('/chat')));
   const [paying, setPaying] = useState(false);
+  const { isWalletPaymentEnabled } = useSettings();
+  const [walletBalance, setWalletBalance] = useState(0);
   const [mapZoom, setMapZoom] = useState(15);
   const [detailMap, setDetailMap] = useState(null);
 
@@ -319,6 +323,33 @@ const BookingDetails = () => {
         }
       }
     });
+  };
+
+  const bookingIdForWallet = booking?._id || booking?.id;
+  useEffect(() => {
+    if (!bookingIdForWallet) return;
+    walletService.getBalance()
+      .then((res) => { if (res.success && res.data) setWalletBalance(Number(res.data.balance) || 0); })
+      .catch(() => {}); // wallet button just stays hidden
+  }, [bookingIdForWallet, booking?.paymentStatus]);
+
+  const handleWalletPayment = async () => {
+    if (paying || !booking) return;
+    try {
+      setPaying(true);
+      const res = await paymentService.processWalletPayment(booking._id || booking.id);
+      if (res.success) {
+        toast.success('Paid from your Zippto wallet');
+        setShowPaymentModal(false);
+        loadBooking();
+      } else {
+        toast.error(res.message || 'Wallet payment failed');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Wallet payment failed');
+    } finally {
+      setPaying(false);
+    }
   };
 
   const handleOnlinePayment = async () => {
@@ -1083,6 +1114,19 @@ const BookingDetails = () => {
                   )}
                 </button>
 
+                {/* Wallet Payment Option: all-or-nothing, only when the balance covers the whole bill */}
+                {isWalletPaymentEnabled && (Number(booking.finalAmount) || 0) > 0 && walletBalance >= Number(booking.finalAmount) && (
+                  <button
+                    type="button"
+                    onClick={handleWalletPayment}
+                    disabled={paying}
+                    className="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <FiDollarSign className="w-4 h-4" />
+                    <span>Pay from Zippto Wallet (₹{walletBalance.toLocaleString('en-IN')})</span>
+                  </button>
+                )}
+
                 {/* Cash Payment Option with OTP */}
                 {(booking.customerConfirmationOTP || booking.paymentOtp) && (
                   <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15 flex items-center justify-between gap-3">
@@ -1133,7 +1177,7 @@ const BookingDetails = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setShowPaymentModal(true)}
+                onClick={() => navigate(`/user/booking/${booking._id || booking.id}/invoice`)}
                 className="text-xs font-bold text-emerald-800 hover:text-emerald-900 bg-white px-3 py-1.5 rounded-xl border border-emerald-200 shadow-2xs cursor-pointer active:scale-95"
               >
                 View Invoice
@@ -1332,6 +1376,7 @@ const BookingDetails = () => {
           onClose={() => setShowPaymentModal(false)}
           booking={booking}
           onPayOnline={handleOnlinePayment}
+          onWalletPaid={loadBooking}
           onOpenChat={() => setIsChatOpen(true)}
         />
 

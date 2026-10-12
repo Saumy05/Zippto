@@ -1,6 +1,9 @@
 const Booking = require('../../models/Booking');
 const { validationResult } = require('express-validator');
 const { BOOKING_STATUS } = require('../../utils/constants');
+const { releaseRedemptionForBooking } = require('../../services/couponService');
+const { getInvoiceForBooking, InvoiceError } = require('../../services/invoiceService');
+const { getCityScope, bookingScope, vendorScope, bookingInScope, vendorInScope } = require('../../utils/cityScope');
 
 /**
  * Get all bookings with filters and search
@@ -19,8 +22,9 @@ const getAllBookings = async (req, res) => {
       limit = 20
     } = req.query;
 
-    // Build query
-    const query = {};
+    // Build query (city-scoped admins only see bookings from their city)
+    const scope = await getCityScope(req);
+    const query = { ...bookingScope(scope) };
 
     if (status) query.status = status;
     if (paymentStatus) query.paymentStatus = paymentStatus;
@@ -89,7 +93,7 @@ const getBookingById = async (req, res) => {
       .populate('serviceId', 'title description iconUrl images')
       .populate('categoryId', 'title slug');
 
-    if (!booking) {
+    if (!booking || !bookingInScope(await getCityScope(req), booking)) {
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
@@ -128,7 +132,7 @@ const cancelBooking = async (req, res) => {
 
     const booking = await Booking.findById(id);
 
-    if (!booking) {
+    if (!booking || !bookingInScope(await getCityScope(req), booking)) {
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
@@ -156,6 +160,7 @@ const cancelBooking = async (req, res) => {
     booking.cancellationReason = cancellationReason || 'Cancelled by admin';
 
     await booking.save();
+    if (booking.couponCode) await releaseRedemptionForBooking(booking._id).catch((e) => console.error('[AdminCancel] Coupon release failed:', e.message));
 
     res.status(200).json({
       success: true,
@@ -178,8 +183,8 @@ const getBookingAnalytics = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    // Build date filter
-    const dateFilter = {};
+    // Build date filter (also restricted to the admin's city when scoped)
+    const dateFilter = { ...bookingScope(await getCityScope(req)) };
     if (startDate || endDate) {
       dateFilter.createdAt = {};
       if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
@@ -299,13 +304,15 @@ const getAvailableVendorsForBooking = async (req, res) => {
       .populate('serviceId', 'title')
       .lean();
 
-    if (!booking) {
+    const scope = await getCityScope(req);
+    if (!booking || !bookingInScope(scope, booking)) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
     const query = {
       isApproved: true,
-      status: { $ne: 'SUSPENDED' }
+      status: { $ne: 'SUSPENDED' },
+      ...vendorScope(scope)
     };
 
     if (search) {
@@ -404,11 +411,12 @@ const assignVendorToBooking = async (req, res) => {
       Vendor.findById(vendorId)
     ]);
 
-    if (!booking) {
+    const scope = await getCityScope(req);
+    if (!booking || !bookingInScope(scope, booking)) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
-    if (!vendor) {
+    if (!vendor || !vendorInScope(scope, vendor)) {
       return res.status(404).json({ success: false, message: 'Vendor not found' });
     }
 
@@ -551,7 +559,32 @@ const assignVendorToBooking = async (req, res) => {
   }
 };
 
+/**
+ * Tax invoice for any paid booking (admin)
+ * GET /api/admin/bookings/:id/invoice
+ */
+const getBookingInvoice = async (req, res) => {
+  try {
+    const scope = await getCityScope(req);
+    if (scope) {
+      const target = await Booking.findById(req.params.id).select('address');
+      if (!target || !bookingInScope(scope, target)) {
+        return res.status(404).json({ success: false, message: 'Booking not found' });
+      }
+    }
+    const invoice = await getInvoiceForBooking(req.params.id);
+    res.status(200).json({ success: true, data: invoice });
+  } catch (error) {
+    if (error instanceof InvoiceError) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    console.error('Admin get invoice error:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate invoice' });
+  }
+};
+
 module.exports = {
+  getBookingInvoice,
   getAllBookings,
   getBookingById,
   cancelBooking,

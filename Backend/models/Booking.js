@@ -112,6 +112,18 @@ const bookingSchema = new mongoose.Schema({
     required: [true, 'Base price is required'],
     min: 0
   },
+  // Tax invoice (issued once, after payment; number comes from Settings.currentInvoiceNumber)
+  invoiceNumber: { type: String, default: null },
+  invoiceIssuedAt: { type: Date, default: null },
+  invoiceBuyer: {
+    name: String,
+    businessName: String,
+    gstin: String
+  },
+
+  // Coupon applied at checkout (the discount is already included in finalAmount)
+  couponCode: { type: String, default: null },
+  couponDiscount: { type: Number, default: 0, min: 0 },
   discount: {
     type: Number,
     default: 0,
@@ -336,6 +348,8 @@ const bookingSchema = new mongoose.Schema({
   review: { type: String, default: null },
   reviewImages: [{ type: String }],
   reviewedAt: { type: Date, default: null },
+  // Set by admin moderation (Review hidden/deleted); excluded from vendor ratings
+  reviewHidden: { type: Boolean, default: false },
 
   // ==========================================
   // 12. SETTLEMENT & NOTES
@@ -366,6 +380,7 @@ bookingSchema.index({ userId: 1, status: 1, createdAt: -1 });
 bookingSchema.index({ vendorId: 1, status: 1, createdAt: -1 });
 bookingSchema.index({ scheduledDate: 1, status: 1 });
 bookingSchema.index({ paymentStatus: 1, status: 1 });
+bookingSchema.index({ invoiceNumber: 1 }, { unique: true, partialFilterExpression: { invoiceNumber: { $type: 'string' } } });
 
 // ── PERFORMANCE INDEXES (added for wave-scheduler & dashboard queries) ──
 // Scheduler: Booking.find({ status: 'searching', waveStartedAt: { $ne: null } })
