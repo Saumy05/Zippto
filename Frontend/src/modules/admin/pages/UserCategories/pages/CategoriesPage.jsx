@@ -65,7 +65,11 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
           }));
 
           // Update catalog with fetched categories
-          setCatalog(prev => ({ ...prev, categories: mappedCategories }));
+          setCatalog(prev => {
+            const next = { ...prev, categories: mappedCategories };
+            saveCatalog(next);
+            return next;
+          });
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error);

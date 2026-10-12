@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FiLifeBuoy, FiX } from 'react-icons/fi';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { FiLifeBuoy, FiX, FiSearch } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { useSearchParams } from 'react-router-dom';
 import ticketService from '../../services/ticketService';
 
 const STATUSES = ['open', 'in_progress', 'resolved', 'closed'];
@@ -19,6 +20,13 @@ const prioColor = { low: 'text-gray-500', medium: 'text-blue-600', high: 'text-o
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q !== null) setSearchTerm(q);
+  }, [searchParams]);
   const [filters, setFilters] = useState({ status: '', priority: '', category: '' });
   const [active, setActive] = useState(null);
   const [draft, setDraft] = useState({});
@@ -63,6 +71,17 @@ const Tickets = () => {
     }
   };
 
+  const displayedTickets = useMemo(() => {
+    if (!searchTerm.trim()) return tickets;
+    const q = searchTerm.toLowerCase();
+    return tickets.filter((t) =>
+      (t.ticketNumber || '').toLowerCase().includes(q) ||
+      (t.subject || '').toLowerCase().includes(q) ||
+      (t.userId?.name || '').toLowerCase().includes(q) ||
+      (t.userId?.phone || '').includes(q)
+    );
+  }, [tickets, searchTerm]);
+
   const select = 'px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white outline-none focus:border-blue-500 capitalize';
 
   return (
@@ -72,7 +91,26 @@ const Tickets = () => {
         <p className="text-xs text-gray-500">Customer issues and refund disputes.</p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[220px] max-w-sm flex-1">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search tickets, subject, customer..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white outline-none focus:border-blue-500"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <FiX className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
         {[['status', STATUSES], ['priority', PRIORITIES], ['category', CATEGORIES]].map(([key, opts]) => (
           <select key={key} className={select} value={filters[key]} onChange={(e) => setFilters((f) => ({ ...f, [key]: e.target.value }))}>
             <option value="">All {key}</option>
@@ -90,9 +128,9 @@ const Tickets = () => {
           <tbody className="divide-y divide-gray-100">
             {loading ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
-            ) : tickets.length === 0 ? (
+            ) : displayedTickets.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No tickets found</td></tr>
-            ) : tickets.map((t) => (
+            ) : displayedTickets.map((t) => (
               <tr key={t._id} onClick={() => open(t)} className="hover:bg-gray-50 cursor-pointer">
                 <td className="px-4 py-3">
                   <div className="font-mono text-xs font-bold text-gray-900">{t.ticketNumber}</div>

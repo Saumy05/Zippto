@@ -1,4 +1,4 @@
-export const LS_KEY = "adminUserAppCatalog";
+export const LS_KEY = "zippto_adminUserAppCatalog";
 
 export const toAssetUrl = (url) => {
   if (!url) return '';
@@ -17,7 +17,18 @@ export const slugify = (value) =>
     .replace(/-+/g, "-");
 
 export const loadCatalog = () => {
-  const raw = localStorage.getItem(LS_KEY);
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      // Clean up legacy un-namespaced key from other local projects on localhost:5173
+      if (localStorage.getItem("adminUserAppCatalog")) {
+        localStorage.removeItem("adminUserAppCatalog");
+      }
+    } catch (e) {
+      // Ignore storage errors
+    }
+  }
+
+  const raw = typeof window !== "undefined" ? localStorage.getItem(LS_KEY) : null;
   if (!raw) {
     return {
       mode: "multi",
