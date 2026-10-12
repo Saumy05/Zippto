@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Link, NavLink, useNavigate, useParams } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   FiSearch,
   FiUser,
@@ -145,6 +145,7 @@ const DEFAULT_CATEGORY_CONFIG = {
 const UserDashboard = () => {
   const navigate = useNavigate();
   const { categorySlug } = useParams();
+  const location = useLocation();
   const { cartItems = [], cartCount = 0, addToCart, removeItem } = useCart() || {};
   const { currentCity } = useCity() || {};
   const [homeContent, setHomeContent] = useState(null);
@@ -179,6 +180,17 @@ const UserDashboard = () => {
   // Interactive Flow States
   const [activeCategoryModal, setActiveCategoryModal] = useState(null);
   const [activeDetailView, setActiveDetailView] = useState(null);
+
+  // After picking a sub-service in the category sheet, scroll to its section once the view renders
+  useEffect(() => {
+    const target = location.state?.scrollTo;
+    if (!target || !activeDetailView) return;
+    const key = String(target).toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const timer = setTimeout(() => {
+      document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [activeDetailView, location.state]);
 
   // Cart Add / Remove Toggle Handler
   const handleToggleAddService = async (item, sectionTitle) => {
@@ -1024,8 +1036,11 @@ const UserDashboard = () => {
             image: cat.icon ? toAssetUrl(cat.icon) : (matchedExplore?.image || matchedMain?.image || '/cat_electrician_plumber.png'),
             badge: cat.badge || null,
             hasSaleBadge: cat.hasSaleBadge || false,
-            isCombo: matchedExplore?.isCombo || false,
-            subCategories: matchedExplore?.subCategories || matchedMain?.subCategories || []
+            // Prefer the category's own sub-services from the DB; the hard-coded
+            // combo (Electrician/Plumber/Carpenter) is only a fallback.
+            subCategories: matchedMain?.subCategories?.length > 0
+              ? matchedMain.subCategories
+              : (matchedExplore?.subCategories || [])
           };
         });
     }
@@ -1135,7 +1150,7 @@ const UserDashboard = () => {
   }, [categorySlug, loadCategoryView]);
 
   const handleCategoryClick = (cat) => {
-    if (cat.isCombo) {
+    if (cat.subCategories?.length > 0) {
       setActiveCategoryModal(cat);
     } else {
       const slug = cat.slug || cat.id;
@@ -2458,9 +2473,15 @@ const UserDashboard = () => {
                   <div
                     key={sub.id}
                     onClick={() => {
-                      const selectedSlug = sub.slug || sub.id;
                       setActiveCategoryModal(null);
-                      navigate(`/user/category/${selectedSlug}`);
+                      if (sub.slug) {
+                        navigate(`/user/category/${sub.slug}`);
+                      } else {
+                        // Sub-service of this category: open it and jump to that section
+                        navigate(`/user/category/${activeCategoryModal.slug || activeCategoryModal.id}`, {
+                          state: { scrollTo: sub.id }
+                        });
+                      }
                     }}
                     className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
                   >
