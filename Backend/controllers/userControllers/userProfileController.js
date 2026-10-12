@@ -4,6 +4,8 @@ const Settings = require('../../models/Settings');
 const { validationResult } = require('express-validator');
 const cloudinaryService = require('../../services/cloudinaryService');
 
+const MAX_SAVED_ADDRESSES = 10;
+
 /**
  * Get user profile
  */
@@ -122,9 +124,17 @@ const updateProfile = async (req, res) => {
       }
     }
 
-    // Update addresses - ENFORCE SINGLE ADDRESS POLICY
+    // Update addresses - client sends the full saved list (add/edit/delete)
     if (addresses && Array.isArray(addresses)) {
-      updateData.addresses = addresses.slice(-1); // Only save the last one
+      if (addresses.length > MAX_SAVED_ADDRESSES) {
+        return res.status(400).json({
+          success: false,
+          message: `You can save up to ${MAX_SAVED_ADDRESSES} addresses`
+        });
+      }
+      // Guarantee exactly one default (the first flagged one, else the first address)
+      const defaultIdx = Math.max(addresses.findIndex(a => a?.isDefault), 0);
+      updateData.addresses = addresses.map((a, i) => ({ ...a, isDefault: i === defaultIdx }));
     }
 
     // Business (B2B) details for GST invoices

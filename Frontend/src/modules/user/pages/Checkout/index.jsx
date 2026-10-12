@@ -863,7 +863,9 @@ const Checkout = () => {
 
         const response = await userAuthService.getProfile();
         if (response.success && response.user) {
-          const updatedAddresses = [newAddress]; // Always replace with single address
+          // Append as the new default, keeping the user's other saved addresses
+          const existing = (response.user.addresses || []).map(a => ({ ...a, isDefault: false }));
+          const updatedAddresses = [...existing, newAddress];
           await userAuthService.updateProfile({ addresses: updatedAddresses });
           toast.success('Address updated in profile!');
         }

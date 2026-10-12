@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  // ENFORCED POLICY: Only 1 address allowed. If user changes it, we replace.
+  // Multiple saved addresses (home/work/other); exactly one is the default.
   addresses: [{
     type: {
       type: String, // home, work, other
@@ -57,6 +57,8 @@ const userSchema = new mongoose.Schema({
     state: String,
     pincode: String,
     landmark: String,
+    lat: Number,
+    lng: Number,
     isDefault: {
       type: Boolean,
       default: false
