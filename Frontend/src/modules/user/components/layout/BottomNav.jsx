@@ -84,13 +84,13 @@ const BottomNav = React.memo(() => {
     <nav
       data-bottom-nav="true"
       data-role="bottom-nav"
-      className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden bottom-nav-container"
+      className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden bottom-nav-container pointer-events-none"
       style={{ WebkitBackfaceVisibility: 'hidden' }}
     >
       <div
-        className="w-full"
+        className="w-full pointer-events-none"
         style={{
-          background: '#ffffff',
+          background: 'transparent',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
@@ -102,12 +102,12 @@ const BottomNav = React.memo(() => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="flex justify-center px-3 pb-1"
+            className="flex justify-center px-3 pb-1.5"
           >
             <button
               type="button"
               onClick={() => navigate('/user/cart')}
-              className="w-full max-w-[320px] sm:max-w-xs bg-slate-900 hover:bg-black text-white px-3.5 py-2.5 rounded-2xl shadow-xl flex items-center justify-between gap-3 cursor-pointer border border-slate-700/50 active:scale-[0.98] transition-all"
+              className="pointer-events-auto w-full max-w-[320px] sm:max-w-xs bg-slate-900 hover:bg-black text-white px-3.5 py-2.5 rounded-2xl shadow-xl flex items-center justify-between gap-3 cursor-pointer border border-slate-700/50 active:scale-[0.98] transition-all"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-6 h-6 rounded-lg bg-[#B33A35] flex items-center justify-center shrink-0">
@@ -134,7 +134,7 @@ const BottomNav = React.memo(() => {
       {/* Floating island pill */}
         <div className="flex justify-center px-3 pb-2 pt-0.5">
           <div
-            className="flex items-center justify-around w-full max-w-[320px] sm:max-w-xs rounded-full px-1.5 py-1"
+            className="pointer-events-auto flex items-center justify-around w-full max-w-[320px] sm:max-w-xs rounded-full px-1.5 py-1"
             style={{
               background: 'rgba(255,255,255,0.94)',
               backdropFilter: 'blur(20px)',
