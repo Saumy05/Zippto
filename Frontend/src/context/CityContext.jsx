@@ -50,6 +50,28 @@ export const CityProvider = ({ children }) => {
     initCity();
   }, []);
 
+  // When GPS detects the user's city, switch to the matching service city (if we operate there)
+  useEffect(() => {
+    if (cities.length === 0) return undefined;
+    const matchDetected = (detected) => {
+      const name = String(detected || '').trim().toLowerCase();
+      if (!name) return;
+      const match = cities.find(c => {
+        const n = String(c.name || '').toLowerCase();
+        return n === name || name.includes(n) || n.includes(name);
+      });
+      if (match) {
+        setCurrentCity(prev => ((prev?._id || prev?.id) === (match._id || match.id) ? prev : match));
+        localStorage.setItem('selectedCityId', match._id || match.id);
+      }
+    };
+    const onDetected = (e) => matchDetected(e.detail?.city);
+    window.addEventListener('userLocationDetected', onDetected);
+    // Location may have been detected before the city list finished loading
+    try { matchDetected(localStorage.getItem('currentCity')); } catch (e) { /* ignore */ }
+    return () => window.removeEventListener('userLocationDetected', onDetected);
+  }, [cities]);
+
   const selectCity = (city) => {
     setCurrentCity(city);
     if (city) {

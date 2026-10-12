@@ -259,7 +259,26 @@ const UserDashboard = () => {
     };
   }, [isLoggedIn]);
   const userName = storedUser?.name || storedUser?.fullName || '';
-  const userCity = storedUser?.city || 'Gondia, Maharashtra';
+  // Header location label: GPS-detected address (set by LocationPermissionChecker) -> saved profile city -> prompt
+  const readSavedAddress = () => {
+    try { return localStorage.getItem('currentAddress') || ''; } catch (e) { return ''; }
+  };
+  const [detectedAddress, setDetectedAddress] = useState(readSavedAddress);
+  useEffect(() => {
+    const onDetected = (e) => setDetectedAddress(e.detail?.address || readSavedAddress());
+    window.addEventListener('userLocationDetected', onDetected);
+    return () => window.removeEventListener('userLocationDetected', onDetected);
+  }, []);
+  // Header label: always lead with the active service city, then the finer-grained area if we know it
+  const userCity = (() => {
+    const area = (detectedAddress || '').split(',')[0].trim();
+    if (currentCity?.name) {
+      return area && area.toLowerCase() !== currentCity.name.toLowerCase()
+        ? `${currentCity.name} · ${area}`
+        : currentCity.name;
+    }
+    return detectedAddress || storedUser?.city || '';
+  })();
   const walletBalance = storedUser?.wallet?.balance ?? storedUser?.walletBalance ?? 0;
 
   // Smooth scroll handler for horizontal card carousels
@@ -1290,7 +1309,7 @@ const UserDashboard = () => {
                 onClick={() => setIsCityModalOpen(true)}
                 className="flex items-center gap-1 text-[11px] sm:text-xs text-slate-500 hover:text-slate-800 font-medium leading-tight truncate focus:outline-none cursor-pointer"
               >
-                <span className="truncate">{userCity || 'Kudwa, Maharashtra 441614'}</span>
+                <span className="truncate">{userCity || 'Select your location'}</span>
                 <FiChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
               </button>
               <h1 className="text-xs sm:text-sm md:text-base font-bold text-slate-900 leading-tight truncate">

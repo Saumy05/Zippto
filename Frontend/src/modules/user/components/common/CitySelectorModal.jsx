@@ -1,12 +1,55 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiX, HiLocationMarker, HiCheck } from 'react-icons/hi';
-import { themeColors } from '../../../../theme';
+import { HiX, HiLocationMarker, HiSearch } from 'react-icons/hi';
+import { useJsApiLoader } from '@react-google-maps/api';
 import { useCity } from '../../../../context/CityContext';
+import flutterBridge from '../../../../utils/flutterBridge';
+import { searchPlacesOSM, reverseGeocodeOSM } from '../../../../utils/placeSearch';
+
+// Must match the libraries used by every other useJsApiLoader call (same loader id).
+const libraries = ['places', 'geometry'];
+
+const sameCity = (a, b) => {
+  const x = String(a || '').trim().toLowerCase();
+  const y = String(b || '').trim().toLowerCase();
+  return !!x && !!y && (x === y || x.includes(y) || y.includes(x));
+};
+
+const component = (result, type) =>
+  result.address_components?.find((c) => c.types.includes(type))?.long_name || '';
+
+/** Turn a Google geocoder result into { address, city, latitude, longitude } */
+const parseGeocode = (result) => {
+  const area =
+    component(result, 'sublocality_level_1') || component(result, 'neighborhood') || component(result, 'locality');
+  const city = component(result, 'locality') || component(result, 'administrative_area_level_2');
+  const state = component(result, 'administrative_area_level_1');
+  const loc = result.geometry?.location;
+  return {
+    address: [area, city, state].filter(Boolean).join(', '),
+    city,
+    latitude: typeof loc?.lat === 'function' ? loc.lat() : loc?.lat,
+    longitude: typeof loc?.lng === 'function' ? loc.lng() : loc?.lng
+  };
+};
 
 const CitySelectorModal = ({ isOpen, onClose }) => {
-  const { cities, currentCity, selectCity } = useCity();
+  const { cities, selectCity } = useCity();
   const modalRef = useRef(null);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+    language: localStorage.getItem('zippto_language') || 'en'
+  });
+
+  const [query, setQuery] = useState('');
+  const [predictions, setPredictions] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const [notice, setNotice] = useState(null); // { type: 'error' | 'info', text }
+  const googleUsable = useRef(true);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -17,19 +60,188 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden';
+    } else {
+      setQuery('');
+      setPredictions([]);
+      setNotice(null);
+      setDetecting(false);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 
-  const handleCitySelect = (city) => {
-    selectCity(city);
-    onClose();
+  // Lock page scroll while the sheet is open (html AND body: both are scroll containers in this app)
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      htmlOverscroll: html.style.overscrollBehavior
+    };
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    html.style.overscrollBehavior = 'none';
+    return () => {
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      html.style.overscrollBehavior = prev.htmlOverscroll;
+    };
+  }, [isOpen]);
+
+  // Debounced place suggestions. Google Places first; if Google is unavailable/denied, fall back to OpenStreetMap.
+  useEffect(() => {
+    const text = query.trim();
+    if (!isOpen || text.length < 2) {
+      setPredictions([]);
+      setSearching(false);
+      return undefined;
+    }
+    setSearching(true);
+    const controller = new AbortController();
+
+    const searchOSM = async () => {
+      try {
+        const results = await searchPlacesOSM(text, controller.signal);
+        if (!controller.signal.aborted) setPredictions(results);
+      } catch (e) {
+        if (!controller.signal.aborted) setPredictions([]);
+      } finally {
+        if (!controller.signal.aborted) setSearching(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      if (!googleUsable.current || !isLoaded || !window.google?.maps?.places) {
+        searchOSM();
+        return;
+      }
+      new window.google.maps.places.AutocompleteService().getPlacePredictions(
+        { input: text, componentRestrictions: { country: 'in' }, types: ['geocode'] },
+        (results, status) => {
+          if (controller.signal.aborted) return;
+          if (status === 'OK' && results?.length) {
+            setSearching(false);
+            setPredictions(
+              results.slice(0, 6).map((p) => ({
+                id: p.place_id,
+                main: p.structured_formatting?.main_text || p.description,
+                secondary: p.structured_formatting?.secondary_text || '',
+                googlePlaceId: p.place_id,
+                description: p.description
+              }))
+            );
+          } else {
+            // REQUEST_DENIED (billing/key) or no result: stop using Google for this session and use OSM
+            if (status === 'REQUEST_DENIED' || status === 'OVER_QUERY_LIMIT') googleUsable.current = false;
+            searchOSM();
+          }
+        }
+      );
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, isOpen, isLoaded]);
+
+  /** Persist the chosen place, then switch to the matching service city (or explain we're not there yet). */
+  const applyPlace = useCallback(
+    ({ address, city, latitude, longitude }) => {
+      try {
+        if (latitude != null && longitude != null) {
+          localStorage.setItem('userCoords', JSON.stringify({ latitude, longitude }));
+        }
+        if (address) localStorage.setItem('currentAddress', address);
+        if (city) localStorage.setItem('currentCity', city);
+      } catch (e) { /* storage unavailable */ }
+
+      window.dispatchEvent(new CustomEvent('userLocationDetected', { detail: { address, city, latitude, longitude } }));
+
+      const match = cities.find((c) => sameCity(c.name, city));
+      if (match) {
+        selectCity(match);
+        onClose();
+        return;
+      }
+      setNotice({
+        type: 'info',
+        text: city
+          ? `We're not available in ${city} yet. Please pick one of the cities we serve below.`
+          : "We couldn't work out the city for that place. Please pick one of the cities below."
+      });
+    },
+    [cities, selectCity, onClose]
+  );
+
+  const handlePredictionSelect = (prediction) => {
+    setNotice(null);
+    setPredictions([]);
+    setQuery(prediction.description || [prediction.main, prediction.secondary].filter(Boolean).join(', '));
+
+    if (prediction.place) {
+      applyPlace(prediction.place); // OSM result already carries coordinates + city
+      return;
+    }
+    new window.google.maps.Geocoder().geocode({ placeId: prediction.googlePlaceId }, (results, status) => {
+      if (status === 'OK' && results?.[0]) {
+        applyPlace(parseGeocode(results[0]));
+      } else {
+        setNotice({ type: 'error', text: "Couldn't load that place. Please try another search." });
+      }
+    });
+  };
+
+  const reverseGeocode = ({ latitude, longitude }) =>
+    new Promise((resolve) => {
+      const viaOSM = () => reverseGeocodeOSM({ latitude, longitude }).then(resolve).catch(() => resolve(null));
+      if (googleUsable.current && isLoaded && window.google?.maps?.Geocoder) {
+        new window.google.maps.Geocoder().geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
+          if (status === 'OK' && results?.[0]) {
+            resolve(parseGeocode(results[0]));
+          } else {
+            if (status === 'REQUEST_DENIED' || status === 'OVER_QUERY_LIMIT') googleUsable.current = false;
+            viaOSM();
+          }
+        });
+      } else {
+        viaOSM();
+      }
+    });
+
+  const handleUseCurrentLocation = async () => {
+    setNotice(null);
+    setDetecting(true);
+    try {
+      const coords = await flutterBridge.getCurrentLocation();
+      const place = await reverseGeocode(coords);
+      if (!place || !place.city) {
+        setNotice({
+          type: 'error',
+          text: "We got your location but couldn't turn it into a city. Please search for your area above."
+        });
+        return;
+      }
+      applyPlace(place);
+    } catch (err) {
+      const code = err?.code;
+      setNotice({
+        type: 'error',
+        text:
+          code === 1
+            ? 'Location permission is blocked. Allow it in your browser settings, or search for your area above.'
+            : code === 2
+              ? 'Your device could not find your location. Turn on GPS/Wi-Fi, or search for your area above.'
+              : code === 3
+                ? 'Finding your location took too long. Please try again or search for your area above.'
+                : "Couldn't get your location. Please search for your area above."
+      });
+    } finally {
+      setDetecting(false);
+    }
   };
 
   return (
@@ -41,7 +253,8 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] touch-none"
+            onWheel={(e) => e.preventDefault()}
           />
 
           {/* Modal Container */}
@@ -53,76 +266,94 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
           >
             <div
               ref={modalRef}
-              className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
-              style={{ maxHeight: '80vh' }}
+              className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col"
+              style={{ maxHeight: '85vh' }}
             >
               {/* Header */}
               <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Select City</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Where would you like to find services?</p>
+                  <h3 className="text-lg font-bold text-gray-900">Choose your location</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Search your area or use your current location</p>
                 </div>
                 <button
                   onClick={onClose}
                   className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
+                  aria-label="Close"
                 >
                   <HiX className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* City List */}
-              <div className="overflow-y-auto p-2" style={{ maxHeight: 'calc(80vh - 80px)' }}>
-                <div className="grid gap-2">
-                  {cities.map((city) => {
-                    const isSelected = currentCity && (currentCity._id === city._id || currentCity.id === city.id);
-
-                    return (
-                      <button
-                        key={city._id || city.id}
-                        onClick={() => handleCitySelect(city)}
-                        className={`
-                        w-full text-left p-4 rounded-xl flex items-center justify-between group transition-all duration-200
-                        ${isSelected
-                            ? 'bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-100 shadow-sm'
-                            : 'hover:bg-gray-50 border border-transparent hover:border-gray-100'
-                          }
-                      `}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`
-                          w-10 h-10 rounded-full flex items-center justify-center transition-colors
-                          ${isSelected ? 'bg-white shadow-sm' : 'bg-gray-100 group-hover:bg-white group-hover:shadow-sm'}
-                        `}>
-                            <HiLocationMarker className={`
-                            w-5 h-5 
-                            ${isSelected ? 'text-teal-600' : 'text-gray-400 group-hover:text-teal-500'}
-                          `} />
-                          </div>
-                          <div>
-                            <div className={`font-semibold ${isSelected ? 'text-teal-900' : 'text-gray-700'}`}>
-                              {city.name}
-                            </div>
-                            {city.state && (
-                              <div className="text-xs text-gray-400 mt-0.5">
-                                {city.state}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {isSelected && (
-                          <div className="w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center text-white shadow-sm">
-                            <HiCheck className="w-3.5 h-3.5" />
-                          </div>
-                        )}
-                      </button>
-                    )
-                  })}
+              <div className="overflow-y-auto overscroll-contain p-3 flex-1">
+                {/* Search */}
+                <div className="relative">
+                  <HiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setNotice(null);
+                    }}
+                    placeholder="Search area, locality or city"
+                    autoComplete="off"
+                    className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                  />
                 </div>
 
+                {/* Suggestions */}
+                {query.trim().length >= 2 && (
+                  <div className="mt-2 rounded-xl border border-gray-100 overflow-hidden">
+                    {predictions.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => handlePredictionSelect(p)}
+                        className="w-full text-left px-3 py-2.5 flex items-start gap-3 hover:bg-gray-50 border-b border-gray-50 last:border-b-0"
+                      >
+                        <HiLocationMarker className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-medium text-gray-800 truncate">
+                            {p.main}
+                          </span>
+                          <span className="block text-xs text-gray-400 truncate">
+                            {p.secondary}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                    {predictions.length === 0 && (
+                      <p className="px-3 py-3 text-xs text-gray-400">
+                        {searching ? 'Searching…' : 'No places found. Try a different search.'}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Current location */}
+                <button
+                  type="button"
+                  onClick={handleUseCurrentLocation}
+                  disabled={detecting}
+                  className="w-full mt-3 p-3 rounded-xl flex items-center gap-3 text-sm font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-100 transition-colors disabled:opacity-60"
+                >
+                  <HiLocationMarker className="w-5 h-5 shrink-0" />
+                  <span className="text-left">{detecting ? 'Detecting your location…' : 'Use my current location'}</span>
+                </button>
+
+                {notice && (
+                  <p
+                    className={`mt-2 px-3 py-2 rounded-lg text-xs leading-snug ${
+                      notice.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'
+                    }`}
+                  >
+                    {notice.text}
+                  </p>
+                )}
+
                 {cities.length === 0 && (
-                  <div className="text-center py-8 text-gray-400">
-                    <p>No cities available at the moment.</p>
+                  <div className="text-center py-6 mt-2 text-gray-400">
+                    <p className="font-semibold text-gray-500">We're not live in any city yet.</p>
+                    <p className="text-xs mt-1">Please check back soon.</p>
                   </div>
                 )}
               </div>
