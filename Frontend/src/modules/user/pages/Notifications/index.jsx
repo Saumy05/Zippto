@@ -28,8 +28,8 @@ const Notifications = () => {
   const [filter, setFilter] = useState('all'); // all, jobs, payments
 
   const quickCategories = [
-    { id: 'electrician', title: 'Electrician & Plumbing', image: '/cat_electrician_plumber.png' },
-    { id: 'cleaning', title: 'Deep Cleaning', image: '/cat_cleaning.png' },
+    { id: 'electrician', title: 'Electrician & Plumbing', image: '/cat_images/electrician.jpg' },
+    { id: 'cleaning', title: 'Deep Cleaning', image: '/intense_bathroom_cleaning.png' },
     { id: 'ac-repair', title: 'AC Service & Repair', image: '/ac_foam_jet_service.png' },
     { id: 'appliance', title: 'Appliance Repair', image: '/drill_wall_decor.png' },
   ];

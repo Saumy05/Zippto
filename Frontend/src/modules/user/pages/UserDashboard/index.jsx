@@ -65,79 +65,79 @@ const DEFAULT_CATEGORY_CONFIG = {
   plumber: {
     icon: '/cat_images/plumber.jpg',
     subCategories: [
-      { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', icon: '🚰' },
-      { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', icon: '🧼' },
-      { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', icon: '🚽' },
-      { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', icon: '🚿' },
+      { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', image: '/tap_plumbing_repair.png' },
+      { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&auto=format&fit=crop&q=80' },
+      { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', image: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80' },
+      { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', image: '/cat_images/plumber.jpg' },
     ]
   },
   carpenter: {
     icon: '/cat_images/carpenter.jpg',
     subCategories: [
-      { id: 'door-lock', name: 'Door Hinge & Lock Repair', icon: '🚪' },
-      { id: 'furniture-assemble', name: 'Furniture Assembly & Repair', icon: '🪑' },
-      { id: 'sofa-repair', name: 'Sofa Repair & Upholstery', icon: '🛋️' },
-      { id: 'hanger-decor', name: 'Hanger & Wall Decor Fitting', icon: '🖼️' },
+      { id: 'door-lock', name: 'Door Hinge & Lock Repair', image: 'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?w=400&auto=format&fit=crop&q=80' },
+      { id: 'furniture-assemble', name: 'Furniture Assembly & Repair', image: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=400&auto=format&fit=crop&q=80' },
+      { id: 'sofa-repair', name: 'Sofa Repair & Upholstery', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop&q=80' },
+      { id: 'hanger-decor', name: 'Hanger & Wall Decor Fitting', image: '/drill_wall_decor.png' },
     ]
   },
   'salon-for-women': {
     icon: '/cat_images/salon_women.jpg',
     subCategories: [
-      { id: 'waxing', name: 'Waxing', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=200' },
-      { id: 'facial', name: 'Facial', image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=200' },
-      { id: 'korean-glow', name: 'Korean Glow', image: 'https://images.unsplash.com/photo-1512290900673-700200877a56?w=200' },
-      { id: 'mani-pedi', name: 'Mani-Pedi', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=200' },
-      { id: 'hair', name: 'Hair', image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=200' },
+      { id: 'waxing', name: 'Waxing', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=400&auto=format&fit=crop&q=80' },
+      { id: 'facial', name: 'Facial', image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&auto=format&fit=crop&q=80' },
+      { id: 'korean-glow', name: 'Korean Glow', image: 'https://images.unsplash.com/photo-1512290900673-700200877a56?w=400&auto=format&fit=crop&q=80' },
+      { id: 'mani-pedi', name: 'Mani-Pedi', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=400&auto=format&fit=crop&q=80' },
+      { id: 'hair', name: 'Hair', image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400&auto=format&fit=crop&q=80' },
     ]
   },
   'ac-appliance-repair': {
     icon: '/ac_repair_wall.png',
     subCategories: [
-      { id: 'ac-service', name: 'AC Service & Repair', icon: '❄️' },
-      { id: 'refrigerator', name: 'Refrigerator Repair', icon: '🧊' },
-      { id: 'washing-machine', name: 'Washing Machine Repair', icon: '🧺' },
-      { id: 'geyser', name: 'Geyser & Water Heater', icon: '🚿' },
+      { id: 'ac-service', name: 'AC Service & Repair', image: '/ac_foam_jet_service.png' },
+      { id: 'refrigerator', name: 'Refrigerator Repair', image: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=400&auto=format&fit=crop&q=80' },
+      { id: 'washing-machine', name: 'Washing Machine Repair', image: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&auto=format&fit=crop&q=80' },
+      { id: 'geyser', name: 'Geyser & Water Heater', image: '/geyser_checkup.png' },
     ]
   },
   'cleaning-service': {
-    icon: '/cat_cleaning.png',
+    icon: '/intense_bathroom_cleaning.png',
     subCategories: [
-      { id: 'deep-clean', name: 'Full Home Deep Cleaning', icon: '✨' },
-      { id: 'bathroom-clean', name: 'Bathroom Cleaning', icon: '🧼' },
-      { id: 'kitchen-clean', name: 'Kitchen Cleaning', icon: '🍳' },
-      { id: 'sofa-cleaning', name: 'Sofa Cleaning', icon: '🛋️' },
+      { id: 'deep-clean', name: 'Full Home Deep Cleaning', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&auto=format&fit=crop&q=80' },
+      { id: 'bathroom-clean', name: 'Bathroom Cleaning', image: '/intense_bathroom_cleaning.png' },
+      { id: 'kitchen-clean', name: 'Kitchen Cleaning', image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&auto=format&fit=crop&q=80' },
+      { id: 'sofa-cleaning', name: 'Sofa Cleaning', image: '/mattress_cleaning.png' },
     ]
   },
   'pest-control': {
-    icon: '/intense_bathroom_cleaning.png',
+    icon: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80',
     subCategories: [
-      { id: 'cockroach-pest', name: 'Cockroach Control', icon: '🪲' },
-      { id: 'termite-pest', name: 'Termite Treatment', icon: '🪵' },
-      { id: 'bedbug-pest', name: 'Bed Bug Eradication', icon: '🛏️' },
+      { id: 'cockroach-pest', name: 'Cockroach Control', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' },
+      { id: 'termite-pest', name: 'Termite Treatment', image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&auto=format&fit=crop&q=80' },
+      { id: 'bedbug-pest', name: 'Bed Bug Eradication', image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=400&auto=format&fit=crop&q=80' },
     ]
   },
   'painting-service': {
-    icon: '/drill_wall_decor.png',
+    icon: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&auto=format&fit=crop&q=80',
     subCategories: [
-      { id: 'interior-paint', name: 'Full Interior Paint', icon: '🎨' },
-      { id: 'waterproofing', name: 'Waterproofing', icon: '💧' },
-      { id: 'wall-texture', name: 'Wall Texture', icon: '🖼️' },
+      { id: 'interior-paint', name: 'Full Interior Paint', image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&auto=format&fit=crop&q=80' },
+      { id: 'waterproofing', name: 'Waterproofing', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80' },
+      { id: 'wall-texture', name: 'Wall Texture', image: '/drill_wall_decor.png' },
     ]
   },
   'construction-renovation': {
-    icon: '/switchboard_repair.png',
+    icon: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400&auto=format&fit=crop&q=80',
     subCategories: [
-      { id: 'civil-repair', name: 'Civil Repair Work', icon: '🧱' },
-      { id: 'false-ceiling', name: 'False Ceiling & Gypsum', icon: '🏗️' },
-      { id: 'tile-laying', name: 'Tile & Marble Laying', icon: '📐' },
+      { id: 'civil-repair', name: 'Civil Repair Work', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80' },
+      { id: 'false-ceiling', name: 'False Ceiling & Gypsum', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&auto=format&fit=crop&q=80' },
+      { id: 'tile-laying', name: 'Tile & Marble Laying', image: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80' },
     ]
   },
   'solar-service': {
-    icon: '/native_water_purifier.png',
+    icon: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80',
     subCategories: [
-      { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', icon: '⚡' },
-      { id: 'solar-panel-washing', name: 'Solar Panel Washing', icon: '🧼' },
-      { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', icon: '☀️' },
+      { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', image: 'https://images.unsplash.com/photo-1548611716-ad78255909ff?w=400&auto=format&fit=crop&q=80' },
+      { id: 'solar-panel-washing', name: 'Solar Panel Washing', image: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=400&auto=format&fit=crop&q=80' },
+      { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80' },
     ]
   }
 };
@@ -353,10 +353,10 @@ const UserDashboard = () => {
       image: '/cat_images/electrician.jpg',
       count: '4 services available',
       subCategories: [
-        { id: 'switch-socket', name: 'Switch & Socket Replacement', icon: '🔌' },
-        { id: 'fan-repair', name: 'Ceiling Fan Repair & Mounting', icon: '🌀' },
-        { id: 'mcb-repair', name: 'MCB & Fuse Box Repair', icon: '⚡' },
-        { id: 'tv-install', name: 'Tv Installation & Wiring', icon: '📺' },
+        { id: 'switch-socket', name: 'Switch & Socket Replacement', image: '/switchboard_repair.png' },
+        { id: 'fan-repair', name: 'Ceiling Fan Repair & Mounting', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=400&auto=format&fit=crop&q=80' },
+        { id: 'mcb-repair', name: 'MCB & Fuse Box Repair', image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&auto=format&fit=crop&q=80' },
+        { id: 'tv-install', name: 'Tv Installation & Wiring', image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&auto=format&fit=crop&q=80' },
       ],
     },
     {
@@ -366,22 +366,22 @@ const UserDashboard = () => {
       image: '/cat_images/plumber.jpg',
       count: '4 services available',
       subCategories: [
-        { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', icon: '🚰' },
-        { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', icon: '🧼' },
-        { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', icon: '🚽' },
-        { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', icon: 'Shower' },
+        { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', image: '/tap_plumbing_repair.png' },
+        { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&auto=format&fit=crop&q=80' },
+        { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', image: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80' },
+        { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', image: '/cat_images/plumber.jpg' },
       ],
     },
     {
       id: 'solar-service',
       slug: 'solar-service',
       title: 'Solar Service',
-      image: '/native_water_purifier.png',
+      image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80',
       count: '3 services available',
       subCategories: [
-        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', icon: '⚡' },
-        { id: 'solar-panel-washing', name: 'Solar Panel Washing', icon: '🧼' },
-        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', icon: '☀️' }
+        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', image: 'https://images.unsplash.com/photo-1548611716-ad78255909ff?w=400&auto=format&fit=crop&q=80' },
+        { id: 'solar-panel-washing', name: 'Solar Panel Washing', image: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=400&auto=format&fit=crop&q=80' },
+        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80' }
       ]
     }
   ]);
@@ -450,7 +450,7 @@ const UserDashboard = () => {
       rating: '4.8',
       desc: 'Certified electrical technicians for fault diagnosis, wiring, lighting, fans, MCBs, and home appliance power solutions.',
       subGrid: [
-        { id: 'consultation', name: 'Book a consultation', image: '/cat_electrician_plumber.png' },
+        { id: 'consultation', name: 'Book a consultation', image: '/cat_images/electrician.jpg' },
         { id: 'inverter', name: 'Inverter And Stabiliser', image: '/native_water_purifier.png' },
         { id: 'appliances', name: 'Appliances', image: '/ac_foam_jet_service.png' },
         { id: 'mcb', name: 'MCB/fuse', image: '/switchboard_repair.png' },
@@ -465,7 +465,7 @@ const UserDashboard = () => {
           id: 'consultation',
           sectionTitle: 'Book a consultation',
           items: [
-            { id: 'book-consultant', title: 'Book electrical consultant', rating: '4.8', price: '₹0', desc: 'Expert inspection, troubleshooting, safety advice, and exact cost estimation.', image: '/cat_electrician_plumber.png' }
+            { id: 'book-consultant', title: 'Book electrical consultant', rating: '4.8', price: '₹0', desc: 'Expert inspection, troubleshooting, safety advice, and exact cost estimation.', image: '/cat_images/electrician.jpg' }
           ]
         },
         {
@@ -941,13 +941,13 @@ const UserDashboard = () => {
       slug: 'electrician',
       title: 'Electrician /\nPlumber / Carpenter',
       displayTitle: 'Electrician / Plumber / Carpenter',
-      image: '/cat_3d/handyman.jpg',
+      image: '/cat_images/electrician.jpg',
       count: '3 trades available',
       isCombo: true,
       subCategories: [
-        { id: 'electrician', name: 'Electrician Services', icon: '⚡', image: '/cat_images/electrician.jpg', slug: 'electrician' },
-        { id: 'plumber', name: 'Plumber Services', icon: '🚰', image: '/cat_images/plumber.jpg', slug: 'plumber' },
-        { id: 'carpenter', name: 'Carpenter Services', icon: '🪚', image: '/cat_images/carpenter.jpg', slug: 'carpenter' },
+        { id: 'electrician', name: 'Electrician Services', image: '/cat_images/electrician.jpg', slug: 'electrician' },
+        { id: 'plumber', name: 'Plumber Services', image: '/cat_images/plumber.jpg', slug: 'plumber' },
+        { id: 'carpenter', name: 'Carpenter Services', image: '/cat_images/carpenter.jpg', slug: 'carpenter' },
       ]
     },
     {
@@ -955,13 +955,13 @@ const UserDashboard = () => {
       slug: 'cleaning-service',
       title: 'Cleaning Service',
       displayTitle: 'Cleaning Service',
-      image: '/cat_3d/cleaning.jpg',
+      image: '/intense_bathroom_cleaning.png',
       count: '4 services available',
       subCategories: [
-        { id: 'full-home', name: 'Full Home Deep Clean', icon: '✨', image: '/cat_cleaning.png' },
-        { id: 'bathroom', name: 'Bathroom Cleaning', icon: '🧼', image: '/intense_bathroom_cleaning.png' },
-        { id: 'kitchen', name: 'Kitchen Degreasing', icon: '🍳', image: '/intense_bathroom_cleaning.png' },
-        { id: 'sofa-carpet', name: 'Sofa & Carpet Wash', icon: '🛋️', image: '/mattress_cleaning.png' }
+        { id: 'full-home', name: 'Full Home Deep Clean', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&auto=format&fit=crop&q=80' },
+        { id: 'bathroom', name: 'Bathroom Cleaning', image: '/intense_bathroom_cleaning.png' },
+        { id: 'kitchen', name: 'Kitchen Degreasing', image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&auto=format&fit=crop&q=80' },
+        { id: 'sofa-carpet', name: 'Sofa & Carpet Wash', image: '/mattress_cleaning.png' }
       ]
     },
     {
@@ -969,12 +969,12 @@ const UserDashboard = () => {
       slug: 'pest-control',
       title: 'Pest Control',
       displayTitle: 'Pest Control',
-      image: '/cat_3d/pest_control.jpg',
+      image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=500&auto=format&fit=crop&q=80',
       count: '3 services available',
       subCategories: [
-        { id: 'cockroach', name: 'Cockroach & Ant Control', icon: '🪲', image: '/intense_bathroom_cleaning.png' },
-        { id: 'termite', name: 'Termite Treatment', icon: '🪵', image: '/drill_wall_decor.png' },
-        { id: 'bedbug', name: 'Bed Bug Eradication', icon: '🛏️', image: '/mattress_cleaning.png' }
+        { id: 'cockroach', name: 'Cockroach & Ant Control', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' },
+        { id: 'termite', name: 'Termite Treatment', image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&auto=format&fit=crop&q=80' },
+        { id: 'bedbug', name: 'Bed Bug Eradication', image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=400&auto=format&fit=crop&q=80' }
       ]
     },
     {
@@ -982,12 +982,12 @@ const UserDashboard = () => {
       slug: 'painting-service',
       title: 'Painting Service',
       displayTitle: 'Painting Service',
-      image: '/cat_3d/painting.jpg',
+      image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500&auto=format&fit=crop&q=80',
       count: '3 services available',
       subCategories: [
-        { id: 'interior-paint', name: 'Full Interior Painting', icon: '🎨', image: '/drill_wall_decor.png' },
-        { id: 'waterproofing', name: 'Seepage Waterproofing', icon: '💧', image: '/tap_plumbing_repair.png' },
-        { id: 'accent-wall', name: 'Accent Wall Textures', icon: '🖼️', image: '/drill_wall_decor.png' }
+        { id: 'interior-paint', name: 'Full Interior Painting', image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&auto=format&fit=crop&q=80' },
+        { id: 'waterproofing', name: 'Seepage Waterproofing', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80' },
+        { id: 'accent-wall', name: 'Accent Wall Textures', image: '/drill_wall_decor.png' }
       ]
     },
     {
@@ -995,12 +995,12 @@ const UserDashboard = () => {
       slug: 'construction-renovation',
       title: 'Construction & Renovation',
       displayTitle: 'Construction & Renovation',
-      image: '/cat_3d/construction.jpg',
+      image: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=500&auto=format&fit=crop&q=80',
       count: '3 services available',
       subCategories: [
-        { id: 'civil-repair', name: 'Civil Repair Work', icon: '🧱', image: '/switchboard_repair.png' },
-        { id: 'false-ceiling', name: 'False Ceiling & Gypsum', icon: '🏗️', image: '/ac_repair_wall.png' },
-        { id: 'tile-laying', name: 'Tile & Marble Laying', icon: '📐', image: '/drill_wall_decor.png' }
+        { id: 'civil-repair', name: 'Civil Repair Work', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80' },
+        { id: 'false-ceiling', name: 'False Ceiling & Gypsum', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&auto=format&fit=crop&q=80' },
+        { id: 'tile-laying', name: 'Tile & Marble Laying', image: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80' }
       ]
     },
     {
@@ -1008,12 +1008,12 @@ const UserDashboard = () => {
       slug: 'solar-service',
       title: 'Solar Service',
       displayTitle: 'Solar Service',
-      image: '/cat_3d/solar.jpg',
+      image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=500&auto=format&fit=crop&q=80',
       count: '3 services available',
       subCategories: [
-        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', icon: '⚡', image: '/native_water_purifier.png' },
-        { id: 'solar-panel-washing', name: 'Solar Panel Washing', icon: '🧼', image: '/intense_bathroom_cleaning.png' },
-        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', icon: '☀️', image: '/native_water_purifier.png' }
+        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', image: 'https://images.unsplash.com/photo-1548611716-ad78255909ff?w=400&auto=format&fit=crop&q=80' },
+        { id: 'solar-panel-washing', name: 'Solar Panel Washing', image: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=400&auto=format&fit=crop&q=80' },
+        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80' }
       ]
     }
   ], []);
@@ -1033,7 +1033,7 @@ const UserDashboard = () => {
             slug: cat.slug,
             title: cat.title,
             displayTitle: cat.title,
-            image: cat.icon ? toAssetUrl(cat.icon) : (matchedExplore?.image || matchedMain?.image || '/cat_electrician_plumber.png'),
+            image: cat.icon ? toAssetUrl(cat.icon) : (matchedExplore?.image || matchedMain?.image || '/cat_images/electrician.jpg'),
             badge: cat.badge || null,
             hasSaleBadge: cat.hasSaleBadge || false,
             // Prefer the category's own sub-services from the DB; the hard-coded
@@ -1095,7 +1095,7 @@ const UserDashboard = () => {
         const dynamicSubGrid = brandRes.brands.map(b => ({
           id: b.slug,
           name: b.title,
-          image: toAssetUrl(b.icon || b.imageUrl || b.logo || '/cat_electrician_plumber.png')
+          image: toAssetUrl(b.icon || b.imageUrl || b.logo || '/cat_images/electrician.jpg')
         }));
 
         const dynamicSections = [];
@@ -1112,7 +1112,7 @@ const UserDashboard = () => {
                   reviews: card.reviews || null,
                   price: card.price ? `₹${card.price}` : (card.basePrice ? `₹${card.basePrice}` : '₹99'),
                   desc: card.subtitle || card.features?.join(' • ') || card.description || 'Professional certified home service package.',
-                  image: toAssetUrl(card.imageUrl || b.icon || '/cat_electrician_plumber.png')
+                  image: toAssetUrl(card.imageUrl || b.icon || '/cat_images/electrician.jpg')
                 }))
               });
             });
@@ -1202,7 +1202,7 @@ const UserDashboard = () => {
       return homeContent.noteworthy.map((item, idx) => ({
         id: item.id || `nw-${idx}`,
         title: item.title,
-        image: item.imageUrl ? toAssetUrl(item.imageUrl) : '/cat_electrician_plumber.png',
+        image: item.imageUrl ? toAssetUrl(item.imageUrl) : '/cat_images/electrician.jpg',
         subtitle: item.subtitle || 'Featured',
         isGreenText: false,
         slug: item.slug,
@@ -1219,7 +1219,7 @@ const UserDashboard = () => {
       return homeContent.booked.map((item, idx) => ({
         id: item.id || `mb-${idx}`,
         title: item.title,
-        image: item.imageUrl ? toAssetUrl(item.imageUrl) : '/cat_electrician_plumber.png',
+        image: item.imageUrl ? toAssetUrl(item.imageUrl) : '/cat_images/electrician.jpg',
         rating: item.rating || '4.80',
         isInstant: true,
         price: item.price ? (String(item.price).startsWith('₹') ? item.price : `₹${item.price}`) : '₹199',
@@ -1531,7 +1531,7 @@ const UserDashboard = () => {
                       alt={sg.name}
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = '/cat_electrician_plumber.png';
+                        e.target.src = '/cat_images/electrician.jpg';
                       }}
                       className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
                     />
@@ -1716,7 +1716,7 @@ const UserDashboard = () => {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = '/cat_electrician_plumber.png';
+                            e.target.src = '/cat_images/electrician.jpg';
                           }}
                         />
                       </div>
@@ -1806,7 +1806,7 @@ const UserDashboard = () => {
                           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = '/cat_electrician_plumber.png';
+                            e.target.src = '/cat_images/electrician.jpg';
                           }}
                         />
                       </div>
@@ -1877,7 +1877,7 @@ const UserDashboard = () => {
                           className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = '/cat_electrician_plumber.png';
+                            e.target.src = '/cat_images/electrician.jpg';
                           }}
                         />
                         {card.discountBadge && (
@@ -2056,12 +2056,12 @@ const UserDashboard = () => {
                           >
                             <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
                               <img
-                                src={card.imageUrl ? toAssetUrl(card.imageUrl) : '/cat_electrician_plumber.png'}
+                                src={card.imageUrl ? toAssetUrl(card.imageUrl) : '/cat_images/electrician.jpg'}
                                 alt={card.title}
                                 className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src = '/cat_electrician_plumber.png';
+                                  e.target.src = '/cat_images/electrician.jpg';
                                 }}
                               />
                               {card.discount && (
@@ -2485,20 +2485,16 @@ const UserDashboard = () => {
                     }}
                     className="flex flex-col items-center cursor-pointer group active:scale-95 transition-transform"
                   >
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-50 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 text-3xl group-hover:shadow-md group-hover:scale-105 transition-all">
-                      {sub.image ? (
-                        <img
-                          src={sub.image}
-                          alt={sub.name}
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/cat_electrician_plumber.png';
-                          }}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <span className="text-3xl">{sub.icon || '⚡'}</span>
-                      )}
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-50 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 group-hover:shadow-md group-hover:scale-105 transition-all">
+                      <img
+                        src={sub.image || '/cat_images/electrician.jpg'}
+                        alt={sub.name}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/cat_images/electrician.jpg';
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
                     <span className="text-xs font-semibold text-slate-800 text-center mt-2.5 leading-tight line-clamp-2 px-1">
                       {sub.name}

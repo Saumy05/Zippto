@@ -57,7 +57,7 @@ const resolveServiceImage = (title = '', categorySlug = '', fallbackUrl = '') =>
   // 4. Cleaning services
   if (t.includes('bath') || t.includes('toilet') || t.includes('washroom') || t.includes('sanit')) return '/intense_bathroom_cleaning.png';
   if (t.includes('sofa') || t.includes('mattress') || t.includes('couch') || t.includes('carpet')) return '/mattress_cleaning.png';
-  if (t.includes('home') || t.includes('kitchen') || t.includes('deep clean') || t.includes('floor')) return '/cat_cleaning.png';
+  if (t.includes('home') || t.includes('kitchen') || t.includes('deep clean') || t.includes('floor')) return 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&auto=format&fit=crop&q=80';
 
   // 5. AC & Appliance
   if (t.includes('foam') || t.includes('filter') || t.includes('split') || t.includes('window')) return '/ac_foam_jet_service.png';
@@ -83,7 +83,7 @@ const resolveServiceImage = (title = '', categorySlug = '', fallbackUrl = '') =>
   if (c.includes('electr')) return '/cat_images/electrician.jpg';
   if (c.includes('plumb')) return '/tap_plumbing_repair.png';
   if (c.includes('carpent')) return '/cat_images/carpenter.jpg';
-  if (c.includes('clean')) return '/cat_cleaning.png';
+  if (c.includes('clean')) return '/intense_bathroom_cleaning.png';
   if (c.includes('ac') || c.includes('appliance')) return '/ac_foam_jet_service.png';
   if (c.includes('salon') || c.includes('women')) return '/cat_images/salon_women.jpg';
 
@@ -231,8 +231,8 @@ const PRESET_CATALOG_DATA = {
       {
         sectionTitle: 'Pest Control Treatments',
         items: [
-          { id: 'pest-cock-1', title: '1 BHK Herbal Gel Pest Control', rating: null, reviews: null, price: '₹599', originalPrice: '₹749', discount: '20% OFF', isInstant: false, desc: 'Odorless Bayer gel dots in all corners + drain spray.', image: '/cat_3d/pest_control.jpg' },
-          { id: 'pest-cock-2', title: '2 BHK Herbal Gel Pest Control', rating: null, reviews: null, price: '₹799', originalPrice: '₹999', discount: '20% OFF', isInstant: false, desc: 'Complete 2BHK coverage with 60-day service warranty.', image: '/cat_3d/pest_control.jpg' }
+          { id: 'pest-cock-1', title: '1 BHK Herbal Gel Pest Control', rating: null, reviews: null, price: '₹599', originalPrice: '₹749', discount: '20% OFF', isInstant: false, desc: 'Odorless Bayer gel dots in all corners + drain spray.', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' },
+          { id: 'pest-cock-2', title: '2 BHK Herbal Gel Pest Control', rating: null, reviews: null, price: '₹799', originalPrice: '₹999', discount: '20% OFF', isInstant: false, desc: 'Complete 2BHK coverage with 60-day service warranty.', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' }
         ]
       }
     ]
