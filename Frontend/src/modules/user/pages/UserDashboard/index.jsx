@@ -1649,7 +1649,17 @@ const UserDashboard = () => {
         <main className="max-w-4xl mx-auto px-3.5 sm:px-6 pt-3 pb-6 space-y-6">
           
           {/* =============================================================
-              1. EXPLORE MORE SERVICES GRID (Dynamic from Admin MongoDB)
+              1. TOP PROMO BANNER SLIDER (Dynamic from Admin HomeContent)
+             ============================================================= */}
+          {homeContent?.isBannersVisible !== false && (
+            <OfferBannerSlider
+              banners={homeContent?.banners || []}
+              onBannerClick={handleBannerClick}
+            />
+          )}
+
+          {/* =============================================================
+              2. EXPLORE MORE SERVICES GRID (Dynamic from Admin MongoDB)
              ============================================================= */}
           {homeContent?.isCategoriesVisible !== false && (
             <section className="space-y-3">
@@ -1756,16 +1766,6 @@ const UserDashboard = () => {
                 )}
               </div>
             </section>
-          )}
-
-          {/* =============================================================
-              2. PROMO BANNER SLIDER (Dynamic from Admin HomeContent)
-             ============================================================= */}
-          {homeContent?.isBannersVisible !== false && (
-            <OfferBannerSlider
-              banners={homeContent?.banners || []}
-              onBannerClick={handleBannerClick}
-            />
           )}
 
           {/* =============================================================

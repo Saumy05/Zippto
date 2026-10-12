@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { FiGrid, FiPlus, FiTrash2, FiSave, FiEdit2 } from "react-icons/fi";
+import { FiGrid, FiPlus, FiTrash2, FiSave, FiEdit2, FiArrowUp, FiArrowDown, FiInfo } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import CardShell from "../components/CardShell";
 import Modal from "../components/Modal";
@@ -372,6 +372,24 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
     }
   };
 
+  const moveBanner = async (index, direction) => {
+    try {
+      const banners = [...(home?.banners || [])];
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= banners.length) return;
+      const temp = banners[index];
+      banners[index] = banners[targetIndex];
+      banners[targetIndex] = temp;
+      banners.forEach((b, idx) => {
+        b.order = idx;
+      });
+      await setHomeBanners(banners);
+      toast.success("Banner order updated!");
+    } catch (error) {
+      // Error toasted in sync
+    }
+  };
+
   // Promo handlers
   const resetPromoForm = () => {
     setEditingPromoId(null);
@@ -530,69 +548,88 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
     <div className="space-y-4">
       <CardShell icon={FiGrid}>
         <div className="space-y-4">
-          <div>
-            <div className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="text-lg font-bold text-gray-900 flex items-center gap-3">
               <div className="w-1.5 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full"></div>
               <span>Home Banners</span>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                {(home?.banners || []).length} active
+              </span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <ToggleSwitch
+                label="Show Banners"
+                checked={home?.isBannersVisible !== false}
+                onChange={() => patchHome({ isBannersVisible: !home?.isBannersVisible })}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setBannerForm({ imageUrl: "", text: "", targetCategoryId: "", scrollToSection: "" });
+                  setIsBannerModalOpen(true);
+                }}
+                className="px-4 py-2 rounded-xl text-white transition-all flex items-center gap-2 text-sm font-semibold shadow-md hover:shadow-lg relative z-10"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'linear-gradient(to right, #2874F0, #1e5fd4)',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <FiPlus className="w-4 h-4" style={{ display: 'block', color: '#ffffff' }} />
+                <span>Add Banner</span>
+              </button>
             </div>
           </div>
-          <div className="flex items-center justify-end mb-3 gap-4">
-            <ToggleSwitch
-              label="Show Banners"
-              checked={home?.isBannersVisible !== false}
-              onChange={() => patchHome({ isBannersVisible: !home?.isBannersVisible })}
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setBannerForm({ imageUrl: "", text: "", targetCategoryId: "", scrollToSection: "" });
-                setIsBannerModalOpen(true);
-              }}
-              className="px-4 py-2 rounded-xl text-white transition-all flex items-center gap-2 text-sm font-semibold shadow-md hover:shadow-lg relative z-10"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'linear-gradient(to right, #2874F0, #1e5fd4)',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <FiPlus className="w-4 h-4" style={{ display: 'block', color: '#ffffff' }} />
-              <span>Add Banner</span>
-            </button>
+
+          {/* Guidelines Box */}
+          <div className="bg-blue-50/70 border border-blue-200/80 rounded-xl p-3 text-xs text-blue-800 flex items-start gap-2.5">
+            <FiInfo className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-bold text-blue-900">Top Carousel Guidelines (3 Banners Recommended)</p>
+              <p className="text-blue-700 mt-0.5 leading-relaxed">
+                These banners appear in the top auto-rotating scrollable carousel on the User App. Recommended image dimensions: <strong>1200 × 500 px</strong> (~21:9 or 16:9 ratio). Keep focal subjects/people on the right side for optimal mobile framing. Use the arrows to set the carousel slide order.
+              </p>
+            </div>
           </div>
 
           {(home?.banners || []).length === 0 ? (
-            <div className="text-base text-gray-500">No home banners added</div>
+            <div className="text-base text-gray-500 py-4 text-center">No home banners added yet</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b-2 border-gray-200">
-                    <th className="text-left py-2 px-3 text-sm font-bold text-gray-700 w-12">#</th>
-                    <th className="text-left py-2 px-3 text-sm font-bold text-gray-700 w-24">Image</th>
+                    <th className="text-left py-2 px-3 text-sm font-bold text-gray-700 w-16">Order</th>
+                    <th className="text-left py-2 px-3 text-sm font-bold text-gray-700 w-28">Preview</th>
                     <th className="text-left py-2 px-3 text-sm font-bold text-gray-700">Text</th>
                     <th className="text-left py-2 px-3 text-sm font-bold text-gray-700">Redirect</th>
                     <th className="text-left py-2 px-3 text-sm font-bold text-gray-700">Scroll To</th>
-                    <th className="text-center py-2 px-3 text-sm font-bold text-gray-700 w-32">Actions</th>
+                    <th className="text-center py-2 px-3 text-sm font-bold text-gray-700 w-44">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(home.banners || []).map((b, idx) => (
-                    <tr key={b.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-2.5 px-3 text-sm font-semibold text-gray-600">{idx + 1}</td>
+                    <tr key={b.id || idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="py-2.5 px-3">
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-xs font-bold text-slate-700">
+                          {idx + 1}
+                        </span>
+                      </td>
                       <td className="py-2.5 px-3">
                         {b.imageUrl ? (
-                          <img src={b.imageUrl} alt="Banner" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
+                          <img src={b.imageUrl} alt="Banner" className="h-12 w-24 object-cover rounded-lg border border-gray-200 shadow-2xs" />
                         ) : (
-                          <div className="h-14 w-14 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                          <div className="h-12 w-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
                             <span className="text-[10px] text-gray-400">No img</span>
                           </div>
                         )}
                       </td>
                       <td className="py-2.5 px-3">
-                        <div className="text-sm text-gray-900">{b.text || "—"}</div>
+                        <div className="text-sm font-medium text-gray-900 max-w-xs truncate">{b.text || "—"}</div>
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="text-sm text-gray-600">
@@ -607,6 +644,27 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="flex items-center justify-center gap-1.5">
+                          {/* Move Up */}
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => moveBanner(idx, -1)}
+                            className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            title="Move Up"
+                          >
+                            <FiArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          {/* Move Down */}
+                          <button
+                            type="button"
+                            disabled={idx === (home.banners || []).length - 1}
+                            onClick={() => moveBanner(idx, 1)}
+                            className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            title="Move Down"
+                          >
+                            <FiArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          {/* Edit */}
                           <button
                             type="button"
                             onClick={() => {
@@ -619,6 +677,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                           >
                             <FiEdit2 className="w-3.5 h-3.5" />
                           </button>
+                          {/* Delete */}
                           <button
                             type="button"
                             onClick={() => setHomeBanners((home.banners || []).filter((x) => x.id !== b.id))}
@@ -1357,9 +1416,25 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
                   </div>
                 </div>
               )}
+              <div className="flex items-center gap-2 my-2 text-xs text-gray-500">
+                <span className="flex-1 border-b border-gray-200"></span>
+                <span>OR ENTER IMAGE URL</span>
+                <span className="flex-1 border-b border-gray-200"></span>
+              </div>
+
+              <div>
+                <input
+                  type="text"
+                  value={bannerForm.imageUrl}
+                  onChange={(e) => setBannerForm((p) => ({ ...p, imageUrl: e.target.value }))}
+                  placeholder="Paste image URL (e.g. https://... or /cat_images/...)"
+                  className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all bg-white"
+                />
+              </div>
+
               {bannerForm.imageUrl && !uploading && (
-                <div className="relative inline-block group">
-                  <img src={bannerForm.imageUrl} alt="Preview" className="h-24 w-auto object-cover rounded-lg border border-gray-200 shadow-sm" />
+                <div className="relative inline-block group mt-2">
+                  <img src={bannerForm.imageUrl} alt="Preview" className="h-24 w-auto max-w-full object-cover rounded-lg border border-gray-200 shadow-sm" />
                   <button
                     onClick={() => setBannerForm(p => ({ ...p, imageUrl: "" }))}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"

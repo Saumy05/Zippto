@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiArrowRight } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 export const toAssetUrl = (url) => {
@@ -13,26 +13,53 @@ export const toAssetUrl = (url) => {
   return url;
 };
 
+// Fallback 3 real high-res photography banners if database has no active banners configured
+const DEFAULT_BANNERS = [
+  {
+    id: 'def-bnr-1',
+    imageUrl: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=1200&auto=format&fit=crop&q=80',
+    text: 'Certified Electricians • Instant Fixes & Repairs from ₹99',
+    badge: 'TOP RATED',
+    slug: 'electrician'
+  },
+  {
+    id: 'def-bnr-2',
+    imageUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=1200&auto=format&fit=crop&q=80',
+    text: 'Beat The Heat • AC Deep Cleaning & Servicing from ₹499',
+    badge: 'SUMMER SPECIAL',
+    slug: 'ac-appliance-repair'
+  },
+  {
+    id: 'def-bnr-3',
+    imageUrl: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1200&auto=format&fit=crop&q=80',
+    text: 'Sparkling Clean Homes • Intense Deep Cleaning & Sanitization',
+    badge: 'POPULAR',
+    slug: 'cleaning-service'
+  }
+];
+
 const OfferBannerSlider = ({ banners = [], onBannerClick }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const touchStartXRef = useRef(0);
   const touchEndXRef = useRef(0);
 
-  // Filter out banners that don't have an imageUrl or image
+  // Filter out invalid items
   const validBanners = (banners || []).filter(
     (b) => b && (b.imageUrl || b.image)
   );
 
-  const totalSlides = validBanners.length;
+  // If no banners from API, use the 3 curated default banners
+  const displayBanners = validBanners.length > 0 ? validBanners : DEFAULT_BANNERS;
+  const totalSlides = displayBanners.length;
 
-  // Auto-slide effect when there are 2 or more banners
+  // Auto-slide effect (5000ms) with pause on hover
   useEffect(() => {
     if (totalSlides <= 1 || isHovered) return;
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % totalSlides);
-    }, 4500);
+    }, 5000);
 
     return () => clearInterval(timer);
   }, [totalSlides, isHovered]);
@@ -60,7 +87,7 @@ const OfferBannerSlider = ({ banners = [], onBannerClick }) => {
   const handleTouchEnd = () => {
     if (!touchStartXRef.current || !touchEndXRef.current) return;
     const diff = touchStartXRef.current - touchEndXRef.current;
-    if (Math.abs(diff) > 50) {
+    if (Math.abs(diff) > 40) {
       if (diff > 0) {
         nextSlide();
       } else {
@@ -71,98 +98,91 @@ const OfferBannerSlider = ({ banners = [], onBannerClick }) => {
     touchEndXRef.current = 0;
   };
 
-  // Fallback: If no dynamic admin banners exist, show the default Zippto Home Pro CTA banner
-  if (totalSlides === 0) {
-    return (
-      <section className="w-full min-h-[200px] sm:min-h-[240px] md:min-h-[280px] rounded-2xl relative overflow-hidden flex items-center p-4 sm:p-6 border border-[#E5E7EB] shadow-xs">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url('/cat_3d/banner_tech.jpg')` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent" />
-        <div className="relative z-10 max-w-md space-y-2 text-left">
-          <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 rounded-md bg-[#B33A35] flex items-center justify-center text-white text-[10px] font-black shadow-xs">
-              Z
-            </div>
-            <span className="font-extrabold text-[11px] tracking-wider text-white uppercase">
-              ZIPPTO HOME PRO
-            </span>
-          </div>
-
-          <h2 className="text-lg sm:text-2xl font-black text-white leading-snug tracking-tight font-heading">
-            All Your Home Needs, <br />
-            One <span className="text-[#D56C67]">Reliable Partner.</span>
-          </h2>
-
-          <div className="flex items-center gap-1.5 text-gray-200 flex-wrap py-0.5">
-            <span className="bg-white/15 backdrop-blur-xs px-2 py-0.5 rounded-sm text-[10px] font-semibold text-white">⚡ Electrician</span>
-            <span className="bg-white/15 backdrop-blur-xs px-2 py-0.5 rounded-sm text-[10px] font-semibold text-white">🚰 Plumber</span>
-            <span className="bg-white/15 backdrop-blur-xs px-2 py-0.5 rounded-sm text-[10px] font-semibold text-white">🧹 Cleaning</span>
-            <span className="bg-white/15 backdrop-blur-xs px-2 py-0.5 rounded-sm text-[10px] font-semibold text-white">🎨 Painting</span>
-          </div>
-
-          <div className="pt-2">
-            <button
-              onClick={() => toast.success('Special offers applied to all home services!')}
-              className="px-4 py-2 rounded-md bg-[#B33A35] hover:bg-[#9E2E2A] text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
-            >
-              Book Service Now
-            </button>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  const currentBanner = validBanners[currentIndex];
-  const imageSrc = toAssetUrl(currentBanner?.imageUrl || currentBanner?.image);
-
   return (
     <section
-      className="w-full relative select-none"
+      className="w-full relative select-none group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      aria-label="Promotional Banners Carousel"
     >
+      {/* Carousel Container */}
       <div
-        onClick={() => onBannerClick && onBannerClick(currentBanner)}
-        className="w-full relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-slate-100 shadow-sm cursor-pointer group transition-all duration-300 hover:shadow-md"
+        className="w-full relative overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/90 bg-slate-900 shadow-xs"
         style={{
-          // Responsive aspect ratio matching high-resolution banner graphics
+          // Responsive aspect ratio: compact on mobile to keep categories above fold
           aspectRatio: '21 / 9',
-          minHeight: '160px',
-          maxHeight: '320px'
+          minHeight: '150px',
+          maxHeight: '260px'
         }}
       >
-        <img
-          key={imageSrc}
-          src={imageSrc}
-          alt={currentBanner?.text || 'Zippto Promotional Banner'}
-          className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.01]"
-          loading="eager"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = '/cat_3d/banner_tech.jpg';
-          }}
-        />
+        {/* Sliding Flex Track */}
+        <div
+          className="flex h-full transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {displayBanners.map((banner, index) => {
+            const imageSrc = toAssetUrl(banner?.imageUrl || banner?.image);
+            const badgeText = banner.badge || 'SPECIAL OFFER';
 
-        {/* Optional text badge if banner has custom text */}
-        {currentBanner?.text && (
-          <div className="absolute bottom-3 left-4 z-10 bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg">
-            <p className="text-white text-xs sm:text-sm font-bold tracking-wide">
-              {currentBanner.text}
-            </p>
-          </div>
-        )}
+            return (
+              <div
+                key={banner.id || banner._id || index}
+                onClick={() => onBannerClick && onBannerClick(banner)}
+                className="w-full h-full flex-shrink-0 relative cursor-pointer overflow-hidden"
+              >
+                {/* Background Image */}
+                <img
+                  src={imageSrc}
+                  alt={banner.text || `Promotion ${index + 1}`}
+                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out hover:scale-[1.02]"
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/cat_images/electrician.jpg';
+                  }}
+                />
 
-        {/* Subtle hover gradient */}
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                {/* Left Gradient Overlay to guarantee text readability */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent pointer-events-none" />
+
+                {/* Banner Content Overlay */}
+                <div className="absolute inset-0 flex flex-col justify-between p-3.5 sm:p-5 md:p-6 z-10 text-white pointer-events-none">
+                  {/* Top Badge */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 bg-red-600/90 text-white font-extrabold text-[9px] sm:text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full shadow-xs">
+                      {badgeText}
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] font-bold text-white/80 tracking-wide uppercase hidden xs:inline">
+                      Zippto Verified
+                    </span>
+                  </div>
+
+                  {/* Main Headline & CTA */}
+                  <div className="max-w-[75%] sm:max-w-md space-y-1.5 sm:space-y-2">
+                    {banner.text && (
+                      <h3 className="text-xs sm:text-base md:text-lg font-black text-white leading-snug tracking-tight drop-shadow-xs line-clamp-2 font-heading">
+                        {banner.text}
+                      </h3>
+                    )}
+
+                    <div className="pt-0.5">
+                      <span className="inline-flex items-center gap-1 bg-white text-slate-900 font-extrabold text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 rounded-md sm:rounded-lg shadow-sm hover:bg-slate-100 transition-all pointer-events-auto">
+                        <span>Book Now</span>
+                        <FiArrowRight className="w-3 h-3 text-red-600" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Navigation Arrows (Visible on hover when multiple slides exist) */}
+      {/* Navigation Arrows (Visible on hover on desktop when > 1 slide) */}
       {totalSlides > 1 && (
         <>
           <button
@@ -171,10 +191,10 @@ const OfferBannerSlider = ({ banners = [], onBannerClick }) => {
               e.stopPropagation();
               prevSlide();
             }}
-            aria-label="Previous Banner"
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 backdrop-blur-sm text-slate-800 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white active:scale-95 transition-all duration-200 cursor-pointer"
+            aria-label="Previous slide"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-xs text-slate-900 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white active:scale-95 transition-all duration-200 cursor-pointer"
           >
-            <FiChevronLeft className="w-5 h-5 text-slate-900" />
+            <FiChevronLeft className="w-4 h-4 text-slate-900" />
           </button>
 
           <button
@@ -183,15 +203,15 @@ const OfferBannerSlider = ({ banners = [], onBannerClick }) => {
               e.stopPropagation();
               nextSlide();
             }}
-            aria-label="Next Banner"
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 backdrop-blur-sm text-slate-800 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white active:scale-95 transition-all duration-200 cursor-pointer"
+            aria-label="Next slide"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 backdrop-blur-xs text-slate-900 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-white active:scale-95 transition-all duration-200 cursor-pointer"
           >
-            <FiChevronRight className="w-5 h-5 text-slate-900" />
+            <FiChevronRight className="w-4 h-4 text-slate-900" />
           </button>
 
-          {/* Indicator Dots */}
-          <div className="absolute bottom-2.5 right-4 z-20 flex items-center gap-1.5 bg-black/35 backdrop-blur-xs px-2 py-1 rounded-full">
-            {validBanners.map((_, idx) => (
+          {/* Indicator Dots & Counter Pill */}
+          <div className="absolute bottom-2.5 right-3 sm:right-4 z-20 flex items-center gap-1.5 bg-black/45 backdrop-blur-xs px-2 py-1 rounded-full border border-white/10">
+            {displayBanners.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
@@ -202,8 +222,8 @@ const OfferBannerSlider = ({ banners = [], onBannerClick }) => {
                 aria-label={`Go to slide ${idx + 1}`}
                 className={`transition-all duration-300 rounded-full cursor-pointer ${
                   idx === currentIndex
-                    ? 'w-5 h-1.5 bg-white shadow-xs'
-                    : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80'
+                    ? 'w-4 sm:w-5 h-1 sm:h-1.5 bg-white shadow-xs'
+                    : 'w-1 sm:w-1.5 h-1 sm:h-1.5 bg-white/40 hover:bg-white/70'
                 }`}
               />
             ))}
