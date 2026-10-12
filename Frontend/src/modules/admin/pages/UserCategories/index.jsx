@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ensureIds, loadCatalog } from "./utils";
+import { ensureIds, loadCatalog, saveCatalog } from "./utils";
 import HomePage from "./pages/HomePage";
 import CategoriesPage from "./pages/CategoriesPage";
 import ServicesPage from "./pages/ServicesPage";
@@ -10,6 +10,7 @@ import VendorServicesPage from "./pages/VendorServicesPage";
 import VendorPartsPage from "./pages/VendorPartsPage";
 
 import { cityService } from "../../services/cityService";
+import { categoryService } from "../../../../services/catalogService";
 import { CustomSelect } from '../../../../components/common';
 
 const UserCategories = () => {
@@ -22,6 +23,43 @@ const UserCategories = () => {
     window.addEventListener("adminUserAppCatalogUpdated", handler);
     return () => window.removeEventListener("adminUserAppCatalogUpdated", handler);
   }, []);
+
+  // Fetch real categories from MongoDB API and keep catalog synced
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const params = {};
+        if (selectedCity) params.cityId = selectedCity;
+        const response = await categoryService.getAll(params);
+        if (response.success && response.categories) {
+          const mappedCategories = response.categories.map((cat, idx) => ({
+            id: cat.id || cat._id,
+            title: cat.title,
+            slug: cat.slug,
+            homeIconUrl: cat.homeIconUrl || "",
+            homeBadge: cat.homeBadge || "",
+            hasSaleBadge: Boolean(cat.hasSaleBadge),
+            showOnHome: cat.showOnHome !== false,
+            homeOrder: Number.isFinite(cat.homeOrder) ? cat.homeOrder : idx,
+            cityIds: cat.cityIds || [],
+            description: cat.description || "",
+            imageUrl: cat.imageUrl || "",
+            status: cat.status || "active",
+            isPopular: Boolean(cat.isPopular),
+          }));
+
+          setCatalog((prev) => {
+            const next = { ...prev, categories: mappedCategories };
+            saveCatalog(next);
+            return next;
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories in UserCategories container:', error);
+      }
+    };
+    fetchCategories();
+  }, [selectedCity]);
 
   // Fetch cities once for the parent container
   useEffect(() => {

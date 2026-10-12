@@ -6,7 +6,7 @@ import Modal from "../components/Modal";
 import ToggleSwitch from "../components/ToggleSwitch"; // Import ToggleSwitch
 import { ensureIds, saveCatalog, slugify, toAssetUrl } from "../utils";
 
-import { homeContentService, serviceService } from "../../../../../services/catalogService";
+import { homeContentService, serviceService, categoryService } from "../../../../../services/catalogService";
 
 const RedirectionSelector = ({
   targetCategoryId,
@@ -285,7 +285,7 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
     saveCatalog(next);
   };
 
-  const moveCategory = (id, dir) => {
+  const moveCategory = async (id, dir) => {
     const next = ensureIds(catalog);
     const list = [...next.categories].sort((a, b) => (a.homeOrder || 0) - (b.homeOrder || 0));
     const idx = list.findIndex((c) => c.id === id);
@@ -294,8 +294,8 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
     if (targetIdx < 0 || targetIdx >= list.length) return;
     const a = list[idx];
     const b = list[targetIdx];
-    const aOrder = a.homeOrder || 0;
-    const bOrder = b.homeOrder || 0;
+    const aOrder = a.homeOrder ?? idx;
+    const bOrder = b.homeOrder ?? targetIdx;
     next.categories = next.categories.map((c) => {
       if (c.id === a.id) return { ...c, homeOrder: bOrder };
       if (c.id === b.id) return { ...c, homeOrder: aOrder };
@@ -303,6 +303,18 @@ const HomePage = ({ catalog, setCatalog, selectedCity }) => {
     });
     setCatalog(next);
     saveCatalog(next);
+
+    try {
+      if (a.id && b.id) {
+        await Promise.all([
+          categoryService.updateOrder(a.id, bOrder),
+          categoryService.updateOrder(b.id, aOrder)
+        ]);
+        toast.success("Category order updated!");
+      }
+    } catch (e) {
+      console.warn("Could not sync category order to server:", e);
+    }
   };
 
   const syncHomeToBackend = async (homeData) => {
