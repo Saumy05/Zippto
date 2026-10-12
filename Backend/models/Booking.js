@@ -283,6 +283,18 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Razorpay payment ids that were captured but could not be applied to this booking
+  // (already settled/cancelled) and have been auto-refunded. Also acts as the idempotency guard.
+  orphanRefundedPayments: {
+    type: [String],
+    default: [],
+    select: false
+  },
+  // Failed payment-OTP attempts for the current OTP (brute-force protection)
+  paymentOtpAttempts: {
+    type: Number,
+    default: 0
+  },
   customerConfirmed: {
     type: Boolean,
     default: false

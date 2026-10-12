@@ -11,6 +11,49 @@ const { PAYMENT_STATUS, BOOKING_STATUS } = require('../../utils/constants');
 const { createOrder, verifyPayment, refundPayment } = require('../../services/razorpayService');
 const { createNotification } = require('../notificationControllers/notificationController');
 const { recordBookingEarning } = require('../../services/earningTrackerService');
+const { refundOrphanPayment } = require('../../services/orphanPaymentRefundService');
+
+/**
+ * Decide the booking status after a successful payment.
+ * `awaiting_payment` is deliberately NOT a completion signal on its own: it is also used for
+ * "accepted, waiting for payment" before service. A generated VendorBill (or a post-visit status)
+ * is what proves the service was performed.
+ */
+const statusAfterPayment = (booking, bill) => {
+  const serviceDone =
+    !!bill ||
+    booking.status === BOOKING_STATUS.WORK_DONE ||
+    booking.status === BOOKING_STATUS.VISITED ||
+    booking.status === BOOKING_STATUS.IN_PROGRESS;
+  return serviceDone ? BOOKING_STATUS.COMPLETED : BOOKING_STATUS.CONFIRMED;
+};
+
+/**
+ * Atomically claim the payment for a booking (persists the already-mutated in-memory payment fields).
+ * Returns null if the booking was cancelled or already settled (online/cash) by a concurrent request,
+ * so only one request can ever credit the vendor.
+ */
+const claimBookingPayment = (booking) => {
+  const set = {
+    paymentStatus: booking.paymentStatus,
+    paymentMethod: booking.paymentMethod,
+    paymentId: booking.paymentId,
+    status: booking.status
+  };
+  if (booking.razorpayPaymentId) set.razorpayPaymentId = booking.razorpayPaymentId;
+  if (booking.completedAt) set.completedAt = booking.completedAt;
+
+  return Booking.findOneAndUpdate(
+    {
+      _id: booking._id,
+      status: { $ne: BOOKING_STATUS.CANCELLED },
+      cashCollected: { $ne: true },
+      paymentStatus: { $nin: [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.COLLECTED_BY_VENDOR] }
+    },
+    { $set: set },
+    { new: true }
+  );
+};
 
 /**
  * Create Razorpay order for booking payment
@@ -162,20 +205,32 @@ const verifyPaymentWebhook = async (req, res) => {
     const bill = await VendorBill.findOne({ bookingId: booking._id });
 
     // Update booking status: If bill exists or service was performed, transition to COMPLETED
-    if (
-      bill ||
-      booking.status === BOOKING_STATUS.AWAITING_PAYMENT ||
-      booking.status === BOOKING_STATUS.WORK_DONE ||
-      booking.status === BOOKING_STATUS.VISITED ||
-      booking.status === BOOKING_STATUS.IN_PROGRESS
-    ) {
-      booking.status = BOOKING_STATUS.COMPLETED;
+    booking.status = statusAfterPayment(booking, bill);
+    if (booking.status === BOOKING_STATUS.COMPLETED) {
       booking.completedAt = booking.completedAt || new Date();
-    } else {
-      booking.status = BOOKING_STATUS.CONFIRMED;
     }
 
-    await booking.save();
+    // Atomic claim: a concurrent webhook / cash confirmation must not settle the same booking twice
+    const claimed = await claimBookingPayment(booking);
+    if (!claimed) {
+      const latest = await Booking.findById(booking._id).select('paymentStatus paymentMethod status razorpayPaymentId').lean();
+      // Same payment verified twice (client retry / webhook already applied it) -> idempotent success
+      if (latest?.paymentStatus === PAYMENT_STATUS.SUCCESS && latest.razorpayPaymentId === razorpay_payment_id) {
+        return res.status(200).json({ success: true, message: 'Payment already verified' });
+      }
+      console.warn(`[Payment] Captured payment ${razorpay_payment_id} could not be applied to booking ${booking._id} (status=${latest?.status}, paymentStatus=${latest?.paymentStatus}). Auto-refunding.`);
+      const refund = await refundOrphanPayment(booking._id, razorpay_payment_id, {
+        amount: booking.finalAmount,
+        reason: latest?.status === BOOKING_STATUS.CANCELLED ? 'Booking was cancelled' : 'Booking already paid'
+      });
+      return res.status(409).json({
+        success: false,
+        refunded: !!refund.refunded,
+        message: refund.refunded
+          ? 'This booking is already settled or cancelled. Your payment has been refunded.'
+          : 'This booking is already settled or cancelled. If you were charged, the amount will be refunded.'
+      });
+    }
 
     if (bill && booking.vendorId) {
       const vendorEarning = bill.vendorTotalEarning;
@@ -321,12 +376,21 @@ const handleRazorpayWebhook = async (req, res) => {
     // Get Webhook Secret from ENV or DB Settings
     let webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!webhookSecret) {
-      const settings = await Settings.getSettings().catch(() => null);
-      webhookSecret = settings?.razorpayWebhookSecret;
+      // Settings has no getSettings() helper; read the global document directly (non-fatal if missing)
+      try {
+        const settings = await Settings.findOne({ type: 'global' }).lean();
+        webhookSecret = settings?.razorpayWebhookSecret;
+      } catch (settingsErr) {
+        console.error('[Webhook] Could not load settings for webhook secret:', settingsErr.message);
+      }
     }
 
     if (!webhookSecret) {
-      console.warn('[Webhook] ⚠️ Razorpay Webhook Secret not configured in .env or Settings. Signature verification bypassed.');
+      if (process.env.NODE_ENV === 'production') {
+        console.error('[Webhook] ❌ Razorpay Webhook Secret not configured. Rejecting unsigned webhook.');
+        return res.status(503).json({ success: false, message: 'Webhook not configured' });
+      }
+      console.warn('[Webhook] ⚠️ Razorpay Webhook Secret not configured (non-production). Signature verification bypassed.');
     } else {
       const rawBody = req.rawBody || JSON.stringify(req.body);
       const expectedSignature = crypto
@@ -352,6 +416,15 @@ const handleRazorpayWebhook = async (req, res) => {
 
       if (razorpayOrderId) {
         const booking = await Booking.findOne({ razorpayOrderId });
+
+        // Booking already paid online by a *different* payment -> this one is a duplicate charge
+        if (booking && booking.paymentStatus === PAYMENT_STATUS.SUCCESS && booking.razorpayPaymentId !== razorpayPaymentId) {
+          await refundOrphanPayment(booking._id, razorpayPaymentId, {
+            amount: paymentEntity.amount ? paymentEntity.amount / 100 : undefined,
+            reason: 'Booking already paid'
+          });
+        }
+
         if (booking && booking.paymentStatus !== PAYMENT_STATUS.SUCCESS) {
           booking.paymentStatus = PAYMENT_STATUS.SUCCESS;
           booking.paymentMethod = 'online';
@@ -359,20 +432,21 @@ const handleRazorpayWebhook = async (req, res) => {
           booking.paymentId = razorpayPaymentId;
 
           const bill = await VendorBill.findOne({ bookingId: booking._id });
-          if (
-            bill ||
-            booking.status === BOOKING_STATUS.AWAITING_PAYMENT ||
-            booking.status === BOOKING_STATUS.WORK_DONE ||
-            booking.status === BOOKING_STATUS.VISITED ||
-            booking.status === BOOKING_STATUS.IN_PROGRESS
-          ) {
-            booking.status = BOOKING_STATUS.COMPLETED;
+          booking.status = statusAfterPayment(booking, bill);
+          if (booking.status === BOOKING_STATUS.COMPLETED) {
             booking.completedAt = booking.completedAt || new Date();
-          } else {
-            booking.status = BOOKING_STATUS.CONFIRMED;
           }
 
-          await booking.save();
+          // Atomic claim: skip if another request (verify call / cash) already settled the booking
+          const claimed = await claimBookingPayment(booking);
+          if (!claimed) {
+            console.warn(`[Webhook] Payment ${razorpayPaymentId} not applied to booking ${booking._id} (already settled/cancelled). Auto-refunding if it is not the settling payment.`);
+            const refund = await refundOrphanPayment(booking._id, razorpayPaymentId, {
+              amount: paymentEntity.amount ? paymentEntity.amount / 100 : undefined,
+              reason: booking.status === BOOKING_STATUS.CANCELLED ? 'Booking was cancelled' : 'Booking already paid'
+            });
+            return res.status(200).json({ status: 'ok', eventHandled: event, applied: false, refunded: !!refund.refunded });
+          }
 
           // Settle vendor bill and earnings if bill exists
           if (bill && booking.vendorId) {
@@ -475,9 +549,13 @@ const handleRazorpayWebhook = async (req, res) => {
       const razorpayOrderId = paymentEntity.order_id;
       if (razorpayOrderId) {
         const booking = await Booking.findOne({ razorpayOrderId });
-        if (booking && booking.paymentStatus !== PAYMENT_STATUS.SUCCESS) {
-          booking.paymentStatus = PAYMENT_STATUS.FAILED;
-          await booking.save();
+        // Never downgrade a booking that was paid (online, cash, plan) in the meantime
+        if (booking && booking.paymentStatus === PAYMENT_STATUS.PENDING && !booking.cashCollected) {
+          const failedUpdate = await Booking.updateOne(
+            { _id: booking._id, paymentStatus: PAYMENT_STATUS.PENDING, cashCollected: { $ne: true } },
+            { $set: { paymentStatus: PAYMENT_STATUS.FAILED } }
+          );
+          if (failedUpdate.modifiedCount === 0) return res.status(200).json({ status: 'ok', eventHandled: event });
 
           await createNotification({
             userId: booking.userId,
@@ -564,52 +642,72 @@ const processWalletPayment = async (req, res) => {
       });
     }
 
-    // Check wallet balance
-    if (user.wallet.balance < booking.finalAmount) {
+    const amountToPay = Number(booking.finalAmount) || 0;
+    if (amountToPay <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid payment amount' });
+    }
+
+    // Check wallet balance (fast fail; the atomic debit below is the real guard)
+    if (user.wallet.balance < amountToPay) {
       return res.status(400).json({
         success: false,
         message: 'Insufficient wallet balance'
       });
     }
 
-    // Deduct from user wallet
-    user.wallet.balance -= booking.finalAmount;
-    await user.save();
+    // Prepare booking payment fields
+    const previousBooking = {
+      paymentStatus: booking.paymentStatus,
+      paymentMethod: booking.paymentMethod,
+      paymentId: booking.paymentId,
+      status: booking.status,
+      completedAt: booking.completedAt
+    };
+    booking.paymentStatus = PAYMENT_STATUS.SUCCESS;
+    booking.paymentMethod = 'wallet';
+    booking.paymentId = `WALLET_${Date.now()}`;
+
+    const bill = await VendorBill.findOne({ bookingId: booking._id });
+    booking.status = statusAfterPayment(booking, bill);
+    if (booking.status === BOOKING_STATUS.COMPLETED) {
+      booking.completedAt = booking.completedAt || new Date();
+    }
+
+    // 1) Atomically claim the booking so it can only be paid once
+    const claimed = await claimBookingPayment(booking);
+    if (!claimed) {
+      return res.status(409).json({
+        success: false,
+        message: 'Payment already completed or booking cancelled'
+      });
+    }
+
+    // 2) Atomically debit the wallet (balance can't go negative even with concurrent payments)
+    const debited = await User.findOneAndUpdate(
+      { _id: userId, 'wallet.balance': { $gte: amountToPay } },
+      { $inc: { 'wallet.balance': -amountToPay } },
+      { new: true }
+    );
+    if (!debited) {
+      await Booking.updateOne({ _id: booking._id }, { $set: previousBooking });
+      return res.status(400).json({
+        success: false,
+        message: 'Insufficient wallet balance'
+      });
+    }
+    user.wallet.balance = debited.wallet.balance;
 
     const Transaction = require('../../models/Transaction');
     await Transaction.create({
       userId,
       bookingId: booking._id,
-      amount: booking.finalAmount,
+      amount: amountToPay,
       type: 'debit',
       paymentMethod: 'wallet',
       status: 'completed',
       description: `Wallet payment for booking ${booking.bookingNumber}`,
-      balanceAfter: user.wallet.balance
+      balanceAfter: debited.wallet.balance
     });
-
-    // Update booking payment status
-    booking.paymentStatus = PAYMENT_STATUS.SUCCESS;
-    booking.paymentMethod = 'wallet';
-    booking.paymentId = `WALLET_${Date.now()}`;
-
-    // Update booking status
-    const bill = await VendorBill.findOne({ bookingId: booking._id });
-
-    if (
-      bill ||
-      booking.status === BOOKING_STATUS.AWAITING_PAYMENT ||
-      booking.status === BOOKING_STATUS.WORK_DONE ||
-      booking.status === BOOKING_STATUS.VISITED ||
-      booking.status === BOOKING_STATUS.IN_PROGRESS
-    ) {
-      booking.status = BOOKING_STATUS.COMPLETED;
-      booking.completedAt = booking.completedAt || new Date();
-    } else {
-      booking.status = BOOKING_STATUS.CONFIRMED;
-    }
-
-    await booking.save();
 
     // ── Credit Vendor Wallet from VendorBill (single source of truth) ──
     if (bill && booking.vendorId) {

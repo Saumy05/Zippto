@@ -800,7 +800,7 @@ const startSelfJob = async (req, res) => {
     }
 
     // Generate Visit OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otp = String(require('crypto').randomInt(1000, 10000));
 
     // Update booking
     booking.status = BOOKING_STATUS.JOURNEY_STARTED;
@@ -918,6 +918,8 @@ const verifySelfVisit = async (req, res) => {
     booking.visitedAt = new Date();
     booking.startedAt = new Date();
     booking.visitOtp = undefined;
+    // The visit OTP must never double as the payment OTP (the vendor has seen it)
+    booking.customerConfirmationOTP = undefined;
     if (location) {
       booking.visitLocation = { ...location, verifiedAt: new Date() };
     }
@@ -1164,8 +1166,10 @@ const completeSelfJob = async (req, res) => {
     booking.vendorBillId = bill._id;
 
     // Reuse existing Payment OTP for cash collection or generate new one
-    const payOtp = booking.paymentOtp || Math.floor(1000 + Math.random() * 9000).toString();
+    const payOtp = booking.paymentOtp || String(require('crypto').randomInt(1000, 10000));
     booking.paymentOtp = payOtp;
+    booking.customerConfirmationOTP = payOtp;
+    booking.paymentOtpAttempts = 0;
 
     if (workPhotos) booking.workPhotos = workPhotos;
 
@@ -1276,155 +1280,13 @@ const completeSelfJob = async (req, res) => {
  *
  * VendorBill is the ONLY source of truth for earnings.
  */
-const collectSelfCash = async (req, res) => {
-  try {
-    const vendorId = req.user.id;
-    const { id } = req.params;
-    const { otp } = req.body;
-
-    const booking = await Booking.findOne({ _id: id, vendorId }).select('+paymentOtp');
-    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
-    
-    // EDGE CASE: If already completed
-    if (booking.status === BOOKING_STATUS.COMPLETED && booking.cashCollected) {
-      return res.status(200).json({ success: true, message: 'Cash collection already confirmed' });
-    }
-
-    // Allow both WORK_DONE and AWAITING_PAYMENT
-    const allowedStatuses = [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.AWAITING_PAYMENT];
-    if (!allowedStatuses.includes(booking.status)) {
-      return res.status(400).json({ success: false, message: 'Work not done or bill not generated yet' });
-    }
-
-    // Prevent cash collection if paid online
-    if (booking.paymentStatus === PAYMENT_STATUS.SUCCESS || booking.paymentMethod === 'online' || booking.razorpayPaymentId) {
-      return res.status(400).json({ success: false, message: 'Payment has already been completed online for this booking' });
-    }
-
-    const validOtp = booking.paymentOtp || booking.customerConfirmationOTP;
-    const isPlanBenefitNoExtras = booking.paymentMethod === 'plan_benefit' && otp === '0000';
-    if (!isPlanBenefitNoExtras && validOtp) {
-      if (!otp || (validOtp !== otp && (process.env.NODE_ENV !== 'development' || otp !== '0000'))) {
-        return res.status(400).json({ success: false, message: 'Invalid OTP. Please enter the correct code shared by customer.' });
-      }
-    }
-
-    // ── Fetch the VendorBill (single source of truth) ──
-    const VendorBill = require('../../models/VendorBill');
-    const bill = await VendorBill.findOne({ bookingId: booking._id });
-    if (!bill) return res.status(500).json({ success: false, message: 'Bill not found — cannot process payment' });
-
-    const grandTotal = Number(bill.grandTotal) || 0;
-    const vendorEarning = Number(bill.vendorTotalEarning) || 0;
-
-    // ── Update Booking status ──
-    booking.status = BOOKING_STATUS.COMPLETED;
-    booking.paymentMethod = 'cash collected'; // Standardized label
-    booking.paymentStatus = PAYMENT_STATUS.COLLECTED_BY_VENDOR;
-    booking.cashCollected = true;
-    booking.cashCollectedBy = 'vendor';
-    booking.cashCollectorId = vendorId;
-    booking.cashCollectedAt = new Date();
-    booking.completedAt = new Date();
-    booking.paymentOtp = undefined;
-    await booking.save();
-
-    // ── Update VendorBill status ──
-    bill.status = 'paid';
-    bill.paidAt = new Date();
-    await bill.save();
-
-    // ── Update Vendor Wallet (Atomic with $inc) ──
-    const Vendor = require('../../models/Vendor');
-    const vendorDoc = await Vendor.findById(vendorId).select('wallet');
-
-    if (vendorDoc) {
-      const currentDues = (vendorDoc.wallet.dues || 0) + grandTotal;
-      const cashLimit = vendorDoc.wallet.cashLimit || 10000;
-      // Net owed = dues − earnings (vendor keeps their share from cash)
-      const netOwed = currentDues - ((vendorDoc.wallet.earnings || 0) + vendorEarning);
-      const isBlocked = netOwed > cashLimit;
-
-      const updateQuery = {
-        $inc: {
-          'wallet.dues': grandTotal,
-          'wallet.earnings': vendorEarning,
-          'wallet.totalCashCollected': grandTotal
-        }
-      };
-
-      if (isBlocked) {
-        updateQuery.$set = {
-          'wallet.isBlocked': true,
-          'wallet.blockedAt': new Date(),
-          'wallet.blockReason': `Cash limit exceeded. Net owed: ₹${netOwed.toFixed(2)}, Limit: ₹${cashLimit}`
-        };
-      }
-
-      await Vendor.findByIdAndUpdate(vendorId, updateQuery);
-
-      // ── Create Transaction Records ──
-      const Transaction = require('../../models/Transaction');
-
-      // Transaction 1: Cash Collected (Platform is owed this amount)
-      await Transaction.create({
-        vendorId,
-        bookingId: booking._id,
-        type: 'cash_collected',
-        amount: grandTotal,
-        status: 'completed',
-        paymentMethod: 'cash collected', // Standardized label
-        description: `Cash ₹${grandTotal} collected for booking #${booking.bookingNumber}. Dues increased.`,
-        metadata: {
-          type: 'dues_increase',
-          collectedBy: 'vendor',
-          billId: bill._id.toString(),
-          grandTotal,
-          vendorEarning,
-          companyRevenue: bill.companyRevenue
-        }
-      });
-
-      // Transaction 2: Earnings Credit (Vendor's rightful share)
-      if (vendorEarning > 0) {
-        await Transaction.create({
-          vendorId,
-          bookingId: booking._id,
-          type: 'earnings_credit',
-          amount: vendorEarning,
-          status: 'completed',
-          paymentMethod: 'wallet',
-          description: `Earnings ₹${vendorEarning} credited for booking #${booking.bookingNumber} (70% service + 10% parts)`,
-          metadata: {
-            type: 'earnings_increase',
-            billId: bill._id.toString(),
-            serviceEarning: bill.vendorServiceEarning,
-            partsEarning: bill.vendorPartsEarning
-          }
-        });
-      }
-    }
-
-    // ── Notify user ──
-    const { createNotification } = require('../notificationControllers/notificationController');
-    await createNotification({
-      userId: booking.userId,
-      type: 'payment_received',
-      title: 'Payment Received (Cash)',
-      message: `Payment of ₹${grandTotal} received in cash for booking ${booking.bookingNumber}. Job Completed. Thanks!`,
-      relatedId: booking._id,
-      relatedType: 'booking',
-      priority: 'high'
-    });
-
-    res.status(200).json({ success: true, message: 'Cash collected, job completed', data: booking });
-  } catch (error) {
-    console.error('Collect self cash error:', error);
-    res.status(500).json({ success: false, message: 'Failed to process cash payment' });
-  }
+const collectSelfCash = (req, res) => {
+  // Single implementation lives in cashCollectionController (atomic claim, OTP attempt limit,
+  // cash-limit blocking, rollback on failure). The route's isVendor guard + the vendor ownership
+  // check inside confirmCashCollection keep this vendor-scoped.
+  const { confirmCashCollection } = require('./cashCollectionController');
+  return confirmCashCollection(req, res);
 };
-
-
 
 /**
  * Get vendor ratings and reviews

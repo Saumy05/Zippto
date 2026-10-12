@@ -262,11 +262,13 @@ const createOrUpdateBill = async (req, res) => {
     booking.userPayableAmount = grandTotal;
     booking.vendorBillId = bill._id;
 
-    // Generate cash OTP if not already present
-    if (!booking.customerConfirmationOTP && !booking.paymentOtp) {
-      const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    // Always issue a fresh payment OTP with the bill: any previous customerConfirmationOTP is the
+    // visit OTP (already known to the vendor) or an OTP for an older version of the bill.
+    {
+      const otp = String(require('crypto').randomInt(1000, 10000));
       booking.customerConfirmationOTP = otp;
       booking.paymentOtp = otp;
+      booking.paymentOtpAttempts = 0;
     }
 
     if (booking.status !== 'completed' && booking.status !== 'cancelled') {
