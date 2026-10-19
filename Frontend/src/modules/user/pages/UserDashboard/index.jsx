@@ -281,15 +281,17 @@ const UserDashboard = () => {
     window.addEventListener('userLocationDetected', onDetected);
     return () => window.removeEventListener('userLocationDetected', onDetected);
   }, []);
-  // Header label: always lead with the active service city, then the finer-grained area if we know it
+  // Header label: stays empty (prompt shown) until the user's current location has actually been fetched.
+  // Once it is, lead with the active service city, then the finer-grained area if we know it
   const userCity = (() => {
-    const area = (detectedAddress || '').split(',')[0].trim();
+    if (!detectedAddress) return '';
+    const area = detectedAddress.split(',')[0].trim();
     if (currentCity?.name) {
       return area && area.toLowerCase() !== currentCity.name.toLowerCase()
         ? `${currentCity.name} · ${area}`
         : currentCity.name;
     }
-    return detectedAddress || storedUser?.city || '';
+    return detectedAddress;
   })();
   const walletBalance = storedUser?.wallet?.balance ?? storedUser?.walletBalance ?? 0;
 
@@ -1308,13 +1310,13 @@ const UserDashboard = () => {
           
           {/* LEFT: App Icon Badge & Location + Greeting (Exactly as in Reference Screenshot) */}
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            {/* Dark Square App Icon Badge Matching Reference Screenshot */}
+            {/* App logo */}
             <Link to="/user" className="shrink-0 focus:outline-none group">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#091E3A] flex items-center justify-center text-white shadow-sm border border-slate-800/40 transition-transform group-hover:scale-105">
-                <span className="font-black text-xl tracking-tighter text-white font-sans">
-                  D
-                </span>
-              </div>
+              <img
+                src="/zippto_logo.png"
+                alt="Zippto"
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-contain shadow-sm transition-transform group-hover:scale-105"
+              />
             </Link>
 
             {/* Location Dropdown & "What you are looking for today" */}

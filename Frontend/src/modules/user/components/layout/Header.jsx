@@ -26,7 +26,7 @@ const Header = ({ location: userLocationProp, onLocationClick }) => {
 
   const isLoggedIn = Boolean(token && storedUser);
   const userName = storedUser?.name || storedUser?.fullName || '';
-  const displayCity = userLocationProp || currentCity?.name || storedUser?.city || 'Gondia, Maharashtra';
+  const displayCity = userLocationProp || currentCity?.name || storedUser?.city || 'Select your location';
   const walletBalance = storedUser?.wallet?.balance ?? storedUser?.walletBalance ?? 0;
 
   return (

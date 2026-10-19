@@ -6,6 +6,9 @@ import ErrorBoundary from '../components/common/ErrorBoundary';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PublicRoute from '../../../components/auth/PublicRoute';
 import GlobalBookingAlert from '../components/common/GlobalBookingAlert';
+// Auth pages are imported eagerly so a refresh on them never shows a loader/splash
+import Login from '../pages/login';
+import Signup from '../pages/signup';
 // import useAppNotifications from '../../../hooks/useAppNotifications.jsx'; // Handled globally
 
 // Lazy load wrapper with error handling (same as user app)
@@ -36,8 +39,6 @@ const lazyLoad = (importFunc) => {
 };
 
 // Lazy load vendor pages for code splitting
-const Login = lazyLoad(() => import('../pages/login'));
-const Signup = lazyLoad(() => import('../pages/signup'));
 const Dashboard = lazyLoad(() => import('../pages/Dashboard'));
 const BookingAlert = lazyLoad(() => import('../pages/BookingAlert'));
 const BookingAlerts = lazyLoad(() => import('../pages/BookingAlerts'));

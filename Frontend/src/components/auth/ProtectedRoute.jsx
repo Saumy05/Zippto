@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
 
 /**
  * Protected Route Component
- * Checks if user is authenticated before allowing access
+ * Checks if user is authenticated before allowing access.
+ * The check is fully synchronous (localStorage/sessionStorage + JWT expiry),
+ * so no intermediate loading screen is rendered on app open / refresh.
  */
 const getKeys = (type) => {
   switch (type) {
@@ -18,107 +19,60 @@ const getKeys = (type) => {
   }
 };
 
-const checkAuthSync = (type) => {
-  const { tokenKey, dataKey } = getKeys(type);
-  const token = sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
-  const userData = sessionStorage.getItem(dataKey) || localStorage.getItem(dataKey);
-  if (!token || !userData) return null;
+const readKey = (key) => sessionStorage.getItem(key) || localStorage.getItem(key);
+
+const clearSession = ({ tokenKey, refreshTokenKey, dataKey }) => {
+  [tokenKey, refreshTokenKey, dataKey].forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+};
+
+/**
+ * Returns whether the stored session is usable.
+ * If the access token is expired but a refresh token exists, we let it proceed:
+ * the axios interceptor in api.js refreshes it on the first request and only
+ * logs out if that fails.
+ */
+const evaluateSession = (type) => {
+  const keys = getKeys(type);
+  const token = readKey(keys.tokenKey);
+  const refreshToken = readKey(keys.refreshTokenKey);
+  const userData = readKey(keys.dataKey);
+
+  if (!token && !userData) return { authenticated: false, expired: false };
+  if (!token || !userData) return { authenticated: false, expired: true };
+
   try {
     const parts = token.split('.');
-    if (parts.length === 3) {
-      const payload = JSON.parse(atob(parts[1]));
-      const currentTime = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp > currentTime) return true;
-    }
-  } catch {
-    return null;
+    if (parts.length !== 3) return { authenticated: false, expired: true };
+
+    const payload = JSON.parse(atob(parts[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    if (payload.exp && payload.exp > currentTime) return { authenticated: true, expired: false };
+    if (refreshToken) return { authenticated: true, expired: false };
+    return { authenticated: false, expired: true };
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return { authenticated: false, expired: true };
   }
-  return null;
 };
 
 const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(() => checkAuthSync(userType));
-  const [isLoading, setIsLoading] = useState(() => checkAuthSync(userType) === null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => evaluateSession(userType).authenticated);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { tokenKey, refreshTokenKey, dataKey } = getKeys(userType);
-
-
-      const token = sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
-      const refreshToken = sessionStorage.getItem(refreshTokenKey) || localStorage.getItem(refreshTokenKey);
-      const userData = sessionStorage.getItem(dataKey) || localStorage.getItem(dataKey);
-
-      if (token && userData) {
-        try {
-          const parts = token.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(atob(parts[1]));
-            const currentTime = Math.floor(Date.now() / 1000);
-
-            // If token is expired but we have a refresh token, let's try to let it proceed.
-            // The axios interceptor in api.js will handle the actual refresh when the first request fails.
-            // We only logout here if there's NO refresh token or if the refresh token itself is expired.
-            
-            if (payload.exp && payload.exp > currentTime) {
-              setIsAuthenticated(true);
-              setIsLoading(false);
-            } else if (refreshToken) {
-              // Access token expired but refresh token exists.
-              // We'll give it a chance. If the first API call fails to refresh, it will logout then.
-              // This prevents an aggressive logout before the interceptor can do its job.
-              console.log(`[Auth] Access token expired for ${userType}, but refresh token exists. Proveding...`);
-              setIsAuthenticated(true);
-              setIsLoading(false);
-            } else {
-              // Truly expired and no way to refresh
-              handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
-            }
-          } else {
-            handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
-          }
-        } catch (error) {
-          console.error('Token validation error:', error);
-          handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
-        }
-      } else {
-        if (token || userData) {
-          handleExpiredSession(tokenKey, refreshTokenKey, dataKey);
-        } else {
-          setIsAuthenticated(false);
-          setIsLoading(false);
-        }
-      }
-    };
-
-    const handleExpiredSession = (tokenKey, refreshTokenKey, dataKey) => {
+    const { authenticated, expired } = evaluateSession(userType);
+    if (expired) {
       console.log('Session truly expired, clearing auth data');
-      localStorage.removeItem(tokenKey);
-      localStorage.removeItem(refreshTokenKey);
-      localStorage.removeItem(dataKey);
-      sessionStorage.removeItem(tokenKey);
-      sessionStorage.removeItem(refreshTokenKey);
-      sessionStorage.removeItem(dataKey);
-      setIsAuthenticated(false);
-      setIsLoading(false);
-    };
-
-    checkAuth();
+      clearSession(getKeys(userType));
+    }
+    setIsAuthenticated(authenticated);
   }, [userType, location.pathname]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#00a6a6' }}></div>
-          <p className="text-gray-600 text-sm">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isAuthenticated === false) {
+  if (!isAuthenticated) {
     // Determine redirect path
     const defaultRedirects = {
       user: '/user/login',
@@ -128,9 +82,6 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
 
     const redirectPath = redirectTo || defaultRedirects[userType] || '/user/login';
 
-    // Toast removed from render phase to prevent "Cannot update a component while rendering" error
-    // If you need a toast, trigger it in useEffect before setting isAuthenticated(false) or rely on LoginPage to show "Please login"
-
     return <Navigate to={redirectPath} state={{ from: location }} replace />;
   }
 
@@ -138,4 +89,3 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
 };
 
 export default ProtectedRoute;
-

@@ -5,6 +5,7 @@ import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { playNotificationSound, isSoundEnabled, playAlertRing } from '../utils/notificationSound';
 import { registerFCMToken } from '../services/pushNotificationService';
+import { getNotificationRoute } from '../modules/admin/utils/notificationRoutes';
 
 const SwipeableNotification = ({ t, data, onClick }) => {
   const x = useMotionValue(0);
@@ -200,7 +201,9 @@ export const SocketProvider = ({ children }) => {
           onClick={() => {
             toast.dismiss(t.id);
             // Optional: navigate based on relatedId
-            if (data.relatedId) {
+            if (userType === 'admin') {
+              navigate(getNotificationRoute(data));
+            } else if (data.relatedId) {
               if (userType === 'vendor') navigate(`/vendor/booking/${data.relatedId}`);
               else navigate(`/user/booking/${data.relatedId}`);
             }
@@ -220,6 +223,9 @@ export const SocketProvider = ({ children }) => {
       }
       if (userType === 'user') {
         window.dispatchEvent(new Event('userBookingsUpdated'));
+      }
+      if (userType === 'admin') {
+        window.dispatchEvent(new Event('adminNotificationsUpdated'));
       }
     });
 

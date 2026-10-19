@@ -17,7 +17,8 @@ const createNotification = async ({
   data = {},
   skipPush = false,
   pushData = {},
-  priority = null
+  priority = null,
+  actionUrl = null
 }) => {
   try {
     // ── DEDUP CHECK: Redis-first (< 1ms), DB fallback ──────────────────────
@@ -63,7 +64,8 @@ const createNotification = async ({
       message,
       relatedId,
       relatedType,
-      data
+      data,
+      actionUrl: actionUrl || pushData?.link || null
     });
 
     // Check Socket Connectivity to prevent Duplicate Notifications (Push + Socket)
@@ -156,6 +158,22 @@ const createNotification = async ({
     console.error('Create notification error:', error);
     return null;
   }
+};
+
+/**
+ * Scope of notifications the caller owns, based on the token role (req.userRole).
+ * Admins also own the global admin broadcasts (no adminId / userId / vendorId).
+ * Returns null for an unknown role.
+ */
+const getOwnerScope = (req) => {
+  const role = String(req.userRole || '').toUpperCase();
+  const id = req.user.id;
+  if (role === 'USER') return { userId: id };
+  if (role === 'VENDOR') return { vendorId: id };
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+    return { $or: [{ adminId: id }, { adminId: null, userId: null, vendorId: null }] };
+  }
+  return null;
 };
 
 /**
@@ -376,21 +394,12 @@ const getAdminNotifications = async (req, res) => {
 const markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
-    const userRole = req.user.role;
-
-    // Build query based on user role
-    let query = { _id: id };
-    if (userRole === 'USER') query.userId = userId;
-    else if (userRole === 'VENDOR') query.vendorId = userId;
-    else if (userRole === 'ADMIN') {
-      query.$or = [
-        { adminId: userId },
-        { adminId: null, userId: null, vendorId: null }
-      ];
+    const scope = getOwnerScope(req);
+    if (!scope) {
+      return res.status(403).json({ success: false, message: 'Invalid user role' });
     }
 
-    const notification = await Notification.findOne(query);
+    const notification = await Notification.findOne({ _id: id, ...scope });
 
     if (!notification) {
       return res.status(404).json({
@@ -422,21 +431,12 @@ const markAsRead = async (req, res) => {
  */
 const markAllAsRead = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const userRole = req.user.role;
-
-    // Build query based on user role
-    let query = { isRead: false };
-    if (userRole === 'USER') query.userId = userId;
-    else if (userRole === 'VENDOR') query.vendorId = userId;
-    else if (userRole === 'ADMIN') {
-      query.$or = [
-        { adminId: userId },
-        { adminId: null, userId: null, vendorId: null }
-      ];
+    const scope = getOwnerScope(req);
+    if (!scope) {
+      return res.status(403).json({ success: false, message: 'Invalid user role' });
     }
 
-    await Notification.updateMany(query, {
+    await Notification.updateMany({ isRead: false, ...scope }, {
       isRead: true,
       readAt: new Date()
     });
@@ -460,16 +460,12 @@ const markAllAsRead = async (req, res) => {
 const deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+    const scope = getOwnerScope(req);
+    if (!scope) {
+      return res.status(403).json({ success: false, message: 'Invalid user role' });
+    }
 
-    // Build query based on user role
-    let query = { _id: id };
-    if (userRole === 'USER') query.userId = userId;
-    else if (userRole === 'VENDOR') query.vendorId = userId;
-    else if (userRole === 'ADMIN') query.adminId = userId;
-
-    const notification = await Notification.findOneAndDelete(query);
+    const notification = await Notification.findOneAndDelete({ _id: id, ...scope });
 
     if (!notification) {
       return res.status(404).json({
@@ -496,23 +492,17 @@ const deleteNotification = async (req, res) => {
  */
 const deleteAllNotifications = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const userRole = req.user.role;
-
-    // Build query based on user role to ensure they only delete their own notifications
-    let query = {};
-    if (userRole === 'USER' || userRole === 'user') query.userId = userId;
-    else if (userRole === 'VENDOR' || userRole === 'vendor') query.vendorId = userId;
-    else if (userRole === 'ADMIN' || userRole === 'admin' || userRole === 'super_admin') query.adminId = userId;
-    else {
-      console.log('Role mismatch in deleteAllNotifications:', userRole);
+    // Scope to the caller's own notifications (admins also own the global admin ones)
+    const scope = getOwnerScope(req);
+    if (!scope) {
+      console.log('Role mismatch in deleteAllNotifications:', req.userRole);
       return res.status(403).json({
         success: false,
         message: 'Invalid user role'
       });
     }
 
-    const result = await Notification.deleteMany(query);
+    const result = await Notification.deleteMany(scope);
 
     res.status(200).json({
       success: true,

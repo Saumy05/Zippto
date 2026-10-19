@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FiPhone, FiArrowRight, FiChevronLeft, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { normalizePhoneInput } from '../../../utils/phone';
 import { themeColors } from '../../../theme';
 import { sendOTP, verifyLogin } from '../services/authService';
 import Logo from '../../../components/common/Logo';
+import { AuthHeader, AuthFooter } from '../../../components/auth/AuthChrome';
 
 import { z } from "zod";
 
@@ -58,7 +60,7 @@ const VendorLogin = () => {
     // Zod Validation
     const validationResult = phoneSchema.safeParse({ phone: phoneNumber });
     if (!validationResult.success) {
-      toast.error(validationResult.error.errors[0].message);
+      toast.error(validationResult.error.issues[0].message);
       return;
     }
 
@@ -179,14 +181,18 @@ const VendorLogin = () => {
   const brandColor = themeColors.brand?.teal || '#347989';
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-start sm:justify-center py-12 sm:px-6 lg:px-8 relative overflow-x-hidden">
+    <div className="h-[100dvh] bg-gray-50 flex flex-col relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8 relative z-10 animate-fade-in">
-        <Logo className="h-24 w-24 mx-auto transform hover:scale-110 transition-transform duration-500" />
-        <h2 className="mt-4 text-3xl font-extrabold text-gray-900 tracking-tight">
+      <AuthHeader />
+
+      {/* Content is vertically centred between the fixed header and the footer */}
+      <div className="flex-1 min-h-0 flex flex-col justify-center pt-14 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6 relative z-10 animate-fade-in">
+        <Logo className="h-16 w-16 mx-auto transform hover:scale-110 transition-transform duration-500" />
+        <h2 className="mt-3 text-3xl font-extrabold text-gray-900 tracking-tight">
           {step === 'phone' ? 'Vendor Sign In' : 'Verify Identity'}
         </h2>
         <p className="mt-2 text-sm text-gray-600 animate-stagger-1 animate-fade-in">
@@ -195,7 +201,7 @@ const VendorLogin = () => {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
-        <div className="bg-white py-8 px-4 shadow-2xl shadow-gray-200/50 sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
+        <div className="bg-white py-6 px-4 shadow-2xl shadow-gray-200/50 sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#347989] via-[#D68F35] to-[#BB5F36]" />
 
           {step === 'phone' ? (
@@ -216,9 +222,10 @@ const VendorLogin = () => {
                     id="phone"
                     name="phone"
                     type="tel"
+                    autoComplete="tel-national"
                     required
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    onChange={(e) => setPhoneNumber(normalizePhoneInput(e.target.value))}
                     className="block w-full pl-24 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
                     placeholder="9876543210"
                     style={{ '--tw-ring-color': brandColor }}
@@ -334,13 +341,16 @@ const VendorLogin = () => {
           )}
         </div>
 
-        <p className="mt-8 text-center text-sm text-gray-500 animate-fade-in animate-stagger-5">
+        <p className="mt-5 text-center text-sm text-gray-500 animate-fade-in animate-stagger-5">
           Don't have a vendor account?{' '}
           <Link to="/vendor/signup" className="font-semibold text-[#347989] hover:text-[#D68F35] transition-colors duration-300">
             Register Now
           </Link>
         </p>
       </div>
+      </div>
+
+      <AuthFooter />
     </div>
   );
 };

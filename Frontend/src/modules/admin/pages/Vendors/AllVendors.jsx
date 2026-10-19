@@ -29,6 +29,37 @@ import CardShell from '../UserCategories/components/CardShell';
 import Modal from '../UserCategories/components/Modal';
 import adminVendorService from '../../../../services/adminVendorService';
 
+// Previews a vendor document. Images render inline; PDFs / anything the browser can't draw
+// fall back to an "Open document" tile so the admin can always reach the file.
+const isPdfUrl = (url = '') => /^data:application\/pdf/i.test(url) || /\.pdf(\?|#|$)/i.test(url);
+
+const DocPreview = ({ url, alt, heightClass = 'h-40' }) => {
+  const [failed, setFailed] = useState(false);
+
+  if (isPdfUrl(url) || failed) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className={`w-full ${heightClass} bg-blue-50 border border-blue-200 rounded-lg flex flex-col items-center justify-center gap-1 text-blue-700 hover:bg-blue-100 transition-colors`}
+      >
+        <FiShield className="w-6 h-6" />
+        <span className="text-xs font-semibold">Open document</span>
+      </a>
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt={alt}
+      onError={() => setFailed(true)}
+      className={`w-full ${heightClass} object-cover rounded-lg border border-gray-200`}
+    />
+  );
+};
+
 const AllVendors = () => {
   const [searchParams] = useSearchParams();
   const urlSearch = searchParams.get('search') || '';
@@ -337,7 +368,6 @@ const AllVendors = () => {
       if (response.success) {
         toast.success('Vendor details updated successfully!');
         setIsEditModalOpen(false);
-        setEditingVendor(null);
         await loadVendors();
       } else {
         toast.error(response.message || 'Failed to update vendor');
@@ -545,8 +575,8 @@ const AllVendors = () => {
       <Modal
         isOpen={isViewModalOpen}
         onClose={() => {
+          // Keep selectedVendor so the modal body doesn't collapse mid exit-animation (caused flicker)
           setIsViewModalOpen(false);
-          setSelectedVendor(null);
         }}
         title="Vendor Details"
         size="lg"
@@ -577,10 +607,14 @@ const AllVendors = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100">
-                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Business Name</label>
-                <div className="text-sm font-semibold text-gray-900">{selectedVendor.businessName || 'N/A'}</div>
-              </div>
+              {/* Business name, service categories and address are not collected at registration -
+                  they only appear once the vendor has filled them in from their profile */}
+              {selectedVendor.businessName && (
+                <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Business Name</label>
+                  <div className="text-sm font-semibold text-gray-900">{selectedVendor.businessName}</div>
+                </div>
+              )}
               <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                 <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Owner Name</label>
                 <div className="text-sm font-semibold text-gray-900">{selectedVendor.name}</div>
@@ -593,12 +627,14 @@ const AllVendors = () => {
                 <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Phone</label>
                 <div className="text-sm font-semibold text-gray-900 font-mono">{selectedVendor.phone}</div>
               </div>
-              <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100 sm:col-span-2">
-                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Service Categories</label>
-                <div className="text-sm font-semibold text-blue-600">
-                  {Array.isArray(selectedVendor.service) ? selectedVendor.service.join(', ') : (selectedVendor.service || 'N/A')}
+              {(Array.isArray(selectedVendor.service) ? selectedVendor.service.length > 0 : !!selectedVendor.service) && (
+                <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100 sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Service Categories</label>
+                  <div className="text-sm font-semibold text-blue-600">
+                    {Array.isArray(selectedVendor.service) ? selectedVendor.service.join(', ') : selectedVendor.service}
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                 <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Approval Status</label>
                 <div className="mt-1">{getStatusBadge(selectedVendor.approvalStatus)}</div>
@@ -609,13 +645,16 @@ const AllVendors = () => {
                   {selectedVendor.isActive ? '● Active (Login Enabled)' : '○ Inactive (Login Disabled)'}
                 </div>
               </div>
-              <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100 sm:col-span-2">
-                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Address</label>
-                <div className="text-xs font-medium text-gray-700">
-                  {selectedVendor.address?.fullAddress ||
-                    `${selectedVendor.address?.addressLine1 || ''} ${selectedVendor.address?.city || ''} ${selectedVendor.address?.state || ''} ${selectedVendor.address?.pincode || ''}`.trim() || 'No address provided'}
-                </div>
-              </div>
+              {(() => {
+                const addressText = selectedVendor.address?.fullAddress ||
+                  `${selectedVendor.address?.addressLine1 || ''} ${selectedVendor.address?.city || ''} ${selectedVendor.address?.state || ''} ${selectedVendor.address?.pincode || ''}`.trim();
+                return addressText ? (
+                  <div className="bg-gray-50/50 p-3 rounded-xl border border-gray-100 sm:col-span-2">
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">Address</label>
+                    <div className="text-xs font-medium text-gray-700">{addressText}</div>
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             <div>
@@ -624,11 +663,7 @@ const AllVendors = () => {
                 {selectedVendor.documents?.aadhar && (
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <label className="block text-xs font-bold text-gray-600 mb-2">Aadhar Front</label>
-                    <img
-                      src={selectedVendor.documents.aadhar}
-                      alt="Aadhar Front"
-                      className="w-full h-40 object-cover rounded-lg border border-gray-200"
-                    />
+                    <DocPreview url={selectedVendor.documents.aadhar} alt="Aadhar Front" />
                     <a
                       href={selectedVendor.documents.aadhar}
                       download
@@ -644,11 +679,7 @@ const AllVendors = () => {
                 {selectedVendor.documents?.aadharBack && (
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <label className="block text-xs font-bold text-gray-600 mb-2">Aadhar Back</label>
-                    <img
-                      src={selectedVendor.documents.aadharBack}
-                      alt="Aadhar Back"
-                      className="w-full h-40 object-cover rounded-lg border border-gray-200"
-                    />
+                    <DocPreview url={selectedVendor.documents.aadharBack} alt="Aadhar Back" />
                     <a
                       href={selectedVendor.documents.aadharBack}
                       download
@@ -664,11 +695,7 @@ const AllVendors = () => {
                 {selectedVendor.documents?.pan && (
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                     <label className="block text-xs font-bold text-gray-600 mb-2">PAN Card</label>
-                    <img
-                      src={selectedVendor.documents.pan}
-                      alt="PAN"
-                      className="w-full h-40 object-cover rounded-lg border border-gray-200"
-                    />
+                    <DocPreview url={selectedVendor.documents.pan} alt="PAN" />
                     <a
                       href={selectedVendor.documents.pan}
                       download
@@ -710,18 +737,7 @@ const AllVendors = () => {
                     {selectedVendor.experience?.certificate ? (
                       <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
                         <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-2">Trade / ITI Certificate</label>
-                        {selectedVendor.experience.certificate.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
-                          <img
-                            src={selectedVendor.experience.certificate}
-                            alt="Experience Certificate"
-                            className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                          />
-                        ) : (
-                          <div className="w-full h-14 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center gap-2">
-                            <FiShield className="w-5 h-5 text-blue-500" />
-                            <span className="text-xs font-semibold text-blue-700">Document / PDF</span>
-                          </div>
-                        )}
+                        <DocPreview url={selectedVendor.experience.certificate} alt="Experience Certificate" heightClass="h-32" />
                         <a
                           href={selectedVendor.experience.certificate}
                           download
@@ -761,7 +777,6 @@ const AllVendors = () => {
                   onClick={async () => {
                     await handleApprove(selectedVendor.id);
                     setIsViewModalOpen(false);
-                    setSelectedVendor(null);
                   }}
                   className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
@@ -772,7 +787,6 @@ const AllVendors = () => {
                   onClick={async () => {
                     await handleReject(selectedVendor.id);
                     setIsViewModalOpen(false);
-                    setSelectedVendor(null);
                   }}
                   className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
@@ -791,7 +805,6 @@ const AllVendors = () => {
         onClose={() => {
           if (!isSaving) {
             setIsEditModalOpen(false);
-            setEditingVendor(null);
           }
         }}
         title={`Edit Partner: ${editingVendor?.name || ''}`}
@@ -1255,7 +1268,6 @@ const AllVendors = () => {
                 disabled={isSaving}
                 onClick={() => {
                   setIsEditModalOpen(false);
-                  setEditingVendor(null);
                 }}
                 className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
               >

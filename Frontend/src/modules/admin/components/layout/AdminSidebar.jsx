@@ -44,7 +44,7 @@ const navSections = [
         children: [
           { label: "All Bookings", to: "/admin/bookings" },
           { label: "Live Tracking", to: "/admin/bookings/tracking" },
-          { label: "Notifications", to: "/admin/bookings/notifications" }
+          { label: "Notifications", to: "/admin/notifications" }
         ]
       },
       {

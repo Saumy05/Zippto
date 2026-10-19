@@ -7,6 +7,9 @@ import ErrorBoundary from '../components/common/ErrorBoundary';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PublicRoute from '../../../components/auth/PublicRoute';
 import useAppNotifications from '../../../hooks/useAppNotifications.jsx';
+// Auth pages are imported eagerly so a refresh on them never shows a loader/splash
+import Login from '../pages/login';
+import Signup from '../pages/signup';
 
 // Lazy load wrapper with error handling
 const lazyLoad = (importFunc) => {
@@ -76,8 +79,6 @@ const MyRating = lazyLoad(() => import('../pages/MyRating'));
 const AboutHomestr = lazyLoad(() => import('../pages/AboutHomster'));
 const UpdateProfile = lazyLoad(() => import('../pages/UpdateProfile'));
 const Invoice = lazyLoad(() => import('../pages/Invoice'));
-const Login = lazyLoad(() => import('../pages/login'));
-const Signup = lazyLoad(() => import('../pages/signup'));
 const Notifications = lazyLoad(() => import('../pages/Notifications'));
 const HelpSupport = lazyLoad(() => import('../pages/HelpSupport'));
 const CancellationPolicy = lazyLoad(() => import('../pages/CancellationPolicy'));

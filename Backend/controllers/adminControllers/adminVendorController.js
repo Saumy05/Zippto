@@ -4,6 +4,8 @@ const VendorBill = require('../../models/VendorBill');
 const { validationResult } = require('express-validator');
 const { VENDOR_STATUS, BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
+const { sendSMS } = require('../../services/smsService');
+const { sendVendorApprovedEmail } = require('../../services/emailService');
 const { getCityScope, vendorScope, bookingScope, vendorInScope, notFound } = require('../../utils/cityScope');
 
 /**
@@ -157,15 +159,24 @@ const approveVendor = async (req, res) => {
     vendor.approvalDate = new Date();
     await vendor.save();
 
-    // Send notification to vendor
+    // Send notification to vendor. A pending vendor cannot log in, so they usually have no FCM
+    // token yet - also tell them by SMS and email so they know they can now log in.
+    const approvalMessage = 'Your vendor registration has been approved. You can now start accepting bookings.';
     await createNotification({
       vendorId: vendor._id,
       type: 'vendor_approved',
       title: 'Vendor Registration Approved',
-      message: 'Your vendor registration has been approved. You can now start accepting bookings.',
+      message: approvalMessage,
       relatedId: vendor._id,
-      relatedType: 'vendor'
+      relatedType: 'vendor',
+      pushData: { type: 'vendor_approved', link: '/vendor/dashboard' }
     });
+
+    // Best-effort side channels: a failure here must never block the approval itself
+    await Promise.allSettled([
+      sendSMS(vendor.phone, 'Your Zippto Partner account is approved. Log in to the Zippto Partner app to start accepting bookings.'),
+      sendVendorApprovedEmail(vendor.email, vendor.name)
+    ]);
 
     res.status(200).json({
       success: true,

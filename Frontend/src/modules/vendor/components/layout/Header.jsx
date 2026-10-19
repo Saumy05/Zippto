@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect } from 'react';
-import { useNavigate, NavLink, Link } from 'react-router-dom';
-import { FiArrowLeft, FiBell, FiSearch, FiMapPin, FiChevronDown, FiCreditCard } from 'react-icons/fi';
+import { useNavigate, useLocation, NavLink, Link } from 'react-router-dom';
+import { FiArrowLeft, FiBell, FiMapPin, FiChevronDown } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 import api from '../../../../services/api';
@@ -9,11 +9,11 @@ const Header = memo(({
   title,
   onBack,
   showBack = false,
-  showSearch = true,
   showNotifications = true,
   notificationCount = 0
 }) => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [count, setCount] = useState(notificationCount);
   const [vendorInfo, setVendorInfo] = useState(() => {
     try {
@@ -85,12 +85,13 @@ const Header = memo(({
     }
   };
 
+  const isDashboard = pathname.startsWith('/vendor/dashboard');
   const vendorInitial = vendorInfo.name ? vendorInfo.name.charAt(0).toUpperCase() : 'P';
   const displayCity = vendorInfo.city && vendorInfo.city !== 'undefined' ? vendorInfo.city : 'Partner Hub';
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs transition-all">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* 1. LEFT BRANDING & LOCATION AREA */}
         <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
@@ -111,35 +112,38 @@ const Header = memo(({
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <Link to="/vendor/dashboard" className="flex items-center gap-1.5 shrink-0 focus:outline-none group">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <Link to="/vendor/dashboard" className="shrink-0 focus:outline-none group" aria-label="Zippto Partner home">
                 <img
                   src="/zippto_logo.png"
                   alt="ZIPPTO"
-                  className="w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 rounded-xl object-contain shadow-xs transition-transform group-hover:scale-105"
+                  className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl object-contain shadow-xs transition-transform group-hover:scale-105"
                 />
-                <div className="flex flex-col text-left shrink-0">
-                  <span className="text-xs xs:text-sm sm:text-base font-black tracking-tight text-[#0B132B] leading-none">
-                    ZIPPTO
-                  </span>
-                  <span className="text-[7.5px] xs:text-[8px] sm:text-[9px] font-extrabold tracking-wider text-amber-500 uppercase leading-none mt-0.5 whitespace-nowrap">
-                    PARTNER APP
-                  </span>
-                </div>
               </Link>
 
-              {/* Location Pin & Hub Selector */}
-              <Link
-                to="/vendor/address"
-                className="flex items-center gap-1 cursor-pointer group shrink min-w-0 px-1 py-0.5 rounded-lg hover:bg-slate-50 transition-colors"
-                title="Service Area / Location"
-              >
-                <FiMapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <div className="flex items-center gap-0.5 text-[10px] xs:text-[11px] sm:text-xs font-bold text-slate-900 leading-none truncate max-w-[85px] xs:max-w-[110px] sm:max-w-none">
-                  <span className="truncate">{displayCity}</span>
-                  <FiChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-700 shrink-0 transition-colors" />
-                </div>
-              </Link>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-[#0B132B] leading-tight truncate">
+                  {title || 'Partner Portal'}
+                </h1>
+                {isDashboard ? (
+                  /* Location Pin & Hub Selector (dashboard only) */
+                  <Link
+                    to="/vendor/address-management"
+                    className="flex items-center gap-1 cursor-pointer group min-w-0 rounded-lg hover:text-slate-900 transition-colors"
+                    title="Service Area / Location"
+                  >
+                    <FiMapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <div className="flex items-center gap-0.5 text-xs font-bold text-slate-700 leading-none truncate max-w-[140px] sm:max-w-none">
+                      <span className="truncate">{displayCity}</span>
+                      <FiChevronDown className="w-3 h-3 text-slate-400 group-hover:text-slate-700 shrink-0 transition-colors" />
+                    </div>
+                  </Link>
+                ) : (
+                  <span className="block text-[10px] font-extrabold tracking-wider text-amber-500 uppercase leading-none mt-0.5 whitespace-nowrap">
+                    Zippto Partner
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -199,34 +203,22 @@ const Header = memo(({
           </nav>
         )}
 
-        {/* 3. RIGHT ACTION CLUSTER: Language Pill, Search Icon, Bell, Profile Avatar */}
-        <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-2.5 shrink-0">
+        {/* 3. RIGHT ACTION CLUSTER: Language Pill, Bell, Profile Avatar */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           {/* Language Selector Pill */}
           <LanguageToggle className="shrink-0 text-[11px] py-1 px-2 sm:px-2.5" />
-
-          {/* Search Button */}
-          {showSearch && (
-            <button
-              onClick={() => navigate('/vendor/jobs')}
-              className="w-7.5 h-7.5 xs:w-8 xs:h-8 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
-              aria-label="Search Jobs"
-              title="Search Bookings & Jobs"
-            >
-              <FiSearch className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-          )}
 
           {/* Notifications Bell */}
           {showNotifications && (
             <Link
               to="/vendor/notifications"
-              className="relative w-7.5 h-7.5 xs:w-8 xs:h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors shrink-0"
+              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100/80 hover:bg-slate-100 flex items-center justify-center text-slate-700 transition-colors shrink-0"
               aria-label="Notifications"
               title="Notifications"
             >
-              <FiBell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <FiBell className="w-4 h-4 sm:w-5 sm:h-5" />
               {count > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[7.5px] xs:text-[8px] px-1 py-0.2 rounded-full ring-2 ring-white shadow-2xs">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full ring-2 ring-white shadow-2xs">
                   {count > 9 ? '9+' : count}
                 </span>
               )}
@@ -236,7 +228,7 @@ const Header = memo(({
           {/* Vendor Profile Avatar Circle */}
           <Link
             to="/vendor/profile"
-            className="w-7.5 h-7.5 xs:w-8 xs:h-8 sm:w-8.5 sm:h-8.5 rounded-full bg-[#0B132B] text-white flex items-center justify-center text-xs font-black shrink-0 ring-2 ring-slate-100 hover:ring-slate-300 transition-all overflow-hidden"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0B132B] text-white flex items-center justify-center text-xs font-black shrink-0 ring-2 ring-slate-100 hover:ring-slate-300 transition-all overflow-hidden"
             title={`Logged in as ${vendorInfo.name}`}
           >
             {vendorInfo.avatar ? (

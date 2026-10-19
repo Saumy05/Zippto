@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { FiUser, FiMail, FiPhone, FiFileText, FiUpload, FiX, FiArrowRight, FiChevronLeft, FiCheckCircle, FiCamera } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { normalizePhoneInput } from '../../../utils/phone';
 import { themeColors } from '../../../theme';
 import { register, sendOTP as sendVendorOTP } from '../services/authService';
 import LogoLoader from '../../../components/common/LogoLoader';
 import Logo from '../../../components/common/Logo';
+import { AuthHeader, AuthFooter } from '../../../components/auth/AuthChrome';
 import { compressImage } from '../../../utils/imageCompression';
 
 import { z } from "zod";
@@ -19,26 +21,40 @@ const vendorSignupSchema = z.object({
   pan: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, "Invalid PAN format (e.g. ABCDE1234F)")
 });
 
+// The in-progress registration is kept in sessionStorage so a page refresh doesn't wipe it
+const DRAFT_KEY = 'vendorSignupDraft';
+
+const EMPTY_FORM = {
+  name: '',
+  email: '',
+  phoneNumber: '',
+  aadhar: '',
+  pan: '',
+  service: '',
+  documents: [],
+  yearsOfExperience: '',
+  experienceDescription: ''
+};
+
+const loadDraft = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem(DRAFT_KEY)) || {};
+  } catch {
+    return {};
+  }
+};
+
 const VendorSignup = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [draft] = useState(loadDraft);
   const [step, setStep] = useState('details'); // 'details' or 'otp'
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phoneNumber: '',
-    aadhar: '',
-    pan: '',
-    service: '',
-    documents: [],
-    yearsOfExperience: '',
-    experienceDescription: ''
-  });
+  const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM, ...draft.formData }));
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpToken, setOtpToken] = useState('');
-  const [verificationToken, setVerificationToken] = useState('');
+  const [verificationToken, setVerificationToken] = useState(draft.verificationToken || '');
   const [isLoading, setIsLoading] = useState(false);
-  const [documentPreview, setDocumentPreview] = useState({});
+  const [documentPreview, setDocumentPreview] = useState(draft.documentPreview || {});
   const [uploadingDocs, setUploadingDocs] = useState({});
   const [resendTimer, setResendTimer] = useState(0);
 
@@ -52,6 +68,29 @@ const VendorSignup = () => {
     }
     return () => clearInterval(interval);
   }, [resendTimer]);
+
+  // Persist the draft on every change (documents are stored as the data URLs that get submitted)
+  useEffect(() => {
+    const slim = { ...formData, documents: formData.documents.map(({ type, url }) => ({ type, url })) };
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ formData: slim, verificationToken, documentPreview }));
+    } catch {
+      // Quota exceeded (large document previews) - keep at least the text fields
+      try {
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ formData: { ...slim, documents: [] }, verificationToken }));
+      } catch {
+        // Storage unavailable - nothing to persist
+      }
+    }
+  }, [formData, verificationToken, documentPreview]);
+
+  const clearDraft = () => {
+    try {
+      sessionStorage.removeItem(DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+  };
 
   // Refs for auto-focus
   const nameInputRef = useRef(null);
@@ -184,7 +223,7 @@ const VendorSignup = () => {
     });
 
     if (!validationResult.success) {
-      validationResult.error.errors.forEach(err => toast.error(err.message));
+      toast.error(validationResult.error.issues[0].message);
       return;
     }
 
@@ -232,6 +271,7 @@ const VendorSignup = () => {
             </div>,
             { icon: <FiCheckCircle className="text-[#D68F35]" />, duration: 5000 }
           );
+          clearDraft();
           navigate('/vendor/login');
         } else {
           toast.error(response.message || 'Registration failed');
@@ -328,6 +368,7 @@ const VendorSignup = () => {
       if (response.success) {
         setIsLoading(false);
         toast.success('Registration successful! Pending admin approval.');
+        clearDraft();
         navigate('/vendor/login');
       } else {
         setIsLoading(false);
@@ -342,12 +383,14 @@ const VendorSignup = () => {
   const brandColor = themeColors.brand?.teal || '#347989';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center pt-20 pb-6 px-4 sm:px-6 lg:px-8 relative">
       {/* Decorative Background Elements - Fixed Container to prevent scroll issues */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
       </div>
+
+      <AuthHeader />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center mb-8 relative z-10 animate-fade-in">
         <Logo className="h-16 w-auto mx-auto transform hover:scale-110 transition-transform duration-500" />
@@ -418,9 +461,10 @@ const VendorSignup = () => {
                         </div>
                         <input
                           type="tel"
+                          autoComplete="tel-national"
                           required
                           value={formData.phoneNumber}
-                          onChange={(e) => setFormData(p => ({ ...p, phoneNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                          onChange={(e) => setFormData(p => ({ ...p, phoneNumber: normalizePhoneInput(e.target.value) }))}
                           className="block w-full pl-14 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-offset-2 transition-all duration-300 outline-none hover:border-gray-400"
                           style={{ '--tw-ring-color': brandColor }}
                           placeholder="9876543210"
@@ -762,6 +806,8 @@ const VendorSignup = () => {
           </Link>
         </p>
       </div >
+
+      <AuthFooter />
     </div >
   );
 };

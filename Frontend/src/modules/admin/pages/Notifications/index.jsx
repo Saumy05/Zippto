@@ -9,6 +9,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import api from '../../../../services/api';
+import { getNotificationRoute } from '../../utils/notificationRoutes';
 
 const TABS = [
   { key: 'push',     label: 'Push Notifications',   path: '/admin/notifications/push',     Icon: FiBell     },
@@ -20,6 +21,7 @@ const segToView = { '': 'push', 'push': 'push', 'messages': 'messages', 'setting
 
 /* ── Push Notifications inbox ── */
 const PushNotificationsView = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading]             = useState(true);
   const [refreshing, setRefreshing]       = useState(false);
@@ -34,13 +36,25 @@ const PushNotificationsView = () => {
     finally   { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+  useEffect(() => {
+    fetchNotifications();
+    // Keep the inbox live when a new admin notification arrives over the socket
+    window.addEventListener('adminNotificationsUpdated', fetchNotifications);
+    return () => window.removeEventListener('adminNotificationsUpdated', fetchNotifications);
+  }, [fetchNotifications]);
+
+  const syncBell = () => window.dispatchEvent(new Event('adminNotificationsUpdated'));
 
   const handleRefresh = async () => { setRefreshing(true); await fetchNotifications(); setRefreshing(false); toast.success('Refreshed'); };
-  const markAsRead    = async (id) => { try { await api.put(`/notifications/${id}/read`); setNotifications(p => p.map(n => n._id === id ? { ...n, isRead: true } : n)); } catch {} };
-  const markAllAsRead = async ()   => { try { await api.put('/notifications/read-all');   setNotifications(p => p.map(n => ({ ...n, isRead: true }))); toast.success('All marked'); } catch {} };
-  const deleteOne     = async (id) => { try { await api.delete(`/notifications/${id}`);  setNotifications(p => p.filter(n => n._id !== id)); toast.success('Deleted'); } catch {} };
-  const clearAll      = async ()   => { if (!window.confirm('Delete all?')) return; try { await api.delete('/notifications/delete-all'); setNotifications([]); toast.success('Cleared'); } catch {} };
+  const markAsRead    = async (id) => { try { await api.put(`/notifications/${id}/read`); setNotifications(p => p.map(n => n._id === id ? { ...n, isRead: true } : n)); syncBell(); } catch { toast.error('Failed to mark as read'); } };
+  const markAllAsRead = async ()   => { try { await api.put('/notifications/read-all');   setNotifications(p => p.map(n => ({ ...n, isRead: true }))); syncBell(); toast.success('All marked'); } catch { toast.error('Failed to mark all as read'); } };
+  const deleteOne     = async (id) => { try { await api.delete(`/notifications/${id}`);  setNotifications(p => p.filter(n => n._id !== id)); syncBell(); toast.success('Deleted'); } catch { toast.error('Failed to delete notification'); } };
+  const clearAll      = async ()   => { if (!window.confirm('Delete all?')) return; try { await api.delete('/notifications/delete-all'); setNotifications([]); syncBell(); toast.success('Cleared'); } catch { toast.error('Failed to clear notifications'); } };
+
+  const openNotification = (n) => {
+    if (!n.isRead) markAsRead(n._id);
+    navigate(getNotificationRoute(n));
+  };
 
   const getIcon = (type) => {
     if (type === 'vendor_withdrawal_request')  return <FiDollarSign className="text-green-500" />;
@@ -80,7 +94,8 @@ const PushNotificationsView = () => {
             <AnimatePresence>
               {filtered.map(n => (
                 <motion.div key={n._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                  className={`p-4 hover:bg-gray-50 flex items-start gap-3 ${!n.isRead ? 'bg-blue-50/30' : ''}`}>
+                  onClick={() => openNotification(n)}
+                  className={`p-4 hover:bg-gray-50 flex items-start gap-3 cursor-pointer ${!n.isRead ? 'bg-blue-50/30' : ''}`}>
                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">{getIcon(n.type)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
@@ -88,8 +103,8 @@ const PushNotificationsView = () => {
                       <span className="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">{formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}</span>
                     </div>
                     <div className="flex gap-2 mt-2">
-                      {!n.isRead && <button onClick={() => markAsRead(n._id)} className="text-[10px] font-semibold text-blue-600 hover:underline flex items-center gap-1"><FiCheck className="text-xs"/> Mark as read</button>}
-                      <button onClick={() => deleteOne(n._id)} className="text-[10px] font-semibold text-red-500 hover:underline flex items-center gap-1"><FiTrash2 className="text-xs"/> Delete</button>
+                      {!n.isRead && <button onClick={(e) => { e.stopPropagation(); markAsRead(n._id); }} className="text-[10px] font-semibold text-blue-600 hover:underline flex items-center gap-1"><FiCheck className="text-xs"/> Mark as read</button>}
+                      <button onClick={(e) => { e.stopPropagation(); deleteOne(n._id); }} className="text-[10px] font-semibold text-red-500 hover:underline flex items-center gap-1"><FiTrash2 className="text-xs"/> Delete</button>
                     </div>
                   </div>
                   {!n.isRead && <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0 mt-2"/>}

@@ -142,7 +142,7 @@ const AdminHeader = ({ onMenuClick }) => {
 
           {/* Real-time Notification Bell */}
           <Link
-            to="/admin/bookings/notifications"
+            to="/admin/notifications"
             className="p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50/60 rounded-xl border border-gray-200/80 transition-all relative cursor-pointer flex items-center justify-center"
             title="System & Order Notifications"
             aria-label="Notifications"

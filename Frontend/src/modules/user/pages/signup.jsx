@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { FiUser, FiMail, FiPhone, FiArrowRight, FiChevronLeft, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { normalizePhoneInput } from '../../../utils/phone';
 import { themeColors } from '../../../theme';
 import { userAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
@@ -78,7 +79,7 @@ const Signup = () => {
     const validationResult = signupSchema.safeParse(formData);
 
     if (!validationResult.success) {
-      validationResult.error.errors.forEach(err => toast.error(err.message));
+      toast.error(validationResult.error.issues[0].message);
       return;
     }
 
@@ -328,9 +329,10 @@ const Signup = () => {
                       id="phoneNumber"
                       name="phoneNumber"
                       type="tel"
+                      autoComplete="tel-national"
                       required
                       value={formData.phoneNumber}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: normalizePhoneInput(e.target.value) }))}
                       className="block w-full pl-24 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
                       placeholder="9876543210"
                       style={{ '--tw-ring-color': brandColor }}

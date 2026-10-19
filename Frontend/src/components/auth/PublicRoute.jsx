@@ -3,114 +3,79 @@ import { Navigate, useLocation } from 'react-router-dom';
 
 /**
  * Public Route Component
- * Redirects to dashboard if user is already authenticated
+ * Redirects to dashboard if user is already authenticated.
+ * The check is synchronous so no loading screen flashes before the page renders.
  */
+const KEYS = {
+  vendor: { tokenKey: 'vendorAccessToken', refreshTokenKey: 'vendorRefreshToken', dataKey: 'vendorData' },
+  admin: { tokenKey: 'adminAccessToken', refreshTokenKey: 'adminRefreshToken', dataKey: 'adminData' },
+  user: { tokenKey: 'accessToken', refreshTokenKey: 'refreshToken', dataKey: 'userData' }
+};
+
+const clearKeys = (keys) => {
+  Object.values(keys).forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+};
+
+const checkAuth = (userType) => {
+  const keys = KEYS[userType] || KEYS.user;
+  const { tokenKey, refreshTokenKey, dataKey } = keys;
+
+  const token = sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
+  const refreshToken = sessionStorage.getItem(refreshTokenKey) || localStorage.getItem(refreshTokenKey);
+  const userData = sessionStorage.getItem(dataKey) || localStorage.getItem(dataKey);
+
+  if (!token || !userData) {
+    if (token && !userData) {
+      // Orphan token without user data - clear it
+      localStorage.removeItem(tokenKey);
+      sessionStorage.removeItem(tokenKey);
+    }
+    return false;
+  }
+
+  try {
+    // Decode JWT token to check expiry and role
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      localStorage.removeItem(tokenKey);
+      sessionStorage.removeItem(tokenKey);
+      return false;
+    }
+
+    const payload = JSON.parse(atob(parts[1]));
+    const currentTime = Date.now() / 1000;
+
+    // JWT role is upper-case (USER / VENDOR / ADMIN) - compare case-insensitively
+    const expectedRole = KEYS[userType] ? userType : 'user';
+    if (String(payload.role || '').toLowerCase() !== expectedRole) return false;
+
+    if (!payload.exp || payload.exp <= currentTime) {
+      // Expired access token: the session is still alive if a refresh token exists
+      // (the axios interceptor renews it on the first request). Never wipe it here.
+      if (refreshToken) return true;
+      clearKeys(keys);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    localStorage.removeItem(tokenKey);
+    sessionStorage.removeItem(tokenKey);
+    return false;
+  }
+};
+
 const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => checkAuth(userType));
 
   useEffect(() => {
-    const checkAuth = () => {
-      let tokenKey = 'accessToken';
-      let refreshTokenKey = 'refreshToken';
-      let dataKey = 'userData';
-
-      // Determine keys based on userType
-      switch (userType) {
-        case 'vendor':
-          tokenKey = 'vendorAccessToken';
-          refreshTokenKey = 'vendorRefreshToken';
-          dataKey = 'vendorData';
-          break;
-        case 'admin':
-          tokenKey = 'adminAccessToken';
-          refreshTokenKey = 'adminRefreshToken';
-          dataKey = 'adminData';
-          break;
-        case 'user':
-        default:
-          tokenKey = 'accessToken';
-          refreshTokenKey = 'refreshToken';
-          dataKey = 'userData';
-          break;
-      }
-
-      const token = sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
-      const userData = sessionStorage.getItem(dataKey) || localStorage.getItem(dataKey);
-
-      if (token && userData) {
-        try {
-          // Decode JWT token to check expiry and role
-          const parts = token.split('.');
-          if (parts.length === 3) {
-            const payload = JSON.parse(atob(parts[1]));
-            const currentTime = Date.now() / 1000;
-
-            // Check if token is expired
-            if (!payload.exp || payload.exp <= currentTime) {
-              // Clear expired tokens
-              localStorage.removeItem(tokenKey);
-              localStorage.removeItem(refreshTokenKey);
-              localStorage.removeItem(dataKey);
-              sessionStorage.removeItem(tokenKey);
-              sessionStorage.removeItem(refreshTokenKey);
-              sessionStorage.removeItem(dataKey);
-              setIsAuthenticated(false);
-              return;
-            }
-
-            // Check if token role matches expected userType
-            const roleMap = {
-              user: 'user',
-              vendor: 'vendor',
-              admin: 'admin'
-            };
-
-            if (payload.role === roleMap[userType]) {
-              setIsAuthenticated(true);
-            } else {
-              // Role mismatch
-              setIsAuthenticated(false);
-            }
-          } else {
-            // Invalid token format
-            localStorage.removeItem(tokenKey);
-            sessionStorage.removeItem(tokenKey);
-            setIsAuthenticated(false);
-          }
-        } catch (error) {
-          // Invalid token
-          console.error('Token validation error:', error);
-          localStorage.removeItem(tokenKey);
-          sessionStorage.removeItem(tokenKey);
-          setIsAuthenticated(false);
-        }
-      } else {
-        if (token && !userData) {
-          // Orphan token without user data - clear it
-          localStorage.removeItem(tokenKey);
-          sessionStorage.removeItem(tokenKey);
-        }
-        setIsAuthenticated(false);
-      }
-
-      setIsLoading(false);
-    };
-
-    checkAuth();
+    setIsAuthenticated(checkAuth(userType));
   }, [userType, location.pathname]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#00a6a6' }}></div>
-          <p className="text-gray-600 text-sm">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (isAuthenticated) {
     // Determine redirect path
@@ -128,4 +93,3 @@ const PublicRoute = ({ children, userType = 'user', redirectTo = null }) => {
 };
 
 export default PublicRoute;
-

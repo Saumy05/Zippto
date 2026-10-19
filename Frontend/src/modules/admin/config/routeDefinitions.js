@@ -10,14 +10,6 @@ export const ROUTE_DEFINITIONS = [
     keywords: ['live', 'map', 'tracking', 'dispatch', 'gps', 'driver', 'vendor location', 'orders']
   },
   {
-    path: '/admin/bookings/notifications',
-    title: 'Order Notifications',
-    description: 'Real-time booking alerts, broadcasts, and system dispatches',
-    category: 'Bookings',
-    categoryPath: '/admin/bookings',
-    keywords: ['alerts', 'broadcasts', 'order notification', 'sound', 'messages']
-  },
-  {
     path: '/admin/bookings',
     title: 'Bookings Management',
     description: 'Monitor, assign, filter, and audit all customer service requests',

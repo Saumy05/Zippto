@@ -42,13 +42,35 @@ const UpdateProfile = () => {
     });
   }, []);
 
+  // Upload + persist a newly picked photo straight away so it isn't lost if the user leaves
+  // the page (back button) without pressing "Save Changes"
+  const savePhotoNow = async (file) => {
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+    setUploading(true);
+    try {
+      const photoUrl = await uploadFile(file);
+      const response = await userAuthService.updateProfile({ profilePhoto: photoUrl });
+      if (!response.success) throw new Error(response.message || 'Failed to save photo');
+      // authService.updateProfile already refreshed localStorage userData with the new photo
+      setFormData(prev => ({ ...prev, profilePhoto: photoUrl }));
+      setPhotoFile(null);
+      toast.success('Profile photo saved');
+    } catch (err) {
+      console.error('Photo save failed:', err);
+      // photoFile stays set so "Save Changes" can retry the upload
+      toast.error('Failed to save profile photo. Tap Save Changes to retry.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleNativeCamera = async () => {
     try {
       const file = await flutterBridge.openCamera();
       if (file) {
-        setPhotoFile(file);
-        setPhotoPreview(URL.createObjectURL(file));
         flutterBridge.hapticFeedback('success');
+        savePhotoNow(file);
       }
     } catch (error) {
       console.error('Native camera failed:', error);
@@ -146,8 +168,7 @@ const UpdateProfile = () => {
         toast.error('File size should be less than 5MB');
         return;
       }
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      savePhotoNow(file);
     }
   };
 
@@ -175,7 +196,7 @@ const UpdateProfile = () => {
     });
 
     if (!validationResult.success) {
-      toast.error(validationResult.error.errors[0].message);
+      toast.error(validationResult.error.issues[0].message);
       return;
     }
 
@@ -428,7 +449,7 @@ const UpdateProfile = () => {
         <div className="mt-6">
           <button
             onClick={handleSave}
-            disabled={isLoading || isSaving}
+            disabled={isLoading || isSaving || uploading}
             className="w-full text-white font-bold py-3.5 rounded-xl active:scale-98 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: `linear-gradient(135deg, ${themeColors.button} 0%, ${themeColors.icon} 100%)`,

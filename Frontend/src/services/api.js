@@ -133,10 +133,16 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         console.error('RefreshToken failed:', refreshError);
-        // Refresh failed, logout
         processQueue(refreshError, null);
         isRefreshing = false;
-        handleLogout(role);
+
+        // Only end the session when the server actually rejected the refresh token.
+        // Network errors, timeouts and 5xx (offline / cold start when the app is reopened)
+        // must not log the user out - their tokens are still valid.
+        const status = refreshError.response?.status;
+        if (status === 400 || status === 401 || status === 403 || status === 404) {
+          handleLogout(role);
+        }
         return Promise.reject(refreshError);
       }
     }

@@ -275,6 +275,30 @@ const sendWelcomeEmail = async (email, name) => {
 };
 
 /**
+ * Send Vendor Approved Email - tells a newly registered partner they can log in
+ */
+const sendVendorApprovedEmail = async (email, name) => {
+  try {
+    if (!email) return { success: false, error: 'No email on file' };
+    const content = `
+      <div style="text-align: center;">
+        <div class="badge badge-success">Approved</div>
+        <h2>Congratulations ${name || 'Partner'}! 🎉</h2>
+        <p>Your Zippto Partner registration has been approved by our team. You can now log in to the Zippto Partner app and start accepting bookings.</p>
+      </div>
+    `;
+    return await sendEmail({
+      to: email,
+      subject: 'Your Zippto Partner account is approved',
+      html: emailWrapper(content, 'Account Approved', 'You can now start accepting bookings on Zippto')
+    });
+  } catch (error) {
+    console.error('Vendor approved email error:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Send Booking Email - Detailed App Style
  */
 const sendBookingEmails = async (booking, user, vendor, service) => {
@@ -470,6 +494,7 @@ module.exports = {
   emailWrapper,
   sendOTPEmail,
   sendWelcomeEmail,
+  sendVendorApprovedEmail,
   sendBookingEmails,
   sendBookingCompletionEmails,
   sendWithdrawalApprovedEmail,

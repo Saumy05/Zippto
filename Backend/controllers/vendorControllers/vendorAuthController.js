@@ -273,7 +273,7 @@ const register = async (req, res) => {
     if (experienceCertificateUrl && experienceCertificateUrl.startsWith('data:')) {
       const uploadRes = await cloudinaryService.uploadFile(experienceCertificateUrl, { folder: 'vendors/experience' });
       if (uploadRes.success) experienceCertificateUrl = uploadRes.url;
-      else experienceCertificateUrl = '';
+      else console.error('Experience certificate upload failed, keeping inline file:', uploadRes.error);
     }
 
     const vendor = await Vendor.create({

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FiPhone, FiArrowRight, FiCheckCircle, FiChevronLeft } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { normalizePhoneInput } from '../../../utils/phone';
 import { themeColors } from '../../../theme';
 import { userAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
@@ -54,7 +55,7 @@ const Login = () => {
     // Zod Validation
     const validationResult = phoneSchema.safeParse({ phone: phoneNumber });
     if (!validationResult.success) {
-      toast.error(validationResult.error.errors[0].message);
+      toast.error(validationResult.error.issues[0].message);
       return;
     }
 
@@ -224,16 +225,13 @@ const Login = () => {
                   <input
                     ref={phoneInputRef}
                     type="tel"
-                    inputMode="numeric"
-                    autoComplete="tel"
+                    inputMode="tel"
+                    autoComplete="tel-national"
                     id="phone"
                     className="block w-full pl-24 pr-4 py-3.5 border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] sm:text-sm transition-all duration-300 ease-in-out hover:border-gray-400"
                     placeholder="98765 43210"
                     value={phoneNumber}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      if (val.length <= 10) setPhoneNumber(val);
-                    }}
+                    onChange={(e) => setPhoneNumber(normalizePhoneInput(e.target.value))}
                     style={{ '--tw-ring-color': brandColor }}
                   />
                 </div>
@@ -263,7 +261,7 @@ const Login = () => {
                     <div className="w-full border-t border-gray-200" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">New to Cleaning Expert Services?</span>
+                    <span className="px-2 bg-white text-gray-500">New to Zippto?</span>
                   </div>
                 </div>
 
@@ -362,7 +360,7 @@ const Login = () => {
       </div>
 
       <div className="mt-8 text-center text-xs text-gray-400 animate-fade-in animate-stagger-4">
-        &copy; {new Date().getFullYear()} Cleaning Expert Services. All rights reserved.
+        &copy; {new Date().getFullYear()} Zippto. All rights reserved.
       </div>
     </div>
   );
