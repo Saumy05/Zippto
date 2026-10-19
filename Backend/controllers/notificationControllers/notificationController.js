@@ -166,7 +166,7 @@ const createNotification = async ({
  * Returns null for an unknown role.
  */
 const getOwnerScope = (req) => {
-  const role = String(req.userRole || '').toUpperCase();
+  const role = String(req.userRole || req.user?.role || '').toUpperCase();
   const id = req.user.id;
   if (role === 'USER') return { userId: id };
   if (role === 'VENDOR') return { vendorId: id };

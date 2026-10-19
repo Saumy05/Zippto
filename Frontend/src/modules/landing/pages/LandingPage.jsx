@@ -85,7 +85,7 @@ const LandingPage = () => {
       <header className="fixed top-0 left-0 right-0 z-[100] bg-white/90 backdrop-blur-xl border-b border-gray-100 py-3 shadow-sm transition-all duration-300">
         <div className="container mx-auto px-4 sm:px-8 flex justify-between items-center max-w-7xl">
           <Link to="/Home" className="flex items-center gap-3 group">
-              <img src="/zippto_logo.png" alt="Cleaning Expert Services Logo" className="h-9 w-9 sm:h-11 sm:w-11 object-cover rounded-full shadow-sm border border-gray-100 transition-transform group-hover:scale-110" />
+              <img src="/zippto_logo.png" alt="Zippto Logo" className="h-9 w-9 sm:h-11 sm:w-11 object-cover rounded-full shadow-sm border border-gray-100 transition-transform group-hover:scale-110" />
           </Link>
 
           {/* Desktop Nav - Dark Text for Light Navbar */}
@@ -277,7 +277,7 @@ const LandingPage = () => {
                 <span className="text-brand">Expert Repairs.</span>
               </h1>
               <p className="text-base sm:text-xl leading-relaxed text-gray-500 mb-8 sm:mb-10 max-w-xl font-normal">
-                "Our parts. Our warranty. Your peace of mind." — Cleaning Expert Services uses only platform-certified genuine electronics parts for every repair.
+                "Our parts. Our warranty. Your peace of mind." — Zippto uses only platform-certified genuine electronics parts for every repair.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 justify-center lg:justify-start items-center">
@@ -722,7 +722,7 @@ const LandingPage = () => {
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-6 sm:gap-10 text-gray-500 font-normal text-[8px] sm:text-[10px] text-center whitespace-nowrap">
-            <p>© {new Date().getFullYear()} {settings?.companyName || 'Cleaning Expert Services'}. Proudly Indore 🇮🇳</p>
+            <p>© {new Date().getFullYear()} {settings?.companyName || 'Zippto'}. Proudly Indore 🇮🇳</p>
           </div>
         </div>
       </footer>

@@ -110,14 +110,6 @@ const VendorLogin = () => {
     }
   };
 
-  // Auto-verify as last digit enters
-  useEffect(() => {
-    const otpValue = otp.join('');
-    if (otpValue.length === 6 && !isLoading && otpToken) {
-      handleOtpSubmit();
-    }
-  }, [otp]);
-
   const handleOtpSubmit = async (e) => {
     if (e) e.preventDefault();
     const otpValue = otp.join('');
@@ -177,6 +169,14 @@ const VendorLogin = () => {
       toast.error(errorMessage);
     }
   };
+
+  // Auto-verify as last digit enters
+  useEffect(() => {
+    const otpValue = otp.join('');
+    if (otpValue.length === 6 && !isLoading && otpToken) {
+      handleOtpSubmit();
+    }
+  }, [otp]);
 
   const brandColor = themeColors.brand?.teal || '#347989';
 

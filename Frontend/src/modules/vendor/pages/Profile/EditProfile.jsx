@@ -316,7 +316,7 @@ const EditProfile = () => {
 
     if (!validationResult.success) {
       console.log('Validation failed:', validationResult.error);
-      const errorMessage = validationResult.error?.errors?.[0]?.message || 'Validation failed';
+      const errorMessage = validationResult.error?.issues?.[0]?.message || validationResult.error?.errors?.[0]?.message || 'Validation failed';
       toast.error(errorMessage);
       return;
     }

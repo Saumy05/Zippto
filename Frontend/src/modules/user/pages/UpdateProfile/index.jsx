@@ -42,6 +42,30 @@ const UpdateProfile = () => {
     });
   }, []);
 
+  // Upload file helper
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    let baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    if (!baseUrl) {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        baseUrl = 'http://localhost:5000';
+      } else {
+        baseUrl = window.location.origin;
+      }
+    }
+    baseUrl = baseUrl.replace(/\/api$/, '');
+    const response = await fetch(`${baseUrl}/api/image/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message || 'Upload failed');
+    return data.imageUrl;
+  };
+
   // Upload + persist a newly picked photo straight away so it isn't lost if the user leaves
   // the page (back button) without pressing "Save Changes"
   const savePhotoNow = async (file) => {
@@ -136,30 +160,6 @@ const UpdateProfile = () => {
 
     fetchProfile();
   }, []);
-
-  // Upload file helper
-  const uploadFile = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    let baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    if (!baseUrl) {
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        baseUrl = 'http://localhost:5000';
-      } else {
-        baseUrl = window.location.origin;
-      }
-    }
-    baseUrl = baseUrl.replace(/\/api$/, '');
-    const response = await fetch(`${baseUrl}/api/image/upload`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.message || 'Upload failed');
-    return data.imageUrl;
-  };
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
