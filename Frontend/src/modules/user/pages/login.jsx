@@ -112,6 +112,14 @@ const Login = () => {
     }
   };
 
+  const handleOtpPaste = (e) => {
+    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!digits) return;
+    e.preventDefault();
+    setOtp(Array.from({ length: 6 }, (_, i) => digits[i] || ''));
+    otpInputRefs.current[Math.min(digits.length, 6) - 1]?.focus();
+  };
+
   const handleOtpKeyDown = (index, e) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus();
@@ -289,6 +297,7 @@ const Login = () => {
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      onPaste={handleOtpPaste}
                     className="w-11 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] transition-all duration-300 shadow-sm border focus:-translate-y-1 hover:border-gray-400"
                     style={{ caretColor: brandColor }}
                   />

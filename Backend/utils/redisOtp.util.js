@@ -27,7 +27,7 @@ const hasSMSGatewayConfigured = () => {
  * Generate 6-digit OTP
  */
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 };
 
 /**
@@ -40,15 +40,28 @@ const hashOTP = (otp) => {
 /**
  * Check rate limit for phone number
  * Returns true if allowed, false if limit exceeded
- * NOTE: Rate limiting primarily uses Redis. If Redis is down, we ALLOW the request 
- * to prevent blocking users during outages (fail-open), or we could implement basic memory/mongo limit.
- * For now: Fail-open for simple rate limiting if Redis is down.
+ * Rate limiting uses Redis; if Redis is down it falls back to an in-process counter.
  */
+const memoryRateLimits = new Map(); // phone -> { count, resetAt }
+
+/**
+ * In-process rate limit used when Redis is unavailable
+ */
+const checkMemoryRateLimit = (phone) => {
+  const now = Date.now();
+  const entry = memoryRateLimits.get(phone);
+  if (!entry || entry.resetAt <= now) {
+    memoryRateLimits.set(phone, { count: 1, resetAt: now + RATE_LIMIT_WINDOW * 1000 });
+    return true;
+  }
+  entry.count += 1;
+  return entry.count <= RATE_LIMIT_COUNT;
+};
+
 const checkRateLimit = async (phone) => {
   const redis = getRedis();
   if (!isRedisConnected() || !redis) {
-    console.warn('[OTP] Redis down, skipping rate limit check (fail-open)');
-    return true;
+    return checkMemoryRateLimit(phone);
   }
 
   const key = `rate:otp:${phone}`;
@@ -60,7 +73,7 @@ const checkRateLimit = async (phone) => {
     return current <= RATE_LIMIT_COUNT;
   } catch (err) {
     console.error('[OTP] Rate limit error:', err);
-    return true; // Fail open
+    return checkMemoryRateLimit(phone);
   }
 };
 
@@ -110,13 +123,12 @@ const storeOTP = async (phone, otpHash) => {
  * Returns: { success: true/false, message: string }
  */
 const verifyOTP = async (phone, plainOtp) => {
-  console.log(`[OTP] Verifying OTP for phone: ${phone}, OTP: ${plainOtp}`);
+  console.log(`[OTP] Verifying OTP for phone: ${phone}`);
 
   const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
 
   const redis = getRedis();
   const inputHash = hashOTP(plainOtp);
-  console.log(`[OTP] Input OTP hash: ${inputHash.substring(0, 10)}...`);
 
   // 1. Try Redis
   if (isRedisConnected() && redis) {

@@ -160,6 +160,14 @@ const Signup = () => {
     }
   };
 
+  const handleOtpPaste = (e) => {
+    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!digits) return;
+    e.preventDefault();
+    setOtp(Array.from({ length: 6 }, (_, i) => digits[i] || ''));
+    otpInputRefs.current[Math.min(digits.length, 6) - 1]?.focus();
+  };
+
   const handleOtpKeyDown = (index, e) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus();
@@ -385,6 +393,7 @@ const Signup = () => {
                       value={digit}
                       onChange={(e) => handleOtpChange(index, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      onPaste={handleOtpPaste}
                       className="w-full h-14 text-center text-xl font-bold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
                       style={{
                         '--tw-ring-color': brandColor,

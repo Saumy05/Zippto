@@ -206,7 +206,10 @@ const sendSMS = async (phone, message, otp = '') => {
 const sendOTP = async (phone, otp, purpose = 'verification') => {
   const appName = process.env.APP_NAME || 'Zippto';
   // DLT Approved Template: "Welcome to the ##var## powered by Appzeto.Your OTP for registration is ##var##.BGADEC"
-  const message = `Welcome to the ${appName} powered by Appzeto.Your OTP for registration is ${otp}.BGADEC`;
+  // Must match the DLT-approved template exactly; override via SMS_OTP_TEMPLATE ({{app}}, {{otp}}) if it changes
+  const template = process.env.SMS_OTP_TEMPLATE
+    || 'Welcome to the {{app}} powered by Appzeto.Your OTP for registration is {{otp}}.BGADEC';
+  const message = template.replace('{{app}}', appName).replace('{{otp}}', otp);
 
   console.log(`[SMS] Dispatching ${purpose} OTP to ${phone}...`);
   return await sendSMS(phone, message, otp);

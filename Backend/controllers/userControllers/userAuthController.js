@@ -41,19 +41,25 @@ const sendOTP = async (req, res) => {
     // 4. Send OTP via SMS
     const smsResult = await sendSMSOTP(phone, otp);
 
+    const isDev = process.env.NODE_ENV === 'development';
+
     // Log OTP in development mode only (NEVER in production)
-    if (process.env.NODE_ENV === 'development') {
+    if (isDev) {
       console.log(`[DEV] OTP for ${phone}: ${otp}`);
+    }
+
+    // Tell the user when the SMS was not delivered instead of reporting success
+    if (!smsResult.success && !isDev) {
+      console.error(`[OTP] SMS failed for ${phone}: ${smsResult.error}`);
+      return res.status(502).json({
+        success: false,
+        message: 'Could not send the OTP SMS. Please try again in a moment.'
+      });
     }
 
     // 5. Optional: Send email notification if email provided
     if (email) {
       await sendOTPEmail(email, otp, 'verification');
-    }
-
-    // Check if SMS failed
-    if (!smsResult.success) {
-      console.warn(`[OTP] SMS failed for ${phone}, but OTP stored for manual entry`);
     }
 
     res.status(200).json({
@@ -75,6 +81,15 @@ const sendOTP = async (req, res) => {
  */
 const verifyLogin = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
     const { phone, otp } = req.body;
 
     // 1. Verify OTP
@@ -97,31 +112,6 @@ const verifyLogin = async (req, res) => {
         { phone: `91${cleanPhone}` }
       ]
     });
-
-    // Auto-create test user if test number 7389279971 is used
-    if (!user && cleanPhone === '7389279971') {
-      user = await User.create({
-        name: 'Saumy User',
-        phone: cleanPhone,
-        password: '123456',
-        isPhoneVerified: true,
-        isEmailVerified: false,
-        isActive: true,
-        role: 'user',
-        addresses: [
-          {
-            type: 'home',
-            addressLine1: '123 Test Street',
-            addressLine2: 'Vijay Nagar',
-            city: 'Indore',
-            state: 'Madhya Pradesh',
-            pincode: '452010',
-            landmark: 'Near City Center',
-            isDefault: true
-          }
-        ]
-      });
-    }
 
     if (user) {
       // EXISTING USER -> LOGIN
@@ -219,8 +209,16 @@ const register = async (req, res) => {
       }
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ phone });
+    // Check if user already exists (phone may be stored with or without a country code)
+    const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+    const existingUser = await User.findOne({
+      $or: [
+        { phone },
+        { phone: cleanPhone },
+        { phone: `+91${cleanPhone}` },
+        { phone: `91${cleanPhone}` }
+      ]
+    });
     if (existingUser) {
       return res.status(400).json({
         success: false,
