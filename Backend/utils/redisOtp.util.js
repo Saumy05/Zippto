@@ -27,6 +27,9 @@ const hasSMSGatewayConfigured = () => {
  * Generate 6-digit OTP
  */
 const generateOTP = () => {
+  if (process.env.USE_DEFAULT_OTP === 'true') {
+    return process.env.DEFAULT_OTP || '123456';
+  }
   return crypto.randomInt(100000, 1000000).toString();
 };
 
@@ -59,6 +62,10 @@ const checkMemoryRateLimit = (phone) => {
 };
 
 const checkRateLimit = async (phone) => {
+  if (process.env.USE_DEFAULT_OTP === 'true') {
+    return true;
+  }
+
   const redis = getRedis();
   if (!isRedisConnected() || !redis) {
     return checkMemoryRateLimit(phone);
@@ -126,6 +133,16 @@ const verifyOTP = async (phone, plainOtp) => {
   console.log(`[OTP] Verifying OTP for phone: ${phone}`);
 
   const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : '';
+
+  // Default OTP check when USE_DEFAULT_OTP is enabled
+  const defaultOtp = process.env.DEFAULT_OTP || '123456';
+  if (
+    process.env.USE_DEFAULT_OTP === 'true' &&
+    (plainOtp === '123456' || plainOtp === defaultOtp)
+  ) {
+    console.log(`[OTP] ✅ Verification successful (USE_DEFAULT_OTP enabled) for ${phone}`);
+    return { success: true };
+  }
 
   const redis = getRedis();
   const inputHash = hashOTP(plainOtp);

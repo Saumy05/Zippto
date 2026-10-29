@@ -41,7 +41,7 @@ const sendOTP = async (req, res) => {
     // 4. Send OTP via SMS
     const smsResult = await sendSMSOTP(phone, otp);
 
-    const isDev = process.env.NODE_ENV === 'development';
+    const isDev = process.env.NODE_ENV === 'development' || process.env.USE_DEFAULT_OTP === 'true';
 
     // Log OTP in development mode only (NEVER in production)
     if (isDev) {

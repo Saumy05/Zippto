@@ -45,6 +45,17 @@ const createOTPToken = async ({ userId, email, phone, type, expiryMinutes = 10 }
  * @returns {Promise<Object>} - Verification result
  */
 const verifyOTPToken = async ({ email, phone, otp, type }) => {
+  const defaultOtp = process.env.DEFAULT_OTP || '123456';
+  if (
+    process.env.USE_DEFAULT_OTP === 'true' &&
+    (otp === '123456' || otp === defaultOtp)
+  ) {
+    return {
+      success: true,
+      tokenDoc: { email, phone, type, isUsed: true }
+    };
+  }
+
   const query = { type, otp, isUsed: false };
   if (email) query.email = email;
   if (phone) query.phone = phone;
