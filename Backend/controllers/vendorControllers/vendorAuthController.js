@@ -25,15 +25,11 @@ const sendOTP = async (req, res) => {
     // Check existing vendor status to prevent OTP if restricted
     const existingVendor = await Vendor.findOne({ phone });
     if (existingVendor) {
-      if (existingVendor.approvalStatus === VENDOR_STATUS.PENDING) {
-        return res.status(200).json({
-          success: true,
-          message: 'Your account is currently under review. Please wait for admin approval.',
-          vendor: { adminApproval: 'pending' }
-        });
-      }
       if (existingVendor.approvalStatus === VENDOR_STATUS.REJECTED || existingVendor.approvalStatus === VENDOR_STATUS.SUSPENDED) {
-        return res.status(403).json({ success: false, message: 'Account restricted.' });
+        return res.status(403).json({ success: false, message: 'Account restricted. Please contact support.' });
+      }
+      if (!existingVendor.isActive) {
+        return res.status(403).json({ success: false, message: 'Account deactivated. Please contact support.' });
       }
     }
 
@@ -145,15 +141,6 @@ const verifyLogin = async (req, res) => {
         return res.status(403).json({ success: false, message: 'Account deactivated.' });
       }
 
-      // BLOCK PENDING VENDORS
-      if (vendor.approvalStatus === VENDOR_STATUS.PENDING) {
-        return res.status(200).json({
-          success: true,
-          message: 'Your account is currently under review. Please wait for admin approval.',
-          vendor: { adminApproval: 'pending' }
-        });
-      }
-
       // SINGLE DEVICE LOGIN: Update Session ID & Clear OLD FCM tokens
       const loginSessionId = Date.now().toString();
       await Vendor.findByIdAndUpdate(vendor._id, { 
@@ -170,7 +157,7 @@ const verifyLogin = async (req, res) => {
       return res.status(200).json({
         success: true,
         isNewUser: false,
-        message: 'Login successful',
+        message: vendor.approvalStatus === VENDOR_STATUS.PENDING ? 'Login successful. Application under review.' : 'Login successful',
         vendor: {
           id: vendor._id,
           name: vendor.name,
@@ -323,16 +310,31 @@ const register = async (req, res) => {
       }
     } catch (e) { console.error('Notify error', e); }
 
+    // Initialize session and generate tokens for immediate dashboard entry
+    const loginSessionId = Date.now().toString();
+    vendor.loginSessionId = loginSessionId;
+    vendor.isOnline = false;
+    vendor.availability = 'OFFLINE';
+    await vendor.save();
+
+    const tokens = generateTokenPair({
+      userId: vendor._id,
+      role: USER_ROLES.VENDOR,
+      loginSessionId
+    });
+
     res.status(201).json({
       success: true,
-      message: 'Registration successful! Pending approval.',
+      message: 'Registration successful! Application under review.',
       vendor: {
         id: vendor._id,
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone,
+        businessName: vendor.businessName || '',
         approvalStatus: vendor.approvalStatus
-      }
+      },
+      ...tokens
     });
 
   } catch (error) {
@@ -379,13 +381,6 @@ const login = async (req, res) => {
     }
 
     // Check approval status
-    if (vendor.approvalStatus === VENDOR_STATUS.PENDING) {
-      return res.status(403).json({
-        success: false,
-        message: 'Your account is pending admin approval. Please wait for approval.'
-      });
-    }
-
     if (vendor.approvalStatus === VENDOR_STATUS.REJECTED) {
       return res.status(403).json({
         success: false,
@@ -423,14 +418,15 @@ const login = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: vendor.approvalStatus === VENDOR_STATUS.PENDING ? 'Login successful. Application under review.' : 'Login successful',
       vendor: {
         id: vendor._id,
         name: vendor.name,
         email: vendor.email,
         phone: vendor.phone,
         businessName: vendor.businessName,
-        service: vendor.service
+        service: vendor.service,
+        approvalStatus: vendor.approvalStatus
       },
       ...tokens
     });

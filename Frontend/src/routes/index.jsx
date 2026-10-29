@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 
 // Import module routes (SOW 3-Platform: Customer, Vendor, Admin)
 import UserRoutes from '../modules/user/routes';
@@ -10,6 +10,16 @@ import LandingPage from '../modules/landing/pages/LandingPage';
 import BlogList from '../modules/landing/pages/BlogList';
 import BlogDetail from '../modules/landing/pages/BlogDetail';
 import DynamicPageView from '../modules/landing/pages/DynamicPageView';
+
+const ServiceRouteRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/user/service/${id}`} replace />;
+};
+
+const CategoryRouteRedirect = () => {
+  const { categorySlug } = useParams();
+  return <Navigate to={`/user/category/${categorySlug}`} replace />;
+};
 
 const AppRoutes = () => {
   return (
@@ -31,6 +41,13 @@ const AppRoutes = () => {
       <Route path="/bookings" element={<Navigate to="/user/my-bookings" replace />} />
       <Route path="/my-bookings" element={<Navigate to="/user/my-bookings" replace />} />
 
+      {/* Service & Category Direct Route Shortcuts */}
+      <Route path="/service/:id" element={<ServiceRouteRedirect />} />
+      <Route path="/category/:categorySlug" element={<CategoryRouteRedirect />} />
+      <Route path="/services" element={<Navigate to="/user/services" replace />} />
+      <Route path="/all-services" element={<Navigate to="/user/services" replace />} />
+      <Route path="/categories" element={<Navigate to="/user/services" replace />} />
+
       {/* User Routes */}
       <Route path="/user/*" element={<UserRoutes />} />
 
@@ -39,6 +56,9 @@ const AppRoutes = () => {
 
       {/* Admin Routes */}
       <Route path="/admin/*" element={<AdminRoutes />} />
+
+      {/* Catch-all fallback */}
+      <Route path="*" element={<Navigate to="/user" replace />} />
     </Routes>
   );
 };

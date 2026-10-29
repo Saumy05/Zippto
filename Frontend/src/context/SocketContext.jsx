@@ -223,6 +223,8 @@ export const SocketProvider = ({ children }) => {
       }
       if (userType === 'user') {
         window.dispatchEvent(new Event('userBookingsUpdated'));
+        window.dispatchEvent(new Event('userNotificationsUpdated'));
+        window.dispatchEvent(new Event('userNotificationsChanged'));
       }
       if (userType === 'admin') {
         window.dispatchEvent(new Event('adminNotificationsUpdated'));
@@ -379,6 +381,20 @@ export const SocketProvider = ({ children }) => {
         window.dispatchEvent(new Event('vendorJobsUpdated'));
         window.dispatchEvent(new Event('vendorStatsUpdated'));
         window.dispatchEvent(new Event('vendorNotificationsUpdated'));
+      });
+
+      // Listen for Live Vendor Account Approval / Status Updates
+      newSocket.on('vendor_status_updated', (data) => {
+        try {
+          const currentData = JSON.parse(localStorage.getItem('vendorData') || '{}');
+          const updated = { ...currentData, approvalStatus: data.approvalStatus };
+          localStorage.setItem('vendorData', JSON.stringify(updated));
+        } catch (e) {
+          console.error('Failed to update local vendorData on vendor_status_updated', e);
+        }
+
+        window.dispatchEvent(new CustomEvent('vendorStatusUpdated', { detail: data }));
+        window.dispatchEvent(new Event('vendorStatsUpdated'));
       });
     }
 

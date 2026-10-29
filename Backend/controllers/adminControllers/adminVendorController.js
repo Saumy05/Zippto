@@ -178,6 +178,21 @@ const approveVendor = async (req, res) => {
       sendVendorApprovedEmail(vendor.email, vendor.name)
     ]);
 
+    // Emit live status update to vendor room
+    try {
+      const { getIO } = require('../../sockets');
+      const io = getIO();
+      if (io) {
+        io.to(`vendor_${vendor._id.toString()}`).emit('vendor_status_updated', {
+          vendorId: vendor._id,
+          approvalStatus: VENDOR_STATUS.APPROVED,
+          message: approvalMessage
+        });
+      }
+    } catch (sockErr) {
+      console.warn('Socket emit vendor_status_updated warning:', sockErr.message);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Vendor approved successfully',
@@ -232,6 +247,22 @@ const rejectVendor = async (req, res) => {
       relatedId: vendor._id,
       relatedType: 'vendor'
     });
+
+    // Emit live status update to vendor room
+    try {
+      const { getIO } = require('../../sockets');
+      const io = getIO();
+      if (io) {
+        io.to(`vendor_${vendor._id.toString()}`).emit('vendor_status_updated', {
+          vendorId: vendor._id,
+          approvalStatus: VENDOR_STATUS.REJECTED,
+          rejectedReason: vendor.rejectedReason,
+          message: `Your vendor registration has been rejected. Reason: ${vendor.rejectedReason}`
+        });
+      }
+    } catch (sockErr) {
+      console.warn('Socket emit vendor_status_updated warning:', sockErr.message);
+    }
 
     res.status(200).json({
       success: true,

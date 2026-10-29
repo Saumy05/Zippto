@@ -41,7 +41,16 @@ const Notifications = () => {
     try {
       setLoading(true);
       const data = await getNotifications();
-      setNotifications(data || []);
+      const list = data || [];
+      setNotifications(list);
+
+      const hasUnread = list.some(n => !n.read && !n.isRead);
+      if (hasUnread) {
+        try {
+          await markAllAsRead();
+          window.dispatchEvent(new Event('vendorNotificationsUpdated'));
+        } catch (_) {}
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
@@ -64,9 +73,10 @@ const Notifications = () => {
   const handleMarkAsRead = async (id) => {
     try {
       await markAsRead(id);
+      window.dispatchEvent(new Event('vendorNotificationsUpdated'));
       // Update local state to reflect change immediately
       setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
+        prev.map(n => n.id === id ? { ...n, read: true, isRead: true } : n)
       );
       toast.success('Notification marked as read');
     } catch (error) {
@@ -78,7 +88,8 @@ const Notifications = () => {
   const handleMarkAllRead = async () => {
     try {
       await markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      window.dispatchEvent(new Event('vendorNotificationsUpdated'));
+      setNotifications(prev => prev.map(n => ({ ...n, read: true, isRead: true })));
       toast.success('All marked as read');
     } catch (error) {
       console.error('Failed to mark all as read', error);
@@ -90,7 +101,8 @@ const Notifications = () => {
     e.stopPropagation();
     try {
       await deleteNotification(id);
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      window.dispatchEvent(new Event('vendorNotificationsUpdated'));
+      setNotifications(prev => prev.filter(n => n.id !== id && n._id !== id));
       toast.success('Notification removed');
     } catch (error) {
       console.error('Failed to delete notification', error);
@@ -105,6 +117,7 @@ const Notifications = () => {
   const confirmClearAll = async () => {
     try {
       await deleteAllNotifications();
+      window.dispatchEvent(new Event('vendorNotificationsUpdated'));
       setNotifications([]);
       toast.success('All notifications cleared');
       setShowClearConfirm(false);

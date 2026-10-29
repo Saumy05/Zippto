@@ -335,6 +335,19 @@ const updateAvailability = async (req, res) => {
       return res.status(400).json({ success: false, message: 'isOnline must be a boolean' });
     }
 
+    // Check approval status: Vendors cannot go online if not approved
+    const currentVendor = await Vendor.findById(vendorId).select('approvalStatus isOnline availability');
+    if (!currentVendor) {
+      return res.status(404).json({ success: false, message: 'Vendor not found' });
+    }
+
+    if (isOnline && currentVendor.approvalStatus !== 'approved') {
+      return res.status(403).json({
+        success: false,
+        message: 'You cannot go online while your account is pending admin approval.'
+      });
+    }
+
     const availability = isOnline ? 'AVAILABLE' : 'OFFLINE';
 
     const vendor = await Vendor.findByIdAndUpdate(
@@ -344,7 +357,7 @@ const updateAvailability = async (req, res) => {
         availability,
         lastSeenAt: new Date()
       },
-      { new: true, select: 'isOnline availability lastSeenAt name businessName' }
+      { new: true, select: 'isOnline availability lastSeenAt name businessName approvalStatus' }
     );
 
     if (!vendor) {

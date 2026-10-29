@@ -425,6 +425,15 @@ const updateVendorOnlineStatus = async (vendorId, isOnline, socketId) => {
     const Vendor = require('../models/Vendor');
     const { setVendorOnline, setVendorAvailability } = require('../services/redisService');
 
+    // Vendors not approved must stay OFFLINE
+    if (isOnline) {
+      const vendorCheck = await Vendor.findById(vendorId).select('approvalStatus');
+      if (!vendorCheck || vendorCheck.approvalStatus !== 'approved') {
+        console.log(`[Socket] Vendor ${vendorId} is not approved (${vendorCheck?.approvalStatus}); keeping OFFLINE`);
+        return;
+      }
+    }
+
     const updateData = {
       isOnline,
       currentSocketId: socketId

@@ -6,7 +6,7 @@ import { normalizePhoneInput } from '../../../utils/phone';
 import { themeColors } from '../../../theme';
 import { sendOTP, verifyLogin } from '../services/authService';
 import Logo from '../../../components/common/Logo';
-import { AuthHeader, AuthFooter } from '../../../components/auth/AuthChrome';
+import { AuthFooter } from '../../../components/auth/AuthChrome';
 
 import { z } from "zod";
 
@@ -137,26 +137,25 @@ const VendorLogin = () => {
             state: { phone: phoneNumber.replace(/\D/g, ''), verificationToken: response.verificationToken }
           });
         } else {
-          // Check for admin approval status
-          if (response.vendor?.adminApproval === 'PENDING' || response.vendor?.adminApproval === 'pending') {
-            toast.error('Your account is currently under review. Please wait for admin approval.', {
-              duration: 5000,
-              icon: '⏳'
-            });
-            // Clear tokens if they were set by the service
-            localStorage.removeItem('vendorAccessToken');
-            localStorage.removeItem('vendorRefreshToken');
-            localStorage.removeItem('vendorData');
-            return;
-          }
+          const isPending = response.vendor?.approvalStatus === 'pending' || response.vendor?.adminApproval === 'pending';
 
-          toast.success(
-            <div className="flex flex-col">
-              <span className="font-bold">Welcome Back!</span>
-              <span className="text-xs">Successfully logged into your vendor account.</span>
-            </div>,
-            { icon: <FiCheckCircle className="text-green-500" /> }
-          );
+          if (isPending) {
+            toast.success(
+              <div className="flex flex-col">
+                <span className="font-bold">Welcome Back!</span>
+                <span className="text-xs">Your vendor application is under review.</span>
+              </div>,
+              { icon: '⏳', duration: 4000 }
+            );
+          } else {
+            toast.success(
+              <div className="flex flex-col">
+                <span className="font-bold">Welcome Back!</span>
+                <span className="text-xs">Successfully logged into your vendor account.</span>
+              </div>,
+              { icon: <FiCheckCircle className="text-green-500" /> }
+            );
+          }
           navigate('/vendor', { replace: true });
         }
       } else {
@@ -186,10 +185,8 @@ const VendorLogin = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
 
-      <AuthHeader />
-
-      {/* Content is vertically centred between the fixed header and the footer */}
-      <div className="flex-1 min-h-0 flex flex-col justify-center pt-14 sm:px-6 lg:px-8">
+      {/* Content is vertically centred */}
+      <div className="flex-1 min-h-0 flex flex-col justify-center py-6 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6 relative z-10 animate-fade-in">
         <Logo className="h-16 w-16 mx-auto transform hover:scale-110 transition-transform duration-500" />
         <h2 className="mt-3 text-3xl font-extrabold text-gray-900 tracking-tight">

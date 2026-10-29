@@ -88,6 +88,8 @@ export const userAuthService = {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userData');
+    window.dispatchEvent(new Event('userLoggedOut'));
+    window.dispatchEvent(new Event('userNotificationsChanged'));
   },
 
   // Get profile
@@ -141,6 +143,13 @@ export const vendorAuthService = {
   // Register
   register: async (data) => {
     const response = await api.post('/vendors/auth/register', data);
+    if (response.data.success && response.data.accessToken) {
+      localStorage.setItem('vendorAccessToken', response.data.accessToken);
+      localStorage.setItem('vendorRefreshToken', response.data.refreshToken);
+      localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
+      notifyFlutterLogin(response.data);
+      registerFCMToken('vendor', true).catch(console.error);
+    }
     return response.data;
   },
 

@@ -112,13 +112,22 @@ api.interceptors.response.use(
           refreshToken
         });
 
-        const { accessToken } = response.data;
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
 
         // Save new access token - Try session first, then local (update where it was found)
         if (sessionStorage.getItem(access)) {
           sessionStorage.setItem(access, accessToken);
         } else {
           localStorage.setItem(access, accessToken);
+        }
+
+        // Also update refresh token if returned by backend (sliding session expiry)
+        if (newRefreshToken) {
+          if (sessionStorage.getItem(refresh)) {
+            sessionStorage.setItem(refresh, newRefreshToken);
+          } else {
+            localStorage.setItem(refresh, newRefreshToken);
+          }
         }
 
         // Update authorization header

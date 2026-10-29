@@ -839,7 +839,7 @@ const BillingPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-0 flex flex-col">
       {/* Unified Sticky Header */}
-      <div className="sticky top-0 z-50 bg-white">
+      <div className="sticky-header sticky top-0 z-50 bg-white">
         {/* Title Bar */}
         <div className="px-4 py-4 shadow-sm border-b border-gray-100 flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full">

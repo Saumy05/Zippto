@@ -59,6 +59,7 @@ const lazyLoad = (importFunc) => {
 // Lazy load all user pages for code splitting with error handling
 const UserDashboard = lazyLoad(() => import('../pages/UserDashboard'));
 const AllServices = lazyLoad(() => import('../pages/AllServices'));
+const ServiceDetail = lazyLoad(() => import('../pages/ServiceDetail'));
 const Home = lazyLoad(() => import('../pages/Home'));
 const Rewards = lazyLoad(() => import('../pages/Rewards'));
 const Account = lazyLoad(() => import('../pages/Account'));
@@ -148,6 +149,7 @@ const UserRoutes = () => {
               <Route path="/services" element={<AllServices />} />
               <Route path="/all-services" element={<Navigate to="/user/services" replace />} />
               <Route path="/categories" element={<Navigate to="/user/services" replace />} />
+              <Route path="/service/:id" element={<ServiceDetail />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/help-support" element={<HelpSupport />} />
               <Route path="/cancellation-policy" element={<CancellationPolicy />} />
@@ -185,7 +187,7 @@ const UserRoutes = () => {
       </div>
 
       {/* These components are OUTSIDE Suspense so they persist during page loads */}
-      {!isMyBookingsPage && !isPublicPage && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
+      {!isMyBookingsPage && !isPublicPage && !location.pathname.includes('/service/') && <LiveBookingCard hasBottomNav={shouldShowBottomNav} />}
       {shouldShowBottomNav && <BottomNav />}
       {(location.pathname === '/user' || location.pathname === '/user/' || location.pathname.includes('dashboard') || location.pathname.includes('/category/')) && <Footer />}
     </ErrorBoundary>

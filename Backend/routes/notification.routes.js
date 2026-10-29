@@ -10,10 +10,12 @@ const {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-  deleteAllNotifications
+  deleteAllNotifications,
+  getUnreadNotificationCount
 } = require('../controllers/notificationControllers/notificationController');
 
 // Routes
+router.get('/unread-count', authenticate, getUnreadNotificationCount);
 router.get('/user', authenticate, isUser, getUserNotifications);
 router.get('/vendor', authenticate, isVendor, getVendorNotifications);
 router.get('/admin', authenticate, isAdmin, getAdminNotifications);

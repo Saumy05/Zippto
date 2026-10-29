@@ -38,7 +38,20 @@ const Notifications = () => {
     try {
       setLoading(true);
       const data = await getNotifications();
-      setNotifications(data || []);
+      const list = data || [];
+      setNotifications(list);
+
+      // If user opened the notifications page and there were unread notifications,
+      // mark them as read so the header bell badge clears dynamically
+      const hasUnread = list.some(n => !n.read);
+      if (hasUnread) {
+        try {
+          await markAllAsRead();
+          window.dispatchEvent(new Event('userNotificationsChanged'));
+        } catch (err) {
+          console.warn('Auto mark-as-read warning:', err);
+        }
+      }
     } catch (error) {
       console.warn('Error fetching notifications:', error);
     } finally {

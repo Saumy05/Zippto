@@ -99,6 +99,8 @@ const Signup = () => {
           } catch (e) { console.error(e); }
 
           window.dispatchEvent(new Event('userLoggedIn'));
+        window.dispatchEvent(new Event('userNotificationsChanged'));
+          window.dispatchEvent(new Event('userNotificationsChanged'));
 
           toast.success(
             <div className="flex flex-col">
@@ -212,6 +214,7 @@ const Signup = () => {
         }
 
         window.dispatchEvent(new Event('userLoggedIn'));
+        window.dispatchEvent(new Event('userNotificationsChanged'));
 
         toast.success(
           <div className="flex flex-col">

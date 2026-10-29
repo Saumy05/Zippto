@@ -27,7 +27,7 @@ import { useCart } from '../../../../context/CartContext';
 import { useCity } from '../../../../context/CityContext';
 import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 import { publicCatalogService } from '../../../../services/catalogService';
-import { getUnreadCount } from '../../services/notificationService';
+import { useUserNotificationCount } from '../../hooks/useUserNotificationCount';
 import CitySelectorModal from '../../components/common/CitySelectorModal';
 import OfferBannerSlider from '../../components/common/OfferBannerSlider';
 
@@ -247,29 +247,8 @@ const UserDashboard = () => {
 
   const isLoggedIn = Boolean(token && storedUser);
 
-  // Real unread notification count for the header bell (refreshes on poll, focus and read/delete events)
-  const [unreadCount, setUnreadCount] = useState(0);
-  useEffect(() => {
-    if (!isLoggedIn) {
-      setUnreadCount(0);
-      return undefined;
-    }
-    let cancelled = false;
-    const refreshUnread = async () => {
-      const count = await getUnreadCount();
-      if (!cancelled) setUnreadCount(Number(count) || 0);
-    };
-    refreshUnread();
-    const interval = setInterval(refreshUnread, 60000);
-    window.addEventListener('userNotificationsChanged', refreshUnread);
-    window.addEventListener('focus', refreshUnread);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      window.removeEventListener('userNotificationsChanged', refreshUnread);
-      window.removeEventListener('focus', refreshUnread);
-    };
-  }, [isLoggedIn]);
+  // Real-time dynamic unread notification count for the header bell
+  const { unreadCount } = useUserNotificationCount();
   const userName = storedUser?.name || storedUser?.fullName || '';
   // Header location label: GPS-detected address (set by LocationPermissionChecker) -> saved profile city -> prompt
   const readSavedAddress = () => {
@@ -1253,7 +1232,7 @@ const UserDashboard = () => {
       return;
     }
     if (card.targetServiceId) {
-      navigate(`/user/booking?serviceId=${card.targetServiceId}`);
+      navigate(`/user/service/${card.targetServiceId}`);
       return;
     }
     handleToggleAddService(card, 'Services');

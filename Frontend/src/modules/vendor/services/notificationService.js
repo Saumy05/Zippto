@@ -110,14 +110,18 @@ export const deleteAllNotifications = async () => {
  */
 export const getUnreadCount = async () => {
   try {
-    const response = await api.get(`${BASE_URL}/vendor?isRead=false&limit=1`);
-    if (response.data.success) {
+    const response = await api.get(`${BASE_URL}/unread-count`);
+    if (response.data && typeof response.data.unreadCount === 'number') {
       return response.data.unreadCount;
     }
-    return 0;
   } catch (error) {
-    console.error('Error fetching unread count:', error);
-    return 0;
+    try {
+      const fb = await api.get(`${BASE_URL}/vendor?isRead=false&limit=1`);
+      if (fb.data?.success && typeof fb.data.unreadCount === 'number') {
+        return fb.data.unreadCount;
+      }
+    } catch (_) {}
   }
+  return 0;
 };
 

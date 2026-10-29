@@ -79,11 +79,13 @@ const AdminHeader = ({ onMenuClick }) => {
     };
     window.addEventListener('adminNotificationsUpdated', handleNotificationAlert);
     window.addEventListener('adminBookingAlert', handleNotificationAlert);
+    window.addEventListener('focus', handleNotificationAlert);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener('adminNotificationsUpdated', handleNotificationAlert);
       window.removeEventListener('adminBookingAlert', handleNotificationAlert);
+      window.removeEventListener('focus', handleNotificationAlert);
     };
   }, []);
 

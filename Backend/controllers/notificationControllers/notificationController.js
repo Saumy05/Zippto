@@ -518,6 +518,30 @@ const deleteAllNotifications = async (req, res) => {
   }
 };
 
+/**
+ * Get unread notification count for the authenticated caller (scoped by role)
+ */
+const getUnreadNotificationCount = async (req, res) => {
+  try {
+    const scope = getOwnerScope(req);
+    if (!scope) {
+      return res.status(200).json({ success: true, unreadCount: 0 });
+    }
+
+    const unreadCount = await Notification.countDocuments({ ...scope, isRead: false });
+    res.status(200).json({
+      success: true,
+      unreadCount
+    });
+  } catch (error) {
+    console.error('Get unread count error:', error);
+    res.status(200).json({
+      success: true,
+      unreadCount: 0
+    });
+  }
+};
+
 module.exports = {
   createNotification,
   getUserNotifications,
@@ -527,7 +551,8 @@ module.exports = {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-  deleteAllNotifications
+  deleteAllNotifications,
+  getUnreadNotificationCount
 };
 
 

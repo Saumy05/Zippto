@@ -5,10 +5,12 @@ import { useCity } from '../../../../context/CityContext';
 import { useCart } from '../../../../context/CartContext';
 import { LanguageToggle } from '../../../../components/common/LanguageSelectorModal';
 import CitySelectorModal from '../common/CitySelectorModal';
+import { useUserNotificationCount } from '../../hooks/useUserNotificationCount';
 
 const Header = ({ location: userLocationProp, onLocationClick }) => {
   const { currentCity } = useCity();
   const { cartCount } = useCart();
+  const { unreadCount } = useUserNotificationCount();
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,6 +172,11 @@ const Header = ({ location: userLocationProp, onLocationClick }) => {
                 aria-label="Notifications"
               >
                 <FiBell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#D32F2F] text-white font-bold text-[9px] min-w-[17px] h-[17px] rounded-full flex items-center justify-center px-0.5 shadow-xs ring-2 ring-white">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </Link>
 
               <Link

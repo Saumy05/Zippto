@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Category = require('../../models/Category');
 const Brand = require('../../models/Brand');
 const Service = require('../../models/UserService');
@@ -400,6 +401,103 @@ const getPublicServices = async (req, res) => {
 };
 
 /**
+ * Get service by ID for user app
+ * GET /api/public/services/:id
+ */
+const getPublicServiceById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid service ID format'
+      });
+    }
+
+    const service = await Service.findById(id)
+      .populate('brandId', 'title slug iconUrl imageUrl badge categoryIds basePrice discountPrice sections')
+      .populate('categoryId', 'title slug iconUrl')
+      .lean();
+
+    if (!service) {
+      return res.status(404).json({
+        success: false,
+        message: 'Service not found'
+      });
+    }
+
+    // Dynamic rating & review counts from actual reviews
+    let dynamicRating = null;
+    let dynamicReviews = null;
+    try {
+      const reviewStats = await Review.aggregate([
+        { $match: { serviceId: new mongoose.Types.ObjectId(id), status: 'active' } },
+        { $group: { _id: '$serviceId', avgRating: { $avg: '$rating' }, totalReviews: { $sum: 1 } } }
+      ]);
+      if (reviewStats.length > 0) {
+        dynamicRating = reviewStats[0].avgRating ? parseFloat(reviewStats[0].avgRating.toFixed(1)) : null;
+        dynamicReviews = reviewStats[0].totalReviews || 0;
+      }
+    } catch (err) {
+      console.warn('Service review aggregation warning:', err.message);
+    }
+
+    // Fetch up to 10 latest verified customer reviews
+    let reviewsList = [];
+    try {
+      reviewsList = await Review.find({ serviceId: id, status: 'active' })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate('userId', 'name')
+        .lean();
+    } catch (err) {
+      console.warn('Service reviews fetch warning:', err.message);
+    }
+
+    const formattedService = {
+      id: service._id.toString(),
+      _id: service._id.toString(),
+      title: service.title,
+      description: service.description || '',
+      iconUrl: service.iconUrl || '',
+      imageUrl: service.imageUrl || service.iconUrl || '',
+      basePrice: service.basePrice || 0,
+      gstPercentage: service.gstPercentage || 18,
+      status: service.status,
+      brandId: service.brandId?._id ? service.brandId._id.toString() : (service.brandId ? service.brandId.toString() : null),
+      brandName: service.brandId?.title || '',
+      brandSlug: service.brandId?.slug || '',
+      brand: service.brandId || null,
+      categoryId: service.categoryId?._id ? service.categoryId._id.toString() : (service.categoryId ? service.categoryId.toString() : null),
+      categoryName: service.categoryId?.title || '',
+      categorySlug: service.categoryId?.slug || '',
+      category: service.categoryId || null,
+      rating: dynamicRating || service.rating || null,
+      reviews: dynamicReviews || service.reviews || null,
+      reviewsList: reviewsList.map(r => ({
+        id: r._id.toString(),
+        rating: r.rating,
+        comment: r.comment || r.review || '',
+        userName: r.userId?.name || r.userName || 'Verified Customer',
+        createdAt: r.createdAt
+      }))
+    };
+
+    res.status(200).json({
+      success: true,
+      service: formattedService
+    });
+  } catch (error) {
+    console.error('Get public service by ID error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch service details'
+    });
+  }
+};
+
+/**
  * Get home content
  */
 const getPublicHomeContent = async (req, res) => {
@@ -641,6 +739,7 @@ module.exports = {
   getPublicBrands,
   getPublicBrandBySlug,
   getPublicServices,
+  getPublicServiceById,
   getPublicHomeContent,
   getPublicHomeData
 };

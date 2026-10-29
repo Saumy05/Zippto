@@ -42,10 +42,7 @@ export const verifyLogin = async (data) => {
   try {
     const response = await api.post('/vendors/auth/verify-login', data);
 
-    // Check if vendor is pending approval
-    const isPending = response.data.vendor?.adminApproval?.toLowerCase() === 'pending';
-
-    if (response.data.success && !response.data.isNewUser && response.data.accessToken && !isPending) {
+    if (response.data.success && !response.data.isNewUser && response.data.accessToken) {
       localStorage.setItem('vendorAccessToken', response.data.accessToken);
       localStorage.setItem('vendorRefreshToken', response.data.refreshToken);
       localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
@@ -123,6 +120,19 @@ export const register = async (vendorData) => {
     console.log('Calling vendor register API with data:', vendorData);
     const response = await api.post('/vendors/auth/register', vendorData);
     console.log('Vendor register API response:', response.data);
+
+    if (response.data.success && response.data.accessToken) {
+      localStorage.setItem('vendorAccessToken', response.data.accessToken);
+      localStorage.setItem('vendorRefreshToken', response.data.refreshToken);
+      localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
+
+      notifyFlutterLogin(response.data);
+
+      registerFCMToken('vendor', true).catch(err => {
+        console.error('[VENDOR AUTH] FCM token registration failed:', err);
+      });
+    }
+
     return response.data;
   } catch (error) {
     console.error('Error registering vendor:', error);

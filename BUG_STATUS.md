@@ -37,7 +37,7 @@ Source: `zippto bug report - Sheet1.pdf` (31 bugs). Status of each after this pa
 
 | # | Bug | Note |
 |---|-----|------|
-| 24 | Static "24" notification badge | Commit `09293ab` already uses the live unread count |
+| 24 | Static "24" notification badge | Replaced static 24 badge across all user headers (UserDashboard, Header layout, NotificationBell) with unified reactive hook useUserNotificationCount, auto-clears on viewing notifications, and syncs via WebSocket notifications |
 | 31 | "About Homestr" | UI strings already say Zippto (only internal component/route names still say "Homstr") |
 
 ## Needs your check / still open

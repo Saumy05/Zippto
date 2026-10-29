@@ -1,15 +1,18 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiBell } from 'react-icons/fi';
 import { gsap } from 'gsap';
 import { themeColors } from '../../../../theme';
-import api from '../../../../services/api';
+import { useUserNotificationCount } from '../../hooks/useUserNotificationCount';
 
-const NotificationBell = ({ notificationCount = 0, size = 'sm' }) => {
+const NotificationBell = ({ notificationCount, size = 'sm' }) => {
   const navigate = useNavigate();
   const bellRef = useRef(null);
   const bellButtonRef = useRef(null);
-  const [count, setCount] = useState(notificationCount);
+  const { unreadCount } = useUserNotificationCount();
+
+  // Prefer explicitly supplied notificationCount if provided, otherwise dynamic unreadCount from hook
+  const count = typeof notificationCount === 'number' ? notificationCount : unreadCount;
 
   // Sizing definitions: 'sm' (default 34px, ideal for top headers), 'md' (40px)
   const isMd = size === 'md';
@@ -17,34 +20,6 @@ const NotificationBell = ({ notificationCount = 0, size = 'sm' }) => {
   const iconSizeClass = isMd ? 'w-5 h-5' : 'w-4 h-4';
   const badgeSize = isMd ? 18 : 16;
   const badgeFont = isMd ? 'text-[10px]' : 'text-[9px]';
-
-  // Sync prop changes
-  useEffect(() => {
-    if (typeof notificationCount !== 'undefined') {
-      setCount(notificationCount);
-    }
-  }, [notificationCount]);
-
-  // Fetch unread count on mount
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
-        if (!token) return; // Not logged in, count 0
-
-        const res = await api.get('/notifications/user');
-        if (res.data.success && typeof res.data.unreadCount === 'number') {
-          setCount(res.data.unreadCount);
-        }
-      } catch (error) {
-        // Silent fail (e.g. 401 not logged in)
-      }
-    };
-
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div
@@ -154,7 +129,7 @@ const NotificationBell = ({ notificationCount = 0, size = 'sm' }) => {
             lineHeight: 1
           }}
         >
-          {count > 9 ? '9+' : count}
+          {count > 99 ? '99+' : count}
         </span>
       )}
     </div>

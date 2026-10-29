@@ -36,6 +36,10 @@ const isPdfUrl = (url = '') => /^data:application\/pdf/i.test(url) || /\.pdf(\?|
 const DocPreview = ({ url, alt, heightClass = 'h-40' }) => {
   const [failed, setFailed] = useState(false);
 
+  useEffect(() => {
+    setFailed(false);
+  }, [url]);
+
   if (isPdfUrl(url) || failed) {
     return (
       <a

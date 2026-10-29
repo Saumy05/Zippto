@@ -295,6 +295,20 @@ export const publicCatalogService = {
     return response.data;
   },
 
+  // Get single service by ID
+  getServiceById: async (id) => {
+    if (!id) return { success: false, message: 'ID required' };
+    const cacheKey = `public:service:${id}`;
+    const cached = apiCache.get(cacheKey);
+    if (cached) return cached;
+
+    const response = await api.get(`/public/services/${id}`);
+    if (response.data.success) {
+      apiCache.set(cacheKey, response.data, 60); // 1 minute
+    }
+    return response.data;
+  },
+
   // Get brand by slug (cached for 1 minute)
   getBrandBySlug: async (slug, cityId) => {
     const cacheKey = `public:brand:${slug}:${cityId || 'default'}`;

@@ -169,6 +169,7 @@ const VendorSignup = () => {
 
       const reader = new FileReader();
       reader.onloadend = () => {
+        toast.dismiss(loadingToast);
         previewUrl = reader.result;
         setFormData(prev => ({
           ...prev,
@@ -179,10 +180,11 @@ const VendorSignup = () => {
           [type]: previewUrl
         }));
         setUploadingDocs(prev => ({ ...prev, [type]: false }));
-        toast.success("Image uploaded", { duration: 2000 });
+        toast.success(file.type === 'application/pdf' ? "Document uploaded" : "Image uploaded", { duration: 2000 });
       };
 
       reader.onerror = () => {
+        toast.dismiss(loadingToast);
         console.error("FileReader failed");
         toast.error("Failed to read file");
         setUploadingDocs(prev => ({ ...prev, [type]: false }));
@@ -267,12 +269,12 @@ const VendorSignup = () => {
           toast.success(
             <div className="flex flex-col">
               <span className="font-bold">Application Submitted!</span>
-              <span className="text-xs">Your vendor account is pending admin approval.</span>
+              <span className="text-xs">Your vendor account is under review. Welcome to your dashboard!</span>
             </div>,
             { icon: <FiCheckCircle className="text-[#D68F35]" />, duration: 5000 }
           );
           clearDraft();
-          navigate('/vendor/login');
+          navigate('/vendor', { replace: true });
         } else {
           toast.error(response.message || 'Registration failed');
         }
@@ -359,9 +361,15 @@ const VendorSignup = () => {
 
       if (response.success) {
         setIsLoading(false);
-        toast.success('Registration successful! Pending admin approval.');
+        toast.success(
+          <div className="flex flex-col">
+            <span className="font-bold">Application Submitted!</span>
+            <span className="text-xs">Your vendor account is under review. Welcome to your dashboard!</span>
+          </div>,
+          { icon: <FiCheckCircle className="text-[#D68F35]" />, duration: 5000 }
+        );
         clearDraft();
-        navigate('/vendor/login');
+        navigate('/vendor', { replace: true });
       } else {
         setIsLoading(false);
         toast.error(response.message || 'Registration failed');

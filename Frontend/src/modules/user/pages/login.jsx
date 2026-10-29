@@ -154,6 +154,7 @@ const Login = () => {
 
       if (response.success) {
         window.dispatchEvent(new Event('userLoggedIn'));
+        window.dispatchEvent(new Event('userNotificationsChanged'));
 
         if (response.isNewUser) {
           toast.success('Phone verified! Please complete your registration.');

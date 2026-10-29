@@ -61,10 +61,24 @@ const Header = memo(({
 
     const fetchUnreadCount = async () => {
       try {
-        const res = await api.get('/notifications/vendor');
-        if (res.data?.success && typeof res.data?.unreadCount === 'number') {
-          setCount(res.data.unreadCount);
+        const token = localStorage.getItem('vendorAccessToken');
+        if (!token) {
+          setCount(0);
+          return;
         }
+        let unread = 0;
+        try {
+          const countRes = await api.get('/notifications/unread-count');
+          if (countRes.data && typeof countRes.data.unreadCount === 'number') {
+            unread = countRes.data.unreadCount;
+          }
+        } catch (_) {
+          const res = await api.get('/notifications/vendor?isRead=false&limit=1');
+          if (res.data?.success && typeof res.data?.unreadCount === 'number') {
+            unread = res.data.unreadCount;
+          }
+        }
+        setCount(Math.max(0, unread));
       } catch (error) {
         // Silent fail
       }
@@ -72,8 +86,18 @@ const Header = memo(({
 
     if (showNotifications) {
       fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 60000);
-      return () => clearInterval(interval);
+      const interval = setInterval(fetchUnreadCount, 30000);
+
+      window.addEventListener('vendorNotificationsUpdated', fetchUnreadCount);
+      window.addEventListener('vendorNotificationsChanged', fetchUnreadCount);
+      window.addEventListener('focus', fetchUnreadCount);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('vendorNotificationsUpdated', fetchUnreadCount);
+        window.removeEventListener('vendorNotificationsChanged', fetchUnreadCount);
+        window.removeEventListener('focus', fetchUnreadCount);
+      };
     }
   }, [showNotifications]);
 
@@ -90,7 +114,7 @@ const Header = memo(({
   const displayCity = vendorInfo.city && vendorInfo.city !== 'undefined' ? vendorInfo.city : 'Partner Hub';
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs transition-all">
+    <header className="sticky-header sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* 1. LEFT BRANDING & LOCATION AREA */}
@@ -219,7 +243,7 @@ const Header = memo(({
               <FiBell className="w-4 h-4 sm:w-5 sm:h-5" />
               {count > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full ring-2 ring-white shadow-2xs">
-                  {count > 9 ? '9+' : count}
+                  {count > 99 ? '99+' : count}
                 </span>
               )}
             </Link>

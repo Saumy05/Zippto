@@ -5,6 +5,7 @@ import { FaWallet } from 'react-icons/fa';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import { vendorDashboardService } from '../../services/dashboardService';
+import { vendorAuthService } from '../../../../services/authService';
 import { acceptBooking, rejectBooking, getPendingAlerts } from '../../services/bookingService';
 // Booking alert handled globally
 import { toast } from 'react-hot-toast';
@@ -67,11 +68,15 @@ const Dashboard = memo(() => {
       textColor: pct >= 80 ? 'text-emerald-600' : pct >= 60 ? 'text-amber-600' : 'text-red-600',
     };
   }, [stats.rating, stats.totalReviews]);
-  const [vendorProfile, setVendorProfile] = useState({
-    name: 'Vendor Name',
-    businessName: 'Business Name',
-    photo: null,
-    service: []
+  const [vendorProfile, setVendorProfile] = useState(() => {
+    const profile = JSON.parse(localStorage.getItem('vendorData') || '{}');
+    return {
+      name: profile.name || 'Vendor Name',
+      businessName: profile.businessName || 'Business Name',
+      photo: profile.profilePhoto || null,
+      service: profile.service || [],
+      approvalStatus: profile.approvalStatus || 'pending'
+    };
   });
   const [isOnline, setIsOnline] = useState(false);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
@@ -230,12 +235,13 @@ const Dashboard = memo(() => {
 
     // Load vendor profile from localStorage (once)
     const profile = JSON.parse(localStorage.getItem('vendorData') || '{}');
-    setVendorProfile({
-      name: profile.name || 'Vendor Name',
-      businessName: profile.businessName || 'Business Name',
-      photo: profile.profilePhoto || null,
-      service: profile.service || []
-    });
+    setVendorProfile(prev => ({
+      name: profile.name || prev.name,
+      businessName: profile.businessName || prev.businessName,
+      photo: profile.profilePhoto || prev.photo,
+      service: profile.service || prev.service,
+      approvalStatus: profile.approvalStatus || prev.approvalStatus
+    }));
   }, []);
 
   // Main data loader - useCallback to prevent recreation
@@ -259,9 +265,33 @@ const Dashboard = memo(() => {
 
   useEffect(() => {
     loadDashboardData();
+
+    // Fetch latest vendor profile to sync approval status
+    vendorAuthService.getProfile()
+      .then(res => {
+        if (res?.vendor) {
+          setVendorProfile(prev => ({
+            ...prev,
+            name: res.vendor.name || prev.name,
+            businessName: res.vendor.businessName || prev.businessName,
+            photo: res.vendor.profilePhoto || prev.photo,
+            service: res.vendor.service || prev.service,
+            approvalStatus: res.vendor.approvalStatus || prev.approvalStatus
+          }));
+          if (res.vendor.approvalStatus !== 'approved') {
+            setIsOnline(false);
+          }
+        }
+      })
+      .catch(() => {/* silently ignore */});
+
     // Fetch initial availability status
     getAvailability()
-      .then(({ isOnline: online }) => setIsOnline(online))
+      .then(({ isOnline: online }) => {
+        const profile = JSON.parse(localStorage.getItem('vendorData') || '{}');
+        const isApproved = (profile.approvalStatus || '').toLowerCase() === 'approved';
+        setIsOnline(isApproved ? online : false);
+      })
       .catch(() => {/* silently ignore — defaults to offline */});
   }, [loadDashboardData]);
 
@@ -322,16 +352,36 @@ const Dashboard = memo(() => {
       }
     };
 
+    const handleStatusUpdate = (e) => {
+      const { approvalStatus, message } = e.detail || {};
+      if (approvalStatus) {
+        setVendorProfile(prev => ({ ...prev, approvalStatus }));
+        if (approvalStatus === 'approved') {
+          toast.success(
+            <div className="flex flex-col">
+              <span className="font-bold">🎉 Account Approved!</span>
+              <span className="text-xs">You can now go online and start accepting customer bookings.</span>
+            </div>,
+            { duration: 7000 }
+          );
+        } else if (approvalStatus === 'rejected') {
+          toast.error(message || 'Your vendor account application was rejected.', { duration: 7000 });
+        }
+      }
+    };
+
     window.addEventListener('vendorJobsUpdated', handleUpdate);
     window.addEventListener('vendorStatsUpdated', handleUpdate);
     window.addEventListener('showDashboardBookingAlert', handleShowAlert);
     window.addEventListener('removeVendorBooking', handleRemoveBooking);
+    window.addEventListener('vendorStatusUpdated', handleStatusUpdate);
 
     return () => {
       window.removeEventListener('vendorJobsUpdated', handleUpdate);
       window.removeEventListener('vendorStatsUpdated', handleUpdate);
       window.removeEventListener('showDashboardBookingAlert', handleShowAlert);
       window.removeEventListener('removeVendorBooking', handleRemoveBooking);
+      window.removeEventListener('vendorStatusUpdated', handleStatusUpdate);
     };
   }, [loadDashboardData]);
 
@@ -380,6 +430,22 @@ const Dashboard = memo(() => {
 
   // Availability toggle handler
   const handleAvailabilityToggle = async () => {
+    const isApproved = (vendorProfile.approvalStatus || '').toLowerCase() === 'approved';
+    if (!isApproved) {
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-1">
+            <span className="font-bold text-amber-800">Account Under Review</span>
+            <span className="text-xs text-slate-600">
+              Your profile documents are being verified by our team. You can go online once approved.
+            </span>
+          </div>
+        ),
+        { icon: '⏳', duration: 4500 }
+      );
+      return;
+    }
+
     const next = !isOnline;
     setAvailabilityLoading(true);
     try {
@@ -389,7 +455,7 @@ const Dashboard = memo(() => {
         toast.success(res.message);
       }
     } catch (err) {
-      toast.error('Failed to update availability. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to update availability. Please try again.');
     } finally {
       setAvailabilityLoading(false);
     }
@@ -483,11 +549,77 @@ const Dashboard = memo(() => {
 
 
 
+  const isPending = (vendorProfile.approvalStatus || 'pending').toLowerCase() === 'pending';
+  const isRejected = (vendorProfile.approvalStatus || '').toLowerCase() === 'rejected';
+
   return (
     <div className="min-h-screen bg-slate-50/60 text-slate-900 pb-28">
       <Header title="Dashboard" showBack={false} notificationCount={stats.pendingAlerts} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Application Under Review Status Banner */}
+        {isPending && (
+          <div className="bg-gradient-to-r from-amber-50 via-amber-50/80 to-orange-50 border border-amber-200/90 rounded-3xl p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-2xs">
+                  <FiClock className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm sm:text-base font-bold text-amber-950">
+                      Application Under Review
+                    </h3>
+                    <span className="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 border border-amber-300/60">
+                      Pending Approval
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-amber-800/90 mt-1 max-w-2xl leading-relaxed font-medium">
+                    Our team is reviewing your Aadhaar, PAN, and credentials. Online booking acceptance will be unlocked once approved (usually within 24–48 hours). You can set up your services and view your profile in the meantime.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+                <button
+                  onClick={() => navigate('/vendor/profile')}
+                  className="px-3.5 py-2 text-xs font-bold text-amber-900 bg-white border border-amber-200 rounded-xl hover:bg-amber-100/60 transition-colors shadow-2xs cursor-pointer active:scale-95"
+                >
+                  View Profile
+                </button>
+                <button
+                  onClick={() => navigate('/vendor/manage-services')}
+                  className="px-3.5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-2xs cursor-pointer active:scale-95"
+                >
+                  Setup Services
+                </button>
+              </div>
+            </div>
+
+            {/* Verification Steps Stepper */}
+            <div className="mt-4 pt-3.5 border-t border-amber-200/60 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[11px] font-bold shrink-0">
+                  ✓
+                </span>
+                <span className="font-semibold text-slate-700">Phone Verified</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[11px] font-bold shrink-0">
+                  ✓
+                </span>
+                <span className="font-semibold text-slate-700">Documents Submitted</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-5 h-5 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-[11px] font-bold shrink-0 animate-pulse">
+                  ⏳
+                </span>
+                <span className="font-bold text-amber-900">Admin Review (In Progress)</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Vendor Hero Card (Clean Professional Enterprise Light Design) */}
         <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
           {/* Subtle Decorative Backdrop Highlights */}
@@ -514,17 +646,28 @@ const Dashboard = memo(() => {
                     )}
                   </div>
                 </div>
-                <div className={`absolute -bottom-1 -right-1 text-white p-1 rounded-lg shadow-xs border-2 border-white transition-colors duration-300 ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`}>
+                <div className={`absolute -bottom-1 -right-1 text-white p-1 rounded-lg shadow-xs border-2 border-white transition-colors duration-300 ${isOnline && !isPending ? 'bg-emerald-500' : 'bg-slate-400'}`}>
                   <FiShield className="w-3.5 h-3.5" />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                    <FiShield className="w-3 h-3 text-teal-600" />
-                    Verified Partner
-                  </span>
+                  {isPending ? (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                      <FiClock className="w-3 h-3 text-amber-600 animate-pulse" />
+                      Under Review
+                    </span>
+                  ) : isRejected ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                      Rejected
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                      <FiShield className="w-3 h-3 text-teal-600" />
+                      Verified Partner
+                    </span>
+                  )}
                   <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
                     <FiStar className="w-3 h-3 fill-amber-400 text-amber-500" />
                     {stats.rating > 0 ? (
@@ -545,16 +688,24 @@ const Dashboard = memo(() => {
 
             {/* Quick Action CTA Buttons + Availability Toggle */}
             <div className="flex items-center gap-3 flex-wrap border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
-                            {/* ─── Availability Toggle ─── */}
+              {/* ─── Availability Toggle ─── */}
               <button
                 onClick={handleAvailabilityToggle}
                 disabled={availabilityLoading}
                 className={`relative flex items-center justify-center gap-2.5 w-[88px] py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs border ${
-                  isOnline
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                    : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200'
-                } ${availabilityLoading ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'}`}
-                title={isOnline ? 'Click to go Offline' : 'Click to go Online'}
+                  isPending
+                    ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-90'
+                    : isOnline
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 cursor-pointer active:scale-95'
+                    : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200 cursor-pointer active:scale-95'
+                }`}
+                title={
+                  isPending
+                    ? 'Online mode locked while account is under review'
+                    : isOnline
+                    ? 'Click to go Offline'
+                    : 'Click to go Online'
+                }
               >
                 {availabilityLoading ? (
                   <svg className="animate-spin h-2.5 w-2.5 shrink-0" viewBox="0 0 24 24" fill="none">
@@ -563,13 +714,13 @@ const Dashboard = memo(() => {
                   </svg>
                 ) : (
                   <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    {isOnline && (
+                    {isOnline && !isPending && (
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     )}
-                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline && !isPending ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                   </span>
                 )}
-                <span>{isOnline ? 'Online' : 'Offline'}</span>
+                <span>{isOnline && !isPending ? 'Online' : 'Offline'}</span>
               </button>
 
               <button
