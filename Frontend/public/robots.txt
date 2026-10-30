@@ -1,0 +1,24 @@
+User-agent: *
+Allow: /
+
+# Private / logged-in areas
+Disallow: /admin
+Disallow: /vendor
+Disallow: /user/login
+Disallow: /user/signup
+Disallow: /user/checkout
+Disallow: /user/cart
+Disallow: /user/account
+Disallow: /user/my-bookings
+Disallow: /user/booking
+Disallow: /user/booking-confirmation
+Disallow: /user/wallet
+Disallow: /user/rewards
+Disallow: /user/settings
+Disallow: /user/notifications
+Disallow: /user/manage-
+Disallow: /user/my-plan
+Disallow: /user/my-rating
+Disallow: /user/update-profile
+
+Sitemap: https://zippto.in/sitemap.xml
