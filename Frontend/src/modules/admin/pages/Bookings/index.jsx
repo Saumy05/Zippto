@@ -42,7 +42,16 @@ const Bookings = () => {
       setSearch(q);
     }
   }, [searchParams]);
-  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'All Status');
+
+  // Deep links (e.g. from the "needs a partner" notification) open the filtered list
+  useEffect(() => {
+    const st = searchParams.get('status');
+    if (st && st !== statusFilter) {
+      setStatusFilter(st);
+      setPage(1);
+    }
+  }, [searchParams]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -52,6 +61,7 @@ const Bookings = () => {
 
   // Stats
   const [stats, setStats] = useState({
+    needsPartner: 0,
     pending: 0,
     confirmed: 0,
     inProgress: 0,
@@ -106,7 +116,8 @@ const Bookings = () => {
         if (analyticsRes?.success && analyticsRes.data) {
           const byStatus = analyticsRes.data.bookingsByStatus || {};
           setStats({
-            pending: (byStatus.pending || 0) + (byStatus.searching || 0) + (byStatus.no_vendors_available || 0),
+            needsPartner: (byStatus.no_vendors || 0) + (byStatus.unassigned || 0),
+            pending: (byStatus.pending || 0) + (byStatus.searching || 0) + (byStatus.requested || 0),
             confirmed: (byStatus.confirmed || 0) + (byStatus.accepted || 0) + (byStatus.assigned || 0),
             inProgress: (byStatus.in_progress || 0) + (byStatus.journey_started || 0) + (byStatus.visited || 0) + (byStatus.awaiting_payment || 0) + (byStatus.work_done || 0),
             completed: byStatus.completed || 0,
@@ -173,12 +184,13 @@ const Bookings = () => {
     }
   };
 
-  const handleAssignVendor = async (vendorId) => {
+  const handleAssignVendor = async (vendorId, confirmMismatch = false) => {
     if (!selectedBookingForAssign) return;
     try {
       setAssigningVendorId(vendorId);
       const res = await adminBookingService.assignVendor(selectedBookingForAssign._id, {
         vendorId,
+        confirmMismatch,
         notes: 'Assigned manually by Admin'
       });
 
@@ -190,8 +202,20 @@ const Bookings = () => {
         toast.error(res.message || 'Failed to assign vendor');
       }
     } catch (err) {
+      if (err?.code === 'CATEGORY_MISMATCH') {
+        // Admin has the final say, but only after seeing the warning
+        setAssigningVendorId(null);
+        if (window.confirm(err.message || 'This partner does not offer this service. Assign anyway?')) {
+          return handleAssignVendor(vendorId, true);
+        }
+        return;
+      }
       console.error('Error assigning vendor:', err);
       toast.error(err.message || 'Failed to assign vendor');
+      if (err?.code === 'BOOKING_NOT_ASSIGNABLE') {
+        setAssignModalOpen(false);
+        fetchData();
+      }
     } finally {
       setAssigningVendorId(null);
     }
@@ -249,6 +273,7 @@ const Bookings = () => {
       case 'assigned':
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/60 whitespace-nowrap">Partner Assigned</span>;
       case 'no_vendors':
+      case 'unassigned':
       case 'rejected':
         return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-600 text-white shadow-2xs whitespace-nowrap animate-pulse">🚨 Needs Partner</span>;
       case 'searching':
@@ -262,7 +287,14 @@ const Bookings = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <div
+          onClick={() => { setStatusFilter('no_vendors'); setPage(1); }}
+          className="cursor-pointer"
+          title="Show bookings that need a partner assigned"
+        >
+          <BookingStatsCard title="Needs Partner" count={stats.needsPartner} icon={FiAlertTriangle} bgClass="bg-rose-50/70" colorClass="text-rose-600" />
+        </div>
         <BookingStatsCard title="Awaiting Alert" count={stats.pending} icon={FiClock} bgClass="bg-amber-50/70" colorClass="text-amber-600" />
         <BookingStatsCard title="Assigned" count={stats.confirmed} icon={FiCheckCircle} bgClass="bg-blue-50/70" colorClass="text-blue-600" />
         <BookingStatsCard title="In Progress" count={stats.inProgress} icon={FiBox} bgClass="bg-purple-50/70" colorClass="text-purple-600" />
@@ -355,7 +387,7 @@ const Bookings = () => {
                 </tr>
               ) : (
                 bookings.map((booking) => {
-                  const needsAssignment = ['no_vendors', 'rejected', 'searching', 'pending', 'requested'].includes(booking.status);
+                  const needsAssignment = ['no_vendors', 'unassigned', 'rejected', 'searching', 'pending', 'requested'].includes(booking.status);
 
                   return (
                     <tr key={booking._id} className="hover:bg-slate-50/80 transition-colors">
@@ -586,13 +618,20 @@ const Bookings = () => {
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <h4 className="text-xs font-bold text-gray-900 truncate">{vendor.name}</h4>
-                            {vendor.matchesCategory && (
+                            {vendor.matchesCategory ? (
                               <span className="px-1.5 py-0.2 bg-teal-50 text-teal-700 font-black text-[9px] rounded-md border border-teal-200">
                                 Match
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.2 bg-amber-50 text-amber-700 font-black text-[9px] rounded-md border border-amber-200" title="This partner has not selected this service category">
+                                Different category
                               </span>
                             )}
                           </div>
                           <p className="text-[10px] text-gray-500 truncate">{vendor.businessName || vendor.phone}</p>
+                          {vendor.blockReason && (
+                            <p className="text-[10px] font-semibold text-rose-600 truncate">{vendor.blockReason}</p>
+                          )}
                           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400">
                             <span className="flex items-center gap-0.5 text-amber-500 font-bold">
                               <FiStar className="w-3 h-3 fill-amber-400" /> {vendor.rating && Number(vendor.rating) > 0 ? Number(vendor.rating).toFixed(1) : 'New'}
@@ -612,8 +651,8 @@ const Bookings = () => {
                       {/* Action Button */}
                       <button
                         onClick={() => handleAssignVendor(vendor.id)}
-                        disabled={assigningVendorId === vendor.id}
-                        className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shrink-0 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                        disabled={assigningVendorId === vendor.id || vendor.canAssign === false}
+                        className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shrink-0 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
                         {assigningVendorId === vendor.id ? 'Assigning...' : 'Assign'}
                       </button>

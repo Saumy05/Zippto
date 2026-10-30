@@ -524,6 +524,7 @@ const rejectBooking = async (req, res) => {
       // 1. Notify Admin via Persistent DB Notification
       await createNotification({
         type: 'booking_rejected',
+        actionUrl: '/admin/bookings?status=no_vendors',
         title: 'All Vendors Rejected Booking',
         message: `Booking #${booking.bookingNumber} (${booking.serviceName || 'Service'}) was rejected by all matching vendors. Please manually assign a partner.`,
         relatedId: booking._id,

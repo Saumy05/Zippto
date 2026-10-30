@@ -416,9 +416,6 @@ const Checkout = () => {
       transports: ['websocket', 'polling']
     });
 
-    socket.on('connect', () => {
-    });
-
     socket.on('connect_error', (err) => {
     });
 
@@ -452,27 +449,28 @@ const Checkout = () => {
       }
     });
 
-    socket.on('booking_search_failed', (data) => {
-      if (data.bookingId === bookingRequest._id) {
-        setSearchingVendors(false);
-        setCurrentStep('failed');
-        toast.error(data.message || 'No vendors available at the moment.');
+    // No partner could be alerted automatically: the admin assigns one manually.
+    // The booking stays open - it must NOT be cancelled here.
+    const handleAssignedByAdmin = () => {
+      setSearchingVendors(false);
+      setCurrentStep('assigning');
+    };
 
-        // Auto-cancel and refresh on failure
-        const handleAutoCancel = async () => {
-          try {
-            await bookingService.cancel(bookingRequest._id, 'No vendors found after search timeout');
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000); // 3 second delay to let the user see the error
-          } catch (err) {
-            console.error('Auto-cancel failed:', err);
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-          }
-        };
-        handleAutoCancel();
+    socket.on('booking_search_failed', (data) => {
+      if (String(data.bookingId) === String(bookingRequest._id)) {
+        handleAssignedByAdmin();
+      }
+    });
+
+    // The escalation can fire before this socket connects, so check the booking once on connect
+    socket.on('connect', async () => {
+      try {
+        const res = await bookingService.getById(bookingRequest._id);
+        if (res?.success && ['no_vendors', 'unassigned'].includes(res.data?.status?.toLowerCase())) {
+          handleAssignedByAdmin();
+        }
+      } catch (err) {
+        // Non-critical: the confirmation page also shows the live status
       }
     });
 

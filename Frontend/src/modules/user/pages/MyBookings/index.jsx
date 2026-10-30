@@ -162,6 +162,9 @@ const MyBookings = () => {
       case 'cancelled':
       case 'rejected':
         return 'bg-rose-50 text-rose-700 border-rose-200';
+      case 'no_vendors':
+      case 'unassigned':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       case 'searching':
       case 'requested':
         return 'bg-teal-50 text-teal-700 border-teal-200';
@@ -186,6 +189,8 @@ const MyBookings = () => {
       case 'work_done': return 'Work Done';
       case 'completed': return 'Completed';
       case 'searching': return 'Finding Expert';
+      case 'no_vendors':
+      case 'unassigned': return 'Assigning Expert';
       case 'requested': return 'Requested';
       default: return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
     }

@@ -275,6 +275,8 @@ const bookingSchema = new mongoose.Schema({
   // Timestamps
   acceptedAt: { type: Date, default: null },
   assignedAt: { type: Date, default: null },
+  assignedBy: { type: String, default: null }, // 'admin' when manually assigned
+  adminNotes: { type: String, default: null },
   startedAt: { type: Date, default: null },
   journeyStartedAt: { type: Date, default: null },
   visitedAt: { type: Date, default: null },

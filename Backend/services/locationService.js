@@ -367,27 +367,10 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
       }));
     }
 
-    // Fallback B: If still 0 vendors found (e.g. category mismatch or new vendor with no categories set), alert active approved vendors
+    // No category-matching vendor: return empty. The booking is escalated to the admin for manual
+    // assignment instead of alerting vendors who do not offer this service.
     if (nearbyVendors.length === 0) {
-      console.log('[LocationService] 0 vendors with category filter. Querying all active approved vendors as safety net...');
-      const broadVendors = await Vendor.find({
-        $or: [
-          { approvalStatus: { $in: ['approved', 'APPROVED'] } },
-          { status: { $in: ['active', 'approved', 'ACTIVE', 'APPROVED'] } },
-          { isApproved: true }
-        ],
-        isActive: true
-      })
-        .select('name businessName phone address location profilePhoto service rating isOnline availability settings')
-        .limit(20);
-
-      if (broadVendors.length > 0) {
-        console.log(`[LocationService] Broad safety net found ${broadVendors.length} active approved vendors.`);
-        nearbyVendors = broadVendors.map(v => ({
-          ...v.toObject(),
-          distance: 2.0
-        }));
-      }
+      console.log('[LocationService] 0 category-matching vendors found. Booking will be escalated to admin.');
     }
 
     if (nearbyVendors.length > 0) {

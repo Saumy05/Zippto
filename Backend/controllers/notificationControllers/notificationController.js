@@ -2,6 +2,9 @@ const Notification = require('../../models/Notification');
 const { validationResult } = require('express-validator');
 const { sendNotificationToUser, sendNotificationToVendor } = require('../../services/firebaseAdmin');
 
+// Global admin notifications that also go out as a push (the rest only reach an open admin panel)
+const ADMIN_BROADCAST_PUSH_TYPES = new Set(['booking_no_vendors', 'booking_timeout', 'booking_rejected']);
+
 /**
  * Create notification (internal use)
  */
@@ -143,6 +146,11 @@ const createNotification = async ({
         if (adminId) {
           const { sendNotificationToAdmin } = require('../../services/firebaseAdmin');
           await sendNotificationToAdmin(adminId, payload);
+        }
+        // Global admin alerts (no specific recipient) that need a person to act: push to all admins
+        if (!userId && !vendorId && !adminId && ADMIN_BROADCAST_PUSH_TYPES.has(payload.data.type)) {
+          const { sendNotificationToAllAdmins } = require('../../services/firebaseAdmin');
+          await sendNotificationToAllAdmins(payload);
         }
       } catch (pushError) {
         console.error('Auto-push notification failed:', pushError);

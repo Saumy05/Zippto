@@ -155,6 +155,8 @@ const Tracking = () => {
     switch (status) {
       case 'searching':
       case 'no_vendors_available':
+      case 'no_vendors':
+      case 'unassigned':
       case 'pending': return 0;
       case 'confirmed':
       case 'accepted':
@@ -229,8 +231,10 @@ const Tracking = () => {
           dot: 'bg-orange-600 animate-ping'
         };
       case 'no_vendors_available':
+      case 'no_vendors':
+      case 'unassigned':
         return {
-          label: 'No Partner Available',
+          label: 'Needs Partner Assignment',
           bg: 'bg-rose-50 text-rose-700 border-rose-200',
           dot: 'bg-rose-600'
         };

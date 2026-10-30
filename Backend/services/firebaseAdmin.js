@@ -58,6 +58,19 @@ if (!admin.apps.length && serviceAccount) {
  */
 const Settings = require('../models/Settings');
 
+// Push types that must break through on a locked screen (time-critical, need a person to act).
+// Android reads sound / lock-screen visibility from the notification channel, so the app
+// must create CHANNEL with max importance and public lock-screen visibility.
+const URGENT_PUSH_TYPES = new Set([
+  'new_booking',           // vendor: new booking request
+  'job_assigned',
+  'booking_assigned',      // vendor: admin assigned a booking
+  'booking_no_vendors',    // admin: booking needs manual assignment
+  'booking_timeout',
+  'booking_rejected'
+]);
+const URGENT_ANDROID_CHANNEL_ID = 'booking_alerts';
+
 /**
  * Send push notification to specific device tokens (Data-Only for maximum reliability)
  * @param {Array<string>} tokens - Array of FCM registration tokens
@@ -183,6 +196,33 @@ async function sendPushNotification(tokens, payload) {
     message.data.title = payload.title || 'App Notification';
     message.data.body = payload.body || 'New Update';
     if (payload.icon) message.data.icon = payload.icon;
+
+    // Urgent alerts: show on the lock screen, ring, vibrate and stay until acted on
+    if (URGENT_PUSH_TYPES.has(String(payload.data?.type || ''))) {
+      Object.assign(message.android.notification, {
+        channelId: URGENT_ANDROID_CHANNEL_ID,
+        priority: 'max',
+        visibility: 'public',
+        defaultSound: true,
+        defaultVibrateTimings: true,
+        sticky: false
+      });
+      message.android.ttl = 5 * 60 * 1000; // a booking alert is useless after the search window
+
+      message.apns.headers['apns-expiration'] = String(Math.floor(Date.now() / 1000) + 300);
+      message.apns.payload.aps.sound = 'default';
+      // Time Sensitive: delivered immediately and shown on the lock screen even in Focus modes
+      message.apns.payload.aps['interruption-level'] = 'time-sensitive';
+
+      message.webpush.headers.Urgency = 'high';
+      message.webpush.headers.TTL = '300';
+      Object.assign(message.webpush.notification, {
+        requireInteraction: true,
+        vibrate: [500, 200, 500, 200, 500],
+        silent: false,
+        tag: String(payload.data?.bookingId || payload.data?.relatedId || payload.data?.type)
+      });
+    }
 
     // Log intent
     console.log(`[FCM] Sending standard notification to ${uniqueTokens.length} tokens:`, payload.title);
@@ -378,9 +418,36 @@ async function sendNotificationToAdmin(adminId, payload, includeMobile = true) {
   }
 }
 
+/**
+ * Send a notification to every admin that has a registered device (global admin alerts).
+ * @param {Object} payload - Notification payload
+ */
+async function sendNotificationToAllAdmins(payload) {
+  try {
+    const Admin = require('../models/Admin');
+    const admins = await Admin.find({
+      $or: [
+        { fcmTokens: { $exists: true, $not: { $size: 0 } } },
+        { fcmTokenMobile: { $exists: true, $not: { $size: 0 } } }
+      ]
+    }).select('fcmTokens fcmTokenMobile').lean();
+
+    const tokens = admins.flatMap(a => [...(a.fcmTokens || []), ...(a.fcmTokenMobile || [])]);
+    if (tokens.length === 0) {
+      console.log('[FCM] ⚠️ No admin devices registered for push');
+      return;
+    }
+
+    await sendPushNotification(tokens, { ...payload, title: `🛡️ [Admin] ${payload.title}` });
+  } catch (error) {
+    console.error('[FCM] ❌ Error sending notification to all admins:', error);
+  }
+}
+
 module.exports = {
   sendPushNotification,
   sendNotificationToUser,
   sendNotificationToVendor,
-  sendNotificationToAdmin
+  sendNotificationToAdmin,
+  sendNotificationToAllAdmins
 };

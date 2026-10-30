@@ -156,6 +156,7 @@ class BookingScheduler {
               // 1. Notify Admin via Persistent DB Notification
               await createNotification({
                 type: 'booking_timeout',
+                actionUrl: '/admin/bookings?status=no_vendors',
                 title: 'Booking Search Timed Out',
                 message: `Booking #${booking.bookingNumber} (${booking.serviceName || 'Service'}) timed out without vendor acceptance. Please assign manually.`,
                 relatedId: booking._id,

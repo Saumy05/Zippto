@@ -110,20 +110,22 @@ const verifyLogin = async (req, res) => {
       ]
     });
 
-    // Auto-create test vendor if test number 7389279971 is used
-    if (!vendor && cleanPhone === '7389279971') {
+    // Auto-create test vendor if test numbers 7389279971 or 7879363299 are used
+    if (!vendor && (cleanPhone === '7389279971' || cleanPhone === '7879363299')) {
       vendor = await Vendor.create({
-        name: 'Test Vendor',
+        name: cleanPhone === '7879363299' ? 'Harsh Pandey' : 'Test Vendor',
         phone: cleanPhone,
         password: '123456',
-        businessName: 'Zippto Test Services',
-        service: ['Electricity', 'AC'],
-        categories: ['Electricity', 'AC'],
+        businessName: cleanPhone === '7879363299' ? 'Zippto Partner Services' : 'Zippto Test Services',
+        service: ['Electricity', 'Electrician', 'AC & Appliance Repair', 'Plumber', 'Carpenter', 'Cleaning Service'],
+        categories: ['Electricity', 'Electrician', 'AC & Appliance Repair', 'Plumber', 'Carpenter', 'Cleaning Service'],
         approvalStatus: VENDOR_STATUS.APPROVED || 'approved',
         isPhoneVerified: true,
         isEmailVerified: false,
         isActive: true,
-        role: 'vendor'
+        role: 'vendor',
+        availability: 'AVAILABLE',
+        isOnline: true
       });
     }
 

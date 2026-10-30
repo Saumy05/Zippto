@@ -486,8 +486,9 @@ const createBooking = async (req, res) => {
           return (a.distance || 0) - (b.distance || 0);
         });
 
-        // Fallback: If nearbyVendors is empty, search for active approved vendors matching this service category as safety net
-        if (sortedVendors.length === 0) {
+        // Fallback: If nearbyVendors is empty, search for active approved vendors matching this service category as safety net.
+        // Only runs when the booking has a category: without one the query would match every vendor.
+        if (sortedVendors.length === 0 && bookingForBackground.serviceCategory) {
           console.warn('[CreateBooking] 0 vendors found in strict radius. Checking active approved vendors matching category as safety net...');
           const broadQuery = {
             $or: [
@@ -584,9 +585,9 @@ const createBooking = async (req, res) => {
             if (err.code !== 11000) console.error('[CreateBooking] BookingRequest insert error:', err);
           }
         } else {
-          console.warn(`[CreateBooking] NO VENDORS FOUND matching service category!`);
-          bookingForBackground.status = BOOKING_STATUS.NO_VENDORS;
-          await bookingForBackground.save();
+          console.warn(`[CreateBooking] NO VENDORS FOUND matching service category! Escalating to admin for manual assignment.`);
+          const { escalateBookingToAdmin } = require('../../services/bookingEscalation');
+          await escalateBookingToAdmin(bookingForBackground, 'No partner offers this service in the customer area');
         }
 
         // Send notifications to all matching Wave 1 vendors

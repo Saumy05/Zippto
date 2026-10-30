@@ -95,6 +95,18 @@ messaging.onBackgroundMessage((payload) => {
       ];
       break;
 
+    case 'booking_no_vendors':
+    case 'booking_timeout':
+    case 'booking_rejected':
+      // Admin: booking needs manual assignment
+      requireInteraction = true;
+      vibrate = [500, 200, 500, 200, 500];
+      actions = [
+        { action: 'view', title: '👁️ Open Bookings' }
+      ];
+      break;
+
+    case 'booking_assigned':
     case 'job_assigned':
       // Worker job assignment - urgent
       notificationTitle = data.title || notification.title || '🔔 New Job Assigned!';

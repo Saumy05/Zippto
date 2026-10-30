@@ -289,6 +289,61 @@ const getBookingAnalytics = async (req, res) => {
   }
 };
 
+// Booking states from which an admin may (re)assign a partner
+const ASSIGNABLE_STATUSES = [
+  BOOKING_STATUS.SEARCHING,
+  BOOKING_STATUS.REQUESTED,
+  BOOKING_STATUS.PENDING,
+  BOOKING_STATUS.NO_VENDORS,
+  BOOKING_STATUS.UNASSIGNED,
+  BOOKING_STATUS.REJECTED
+];
+
+const normalizeToken = (v) => String(v || '').trim().toLowerCase();
+const slugifyToken = (v) => normalizeToken(v).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+/**
+ * Whether the vendor offers the booking's service category (title / slug / id).
+ * Vendors store categories in `service` and `categories`; `skills` holds brand slugs.
+ */
+const vendorMatchesBookingCategory = (vendor, booking) => {
+  const cat = booking.categoryId && typeof booking.categoryId === 'object' ? booking.categoryId : null;
+  const bookingTokens = new Set();
+  [booking.serviceCategory, cat?.title, cat?.slug, cat?._id, !cat ? booking.categoryId : null]
+    .filter(Boolean)
+    .forEach((t) => {
+      bookingTokens.add(normalizeToken(t));
+      bookingTokens.add(slugifyToken(t));
+    });
+  bookingTokens.delete('');
+  if (bookingTokens.size === 0) return false;
+
+  const vendorTokens = [vendor.service, vendor.categories, vendor.skills]
+    .flatMap((v) => (Array.isArray(v) ? v : [v]))
+    .filter(Boolean)
+    .flatMap((t) => [normalizeToken(t), slugifyToken(t)])
+    .filter(Boolean);
+
+  return vendorTokens.some((vt) =>
+    [...bookingTokens].some((bt) => vt === bt || (bt.length >= 4 && vt.length >= 4 && (vt.includes(bt) || bt.includes(vt))))
+  );
+};
+
+/**
+ * Hard limits an admin cannot override. Returns a reason string, or null when assignable.
+ */
+const getVendorAssignBlockReason = (vendor, booking) => {
+  if (!['approved', 'APPROVED'].includes(vendor.approvalStatus)) return 'Partner is not approved';
+  if (vendor.isActive === false) return 'Partner account is inactive';
+  if (vendor.wallet?.isBlocked) return 'Partner wallet is blocked';
+  if (booking.paymentMethod === 'cash') {
+    const dues = vendor.wallet?.dues || 0;
+    const limit = vendor.wallet?.cashLimit ?? 10000;
+    if (dues > limit) return 'Partner has exceeded the cash limit';
+  }
+  return null;
+};
+
 /**
  * Get available matching vendors for manual assignment
  * GET /api/admin/bookings/:id/available-vendors
@@ -310,8 +365,7 @@ const getAvailableVendorsForBooking = async (req, res) => {
     }
 
     const query = {
-      isApproved: true,
-      status: { $ne: 'SUSPENDED' },
+      approvalStatus: { $in: ['approved', 'APPROVED'] },
       ...vendorScope(scope)
     };
 
@@ -323,27 +377,14 @@ const getAvailableVendorsForBooking = async (req, res) => {
       ];
     }
 
+    // No arbitrary cap before scoring: otherwise category-matching vendors can be cut off
     const allVendors = await Vendor.find(query)
-      .select('name businessName phone profilePhoto isOnline availability serviceCategory service skills rating totalJobs city address')
-      .sort({ isOnline: -1, rating: -1 })
-      .limit(30)
+      .select('name businessName phone profilePhoto isOnline availability service categories skills rating totalJobs address approvalStatus isActive wallet.isBlocked wallet.dues wallet.cashLimit')
+      .limit(300)
       .lean();
 
-    // Score/sort vendors: matching category first, then online
-    const targetCat = (booking.serviceCategory || booking.categoryId?.slug || booking.categoryId?.title || '').toLowerCase();
-
     const scoredVendors = allVendors.map(v => {
-      let matchesCategory = false;
-      const vCats = [
-        ...(Array.isArray(v.serviceCategory) ? v.serviceCategory : [v.serviceCategory]),
-        ...(Array.isArray(v.service) ? v.service : [v.service]),
-        ...(Array.isArray(v.skills) ? v.skills : [v.skills])
-      ].filter(Boolean).map(s => String(s).toLowerCase());
-
-      if (targetCat && vCats.some(c => c.includes(targetCat) || targetCat.includes(c))) {
-        matchesCategory = true;
-      }
-
+      const blockReason = getVendorAssignBlockReason(v, booking);
       return {
         id: v._id.toString(),
         name: v.name || v.businessName || 'Partner',
@@ -352,19 +393,20 @@ const getAvailableVendorsForBooking = async (req, res) => {
         profilePhoto: v.profilePhoto || null,
         isOnline: Boolean(v.isOnline),
         availability: v.availability || 'AVAILABLE',
-        rating: v.rating || 4.8,
+        rating: v.rating || 0,
         totalJobs: v.totalJobs || 0,
-        city: v.city || (typeof v.address === 'object' ? v.address?.city : v.address) || '',
-        matchesCategory
+        city: (typeof v.address === 'object' ? v.address?.city : v.address) || '',
+        matchesCategory: vendorMatchesBookingCategory(v, booking),
+        canAssign: !blockReason,
+        blockReason
       };
     });
 
-    // Sort: matching category first, then online
+    // Assignable first, then matching category, then online, then rating
     scoredVendors.sort((a, b) => {
-      if (a.matchesCategory && !b.matchesCategory) return -1;
-      if (!a.matchesCategory && b.matchesCategory) return 1;
-      if (a.isOnline && !b.isOnline) return -1;
-      if (!a.isOnline && b.isOnline) return 1;
+      if (a.canAssign !== b.canAssign) return a.canAssign ? -1 : 1;
+      if (a.matchesCategory !== b.matchesCategory) return a.matchesCategory ? -1 : 1;
+      if (a.isOnline !== b.isOnline) return a.isOnline ? -1 : 1;
       return (b.rating || 0) - (a.rating || 0);
     });
 
@@ -396,7 +438,7 @@ const getAvailableVendorsForBooking = async (req, res) => {
 const assignVendorToBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const { vendorId, notes } = req.body;
+    const { vendorId, notes, confirmMismatch } = req.body;
     const Vendor = require('../../models/Vendor');
     const BookingRequest = require('../../models/BookingRequest');
     const { createNotification } = require('../notificationControllers/notificationController');
@@ -406,13 +448,13 @@ const assignVendorToBooking = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Vendor ID is required' });
     }
 
-    const [booking, vendor] = await Promise.all([
-      Booking.findById(id),
+    const [existingBooking, vendor] = await Promise.all([
+      Booking.findById(id).populate('categoryId', 'title slug'),
       Vendor.findById(vendorId)
     ]);
 
     const scope = await getCityScope(req);
-    if (!booking || !bookingInScope(scope, booking)) {
+    if (!existingBooking || !bookingInScope(scope, existingBooking)) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
@@ -420,35 +462,87 @@ const assignVendorToBooking = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Vendor not found' });
     }
 
-    // Generate visit verification OTP if not present
-    if (!booking.verificationCode) {
-      booking.verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+    if (!ASSIGNABLE_STATUSES.includes(existingBooking.status)) {
+      return res.status(400).json({
+        success: false,
+        code: 'BOOKING_NOT_ASSIGNABLE',
+        message: `Booking is already ${String(existingBooking.status).replace(/_/g, ' ')} and cannot be assigned.`
+      });
     }
 
-    // Assign Vendor & Accept Booking
-    booking.vendorId = vendor._id;
-    booking.status = BOOKING_STATUS.ACCEPTED;
-    booking.assignedBy = 'admin';
-    booking.assignedAt = new Date();
-    booking.acceptedAt = new Date();
-    if (notes) {
-      booking.adminNotes = notes;
+    // Hard limits: the admin cannot override these
+    const blockReason = getVendorAssignBlockReason(vendor, existingBooking);
+    if (blockReason) {
+      return res.status(400).json({ success: false, code: 'VENDOR_NOT_ASSIGNABLE', message: blockReason });
     }
 
-    await booking.save();
+    // Soft limit: category mismatch needs an explicit confirmation from the admin
+    if (!confirmMismatch && !vendorMatchesBookingCategory(vendor, existingBooking)) {
+      return res.status(409).json({
+        success: false,
+        code: 'CATEGORY_MISMATCH',
+        message: `${vendor.name || vendor.businessName || 'This partner'} does not offer "${existingBooking.serviceCategory || existingBooking.categoryId?.title || 'this service'}". Assign anyway?`
+      });
+    }
 
-    // Create or update BookingRequest as ACCEPTED
-    await BookingRequest.findOneAndUpdate(
-      { bookingId: booking._id, vendorId: vendor._id },
+    const previouslyNotified = (existingBooking.notifiedVendors || []).map(String);
+    const assignedAt = new Date();
+
+    // Atomic: only one assignment wins if the vendor accepts at the same moment
+    const booking = await Booking.findOneAndUpdate(
+      { _id: id, status: { $in: ASSIGNABLE_STATUSES } },
       {
-        status: 'ACCEPTED',
-        respondedAt: new Date(),
-        acceptedAt: new Date()
+        $set: {
+          vendorId: vendor._id,
+          status: BOOKING_STATUS.ACCEPTED,
+          assignedBy: 'admin',
+          assignedAt,
+          acceptedAt: assignedAt,
+          cancelledAt: null,
+          cancelledBy: null,
+          cancellationReason: null,
+          ...(notes ? { adminNotes: notes } : {})
+        }
       },
-      { upsert: true, new: true }
+      { new: true }
     );
 
+    if (!booking) {
+      return res.status(409).json({
+        success: false,
+        code: 'BOOKING_NOT_ASSIGNABLE',
+        message: 'This booking was just taken by another partner or changed. Please refresh.'
+      });
+    }
+
+    // Create or update BookingRequest as ACCEPTED, and close every other open request
+    await Promise.all([
+      BookingRequest.findOneAndUpdate(
+        { bookingId: booking._id, vendorId: vendor._id },
+        { status: 'ACCEPTED', respondedAt: assignedAt },
+        { upsert: true, new: true }
+      ),
+      BookingRequest.updateMany(
+        { bookingId: booking._id, vendorId: { $ne: vendor._id }, status: { $in: ['PENDING', 'VIEWED'] } },
+        { status: 'EXPIRED', respondedAt: assignedAt }
+      ),
+      // Same as a normal vendor accept: the partner is now on this job
+      Vendor.findByIdAndUpdate(vendor._id, { availability: 'ON_JOB' })
+    ]);
+
     const io = getIO();
+
+    // Remove the alert from other partners who were notified for this booking
+    if (io) {
+      previouslyNotified
+        .filter((vId) => vId !== vendor._id.toString())
+        .forEach((vId) => {
+          io.to(`vendor_${vId}`).emit('booking_taken', {
+            bookingId: booking._id.toString(),
+            message: 'This job has been assigned to another partner.'
+          });
+        });
+    }
 
     // 1. Notify Assigned Vendor (Socket + Push + DB)
     if (io) {

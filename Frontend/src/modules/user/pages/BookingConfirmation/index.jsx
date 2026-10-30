@@ -293,7 +293,7 @@ const BookingConfirmation = () => {
           )}
 
           {/* Success Icon - Show when confirmed */}
-          {!isSearching && ['confirmed', 'assigned', 'journey_started', 'work_in_progress', 'visited', 'work_done', 'completed'].includes(booking?.status?.toLowerCase()) && (
+          {!isSearching && ['confirmed', 'accepted', 'assigned', 'journey_started', 'work_in_progress', 'visited', 'work_done', 'completed'].includes(booking?.status?.toLowerCase()) && (
             <div className="flex flex-col items-center justify-center mb-6">
               <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-4">
                 <FiCheckCircle className="w-12 h-12 text-green-600" />
@@ -314,6 +314,19 @@ const BookingConfirmation = () => {
               <h1 className="text-2xl font-black text-gray-900 mb-2 italic tracking-tight">REQUEST SENT!</h1>
               <p className="text-sm text-gray-500 text-center max-w-[260px] font-medium leading-relaxed">
                 Your request has been broadcasted to all nearby experts. We'll notify you the moment someone accepts.
+              </p>
+            </div>
+          )}
+
+          {/* Admin is assigning a partner manually (no automatic match) */}
+          {!isSearching && ['no_vendors', 'unassigned'].includes(booking?.status?.toLowerCase()) && (
+            <div className="flex flex-col items-center justify-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center mb-4 border border-amber-100 shadow-sm">
+                <FiClock className="w-10 h-10 text-amber-500 animate-pulse" />
+              </div>
+              <h1 className="text-2xl font-black text-gray-900 mb-2 italic tracking-tight">ASSIGNING YOUR EXPERT</h1>
+              <p className="text-sm text-gray-500 text-center max-w-[260px] font-medium leading-relaxed">
+                Our team is assigning the best available professional to your booking. We'll notify you as soon as it's confirmed.
               </p>
             </div>
           )}

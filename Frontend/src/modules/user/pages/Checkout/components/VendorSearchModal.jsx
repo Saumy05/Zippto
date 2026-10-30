@@ -142,6 +142,30 @@ const VendorSearchModal = ({ isOpen, onClose, currentStep, acceptedVendor, onRet
           </div>
         )}
 
+        {currentStep === 'assigning' && (
+          <div className="flex flex-col items-center pt-12 pb-10 px-6 bg-white w-full h-full min-h-[450px]">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-2xl bg-amber-50 border-2 border-amber-100">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <polyline points="12 7 12 12 15 14"></polyline>
+              </svg>
+            </div>
+
+            <h3 className="text-2xl font-black text-gray-900 mb-2 italic">ASSIGNING YOUR EXPERT</h3>
+            <p className="text-gray-400 text-[10px] text-center mb-10 px-8 font-black uppercase tracking-widest leading-relaxed">
+              Your booking is confirmed with us. Our team is assigning the best available professional and you will be notified shortly.
+            </p>
+
+            <button
+              onClick={onClose}
+              className="w-full text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95"
+              style={{ background: themeColors.button }}
+            >
+              View Booking
+            </button>
+          </div>
+        )}
+
         {currentStep === 'failed' && (
           <div className="flex flex-col items-center pt-12 pb-10 px-6 bg-white w-full h-full min-h-[450px]">
             {/* Failed Icon */}

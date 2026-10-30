@@ -48,6 +48,15 @@ const adminSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  // FCM Push Notification Tokens (web / mobile)
+  fcmTokens: {
+    type: [String],
+    default: []
+  },
+  fcmTokenMobile: {
+    type: [String],
+    default: []
   }
 }, {
   timestamps: true
