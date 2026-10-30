@@ -502,10 +502,15 @@ const refreshToken = async (req, res) => {
     }
 
     // Check status
-    if (vendor.approvalStatus !== VENDOR_STATUS.APPROVED || !vendor.isActive) {
+    // Pending vendors may stay logged in (same rule as authMiddleware); only block restricted accounts
+    if (
+      vendor.approvalStatus === VENDOR_STATUS.REJECTED ||
+      vendor.approvalStatus === VENDOR_STATUS.SUSPENDED ||
+      !vendor.isActive
+    ) {
       return res.status(403).json({
         success: false,
-        message: 'Account is not approved or is inactive'
+        message: 'Account is restricted or inactive'
       });
     }
 

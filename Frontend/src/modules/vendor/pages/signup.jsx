@@ -523,7 +523,7 @@ const VendorSignup = () => {
                   <div className="flex items-center gap-3">
                     <h3 className="text-base font-bold text-gray-900">Work Experience</h3>
                     <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 rounded-full border border-amber-200">Optional</span>
-                    <p className="text-xs text-gray-400 ml-auto hidden sm:block">Helps admin verify your expertise faster</p>
+                    <p className="text-xs text-gray-400 ml-auto hidden sm:block">No ITI / certificate? You can still register - describe your skills below</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

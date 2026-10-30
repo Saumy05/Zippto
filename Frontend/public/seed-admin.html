@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head><title>Seed Auth</title></head>
+<body>
+<h1>Seeding Admin Auth...</h1>
+<script>
+async function seed() {
+  const res = await fetch('http://localhost:5000/api/admin/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: '7389279971', password: '123456' })
+  });
+  const data = await res.json();
+  if (data.accessToken) {
+    localStorage.setItem('adminAccessToken', data.accessToken);
+    localStorage.setItem('adminRefreshToken', data.refreshToken);
+    localStorage.setItem('adminData', JSON.stringify(data.admin));
+    document.body.innerHTML = '<h1>Auth Seeded! Redirecting...</h1>';
+    window.location.href = 'http://localhost:5173/admin/dashboard';
+  } else {
+    document.body.innerHTML = '<h1>Auth Failed!</h1>';
+  }
+}
+seed();
+</script>
+</body>
+</html>
