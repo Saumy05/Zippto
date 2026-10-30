@@ -139,6 +139,23 @@ const DEFAULT_CATEGORY_CONFIG = {
       { id: 'solar-panel-washing', name: 'Solar Panel Washing', image: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=400&auto=format&fit=crop&q=80' },
       { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80' },
     ]
+  },
+  cook: {
+    icon: '/cat_images/cook.jpg',
+    subCategories: [
+      { id: 'cook-home-cook', name: 'Home Cook', image: '/cat_images/cook-home-cook.jpg' },
+      { id: 'cook-party-event-cook', name: 'Party & Event Cook', image: '/cat_images/cook-party-event-cook.jpg' },
+      { id: 'cook-festival-pooja-cooking', name: 'Festival & Pooja Cooking', image: '/cat_images/cook-festival-pooja-cooking.jpg' }
+    ]
+  },
+  'home-helper': {
+    icon: '/cat_images/home-helper.jpg',
+    subCategories: [
+      { id: 'helper-kitchen-helper', name: 'Kitchen Helper', image: '/cat_images/helper-kitchen-helper.jpg' },
+      { id: 'helper-house-help', name: 'House Help', image: '/cat_images/helper-house-help.jpg' },
+      { id: 'helper-care-helper', name: 'Care Helper', image: '/cat_images/helper-care-helper.jpg' },
+      { id: 'helper-party-helper', name: 'Party Helper', image: '/cat_images/helper-party-helper.jpg' }
+    ]
   }
 };
 

@@ -4,7 +4,6 @@ import { HiX, HiLocationMarker, HiSearch } from 'react-icons/hi';
 import { useJsApiLoader } from '@react-google-maps/api';
 import { useCity } from '../../../../context/CityContext';
 import flutterBridge from '../../../../utils/flutterBridge';
-import { searchPlacesOSM, reverseGeocodeOSM } from '../../../../utils/placeSearch';
 
 // Must match the libraries used by every other useJsApiLoader call (same loader id).
 const libraries = ['places', 'geometry'];
@@ -49,7 +48,6 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
   const [searching, setSearching] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [notice, setNotice] = useState(null); // { type: 'error' | 'info', text }
-  const googleUsable = useRef(true);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -92,7 +90,7 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
-  // Debounced place suggestions. Google Places first; if Google is unavailable/denied, fall back to OpenStreetMap.
+  // Debounced place suggestions. Google Places autocomplete.
   useEffect(() => {
     const text = query.trim();
     if (!isOpen || text.length < 2) {
@@ -103,28 +101,18 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
     setSearching(true);
     const controller = new AbortController();
 
-    const searchOSM = async () => {
-      try {
-        const results = await searchPlacesOSM(text, controller.signal);
-        if (!controller.signal.aborted) setPredictions(results);
-      } catch (e) {
-        if (!controller.signal.aborted) setPredictions([]);
-      } finally {
-        if (!controller.signal.aborted) setSearching(false);
-      }
-    };
-
     const timer = setTimeout(() => {
-      if (!googleUsable.current || !isLoaded || !window.google?.maps?.places) {
-        searchOSM();
+      if (!isLoaded || !window.google?.maps?.places) {
+        setPredictions([]);
+        setSearching(false);
         return;
       }
       new window.google.maps.places.AutocompleteService().getPlacePredictions(
         { input: text, componentRestrictions: { country: 'in' }, types: ['geocode'] },
         (results, status) => {
           if (controller.signal.aborted) return;
+          setSearching(false);
           if (status === 'OK' && results?.length) {
-            setSearching(false);
             setPredictions(
               results.slice(0, 6).map((p) => ({
                 id: p.place_id,
@@ -135,9 +123,7 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
               }))
             );
           } else {
-            // REQUEST_DENIED (billing/key) or no result: stop using Google for this session and use OSM
-            if (status === 'REQUEST_DENIED' || status === 'OVER_QUERY_LIMIT') googleUsable.current = false;
-            searchOSM();
+            setPredictions([]);
           }
         }
       );
@@ -182,10 +168,6 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
     setPredictions([]);
     setQuery(prediction.description || [prediction.main, prediction.secondary].filter(Boolean).join(', '));
 
-    if (prediction.place) {
-      applyPlace(prediction.place); // OSM result already carries coordinates + city
-      return;
-    }
     new window.google.maps.Geocoder().geocode({ placeId: prediction.googlePlaceId }, (results, status) => {
       if (status === 'OK' && results?.[0]) {
         applyPlace(parseGeocode(results[0]));
@@ -197,19 +179,13 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
 
   const reverseGeocode = ({ latitude, longitude }) =>
     new Promise((resolve) => {
-      const viaOSM = () => reverseGeocodeOSM({ latitude, longitude }).then(resolve).catch(() => resolve(null));
-      if (googleUsable.current && isLoaded && window.google?.maps?.Geocoder) {
-        new window.google.maps.Geocoder().geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
-          if (status === 'OK' && results?.[0]) {
-            resolve(parseGeocode(results[0]));
-          } else {
-            if (status === 'REQUEST_DENIED' || status === 'OVER_QUERY_LIMIT') googleUsable.current = false;
-            viaOSM();
-          }
-        });
-      } else {
-        viaOSM();
+      if (!isLoaded || !window.google?.maps?.Geocoder) {
+        resolve(null);
+        return;
       }
+      new window.google.maps.Geocoder().geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
+        resolve(status === 'OK' && results?.[0] ? parseGeocode(results[0]) : null);
+      });
     });
 
   const handleUseCurrentLocation = async () => {

@@ -66,6 +66,10 @@ const resolveServiceImage = (title = '', categorySlug = '', fallbackUrl = '') =>
   // 6. Salon for Women
   if (t.includes('wax') || t.includes('facial') || t.includes('glow') || t.includes('thread') || t.includes('pedi') || t.includes('mani') || t.includes('hair') || t.includes('spa') || t.includes('salon')) return '/cat_images/salon_women.jpg';
 
+  // Cook & Helper
+  if (t.includes('cook') || t.includes('meal') || t.includes('bhog') || t.includes('prasad') || t.includes('pooja')) return '/cat_images/cook.jpg';
+  if (t.includes('helper') || t.includes('utensil') || t.includes('mop') || t.includes('care') || t.includes('maid')) return '/cat_images/home-helper.jpg';
+
   // 7. Check if fallbackUrl is a valid non-placeholder image (not walkie/radio clipart)
   if (fallbackUrl && typeof fallbackUrl === 'string') {
     const isGenericIcon =
@@ -86,6 +90,8 @@ const resolveServiceImage = (title = '', categorySlug = '', fallbackUrl = '') =>
   if (c.includes('clean')) return '/intense_bathroom_cleaning.png';
   if (c.includes('ac') || c.includes('appliance')) return '/ac_foam_jet_service.png';
   if (c.includes('salon') || c.includes('women')) return '/cat_images/salon_women.jpg';
+  if (c.includes('cook')) return '/cat_images/cook.jpg';
+  if (c.includes('helper') || c.includes('help')) return '/cat_images/home-helper.jpg';
 
   return '/cat_images/electrician.jpg';
 };

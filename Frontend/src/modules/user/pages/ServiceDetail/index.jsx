@@ -57,6 +57,10 @@ const resolveServiceImage = (title = '', categorySlug = '', fallbackUrl = '') =>
   // Salon
   if (t.includes('facial') || t.includes('tan') || t.includes('wax') || t.includes('salon') || t.includes('glow')) return '/cat_images/salon_women.jpg';
 
+  // Cook & Helper
+  if (t.includes('cook') || t.includes('meal') || t.includes('bhog') || t.includes('prasad') || t.includes('pooja')) return '/cat_images/cook.jpg';
+  if (t.includes('helper') || t.includes('utensil') || t.includes('mop') || t.includes('care') || t.includes('maid')) return '/cat_images/home-helper.jpg';
+
   // Category fallback
   if (c.includes('electr')) return '/cat_images/electrician.jpg';
   if (c.includes('plumb')) return '/tap_plumbing_repair.png';
@@ -64,6 +68,8 @@ const resolveServiceImage = (title = '', categorySlug = '', fallbackUrl = '') =>
   if (c.includes('clean')) return '/intense_bathroom_cleaning.png';
   if (c.includes('ac') || c.includes('appliance')) return '/ac_foam_jet_service.png';
   if (c.includes('salon') || c.includes('women')) return '/cat_images/salon_women.jpg';
+  if (c.includes('cook')) return '/cat_images/cook.jpg';
+  if (c.includes('helper') || c.includes('help')) return '/cat_images/home-helper.jpg';
 
   return '/cat_images/electrician.jpg';
 };
