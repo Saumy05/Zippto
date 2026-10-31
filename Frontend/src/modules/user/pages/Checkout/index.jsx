@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import { getSocketUrl } from '../../../../utils/socketUrl';
 import { FiArrowLeft, FiShoppingCart, FiTrash2, FiMinus, FiPlus, FiPhone, FiHome, FiClock, FiEdit2, FiCheckCircle, FiInfo, FiTag, FiX } from 'react-icons/fi';
 import { MdStar } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
@@ -439,7 +440,7 @@ const Checkout = () => {
   useEffect(() => {
     if (currentStep !== 'waiting' || !bookingRequest) return;
 
-    const socketUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
+    const socketUrl = getSocketUrl();
     const socket = io(socketUrl, {
       auth: { token: localStorage.getItem('accessToken') },
       transports: ['websocket', 'polling']

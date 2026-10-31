@@ -33,7 +33,9 @@ const PageTransition = ({ children }) => {
       style={{
         opacity: isTransitioning ? 0.7 : 1,
         transition: 'opacity 100ms ease-out',
-        willChange: 'opacity',
+        // Only hint while fading: a permanent will-change creates a stacking context that traps
+        // every fixed modal inside the page, leaving the bottom nav above the modal overlay
+        willChange: isTransitioning ? 'opacity' : 'auto',
       }}
     >
       {cloneElement(children, { location: displayLocation })}

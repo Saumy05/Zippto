@@ -94,7 +94,7 @@ const WorkCompletionModal = ({ isOpen, onClose, job, onComplete, loading }) => {
             <div className="px-8 pt-8 pb-4 flex justify-between items-start">
               <div>
                 <h3 className="text-2xl font-black text-gray-900 leading-tight">Complete Work</h3>
-                <p className="text-xs text-green-600 font-bold uppercase tracking-wider mt-1">Final Step</p>
+                <p className="text-xs text-green-600 font-bold uppercase tracking-wider mt-1">Step 2 of 3 · Finish work</p>
               </div>
               <button
                 onClick={onClose}

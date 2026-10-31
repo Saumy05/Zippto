@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { getSocketUrl } from '../utils/socketUrl';
 import { toast } from 'react-hot-toast';
 import { playNotificationSound, isSoundEnabled } from '../utils/notificationSound';
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
+const SOCKET_URL = getSocketUrl();
 
 /**
  * Custom hook for vendor real-time notifications

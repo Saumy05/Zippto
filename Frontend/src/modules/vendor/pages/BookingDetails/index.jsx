@@ -15,6 +15,7 @@ import {
   completeSelfJob
 } from '../../services/bookingService';
 import { CashCollectionModal, ConfirmDialog, OtpVerificationModal, VisitVerificationModal } from '../../components/common';
+import vendorWalletService from '../../../../services/vendorWalletService';
 import WorkCompletionModal from '../../components/common/WorkCompletionModal';
 import vendorBillService from '../../../../services/vendorBillService';
 import { toast } from 'react-hot-toast';
@@ -333,6 +334,18 @@ export default function BookingDetails() {
     }
   };
 
+  // Vendor job flow: Arrive -> Finish work (photos) -> Bill & payment
+  const JOB_STEPS = ['Arrive at site', 'Finish work', 'Bill & payment'];
+  const jobStepIndex = (() => {
+    const st = (booking?.status || '').toLowerCase();
+    const paid = booking?.cashCollected || ['success', 'paid', 'collected_by_vendor'].includes((booking?.paymentStatus || '').toLowerCase());
+    if (st === 'completed' || paid) return null;
+    if (['confirmed', 'assigned', 'accepted', 'journey_started'].includes(st)) return 0;
+    if (['visited', 'in_progress'].includes(st)) return 1;
+    if (['work_done', 'awaiting_payment'].includes(st)) return 2;
+    return null;
+  })();
+
   const canCollectCash = (booking) => {
     // Hide if already collected or paid online
     if (
@@ -345,10 +358,8 @@ export default function BookingDetails() {
       return false;
     }
 
-    // Cash / Bill can be handled across visited, in_progress, awaiting_payment, work_done, completed
+    // Billing & payment is the step AFTER finishing work (photos), so it only opens from work_done on
     const validStatus = [
-      'visited',
-      'in_progress',
       'awaiting_payment',
       'work_done',
       'completed'
@@ -980,7 +991,7 @@ export default function BookingDetails() {
                     {booking.paymentMethod === 'plan_benefit' ? 'Prepare Final Bill' : 'Collect Payment'}
                   </h3>
                   <p className="text-xs text-gray-500 font-medium tracking-wide uppercase">
-                    {booking.paymentMethod === 'plan_benefit' ? 'Add extra charges if any' : 'Step 1: Finish Settlement'}
+                    {booking.paymentMethod === 'plan_benefit' ? 'Step 3 of 3 · Add extra charges if any' : 'Step 3 of 3 · Bill & payment'}
                   </p>
                 </div>
               </div>
@@ -1007,12 +1018,13 @@ export default function BookingDetails() {
                   </div>
                   <div className="mt-3 flex items-start gap-2 text-[11px] text-orange-700/80 leading-relaxed">
                     <FiClock className="w-3 h-3 mt-0.5" />
-                    <span>Customer chose {
+                    <span>Customer's payment choice: {
                       booking.paymentMethod === 'cash collected' ? 'Cash Collected' : 
                       booking.paymentMethod === 'Qr online' ? 'QR Online' : 
                       booking.paymentMethod === 'online' ? 'Online Paid' : 
-                      booking.paymentMethod?.replace('_', ' ') || 'Cash'
-                    } payment. Please verify collection to proceed.</span>
+                      booking.paymentMethod === 'pay_at_home' ? 'Pay After Service' :
+                      booking.paymentMethod?.replace(/_/g, ' ') || 'Cash'
+                    }. Prepare the bill, then collect the payment from the customer.</span>
                   </div>
                 </div>
               )}
@@ -1118,18 +1130,37 @@ export default function BookingDetails() {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="space-y-3">
+        {/* Action Buttons: one clear next step at a time; the timeline is a secondary link below it */}
+        <div className="flex flex-col gap-3">
+          {jobStepIndex !== null && (
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <div className="flex items-center">
+                {JOB_STEPS.map((label, i) => (
+                  <React.Fragment key={label}>
+                    <div className="flex flex-col items-center gap-1 min-w-0">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                        i < jobStepIndex ? 'bg-emerald-500 text-white' : i === jobStepIndex ? 'text-white' : 'bg-gray-100 text-gray-400'
+                      }`} style={i === jobStepIndex ? { backgroundColor: themeColors.button } : undefined}>
+                        {i < jobStepIndex ? <FiCheckCircle className="w-4 h-4" /> : i + 1}
+                      </div>
+                      <span className={`text-[10px] font-bold text-center leading-tight ${i === jobStepIndex ? 'text-gray-900' : 'text-gray-400'}`}>{label}</span>
+                    </div>
+                    {i < JOB_STEPS.length - 1 && (
+                      <div className={`flex-1 h-0.5 mx-2 mb-4 ${i < jobStepIndex ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+
           <button
             onClick={handleViewTimeline}
-            className="w-full py-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all active:scale-95"
-            style={{
-              background: themeColors.button,
-              boxShadow: `0 4px 12px ${themeColors.button}40`,
-            }}
+            className="order-last w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 bg-white border"
+            style={{ color: themeColors.button, borderColor: `${themeColors.button}55` }}
           >
             View Timeline
-            <FiArrowRight className="w-5 h-5" />
+            <FiArrowRight className="w-4 h-4" />
           </button>
 
           {(booking.status === 'completed' || booking.paymentStatus === 'SUCCESS' || booking.paymentStatus === 'success' || booking.paymentStatus === 'paid') ? (
@@ -1181,6 +1212,7 @@ export default function BookingDetails() {
 
               {/* Visited / In Progress -> Work Done */}
               {(booking.status === 'visited' || booking.status === 'in_progress') && (
+                <>
                 <button
                   onClick={() => setIsWorkDoneModalOpen(true)}
                   className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg cursor-pointer"
@@ -1190,40 +1222,13 @@ export default function BookingDetails() {
                   }}
                 >
                   <FiCheckCircle className="w-5 h-5" />
-                  <span>Work Done</span>
+                  <span>Finish Work &amp; Upload Photos</span>
                 </button>
+                <p className="text-center text-xs text-gray-500 -mt-1">Next: prepare the bill and collect payment</p>
+                </>
               )}
 
-              {/* Awaiting Payment / Work Done -> Prepare Bill / Enter Cash PIN */}
-              {(booking.status === 'awaiting_payment' || booking.status === 'work_done') && (
-                <div className="space-y-2.5">
-                  <button
-                    onClick={() => navigate(`/vendor/booking/${booking.id || id}/billing`)}
-                    className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg cursor-pointer"
-                    style={{
-                      background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
-                      boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
-                    }}
-                  >
-                    <FiDollarSign className="w-5 h-5" />
-                    <span>Prepare Bill & Collect Payment</span>
-                  </button>
-
-                  {(booking?.customerConfirmationOTP || booking?.paymentOtp) && (
-                    <button
-                      onClick={() => setIsOtpModalOpen(true)}
-                      className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md cursor-pointer"
-                      style={{
-                        background: 'linear-gradient(135deg, #10B981, #059669)',
-                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                      }}
-                    >
-                      <FiCheckCircle className="w-5 h-5" />
-                      <span>Enter Customer Cash PIN</span>
-                    </button>
-                  )}
-                </div>
-              )}
+              {/* Work Done / Awaiting Payment: billing & payment live in the Collect Payment card above */}
             </div>
           )}
         </div>
@@ -1271,9 +1276,9 @@ export default function BookingDetails() {
             setActionLoading(true);
             // Use vendor-specific service call (completeSelfJob)
             await completeSelfJob(id, { workPhotos: photos });
-            toast.success('Work marked done');
+            toast.success('Work done. Now prepare the bill.');
             setIsWorkDoneModalOpen(false);
-            window.location.reload();
+            navigate(`/vendor/booking/${booking?.id || booking?._id || id}/billing`);
           } catch (err) {
             toast.error(err.response?.data?.message || 'Failed to complete job');
           } finally {

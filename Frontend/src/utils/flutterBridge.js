@@ -82,7 +82,11 @@ class FlutterBridge {
   ================================== */
   async getCurrentLocation() {
     try {
-      const result = await this.callHandler("getLocation");
+      // The native handler can hang (GPS off, permission dialog ignored); don't leave callers spinning
+      const result = await Promise.race([
+        this.callHandler("getLocation"),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Native location timed out")), 8000))
+      ]);
 
       if (result && result.success) {
         return {

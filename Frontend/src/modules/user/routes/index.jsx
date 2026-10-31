@@ -116,7 +116,7 @@ const UserRoutes = () => {
     '/user/rewards'
   ];
   const isBookingRelatedPage = (
-    location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/(track|chat))?$/) ||
+    location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/chat)?$/) || // not /track: the live map is full-screen
     location.pathname.includes('/booking-confirmation')
   );
   const shouldShowBottomNav = (
