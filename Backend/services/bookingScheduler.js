@@ -295,57 +295,42 @@ class BookingScheduler {
       const serviceName = populatedBooking.serviceId?.title || populatedBooking.serviceName;
       const customerName = populatedBooking.userId?.name || 'Customer';
 
-      // Send all vendor notifications in parallel
-      await Promise.all(
-        vendors.map(async (v) => {
-          // Fire socket immediately (synchronous, non-blocking)
-          if (this.io) {
-            this.io.to(`vendor_${v.vendorId}`).emit('new_booking_request', {
-              bookingId: booking._id,
-              serviceName,
-              customerName,
-              scheduledDate: populatedBooking.scheduledDate,
-              scheduledTime: populatedBooking.scheduledTime,
-              price: populatedBooking.finalAmount,
-              address: populatedBooking.address,
-              distance: v.distance,
-              serviceCategory: populatedBooking.serviceCategory,
-              brandName: populatedBooking.brandName,
-              brandIcon: populatedBooking.brandIcon,
-              categoryIcon: populatedBooking.categoryIcon,
-              createdAt: populatedBooking.createdAt,
-              expiresAt: new Date(new Date(populatedBooking.createdAt).getTime() + (populatedBooking.bookingType === 'instant' ? 120000 : MAX_SEARCH_TIME_MS)).toISOString(),
-              playSound: true,
-              message: `New booking request within ${v.distance?.toFixed(1) || '?'}km!`
-            });
-          }
-
-          // Create DB notification + FCM push
-          await createNotification({
-            vendorId: v.vendorId,
-            type: 'booking_request',
-            title: 'New Booking Request',
-            message: `New service request for ${serviceName} from ${customerName}`,
-            relatedId: booking._id,
-            relatedType: 'booking',
-            data: {
-              bookingId: booking._id,
-              serviceName,
-              customerName,
-              scheduledDate: populatedBooking.scheduledDate,
-              scheduledTime: populatedBooking.scheduledTime,
-              location: populatedBooking.address,
-              price: populatedBooking.finalAmount,
-              distance: v.distance
-            },
-            pushData: {
-              type: 'new_booking',
-              dataOnly: false,
-              link: `/vendor/bookings/${booking._id}`
-            }
+      // 1. Fire socket immediately to online vendors (synchronous, non-blocking)
+      if (this.io) {
+        vendors.forEach((v) => {
+          this.io.to(`vendor_${v.vendorId}`).emit('new_booking_request', {
+            bookingId: booking._id,
+            serviceName,
+            customerName,
+            scheduledDate: populatedBooking.scheduledDate,
+            scheduledTime: populatedBooking.scheduledTime,
+            price: populatedBooking.finalAmount,
+            address: populatedBooking.address,
+            distance: v.distance,
+            serviceCategory: populatedBooking.serviceCategory,
+            brandName: populatedBooking.brandName,
+            brandIcon: populatedBooking.brandIcon,
+            categoryIcon: populatedBooking.categoryIcon,
+            createdAt: populatedBooking.createdAt,
+            expiresAt: new Date(new Date(populatedBooking.createdAt).getTime() + (populatedBooking.bookingType === 'instant' ? 120000 : MAX_SEARCH_TIME_MS)).toISOString(),
+            playSound: true,
+            message: `New booking request within ${v.distance?.toFixed(1) || '?'}km!`
           });
-        })
-      );
+        });
+      }
+
+      // 2. High-speed FCM multicast push + bulk DB notification insert in 1 shot
+      const { sendBookingAlertToVendors } = require('./firebaseAdmin');
+      const vendorIds = vendors.map(v => v.vendorId);
+      await sendBookingAlertToVendors(vendorIds, {
+        _id: booking._id,
+        bookingNumber: booking.bookingNumber,
+        serviceName,
+        customerName,
+        finalAmount: populatedBooking.finalAmount,
+        serviceCategory: populatedBooking.serviceCategory,
+        address: populatedBooking.address
+      });
 
       console.log(`[BookingScheduler] Notified ${vendors.length} vendors for booking ${booking.bookingNumber}`);
     } catch (error) {

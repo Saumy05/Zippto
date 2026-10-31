@@ -481,6 +481,20 @@ const rejectBooking = async (req, res) => {
           { upsert: true }
         );
 
+        // Send high-priority push notification to nextVendor (breaks through on lock screen / other apps)
+        const { sendBookingAlertToVendors } = require('../../services/firebaseAdmin');
+        sendBookingAlertToVendors([nextVendor._id], {
+          _id: booking._id,
+          bookingNumber: booking.bookingNumber,
+          serviceName: booking.serviceName || booking.serviceCategory,
+          customerName: booking.customerName || booking.userId?.name || 'Customer',
+          customerPhone: booking.customerPhone || booking.userId?.phone,
+          finalAmount: booking.finalAmount,
+          serviceCategory: booking.serviceCategory,
+          address: booking.address,
+          distance: nextCandidate.distance
+        }).catch(err => console.error('[RejectBooking] Backfill push failed:', err.message));
+
         if (io) {
           const socketExpiresAt = new Date(new Date(booking.createdAt || Date.now()).getTime() + (5 * 60 * 1000)).toISOString();
           io.to(`vendor_${nextVendor._id.toString()}`).emit('new_booking_request', {

@@ -133,30 +133,25 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
   try {
     // console.log(`[FCM] Starting registration for ${userType}, forceUpdate: ${forceUpdate}`);
 
-    // Check if already registered
-    const storageKey = `fcm_token_${userType}_web`;
+    // Detect platform
+    const platform = getPlatformType();
+    const storageKey = `fcm_token_${userType}_${platform}`;
     const savedToken = localStorage.getItem(storageKey);
     if (savedToken && !forceUpdate) {
-      // console.log('[FCM] Token already registered in localStorage');
       return savedToken;
     }
 
     // Request permission
-    // console.log('[FCM] Requesting notification permission...');
     const hasPermission = await requestNotificationPermission();
     if (!hasPermission) {
-      // console.log('[FCM] ❌ Notification permission not granted, skipping FCM registration');
       return null;
     }
 
     // Get token
-    // console.log('[FCM] Getting FCM token from Firebase...');
     const token = await getFCMToken();
     if (!token) {
-      // console.log('[FCM] ❌ Failed to get FCM token from Firebase');
       return null;
     }
-    // console.log('[FCM] ✅ Got FCM token:', token.substring(0, 30) + '...');
 
     // Determine API endpoint based on user type
     let endpoint;
@@ -176,16 +171,14 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
         authTokenKey = 'accessToken';
     }
 
-    // Get auth token
-    const authToken = localStorage.getItem(authTokenKey);
+    // Get auth token from localStorage or sessionStorage
+    const authToken = localStorage.getItem(authTokenKey) || sessionStorage.getItem(authTokenKey);
     if (!authToken) {
-      // console.log(`[FCM] ❌ No auth token found for ${userType} (${authTokenKey}), skipping registration`);
       return null;
     }
 
     // Save to backend
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-    // console.log(`[FCM] Saving to backend: ${baseUrl}${endpoint}`);
 
     const response = await fetch(`${baseUrl}${endpoint}`, {
       method: 'POST',
@@ -195,7 +188,7 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
       },
       body: JSON.stringify({
         token: token,
-        platform: 'web'
+        platform: platform
       })
     });
 
@@ -315,15 +308,59 @@ function setupForegroundNotificationHandler(handler) {
 async function initializePushNotifications() {
   try {
     if (!('serviceWorker' in navigator)) {
-      // console.log('Service workers not supported');
       return;
     }
 
-    // Always register: the same worker also caches the app shell for offline launches
+    // Always register: the same worker handles push alerts and caches app shell
     await registerServiceWorker();
-    // console.log('✅ Push notifications initialized');
+
+    // Listen for messages from the service worker (push notification received or clicked)
+    if (!navigator.serviceWorker.__zipptoListenerAttached) {
+      navigator.serviceWorker.__zipptoListenerAttached = true;
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        const msg = event.data;
+        if (!msg) return;
+
+        if (msg.type === 'PUSH_NOTIFICATION_RECEIVED') {
+          const notif = msg.notification || {};
+          const notifData = notif.data || {};
+          const notifType = notifData.type || notifData.notificationType;
+
+          if (notifType === 'new_booking' || notifType === 'booking_request') {
+            const newJob = {
+              id: notifData.bookingId,
+              serviceType: notifData.serviceName || notif.title,
+              customerName: notifData.customerName || 'Customer',
+              customerPhone: notifData.customerPhone || '',
+              location: {
+                address: notifData.location || 'Location shared',
+                distance: notifData.distance ? `${Number(notifData.distance).toFixed(1)} km` : 'Near you'
+              },
+              price: notifData.price,
+              scheduledDate: notifData.scheduledDate,
+              scheduledTime: notifData.scheduledTime,
+              status: 'requested',
+              createdAt: notifData.createdAt || new Date().toISOString()
+            };
+
+            const pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+            if (!pendingJobs.find(job => String(job.id || job._id) === String(newJob.id))) {
+              pendingJobs.unshift(newJob);
+              localStorage.setItem('vendorPendingJobs', JSON.stringify(pendingJobs));
+            }
+
+            window.dispatchEvent(new CustomEvent('showDashboardBookingAlert', { detail: newJob }));
+          }
+
+          window.dispatchEvent(new Event('vendorJobsUpdated'));
+          window.dispatchEvent(new Event('vendorStatsUpdated'));
+          window.dispatchEvent(new Event('userBookingsUpdated'));
+          window.dispatchEvent(new Event('appNotificationReceived'));
+        }
+      });
+    }
   } catch (error) {
-    // console.error('Error initializing push notifications:', error);
+    console.error('Error initializing push notifications:', error);
   }
 }
 

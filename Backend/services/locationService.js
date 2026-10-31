@@ -238,7 +238,7 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
         const vendors = await Vendor.find({
           _id: { $in: vendorIds },
           ...baseQuery
-        }).select('name businessName phone address profilePhoto service rating isOnline availability geoLocation');
+        }).select('name businessName phone address profilePhoto service rating isOnline availability geoLocation fcmTokens fcmTokenMobile');
 
         // Merge distance from cache
         const vendorMap = new Map(vendors.map(v => [v._id.toString(), v.toObject()]));
@@ -285,7 +285,7 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
             }
           }
         })
-          .select('name businessName phone address profilePhoto service rating isOnline availability geoLocation settings')
+          .select('name businessName phone address profilePhoto service rating isOnline availability geoLocation settings fcmTokens fcmTokenMobile')
           .limit(50);
 
         // Calculate distance for each vendor
@@ -325,7 +325,7 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
 
     // OPTION 3: Fallback using Haversine formula (checks location or address.lat/lng)
     const vendors = await Vendor.find(baseQuery)
-      .select('name businessName phone address location profilePhoto service rating isOnline availability settings');
+      .select('name businessName phone address location profilePhoto service rating isOnline availability settings fcmTokens fcmTokenMobile');
 
     console.log(`[LocationService] Haversine fallback: found ${vendors.length} vendors matching baseQuery before distance filter`);
 

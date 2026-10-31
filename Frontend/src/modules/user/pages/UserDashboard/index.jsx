@@ -43,16 +43,21 @@ const toAssetUrl = (url) => {
   return url;
 };
 
+// Last home content / categories, kept across tab switches (the page unmounts when you leave it).
+// Returning to Home shows these immediately and refreshes quietly, instead of starting from blank.
+let homeCache = { homeContent: null, categories: [] };
+let mainCategoriesCache = [];
+
 const UserDashboard = () => {
   const navigate = useNavigate();
   const { categorySlug } = useParams();
   const location = useLocation();
   const { cartItems = [], cartCount = 0, addToCart, removeItem } = useCart() || {};
   const { currentCity } = useCity() || {};
-  const [homeContent, setHomeContent] = useState(null);
+  const [homeContent, setHomeContent] = useState(() => homeCache.homeContent);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState(() => homeCache.categories);
   const [newsletterInput, setNewsletterInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
@@ -66,9 +71,11 @@ const UserDashboard = () => {
         if (res?.success) {
           if (res.homeContent) {
             setHomeContent(res.homeContent);
+            homeCache.homeContent = res.homeContent;
           }
           if (Array.isArray(res.categories) && res.categories.length > 0) {
             setCategories(res.categories);
+            homeCache.categories = res.categories;
           }
         }
       } catch (err) {
@@ -227,7 +234,7 @@ const UserDashboard = () => {
   }, []);
 
   // Main category items (loaded live from the API)
-  const [mainCategories, setMainCategories] = useState([]);
+  const [mainCategories, setMainCategories] = useState(() => mainCategoriesCache);
 
   // Fetch live categories & brands dynamically from MongoDB API
   useEffect(() => {
@@ -268,6 +275,7 @@ const UserDashboard = () => {
 
           if (liveCats.length > 0) {
             setMainCategories(liveCats);
+            mainCategoriesCache = liveCats;
           }
         }
       } catch (err) {

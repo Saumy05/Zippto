@@ -115,14 +115,10 @@ const UserRoutes = () => {
     '/user/wallet',
     '/user/rewards'
   ];
-  const isBookingRelatedPage = (
-    location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/chat)?$/) || // not /track: the live map is full-screen
-    location.pathname.includes('/booking-confirmation')
-  );
+
   const shouldShowBottomNav = (
     bottomNavPages.includes(location.pathname) ||
-    location.pathname.includes('/category/') ||
-    !!isBookingRelatedPage
+    location.pathname.includes('/category/')
   );
 
   // Check if we hide the live booking card (already self-suppresses inside LiveBookingCard for specific booking pages)
@@ -134,7 +130,7 @@ const UserRoutes = () => {
   return (
     <ErrorBoundary>
       {/* Main content area - leaves space for bottom nav when needed */}
-      <div className={shouldShowBottomNav ? "pb-24" : ""}>
+      <div className={shouldShowBottomNav ? "pb-[calc(6rem+env(safe-area-inset-bottom,0px))]" : ""}>
         <Suspense fallback={<LoadingFallback />}>
           <PageTransition>
             <Routes>

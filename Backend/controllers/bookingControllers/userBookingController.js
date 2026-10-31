@@ -511,7 +511,7 @@ const createBooking = async (req, res) => {
           }
 
           const broadVendors = await Vendor.find(broadQuery)
-            .select('name businessName phone address location profilePhoto service rating isOnline availability settings')
+            .select('name businessName phone address location profilePhoto service rating isOnline availability settings fcmTokens fcmTokenMobile')
             .limit(10)
             .lean();
 
@@ -618,34 +618,19 @@ const createBooking = async (req, res) => {
           });
         }
 
-        // 2. Push (FCM) is started right away for every vendor in parallel, covering vendors whose app
-        // is closed/backgrounded. Not awaited here so it can't delay anything else.
-        const vendorPushPromise = Promise.all(wave1Vendors.map(vendor =>
-          createNotification({
-            vendorId: vendor._id,
-            type: 'booking_request',
-            title: 'New Booking Request',
-            message: `New service request for ${serviceForBackground.title} from ${userForBackground.name}`,
-            relatedId: bookingForBackground._id,
-            relatedType: 'booking',
-            data: {
-              bookingId: bookingForBackground._id,
-              serviceName: serviceForBackground.title,
-              customerName: userForBackground.name,
-              customerPhone: userForBackground.phone,
-              scheduledDate: scheduledDate,
-              scheduledTime: scheduledTime,
-              location: address,
-              price: finalAmount,
-              distance: vendor.distance
-            },
-            pushData: {
-              type: 'new_booking',
-              dataOnly: false,
-              link: `/vendor/bookings/${bookingForBackground._id}`
-            }
-          })
-        )).catch(notifError => {
+        // 2. High-speed multicast push directly to all matching vendors in 1 shot
+        // Covers vendors whose app is closed or phone is locked with zero individual round-trip lag.
+        const { sendBookingAlertToVendors } = require('../../services/firebaseAdmin');
+        const vendorPushPromise = sendBookingAlertToVendors(wave1Vendors, {
+          _id: bookingForBackground._id,
+          bookingNumber: bookingForBackground.bookingNumber,
+          serviceName: serviceForBackground.title,
+          customerName: userForBackground.name,
+          customerPhone: userForBackground.phone,
+          finalAmount: finalAmount,
+          serviceCategory: bookingForBackground.serviceCategory,
+          address: address
+        }).catch(notifError => {
           console.error('[CreateBooking] Firebase/Notification Error (Non-blocking):', notifError.message);
         });
 

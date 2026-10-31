@@ -79,13 +79,8 @@ const BottomNav = React.memo(() => {
   const getActiveTab = () => {
     const p = location.pathname;
     if (p === '/user' || p === '/user/' || p.includes('dashboard') || p.includes('/category/')) return 'home';
-    if (
-      p.includes('/my-bookings') ||
-      p.includes('/bookings') ||
-      p.match(/\/booking\/[a-zA-Z0-9]/) ||
-      p.includes('/booking-confirmation')
-    ) return 'bookings';
-    if (p.includes('/cart') || p.includes('/checkout')) return 'cart';
+    if (p.includes('/my-bookings') || p.includes('/bookings')) return 'bookings';
+    if (p.includes('/cart')) return 'cart';
     if (p.includes('/account') || p.includes('/settings') || p.includes('/profile') || p.includes('/update-profile')) return 'account';
     return 'home';
   };
@@ -108,6 +103,12 @@ const BottomNav = React.memo(() => {
       className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden bottom-nav-container pointer-events-none"
       style={{ WebkitBackfaceVisibility: 'hidden' }}
     >
+      {/* Dynamic gradient backdrop scrim: adjusts automatically to 3-button nav, gesture nav, safe-area insets, and cart banner */}
+      <div
+        className="absolute inset-x-0 bottom-0 pointer-events-none -z-10 h-[calc(100%+1.5rem)] bg-gradient-to-t from-white via-white/90 to-transparent dark:from-[#0A0911] dark:via-[#0A0911]/90"
+        style={{ WebkitBackfaceVisibility: 'hidden' }}
+      />
+
       <div
         className="w-full pointer-events-none"
         style={{
