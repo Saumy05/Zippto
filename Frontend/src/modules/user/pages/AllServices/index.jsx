@@ -116,135 +116,6 @@ const getRealRating = (explicitRating = null, explicitReviews = null) => {
   return { rating: null, reviews: null };
 };
 
-// Authentic catalog fallback with photorealistic lifestyle commercial assets & discount structures
-const PRESET_CATALOG_DATA = {
-  electrician: {
-    bannerTitle: 'ELECTRICAL SERVICES',
-    title: 'Electrician',
-    rating: null,
-    reviews: null,
-    desc: 'Expert electricians for wiring, switchboards, fan installations, appliance setups, and emergency repairs.',
-    sections: [
-      {
-        sectionTitle: 'Electrical Repairs & Installation',
-        items: [
-          { id: 'elec-switch-1', title: 'Switch & Socket Replacement', rating: null, reviews: null, price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Installation & repair of modular switches & sockets.', image: '/switchboard_repair.png' },
-          { id: 'elec-fan-1', title: 'Ceiling Fan Repair & Mounting', rating: null, reviews: null, price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'Precision ceiling fan mounting, balancing & wiring test.', image: '/drill_wall_decor.png' },
-          { id: 'elec-wire-1', title: 'MCB & Distribution Board Repair', rating: null, reviews: null, price: '₹299', originalPrice: '₹349', discount: '14% OFF', isInstant: true, desc: 'Short circuit troubleshooting & trip MCB replacement.', image: '/cat_images/electrician.jpg' },
-          { id: 'elec-switch-2', title: 'Switchboard Installation', rating: null, reviews: null, price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: false, desc: 'Complete multi-slot switchboard mounting & connection.', image: '/switchboard_repair.png' },
-          { id: 'elec-light-1', title: 'Decorative & Spotlight Fitting', rating: null, reviews: null, price: '₹89', originalPrice: '₹119', discount: '25% OFF', isInstant: false, desc: 'Ceiling spotlight, strip LED, or hanging lamp installation.', image: '/cat_images/electrician.jpg' }
-        ]
-      }
-    ]
-  },
-  plumber: {
-    bannerTitle: 'PLUMBING SERVICES',
-    title: 'Plumber',
-    rating: null,
-    reviews: null,
-    desc: 'Certified plumbers for tap repairs, pipe leaks, bathroom fixtures, drainage blocks, and water tanks.',
-    sections: [
-      {
-        sectionTitle: 'Plumbing Repairs & Fittings',
-        items: [
-          { id: 'plumb-tap-1', title: 'Tap & Plumbing Repair', rating: null, reviews: null, price: '₹49', originalPrice: '₹99', discount: '50% OFF', isInstant: true, desc: 'Fix dripping tap, nozzle change, or washer replacement.', image: '/tap_plumbing_repair.png' },
-          { id: 'plumb-drain-1', title: 'Sink & Basin Blockage Removal', rating: null, reviews: null, price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Deep pipe cleaning and clog removal with mechanical spring.', image: '/tap_plumbing_repair.png' },
-          { id: 'plumb-shower-1', title: 'Overhead Shower Fitting', rating: null, reviews: null, price: '₹129', originalPrice: '₹169', discount: '23% OFF', isInstant: false, desc: 'Shower arm & head installation or limescale deep cleaning.', image: '/cat_images/plumber.jpg' },
-          { id: 'plumb-leak-1', title: 'Pipe Joint Leakage Fix', rating: null, reviews: null, price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'CPVC/PVC pipe joint soldering and pressure sealing check.', image: '/cat_images/plumber.jpg' }
-        ]
-      }
-    ]
-  },
-  carpenter: {
-    bannerTitle: 'CARPENTRY SERVICES',
-    title: 'Carpenter',
-    rating: null,
-    reviews: null,
-    desc: 'Skilled carpenters for furniture repair, hinges, locks, drill & hang work, and custom woodwork.',
-    sections: [
-      {
-        sectionTitle: 'Woodwork & Fixtures',
-        items: [
-          { id: 'carp-drill-1', title: 'Wall Drill & Decor Hang', rating: null, reviews: null, price: '₹99', originalPrice: '₹129', discount: '23% OFF', isInstant: true, desc: 'Photo frames, clocks, mirrors, paintings safely hung.', image: '/drill_wall_decor.png' },
-          { id: 'carp-door-1', title: 'Door Lock & Handle Repair', rating: null, reviews: null, price: '₹149', originalPrice: '₹199', discount: '25% OFF', isInstant: true, desc: 'Fix sticking lock, handle alignment, or latch replacement.', image: '/cat_images/carpenter.jpg' },
-          { id: 'carp-curtain-1', title: 'Curtain Rod Installation', rating: null, reviews: null, price: '₹129', originalPrice: '₹169', discount: '23% OFF', isInstant: false, desc: 'Precision wall drilling and bracket fixing for curtains.', image: '/cat_images/carpenter.jpg' },
-          { id: 'carp-hinge-1', title: 'Cabinet Hinge Adjustment', rating: null, reviews: null, price: '₹89', originalPrice: '₹109', discount: '18% OFF', isInstant: false, desc: 'Hydraulic or regular hinge tightening and realigning.', image: '/cat_images/carpenter.jpg' }
-        ]
-      }
-    ]
-  },
-  'cleaning-service': {
-    bannerTitle: 'CLEANING SERVICES',
-    title: 'Cleaning Service',
-    rating: null,
-    reviews: null,
-    desc: 'Deep cleaning for full homes, bathrooms, kitchens, sofas, and carpets using mechanized tools.',
-    sections: [
-      {
-        sectionTitle: 'Cleaning Essentials',
-        items: [
-          { id: 'clean-bath-1', title: 'Intense Bathroom Cleaning', rating: null, reviews: null, price: '₹872', originalPrice: '₹1,038', discount: '8% OFF', isInstant: true, desc: 'High-pressure mechanized scrubbing, de-scaling & sanitization.', image: '/intense_bathroom_cleaning.png' },
-          { id: 'clean-mattress-1', title: 'Mattress & Sofa Wash', rating: null, reviews: null, price: '₹599', originalPrice: '₹749', discount: '20% OFF', isInstant: false, desc: 'Fabric extraction shampooing and deep suction vacuuming.', image: '/mattress_cleaning.png' },
-          { id: 'clean-home-1', title: 'Full Home Deep Clean', rating: null, reviews: null, price: '₹1,499', originalPrice: '₹1,799', discount: '17% OFF', isInstant: false, desc: 'Complete multi-room floor scrubbing, balcony, and kitchen degreasing.', image: '/cat_cleaning.png' },
-          { id: 'clean-tap-1', title: 'Sink & Tap Sanitation', rating: null, reviews: null, price: '₹199', originalPrice: '₹249', discount: '20% OFF', isInstant: true, desc: 'Anti-bacterial chrome polish, basin scrub & drain flushing.', image: '/tap_plumbing_repair.png' }
-        ]
-      }
-    ]
-  },
-  'ac-appliance-repair': {
-    bannerTitle: 'AC & APPLIANCE REPAIR',
-    title: 'AC & Appliance Repair',
-    rating: null,
-    reviews: null,
-    desc: 'Expert technicians for Split & Window AC service, gas recharge, geysers, and appliances.',
-    sections: [
-      {
-        sectionTitle: 'AC Servicing & Appliances',
-        items: [
-          { id: 'ac-foam-1', title: 'Foam-jet AC Service', rating: null, reviews: null, price: '₹649', originalPrice: '₹799', discount: '18% OFF', isInstant: true, desc: '2X deeper indoor & outdoor coil cleaning with pressure jet pump.', image: '/ac_foam_jet_service.png' },
-          { id: 'ac-repair-1', title: 'AC Repair (Wall Mount)', rating: null, reviews: null, price: '₹299', originalPrice: '₹399', discount: '25% OFF', isInstant: true, desc: 'Inspection, PCB troubleshooting, cooling issue fix & water leak repair.', image: '/ac_repair_wall.png' },
-          { id: 'ac-geyser-1', title: 'Geyser Check-up & Repair', rating: null, reviews: null, price: '₹249', originalPrice: '₹299', discount: '16% OFF', isInstant: false, desc: 'Thermostat testing, heating element de-scaling & safety valve check.', image: '/geyser_checkup.png' },
-          { id: 'ac-purifier-1', title: 'Native RO Water Purifier', rating: null, reviews: null, price: '₹4,999', originalPrice: '₹8,549', discount: 'Up to ₹3,550 OFF', isInstant: false, desc: 'Needs no service for 2 years. Multi-stage RO+UV+Copper technology.', image: '/native_water_purifier.png' }
-        ]
-      }
-    ]
-  },
-  'salon-for-women': {
-    bannerTitle: 'SALON FOR WOMEN',
-    title: 'Salon for Women',
-    rating: null,
-    reviews: null,
-    desc: 'Hygienic salon treatments at home: waxing, facial, manicure, pedicure, and haircare.',
-    sections: [
-      {
-        sectionTitle: 'Salon & Spa Services',
-        items: [
-          { id: 'salon-wax-1', title: 'Full Arms + Full Legs RICA Wax', rating: null, reviews: null, price: '₹599', originalPrice: '₹699', discount: '14% OFF', isInstant: false, desc: 'Gentle Italian RICA wax for smooth skin without irritation.', image: '/cat_images/salon_women.jpg' },
-          { id: 'salon-face-1', title: 'O3+ Bridal Glow Facial', rating: null, reviews: null, price: '₹1,299', originalPrice: '₹1,599', discount: '18% OFF', isInstant: false, desc: 'High-frequency skin brightening and deep detox massage.', image: '/cat_images/salon_women.jpg' },
-          { id: 'salon-thread-1', title: 'Eyebrow + Upper Lip Threading', rating: null, reviews: null, price: '₹49', originalPrice: '₹69', discount: '28% OFF', isInstant: true, desc: 'Precise shape contouring with disposable sanitary thread.', image: '/cat_images/salon_women.jpg' },
-          { id: 'salon-mani-1', title: 'Classic Pedicure & Foot Scrub', rating: null, reviews: null, price: '₹449', originalPrice: '₹549', discount: '18% OFF', isInstant: false, desc: 'Exfoliation, cuticle care, foot massage, and nail paint.', image: '/cat_images/salon_women.jpg' }
-        ]
-      }
-    ]
-  },
-  'pest-control': {
-    bannerTitle: 'PEST CONTROL',
-    title: 'Pest Control',
-    rating: null,
-    reviews: null,
-    desc: 'Odorless, government-approved pest treatment for cockroaches, termites, bed bugs, and ants.',
-    sections: [
-      {
-        sectionTitle: 'Pest Control Treatments',
-        items: [
-          { id: 'pest-cock-1', title: '1 BHK Herbal Gel Pest Control', rating: null, reviews: null, price: '₹599', originalPrice: '₹749', discount: '20% OFF', isInstant: false, desc: 'Odorless Bayer gel dots in all corners + drain spray.', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' },
-          { id: 'pest-cock-2', title: '2 BHK Herbal Gel Pest Control', rating: null, reviews: null, price: '₹799', originalPrice: '₹999', discount: '20% OFF', isInstant: false, desc: 'Complete 2BHK coverage with 60-day service warranty.', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' }
-        ]
-      }
-    ]
-  }
-};
-
 /**
  * Single Row Carousel with Left & Right Arrow Buttons
  */
@@ -554,17 +425,6 @@ const AllServices = () => {
           liveBrands = brandRes.value.brands;
         }
 
-        // Merge categories: if backend has none, fallback to standard platform registry
-        if (liveCategories.length === 0) {
-          liveCategories = Object.keys(PRESET_CATALOG_DATA).map(key => ({
-            id: key,
-            slug: key,
-            title: PRESET_CATALOG_DATA[key].title,
-            homeIconUrl: PRESET_CATALOG_DATA[key].sections?.[0]?.items?.[0]?.image || '/cat_images/electrician.jpg',
-            homeOrder: 0
-          }));
-        }
-
         setCategories(liveCategories);
         setBrands(liveBrands);
       } catch (err) {
@@ -637,36 +497,6 @@ const AllServices = () => {
             });
           }
         });
-      }
-
-      // If no live brand sections, check PRESET_CATALOG_DATA
-      if (sections.length === 0) {
-        let presetKey = Object.keys(PRESET_CATALOG_DATA).find(
-          (k) => slug.includes(k) || k.includes(slug)
-        );
-        if (!presetKey) {
-          if (slug.includes('electr')) presetKey = 'electrician';
-          else if (slug.includes('plumb')) presetKey = 'plumber';
-          else if (slug.includes('carpent')) presetKey = 'carpenter';
-          else if (slug.includes('clean')) presetKey = 'cleaning-service';
-          else if (slug.includes('salon') || slug.includes('women')) presetKey = 'salon-for-women';
-          else if (slug.includes('ac') || slug.includes('appliance')) presetKey = 'ac-appliance-repair';
-          else if (slug.includes('pest')) presetKey = 'pest-control';
-        }
-
-        if (presetKey && PRESET_CATALOG_DATA[presetKey]) {
-          sections = PRESET_CATALOG_DATA[presetKey].sections.map((s) => ({
-            ...s,
-            items: (s.items || []).map((it) => {
-              const realRating = getRealRating(it.rating, it.reviews);
-              return {
-                ...it,
-                rating: realRating.rating,
-                reviews: realRating.reviews
-              };
-            })
-          }));
-        }
       }
 
       const totalServices = sections.reduce((acc, sec) => acc + (sec.items?.length || 0), 0);

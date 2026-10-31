@@ -43,122 +43,6 @@ const toAssetUrl = (url) => {
   return url;
 };
 
-const DEFAULT_CATEGORY_CONFIG = {
-  electrician: {
-    title: 'Electrician Services',
-    rating: 4.8,
-    reviews: '12K+',
-    icon: '⚡',
-    gradient: 'from-amber-500 to-yellow-600',
-    sections: [
-      {
-        sectionTitle: 'Popular Fixes & Repairs',
-        items: [
-          { id: 'elec-1', title: 'Switch / Socket Replacement', price: '₹99', rating: 4.8, reviews: '3.4K', desc: 'Replacement or new switch/socket installation with surge testing.', image: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=300&auto=format&fit=crop&q=80' },
-          { id: 'elec-2', title: 'Ceiling Fan Installation / Repair', price: '₹149', rating: 4.9, reviews: '5.1K', desc: 'Blade balancing, regulator repair, and noise isolation setup.', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=300&auto=format&fit=crop&q=80' },
-          { id: 'elec-3', title: 'MCB / Fuse Box Troubleshooting', price: '₹199', rating: 4.7, reviews: '2.2K', desc: 'Short circuit tracing, main breaker diagnostics, load balancing.', image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&auto=format&fit=crop&q=80' },
-          { id: 'elec-4', title: 'Full House Wiring Inspection', price: '₹349', rating: 4.9, reviews: '1.8K', desc: 'Earthing health check, voltage leak audit, power point mapping.', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=300&auto=format&fit=crop&q=80' }
-        ]
-      }
-    ]
-  },
-  plumber: {
-    icon: '/cat_images/plumber.jpg',
-    subCategories: [
-      { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', image: '/tap_plumbing_repair.png' },
-      { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&auto=format&fit=crop&q=80' },
-      { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', image: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80' },
-      { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', image: '/cat_images/plumber.jpg' },
-    ]
-  },
-  carpenter: {
-    icon: '/cat_images/carpenter.jpg',
-    subCategories: [
-      { id: 'door-lock', name: 'Door Hinge & Lock Repair', image: 'https://images.unsplash.com/photo-1558036117-15d82a90b9b1?w=400&auto=format&fit=crop&q=80' },
-      { id: 'furniture-assemble', name: 'Furniture Assembly & Repair', image: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=400&auto=format&fit=crop&q=80' },
-      { id: 'sofa-repair', name: 'Sofa Repair & Upholstery', image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop&q=80' },
-      { id: 'hanger-decor', name: 'Hanger & Wall Decor Fitting', image: '/drill_wall_decor.png' },
-    ]
-  },
-  'salon-for-women': {
-    icon: '/cat_images/salon_women.jpg',
-    subCategories: [
-      { id: 'waxing', name: 'Waxing', image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=400&auto=format&fit=crop&q=80' },
-      { id: 'facial', name: 'Facial', image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&auto=format&fit=crop&q=80' },
-      { id: 'korean-glow', name: 'Korean Glow', image: 'https://images.unsplash.com/photo-1512290900673-700200877a56?w=400&auto=format&fit=crop&q=80' },
-      { id: 'mani-pedi', name: 'Mani-Pedi', image: 'https://images.unsplash.com/photo-1519014816548-bf5fe059798b?w=400&auto=format&fit=crop&q=80' },
-      { id: 'hair', name: 'Hair', image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400&auto=format&fit=crop&q=80' },
-    ]
-  },
-  'ac-appliance-repair': {
-    icon: '/ac_repair_wall.png',
-    subCategories: [
-      { id: 'ac-service', name: 'AC Service & Repair', image: '/ac_foam_jet_service.png' },
-      { id: 'refrigerator', name: 'Refrigerator Repair', image: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=400&auto=format&fit=crop&q=80' },
-      { id: 'washing-machine', name: 'Washing Machine Repair', image: 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&auto=format&fit=crop&q=80' },
-      { id: 'geyser', name: 'Geyser & Water Heater', image: '/geyser_checkup.png' },
-    ]
-  },
-  'cleaning-service': {
-    icon: '/intense_bathroom_cleaning.png',
-    subCategories: [
-      { id: 'deep-clean', name: 'Full Home Deep Cleaning', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&auto=format&fit=crop&q=80' },
-      { id: 'bathroom-clean', name: 'Bathroom Cleaning', image: '/intense_bathroom_cleaning.png' },
-      { id: 'kitchen-clean', name: 'Kitchen Cleaning', image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&auto=format&fit=crop&q=80' },
-      { id: 'sofa-cleaning', name: 'Sofa Cleaning', image: '/mattress_cleaning.png' },
-    ]
-  },
-  'pest-control': {
-    icon: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80',
-    subCategories: [
-      { id: 'cockroach-pest', name: 'Cockroach Control', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' },
-      { id: 'termite-pest', name: 'Termite Treatment', image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&auto=format&fit=crop&q=80' },
-      { id: 'bedbug-pest', name: 'Bed Bug Eradication', image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=400&auto=format&fit=crop&q=80' },
-    ]
-  },
-  'painting-service': {
-    icon: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&auto=format&fit=crop&q=80',
-    subCategories: [
-      { id: 'interior-paint', name: 'Full Interior Paint', image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&auto=format&fit=crop&q=80' },
-      { id: 'waterproofing', name: 'Waterproofing', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80' },
-      { id: 'wall-texture', name: 'Wall Texture', image: '/drill_wall_decor.png' },
-    ]
-  },
-  'construction-renovation': {
-    icon: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400&auto=format&fit=crop&q=80',
-    subCategories: [
-      { id: 'civil-repair', name: 'Civil Repair Work', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80' },
-      { id: 'false-ceiling', name: 'False Ceiling & Gypsum', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&auto=format&fit=crop&q=80' },
-      { id: 'tile-laying', name: 'Tile & Marble Laying', image: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80' },
-    ]
-  },
-  'solar-service': {
-    icon: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80',
-    subCategories: [
-      { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', image: 'https://images.unsplash.com/photo-1548611716-ad78255909ff?w=400&auto=format&fit=crop&q=80' },
-      { id: 'solar-panel-washing', name: 'Solar Panel Washing', image: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=400&auto=format&fit=crop&q=80' },
-      { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80' },
-    ]
-  },
-  cook: {
-    icon: '/cat_images/cook.jpg',
-    subCategories: [
-      { id: 'cook-home-cook', name: 'Home Cook', image: '/cat_images/cook-home-cook.jpg' },
-      { id: 'cook-party-event-cook', name: 'Party & Event Cook', image: '/cat_images/cook-party-event-cook.jpg' },
-      { id: 'cook-festival-pooja-cooking', name: 'Festival & Pooja Cooking', image: '/cat_images/cook-festival-pooja-cooking.jpg' }
-    ]
-  },
-  'home-helper': {
-    icon: '/cat_images/home-helper.jpg',
-    subCategories: [
-      { id: 'helper-kitchen-helper', name: 'Kitchen Helper', image: '/cat_images/helper-kitchen-helper.jpg' },
-      { id: 'helper-house-help', name: 'House Help', image: '/cat_images/helper-house-help.jpg' },
-      { id: 'helper-care-helper', name: 'Care Helper', image: '/cat_images/helper-care-helper.jpg' },
-      { id: 'helper-party-helper', name: 'Party Helper', image: '/cat_images/helper-party-helper.jpg' }
-    ]
-  }
-};
-
 const UserDashboard = () => {
   const navigate = useNavigate();
   const { categorySlug } = useParams();
@@ -342,47 +226,8 @@ const UserDashboard = () => {
     return () => window.removeEventListener('resize', checkAllCarousels);
   }, []);
 
-  // Main Category Items State (Dynamic from DB with static fallback)
-  const [mainCategories, setMainCategories] = useState([
-    {
-      id: 'electrician',
-      slug: 'electrician',
-      title: 'Electrician',
-      image: '/cat_images/electrician.jpg',
-      count: '4 services available',
-      subCategories: [
-        { id: 'switch-socket', name: 'Switch & Socket Replacement', image: '/switchboard_repair.png' },
-        { id: 'fan-repair', name: 'Ceiling Fan Repair & Mounting', image: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=400&auto=format&fit=crop&q=80' },
-        { id: 'mcb-repair', name: 'MCB & Fuse Box Repair', image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&auto=format&fit=crop&q=80' },
-        { id: 'tv-install', name: 'Tv Installation & Wiring', image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&auto=format&fit=crop&q=80' },
-      ],
-    },
-    {
-      id: 'plumber',
-      slug: 'plumber',
-      title: 'Plumber',
-      image: '/cat_images/plumber.jpg',
-      count: '4 services available',
-      subCategories: [
-        { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', image: '/tap_plumbing_repair.png' },
-        { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&auto=format&fit=crop&q=80' },
-        { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', image: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80' },
-        { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', image: '/cat_images/plumber.jpg' },
-      ],
-    },
-    {
-      id: 'solar-service',
-      slug: 'solar-service',
-      title: 'Solar Service',
-      image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80',
-      count: '3 services available',
-      subCategories: [
-        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', image: 'https://images.unsplash.com/photo-1548611716-ad78255909ff?w=400&auto=format&fit=crop&q=80' },
-        { id: 'solar-panel-washing', name: 'Solar Panel Washing', image: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=400&auto=format&fit=crop&q=80' },
-        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80' }
-      ]
-    }
-  ]);
+  // Main category items (loaded live from the API)
+  const [mainCategories, setMainCategories] = useState([]);
 
   // Fetch live categories & brands dynamically from MongoDB API
   useEffect(() => {
@@ -395,8 +240,7 @@ const UserDashboard = () => {
           const allBrands = brandRes.brands || [];
 
           const liveCats = catRes.categories.map(c => {
-            const config = DEFAULT_CATEGORY_CONFIG[c.slug] || DEFAULT_CATEGORY_CONFIG[c.id] || {};
-            const iconPath = c.icon || c.homeIconUrl || config.icon || '/cat_images/electrician.jpg';
+            const iconPath = c.icon || c.homeIconUrl || '/cat_images/electrician.jpg';
 
               // Match brands belonging to this category from MongoDB
               const matchingBrands = allBrands.filter(b =>
@@ -406,18 +250,11 @@ const UserDashboard = () => {
                 (b.categorySlug && b.categorySlug === c.slug)
               );
 
-              let subCats = [];
-              if (matchingBrands.length > 0) {
-                subCats = matchingBrands.map(b => ({
-                  id: b.slug || b.id,
-                  name: b.title,
-                  image: toAssetUrl(b.icon || b.imageUrl || b.logo)
-                }));
-              } else if (config.subCategories && config.subCategories.length > 0) {
-                subCats = config.subCategories;
-              } else {
-                subCats = [];
-              }
+              const subCats = matchingBrands.map(b => ({
+                id: b.slug || b.id,
+                name: b.title,
+                image: toAssetUrl(b.icon || b.imageUrl || b.logo)
+              }));
 
               return {
                 id: c.slug || c.id,
@@ -440,481 +277,8 @@ const UserDashboard = () => {
     fetchLiveCategories();
   }, []);
 
-  // Complete Dynamic Services Registry for All Platform Categories
-  const CATEGORY_CATALOG_REGISTRY = {
-    electrician: {
-      bannerTitle: 'ELECTRICAL SERVICES',
-      title: 'Electrician',
-      rating: '4.8',
-      desc: 'Certified electrical technicians for fault diagnosis, wiring, lighting, fans, MCBs, and home appliance power solutions.',
-      subGrid: [
-        { id: 'consultation', name: 'Book a consultation', image: '/cat_images/electrician.jpg' },
-        { id: 'inverter', name: 'Inverter And Stabiliser', image: '/native_water_purifier.png' },
-        { id: 'appliances', name: 'Appliances', image: '/ac_foam_jet_service.png' },
-        { id: 'mcb', name: 'MCB/fuse', image: '/switchboard_repair.png' },
-        { id: 'doorbell', name: 'Doorbell & security', image: '/drill_wall_decor.png' },
-        { id: 'wiring', name: 'Wiring', image: '/switchboard_repair.png' },
-        { id: 'light', name: 'Light', image: '/ac_repair_wall.png' },
-        { id: 'fan', name: 'Fan', image: '/ac_repair_wall.png' },
-        { id: 'switch-socket', name: 'Switch & socket', image: '/switchboard_repair.png' },
-      ],
-      detailedSections: [
-        {
-          id: 'consultation',
-          sectionTitle: 'Book a consultation',
-          items: [
-            { id: 'book-consultant', title: 'Book electrical consultant', rating: '4.8', price: '₹0', desc: 'Expert inspection, troubleshooting, safety advice, and exact cost estimation.', image: '/cat_images/electrician.jpg' }
-          ]
-        },
-        {
-          id: 'inverter',
-          sectionTitle: 'Inverter And Stabiliser',
-          items: [
-            { id: 'inverter-install', title: 'Inverter installation', rating: '4.8', price: '₹249', desc: 'Professional single inverter battery installation, replacement, and power connection.', image: '/native_water_purifier.png' },
-            { id: 'inverter-stabilizer', title: 'Inverter & stabilizer repair', rating: '4.8', price: '₹199', desc: 'Diagnosis and component repair for heavy-load voltage stabilizers.', image: '/native_water_purifier.png' }
-          ]
-        },
-        {
-          id: 'appliances',
-          sectionTitle: 'Appliances',
-          items: [
-            { id: 'home-theatre-install', title: 'Home theatre installation', rating: '4.8', price: '₹399', desc: 'Surround sound setup, subwoofer tuning, and clean audio routing.', image: '/ac_foam_jet_service.png' },
-            { id: 'tv-wall-mounting', title: 'TV Wall Mounting & Setup', rating: '4.9', price: '₹299', desc: 'Laser-level TV wall mount fitting with concealed cable casing.', image: '/ac_repair_wall.png' }
-          ]
-        },
-        {
-          id: 'mcb',
-          sectionTitle: 'MCB / Fuse Box',
-          items: [
-            { id: 'mcb-replacement', title: 'MCB Switch Replacement', rating: '4.8', price: '₹149', desc: 'Replacement of single/double pole miniature circuit breaker with surge test.', image: '/switchboard_repair.png' },
-            { id: 'fuse-troubleshoot', title: 'Main Fuse Troubleshooting', rating: '4.7', price: '₹199', desc: 'Diagnosis of sudden trips, short circuits, and phase load balancing.', image: '/switchboard_repair.png' }
-          ]
-        },
-        {
-          id: 'doorbell',
-          sectionTitle: 'Doorbell & Security',
-          items: [
-            { id: 'doorbell-install', title: 'Smart / Standard Doorbell Installation', rating: '4.8', price: '₹129', desc: 'Fitting electric or smart video doorbells with transformer & chime setup.', image: '/drill_wall_decor.png' }
-          ]
-        },
-        {
-          id: 'wiring',
-          sectionTitle: 'Wiring & Cable Management',
-          items: [
-            { id: 'internal-wiring', title: 'Internal Concealed Wiring (Per Point)', rating: '4.9', price: '₹199', desc: 'Flame-retardant wiring installation with PVC casing and pipe conduit.', image: '/switchboard_repair.png' }
-          ]
-        },
-        {
-          id: 'light',
-          sectionTitle: 'Light & Fixture Installation',
-          items: [
-            { id: 'fancy-light-install', title: 'Decorative / Chandelier Light Fitting', rating: '4.8', price: '₹199', desc: 'Ceiling anchor fixing for fancy pendant lights, chandeliers, and LED battens.', image: '/ac_repair_wall.png' }
-          ]
-        },
-        {
-          id: 'fan',
-          sectionTitle: 'Fan Installation & Repair',
-          items: [
-            { id: 'ceiling-fan-install', title: 'Ceiling Fan Installation & Balancing', rating: '4.9', price: '₹149', desc: 'Downrod assembly, blade balancing, regulator wiring, and wobble elimination.', image: '/ac_repair_wall.png' }
-          ]
-        },
-        {
-          id: 'switch-socket',
-          sectionTitle: 'Switch & Socket Replacement',
-          items: [
-            { id: 'switch-socket-replace-item', title: 'Modular Switch & 16A Socket Replacement', rating: '4.8', price: '₹79', desc: 'Replacement of burnt or broken switches, plugs, and heavy appliance sockets.', image: '/switchboard_repair.png' }
-          ]
-        }
-      ]
-    },
-    plumber: {
-      bannerTitle: 'PLUMBING & SANITARY SERVICES',
-      title: 'Plumber',
-      rating: '4.7',
-      desc: 'Expert plumbing specialists for tap leakage, high pressure drainage unclogging, pipe fittings, and complete bathroom sanitary repairs at transparent prices.',
-      subGrid: [
-        { id: 'tap-mixer', name: 'Tap & Mixer Repair', image: '/tap_plumbing_repair.png' },
-        { id: 'drainage', name: 'Drainage & Blockage', image: '/intense_bathroom_cleaning.png' },
-        { id: 'flush-toilet', name: 'Flush Tank & Toilet', image: '/intense_bathroom_cleaning.png' },
-        { id: 'pipe-fitting', name: 'Pipe & Tank Fitting', image: '/tap_plumbing_repair.png' },
-        { id: 'basin-sink', name: 'Basin & Kitchen Sink', image: '/tap_plumbing_repair.png' },
-        { id: 'water-pump', name: 'Water Pump & Motor', image: '/native_water_purifier.png' }
-      ],
-      detailedSections: [
-        {
-          id: 'tap-mixer',
-          sectionTitle: 'Tap & Mixer Leakage Repair',
-          items: [
-            { id: 'plumb-tap-replace', title: 'Tap & Spout Replacement', price: '₹79', rating: '4.8', desc: 'Fix leaking or broken bib taps, pillar cocks, and spout filters.', image: '/tap_plumbing_repair.png' },
-            { id: 'plumb-mixer-cartridge', title: 'Wall Mixer Cartridge Repair', price: '₹149', rating: '4.9', desc: 'Repair low water pressure and internal ceramic disc cartridges.', image: '/tap_plumbing_repair.png' },
-            { id: 'plumb-angle-valve', title: 'Angle Valve & Jet Spray Fit', price: '₹99', rating: '4.7', desc: 'Installation of high-pressure bidet jet sprays and angle stop valves.', image: '/tap_plumbing_repair.png' }
-          ]
-        },
-        {
-          id: 'drainage',
-          sectionTitle: 'Blockage & Drainage Clearing',
-          items: [
-            { id: 'plumb-sink-unclog', title: 'Kitchen Sink Drain Unclogging', price: '₹199', rating: '4.8', desc: 'Clearing food sludge, grease buildup, and bottle trap sanitization.', image: '/intense_bathroom_cleaning.png' },
-            { id: 'plumb-bath-drain', title: 'Bathroom Floor Trap Clearing', price: '₹249', rating: '4.7', desc: 'Removal of hair clogs, soap residue, and gully trap unclogging.', image: '/intense_bathroom_cleaning.png' },
-            { id: 'plumb-jet-clear', title: 'High-Pressure Pipe Jet Clean', price: '₹499', rating: '4.9', desc: 'Motorized mechanical snake rodding for heavy main line blocks.', image: '/intense_bathroom_cleaning.png' }
-          ]
-        },
-        {
-          id: 'flush-toilet',
-          sectionTitle: 'Flush Tank & Toilet Repair',
-          items: [
-            { id: 'plumb-flush-syphon', title: 'Flush Tank Syphon & Float Valve', price: '₹179', rating: '4.8', desc: 'Fix continuous water running, faulty push button, and overflow float valve.', image: '/intense_bathroom_cleaning.png' },
-            { id: 'plumb-commode-leak', title: 'Western Commode Sealing & Repair', price: '₹249', rating: '4.7', desc: 'Gasket replacement, wax ring sealing, and floor joint leak prevention.', image: '/intense_bathroom_cleaning.png' }
-          ]
-        },
-        {
-          id: 'pipe-fitting',
-          sectionTitle: 'Pipe & Tank Fitting',
-          items: [
-            { id: 'plumb-concealed-pipe', title: 'Concealed Pipeline Leakage Repair', price: '₹299', rating: '4.9', desc: 'Acoustic detection and CPVC/UPVC pipe joint patching with pressure test.', image: '/tap_plumbing_repair.png' },
-            { id: 'plumb-tank-valve', title: 'Overhead Tank Ball Valve Install', price: '₹199', rating: '4.8', desc: 'Automatic brass ball valve fitting to prevent overhead water overflow.', image: '/native_water_purifier.png' }
-          ]
-        },
-        {
-          id: 'basin-sink',
-          sectionTitle: 'Basin & Kitchen Sink',
-          items: [
-            { id: 'plumb-basin-install', title: 'Wash Basin Installation & Coupling', price: '₹249', rating: '4.8', desc: 'Laser level mounting of wash basins with waste coupling & trap.', image: '/tap_plumbing_repair.png' }
-          ]
-        },
-        {
-          id: 'water-pump',
-          sectionTitle: 'Water Pump & Motor',
-          items: [
-            { id: 'plumb-motor-connect', title: 'Water Motor Pump Connection & Wiring', price: '₹349', rating: '4.8', desc: 'Inlet/outlet plumbing union joints and capacitor check for booster pumps.', image: '/native_water_purifier.png' }
-          ]
-        }
-      ]
-    },
-    carpenter: {
-      bannerTitle: 'CARPENTRY & WOODWORK SERVICES',
-      title: 'Carpenter',
-      rating: '4.8',
-      desc: 'Expert woodworking, flat-pack furniture assembly, door locks, hinges, and custom wall mounting with laser precision.',
-      subGrid: [
-        { id: 'door-lock', name: 'Door Lock & Handles', image: '/drill_wall_decor.png' },
-        { id: 'furniture-assemble', name: 'Furniture Assembly', image: '/drill_wall_decor.png' },
-        { id: 'sofa-repair', name: 'Sofa & Chair Repair', image: '/drill_wall_decor.png' },
-        { id: 'wardrobe-hinge', name: 'Cupboard & Hinge Fix', image: '/switchboard_repair.png' },
-        { id: 'custom-drilling', name: 'Wall Hanging & Drill', image: '/drill_wall_decor.png' }
-      ],
-      detailedSections: [
-        {
-          id: 'door-lock',
-          sectionTitle: 'Door Lock & Handles',
-          items: [
-            { id: 'carp-mortise-lock', title: 'Mortise Main Door Lock Fitting', price: '₹199', rating: '4.9', desc: 'Precision mortise chiseled installation for security locks & smart latches.', image: '/drill_wall_decor.png' },
-            { id: 'carp-cylinder-replace', title: 'Lock Cylinder Replacement', price: '₹149', rating: '4.8', desc: 'Replacement of brass key cylinder with 3 duplicate keys testing.', image: '/drill_wall_decor.png' }
-          ]
-        },
-        {
-          id: 'furniture-assemble',
-          sectionTitle: 'Furniture Assembly',
-          items: [
-            { id: 'carp-bed-assembly', title: 'Bed Assembly (Single/Double/Hydraulic)', price: '₹349', rating: '4.8', desc: 'Flat-pack bed frame assembly with headboard and hydraulic lift fitting.', image: '/drill_wall_decor.png' },
-            { id: 'carp-table-chair', title: 'Study Table & Dining Table Assembly', price: '₹249', rating: '4.7', desc: 'Leg bolt alignment, structural wobble removal, and surface leveling.', image: '/drill_wall_decor.png' }
-          ]
-        },
-        {
-          id: 'wardrobe-hinge',
-          sectionTitle: 'Cupboard & Hinge Fix',
-          items: [
-            { id: 'carp-soft-hinge', title: 'Soft-Close Cabinet Hinge Fitting', price: '₹129', rating: '4.8', desc: 'Replacement of rusted or loose cabinet auto-hinges and magnetic catches.', image: '/switchboard_repair.png' },
-            { id: 'carp-drawer-channel', title: 'Drawer Telescopic Channel Repair', price: '₹179', rating: '4.7', desc: 'Smooth ball-bearing channel realigning for kitchen & wardrobe drawers.', image: '/switchboard_repair.png' }
-          ]
-        },
-        {
-          id: 'custom-drilling',
-          sectionTitle: 'Wall Hanging & Drill',
-          items: [
-            { id: 'carp-curtain-rod', title: 'Curtain Rod Installation (Per Rod)', price: '₹99', rating: '4.9', desc: 'Heavy masonry anchor drill fitting with spirit level alignment.', image: '/drill_wall_decor.png' },
-            { id: 'carp-heavy-mirror', title: 'Large Mirror & Artwork Mounting', price: '₹149', rating: '4.8', desc: 'Secure load-rated bracket wall drilling for vanity mirrors and framed art.', image: '/drill_wall_decor.png' }
-          ]
-        }
-      ]
-    },
-    'salon-for-women': {
-      bannerTitle: 'SALON & SPA FOR WOMEN',
-      title: 'Salon for Women',
-      rating: '4.9',
-      desc: 'Certified female beauticians delivering hygienic doorstep waxing, glowing facials, manicures, pedicures, and hair rituals with single-use kits.',
-      subGrid: [
-        { id: 'waxing', name: 'Waxing & Threading', image: '/cat_images/salon_women.jpg' },
-        { id: 'facial', name: 'Facials & Cleanups', image: '/cat_images/salon_women.jpg' },
-        { id: 'korean-glow', name: 'Korean Glass Glow', image: '/cat_images/salon_women.jpg' },
-        { id: 'mani-pedi', name: 'Manicure & Pedicure', image: '/cat_images/salon_women.jpg' },
-        { id: 'hair-spa', name: 'Hair Care & Spa', image: '/cat_images/salon_women.jpg' }
-      ],
-      detailedSections: [
-        {
-          id: 'waxing',
-          sectionTitle: 'Waxing & Threading',
-          items: [
-            { id: 'salon-wax-combo', title: 'Rica Full Arms + Full Legs Waxing', price: '₹499', rating: '4.9', desc: 'Painless roll-on Rica waxing with pre-wax gel & post-wax oil treatment.', image: '/cat_images/salon_women.jpg' },
-            { id: 'salon-threading', title: 'Eyebrow + Upper Lip Threading', price: '₹79', rating: '4.8', desc: 'Precision shaping with sanitized organic antibacterial thread.', image: '/cat_images/salon_women.jpg' }
-          ]
-        },
-        {
-          id: 'facial',
-          sectionTitle: 'Facials & Cleanups',
-          items: [
-            { id: 'salon-o3-facial', title: 'O3+ Bridal Radiance & Glow Facial', price: '₹1,199', rating: '4.9', desc: '6-Step brightening treatment with peel-off algae mask and serum infusion.', image: '/cat_images/salon_women.jpg' },
-            { id: 'salon-fruit-cleanup', title: 'Herbal Fruit Cleanup', price: '₹399', rating: '4.8', desc: 'Deep pore cleansing, fruit enzyme scrub, blackhead extraction, and pack.', image: '/cat_images/salon_women.jpg' }
-          ]
-        },
-        {
-          id: 'korean-glow',
-          sectionTitle: 'Korean Glass Glow',
-          items: [
-            { id: 'salon-hydra-glow', title: 'Korean Hydra Glass Skin Facial', price: '₹1,499', rating: '4.9', desc: 'Deep ultrasonic exfoliation, hyaluronic hydration infusion, and LED phototherapy.', image: '/cat_images/salon_women.jpg' }
-          ]
-        },
-        {
-          id: 'mani-pedi',
-          sectionTitle: 'Manicure & Pedicure',
-          items: [
-            { id: 'salon-rose-pedi', title: 'Rose Petal Spa Pedicure + Manicure', price: '₹699', rating: '4.8', desc: 'Dead skin buffing, cuticle care, relaxing massage, and nail polish.', image: '/cat_images/salon_women.jpg' }
-          ]
-        }
-      ]
-    },
-    'ac-appliance-repair': {
-      bannerTitle: 'AC & APPLIANCE REPAIR SERVICES',
-      title: 'AC & Appliance Repair',
-      rating: '4.8',
-      desc: 'Certified appliance engineers for AC foam-jet servicing, gas charging, washing machines, refrigerators, and water heaters.',
-      subGrid: [
-        { id: 'ac-foam-jet', name: 'AC Service & Repair', image: '/ac_foam_jet_service.png' },
-        { id: 'refrigerator', name: 'Refrigerator Repair', image: '/ac_repair_wall.png' },
-        { id: 'washing-machine', name: 'Washing Machine', image: '/intense_bathroom_cleaning.png' },
-        { id: 'geyser', name: 'Geyser & Water Heater', image: '/geyser_checkup.png' },
-        { id: 'ro-purifier', name: 'RO Water Purifier', image: '/native_water_purifier.png' }
-      ],
-      detailedSections: [
-        {
-          id: 'ac-foam-jet',
-          sectionTitle: 'AC Service & Repair',
-          items: [
-            { id: 'app-foam-jet-1', title: 'Power-Jet Foam AC Deep Service', price: '₹599', rating: '4.8', desc: '2x deeper coil cleaning with pressurized foam jet gun, drain tray wash & anti-fungal spray.', image: '/ac_foam_jet_service.png' },
-            { id: 'app-ac-gas', title: 'AC Gas Charging & Leak Check', price: '₹1,499', rating: '4.7', desc: 'Nitrogen pressure testing, brazing leak repair, and 100% refrigerant top-up.', image: '/ac_repair_wall.png' }
-          ]
-        },
-        {
-          id: 'refrigerator',
-          sectionTitle: 'Refrigerator Repair',
-          items: [
-            { id: 'app-fridge-diag', title: 'Refrigerator Cooling Diagnosis', price: '₹199', rating: '4.8', desc: 'Compressor check, thermostat relay diagnostic, and cooling gas level test.', image: '/ac_repair_wall.png' }
-          ]
-        },
-        {
-          id: 'washing-machine',
-          sectionTitle: 'Washing Machine',
-          items: [
-            { id: 'app-wm-service', title: 'Automatic Washing Machine Service', price: '₹249', rating: '4.8', desc: 'Drum descaling, drain motor valve clearance, and spin noise balance.', image: '/intense_bathroom_cleaning.png' }
-          ]
-        },
-        {
-          id: 'geyser',
-          sectionTitle: 'Geyser & Water Heater',
-          items: [
-            { id: 'app-geyser-check', title: 'Geyser Check-up & Element Descale', price: '₹249', rating: '4.8', desc: 'Heating coil descaling, thermostat temperature test, and safety valve check.', image: '/geyser_checkup.png' }
-          ]
-        }
-      ]
-    },
-    'cleaning-service': {
-      bannerTitle: 'CLEANING & HYGIENE SERVICES',
-      title: 'Cleaning Service',
-      rating: '4.8',
-      desc: 'Professional mechanized deep cleaning for bathrooms, kitchens, sofas, and full apartments with eco-friendly sanitizers.',
-      subGrid: [
-        { id: 'full-home', name: 'Full Home Deep Clean', image: '/intense_bathroom_cleaning.png' },
-        { id: 'bathroom', name: 'Bathroom Cleaning', image: '/intense_bathroom_cleaning.png' },
-        { id: 'kitchen', name: 'Kitchen Degreasing', image: '/intense_bathroom_cleaning.png' },
-        { id: 'sofa-carpet', name: 'Sofa & Carpet Wash', image: '/mattress_cleaning.png' }
-      ],
-      detailedSections: [
-        {
-          id: 'full-home',
-          sectionTitle: 'Full Home Deep Clean',
-          items: [
-            { id: 'clean-1bhk', title: '1 BHK Complete Home Deep Clean', price: '₹1,899', rating: '4.8', desc: 'Floor single-disc buffing, bathroom descaling, kitchen degreasing & balcony wash.', image: '/intense_bathroom_cleaning.png' },
-            { id: 'clean-2bhk', title: '2 BHK Complete Home Deep Clean', price: '₹2,499', rating: '4.9', desc: 'Comprehensive deep cleaning for 2 bedrooms, hall, kitchen & 2 bathrooms.', image: '/intense_bathroom_cleaning.png' }
-          ]
-        },
-        {
-          id: 'bathroom',
-          sectionTitle: 'Bathroom Cleaning',
-          items: [
-            { id: 'clean-bath-intense', title: 'Intense Bathroom Descaling (2 Bathrooms)', price: '₹699', rating: '4.8', desc: 'Heavy hard-water stain removal from tiles, taps, mirrors, and WC sanitization.', image: '/intense_bathroom_cleaning.png' }
-          ]
-        },
-        {
-          id: 'sofa-carpet',
-          sectionTitle: 'Sofa & Carpet Wash',
-          items: [
-            { id: 'clean-sofa-shampoo', title: '3-Seater Sofa Injection Shampooing', price: '₹599', rating: '4.9', desc: 'High-power foam extraction wash for fabric sofas with dust mite removal.', image: '/mattress_cleaning.png' }
-          ]
-        }
-      ]
-    },
-    'pest-control': {
-      bannerTitle: 'PEST CONTROL & DISINFECTION',
-      title: 'Pest Control',
-      rating: '4.8',
-      desc: 'Odorless, government-approved herbal pest control for cockroaches, termites, bed bugs, and rodents with warranty.',
-      subGrid: [
-        { id: 'cockroach', name: 'Cockroach & Ant Control', image: '/intense_bathroom_cleaning.png' },
-        { id: 'termite', name: 'Termite Treatment', image: '/drill_wall_decor.png' },
-        { id: 'bedbug', name: 'Bed Bug Eradication', image: '/mattress_cleaning.png' }
-      ],
-      detailedSections: [
-        {
-          id: 'cockroach',
-          sectionTitle: 'Cockroach & Ant Control',
-          items: [
-            { id: 'pest-cockroach-1bhk', title: '1 BHK Herbal Gel Cockroach Treatment', price: '₹699', rating: '4.8', desc: 'Odorless German gel baiting across cabinets and kitchen corners with 3-month warranty.', image: '/intense_bathroom_cleaning.png' },
-            { id: 'pest-cockroach-2bhk', title: '2 BHK Herbal Gel + Drain Spray', price: '₹899', rating: '4.9', desc: 'Dual-action gel baiting and anti-cockroach drain piping treatment.', image: '/intense_bathroom_cleaning.png' }
-          ]
-        },
-        {
-          id: 'termite',
-          sectionTitle: 'Termite Treatment',
-          items: [
-            { id: 'pest-termite-barrier', title: 'Drill-Fill-Seal Termite Barrier (1 Room)', price: '₹1,499', rating: '4.9', desc: 'Subterranean chemical barrier drill injection with color-matched sealant.', image: '/drill_wall_decor.png' }
-          ]
-        }
-      ]
-    },
-    'painting-service': {
-      bannerTitle: 'PAINTING & WATERPROOFING',
-      title: 'Painting Service',
-      rating: '4.8',
-      desc: 'Expert wall painting, moisture leak waterproofing, texture stencils, and dustless mechanized sanding.',
-      subGrid: [
-        { id: 'interior-paint', name: 'Full Interior Painting', image: '/drill_wall_decor.png' },
-        { id: 'waterproofing', name: 'Seepage Waterproofing', image: '/tap_plumbing_repair.png' },
-        { id: 'accent-wall', name: 'Accent Wall Textures', image: '/drill_wall_decor.png' }
-      ],
-      detailedSections: [
-        {
-          id: 'interior-paint',
-          sectionTitle: 'Full Interior Painting',
-          items: [
-            { id: 'paint-1room', title: '1 Room Fresh Paint (Walls + Ceiling)', price: '₹1,999', rating: '4.8', desc: '2 Coats premium washable acrylic emulsion with floor masking and putty touchup.', image: '/drill_wall_decor.png' },
-            { id: 'paint-2bhk', title: '2 BHK Full Interior Painting Package', price: '₹8,999', rating: '4.9', desc: 'Complete Asian Paints / Berger premium paint finish with mechanized dustless sanding.', image: '/drill_wall_decor.png' }
-          ]
-        },
-        {
-          id: 'waterproofing',
-          sectionTitle: 'Seepage Waterproofing',
-          items: [
-            { id: 'paint-seepage-fix', title: 'Wall Dampness & Efflorescence Sealing', price: '₹999', rating: '4.8', desc: 'Epoxy injection and silicone barrier primer to permanently stop peeling paint.', image: '/tap_plumbing_repair.png' }
-          ]
-        }
-      ]
-    },
-    'construction-renovation': {
-      bannerTitle: 'CONSTRUCTION & RENOVATION',
-      title: 'Construction & Renovation',
-      rating: '4.8',
-      desc: 'Civil repair work, false ceiling installations, tile laying, bathroom remodels, and structural masonry work.',
-      subGrid: [
-        { id: 'civil-repair', name: 'Civil Repair Work', image: '/switchboard_repair.png' },
-        { id: 'false-ceiling', name: 'False Ceiling & Gypsum', image: '/ac_repair_wall.png' },
-        { id: 'tile-laying', name: 'Tile & Marble Laying', image: '/drill_wall_decor.png' }
-      ],
-      detailedSections: [
-        {
-          id: 'civil-repair',
-          sectionTitle: 'Civil Repair Work',
-          items: [
-            { id: 'const-wall-crack', title: 'Structural Wall Crack Repair & Stitching', price: '₹499', rating: '4.8', desc: 'Polymer modified mortar patching and structural fiber mesh reinforcement.', image: '/switchboard_repair.png' },
-            { id: 'const-core-cut', title: 'Masonry Wall Cut & Plastering', price: '₹799', rating: '4.7', desc: 'Neat electrical/plumbing chase groove cutting and cement sand plaster finishing.', image: '/switchboard_repair.png' }
-          ]
-        },
-        {
-          id: 'tile-laying',
-          sectionTitle: 'Tile & Marble Laying',
-          items: [
-            { id: 'const-tile-replace', title: 'Broken Tile Replacement & Re-Grouting', price: '₹349', rating: '4.8', desc: 'Chiseling cracked floor/wall tiles, adhesive bed leveling, and epoxy joint sealing.', image: '/drill_wall_decor.png' }
-          ]
-        }
-      ]
-    },
-    'solar-service': {
-      bannerTitle: 'SOLAR ROOFTOP & INVERTER SERVICES',
-      title: 'Solar Service',
-      rating: '4.9',
-      desc: 'Specialized solar technicians for inverter wiring repair, de-ionized solar panel washing, and full rooftop solar generation audits.',
-      subGrid: [
-        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', image: '/native_water_purifier.png' },
-        { id: 'solar-panel-washing', name: 'Solar Panel Washing & Maintenance', image: '/intense_bathroom_cleaning.png' },
-        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation Checkup', image: '/native_water_purifier.png' }
-      ],
-      detailedSections: [
-        {
-          id: 'solar-inverter-wiring-repair',
-          sectionTitle: 'Solar Inverter & Wiring Repair',
-          items: [
-            { id: 'solar-inv-diag', title: 'Solar Inverter Error & Fault Diagnostics', price: '₹299', rating: '4.9', desc: 'Diagnostic check for MPPT charge controller, grid sync faults, and MC4 connectors.', image: '/native_water_purifier.png' },
-            { id: 'solar-string-wire', title: 'DC String Cable & Surge Protector Fix', price: '₹399', rating: '4.8', desc: 'Rewiring damaged solar DC cables, replacement of SPD fuses and isolator switches.', image: '/native_water_purifier.png' }
-          ]
-        },
-        {
-          id: 'solar-panel-washing',
-          sectionTitle: 'Solar Panel Washing & Maintenance',
-          items: [
-            { id: 'solar-wash-10', title: 'De-ionized Pressure Wash (Up to 10 Panels)', price: '₹499', rating: '4.9', desc: 'Non-abrasive microfiber de-ionized pressure wash removing dust and bird drops to boost output by 15-25%.', image: '/intense_bathroom_cleaning.png' },
-            { id: 'solar-wash-20', title: 'Rooftop Solar Deep Clean (11-25 Panels)', price: '₹799', rating: '4.9', desc: 'Complete frame scrub, glass polish, and anti-static dust repellent coating.', image: '/intense_bathroom_cleaning.png' }
-          ]
-        },
-        {
-          id: 'rooftop-solar-installation',
-          sectionTitle: 'Rooftop Solar Installation Checkup',
-          items: [
-            { id: 'solar-audit-full', title: 'Comprehensive Solar Plant Generation Audit', price: '₹699', rating: '4.9', desc: 'Thermal imaging for hot spots, inverter efficiency test, and structural bolt torque check.', image: '/native_water_purifier.png' }
-          ]
-        }
-      ]
-    }
-  };
-
-  // Helper to dynamically resolve full service detail template for ANY category (preset or custom created by admin)
-  const resolveCategoryDetail = (category, _subCategory) => {
-    const catSlug = (category.slug || category.id || category.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-    
-    let key = Object.keys(CATEGORY_CATALOG_REGISTRY).find(k => catSlug.includes(k) || k.includes(catSlug));
-    if (!key) {
-      if (catSlug.includes('electr')) key = 'electrician';
-      else if (catSlug.includes('plumb')) key = 'plumber';
-      else if (catSlug.includes('carpent')) key = 'carpenter';
-      else if (catSlug.includes('salon') || catSlug.includes('women')) key = 'salon-for-women';
-      else if (catSlug.includes('ac') || catSlug.includes('appliance')) key = 'ac-appliance-repair';
-      else if (catSlug.includes('clean')) key = 'cleaning-service';
-      else if (catSlug.includes('pest')) key = 'pest-control';
-      else if (catSlug.includes('paint')) key = 'painting-service';
-      else if (catSlug.includes('construct') || catSlug.includes('renovat')) key = 'construction-renovation';
-      else if (catSlug.includes('solar')) key = 'solar-service';
-    }
-
-    if (key && CATEGORY_CATALOG_REGISTRY[key]) {
-      const template = CATEGORY_CATALOG_REGISTRY[key];
-      return {
-        ...template,
-        title: category.title || template.title,
-        bannerTitle: `${(category.title || template.title).toUpperCase()} SERVICES`,
-        rating: category.rating || template.rating || 'New',
-        reviews: category.reviews || null
-      };
-    }
-
-    // Custom Categories Created by Admin in Database with no presets
+  // Builds the category detail view from live data (sub-services come from the category's brands)
+  const resolveCategoryDetail = (category) => {
     const subList = Array.isArray(category.subCategories) ? category.subCategories : [];
 
     return {
@@ -932,118 +296,26 @@ const UserDashboard = () => {
     };
   };
 
-  // 6 Primary Explore Services Configured to Exactly Match the User's Reference Screenshot
-  const exploreServices = useMemo(() => [
-    {
-      id: 'handyman',
-      slug: 'electrician',
-      title: 'Electrician /\nPlumber / Carpenter',
-      displayTitle: 'Electrician / Plumber / Carpenter',
-      image: '/cat_images/electrician.jpg',
-      count: '3 trades available',
-      isCombo: true,
-      subCategories: [
-        { id: 'electrician', name: 'Electrician Services', image: '/cat_images/electrician.jpg', slug: 'electrician' },
-        { id: 'plumber', name: 'Plumber Services', image: '/cat_images/plumber.jpg', slug: 'plumber' },
-        { id: 'carpenter', name: 'Carpenter Services', image: '/cat_images/carpenter.jpg', slug: 'carpenter' },
-      ]
-    },
-    {
-      id: 'cleaning-service',
-      slug: 'cleaning-service',
-      title: 'Cleaning Service',
-      displayTitle: 'Cleaning Service',
-      image: '/intense_bathroom_cleaning.png',
-      count: '4 services available',
-      subCategories: [
-        { id: 'full-home', name: 'Full Home Deep Clean', image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&auto=format&fit=crop&q=80' },
-        { id: 'bathroom', name: 'Bathroom Cleaning', image: '/intense_bathroom_cleaning.png' },
-        { id: 'kitchen', name: 'Kitchen Degreasing', image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&auto=format&fit=crop&q=80' },
-        { id: 'sofa-carpet', name: 'Sofa & Carpet Wash', image: '/mattress_cleaning.png' }
-      ]
-    },
-    {
-      id: 'pest-control',
-      slug: 'pest-control',
-      title: 'Pest Control',
-      displayTitle: 'Pest Control',
-      image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=500&auto=format&fit=crop&q=80',
-      count: '3 services available',
-      subCategories: [
-        { id: 'cockroach', name: 'Cockroach & Ant Control', image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' },
-        { id: 'termite', name: 'Termite Treatment', image: 'https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=400&auto=format&fit=crop&q=80' },
-        { id: 'bedbug', name: 'Bed Bug Eradication', image: 'https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=400&auto=format&fit=crop&q=80' }
-      ]
-    },
-    {
-      id: 'painting-service',
-      slug: 'painting-service',
-      title: 'Painting Service',
-      displayTitle: 'Painting Service',
-      image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500&auto=format&fit=crop&q=80',
-      count: '3 services available',
-      subCategories: [
-        { id: 'interior-paint', name: 'Full Interior Painting', image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&auto=format&fit=crop&q=80' },
-        { id: 'waterproofing', name: 'Seepage Waterproofing', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80' },
-        { id: 'accent-wall', name: 'Accent Wall Textures', image: '/drill_wall_decor.png' }
-      ]
-    },
-    {
-      id: 'construction-renovation',
-      slug: 'construction-renovation',
-      title: 'Construction & Renovation',
-      displayTitle: 'Construction & Renovation',
-      image: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=500&auto=format&fit=crop&q=80',
-      count: '3 services available',
-      subCategories: [
-        { id: 'civil-repair', name: 'Civil Repair Work', image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&auto=format&fit=crop&q=80' },
-        { id: 'false-ceiling', name: 'False Ceiling & Gypsum', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&auto=format&fit=crop&q=80' },
-        { id: 'tile-laying', name: 'Tile & Marble Laying', image: 'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80' }
-      ]
-    },
-    {
-      id: 'solar-service',
-      slug: 'solar-service',
-      title: 'Solar Service',
-      displayTitle: 'Solar Service',
-      image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=500&auto=format&fit=crop&q=80',
-      count: '3 services available',
-      subCategories: [
-        { id: 'solar-inverter-wiring-repair', name: 'Solar Inverter & Wiring Repair', image: 'https://images.unsplash.com/photo-1548611716-ad78255909ff?w=400&auto=format&fit=crop&q=80' },
-        { id: 'solar-panel-washing', name: 'Solar Panel Washing', image: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?w=400&auto=format&fit=crop&q=80' },
-        { id: 'rooftop-solar-installation', name: 'Rooftop Solar Installation', image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=400&auto=format&fit=crop&q=80' }
-      ]
-    }
-  ], []);
-
-  // Dynamic categories mapped from Admin API with fallback to exploreServices
+  // Categories come from the live API only
   const displayCategories = useMemo(() => {
-    if (categories && categories.length > 0) {
-      return categories
-        .filter(cat => cat.showOnHome !== false)
-        .sort((a, b) => (a.homeOrder || 0) - (b.homeOrder || 0))
-        .map((cat) => {
-          const matchedExplore = exploreServices.find(e => e.slug === cat.slug || e.id === cat.id);
-          const matchedMain = mainCategories.find(m => m.slug === cat.slug || m.id === cat.id);
+    return (categories || [])
+      .filter(cat => cat.showOnHome !== false)
+      .sort((a, b) => (a.homeOrder || 0) - (b.homeOrder || 0))
+      .map((cat) => {
+        const matchedMain = mainCategories.find(m => m.slug === cat.slug || m.id === cat.id);
 
-          return {
-            id: cat.id,
-            slug: cat.slug,
-            title: cat.title,
-            displayTitle: cat.title,
-            image: cat.icon ? toAssetUrl(cat.icon) : (matchedExplore?.image || matchedMain?.image || '/cat_images/electrician.jpg'),
-            badge: cat.badge || null,
-            hasSaleBadge: cat.hasSaleBadge || false,
-            // Prefer the category's own sub-services from the DB; the hard-coded
-            // combo (Electrician/Plumber/Carpenter) is only a fallback.
-            subCategories: matchedMain?.subCategories?.length > 0
-              ? matchedMain.subCategories
-              : (matchedExplore?.subCategories || [])
-          };
-        });
-    }
-    return exploreServices;
-  }, [categories, exploreServices, mainCategories]);
+        return {
+          id: cat.id,
+          slug: cat.slug,
+          title: cat.title,
+          displayTitle: cat.title,
+          image: cat.icon ? toAssetUrl(cat.icon) : (matchedMain?.image || '/cat_images/electrician.jpg'),
+          badge: cat.badge || null,
+          hasSaleBadge: cat.hasSaleBadge || false,
+          subCategories: matchedMain?.subCategories || []
+        };
+      });
+  }, [categories, mainCategories]);
 
   const RESERVED_SLUGS = useMemo(() => [
     'login', 'signup', 'dashboard', 'home', 'home-legacy', 'native', 'cart',
@@ -1054,7 +326,7 @@ const UserDashboard = () => {
     'services', 'all-services', 'categories'
   ], []);
 
-  // Helper to load category detail view dynamically from DB or fallback registry
+  // Helper to load category detail view dynamically from the DB
   const loadCategoryView = useCallback(async (slug) => {
     if (!slug) {
       setActiveDetailView(null);
@@ -1068,10 +340,8 @@ const UserDashboard = () => {
     }
     if (RESERVED_SLUGS.includes(cleanSlug)) return;
 
-    // 1. Match from displayCategories or exploreServices or mainCategories or fallback
+    // 1. Match from the live displayCategories / mainCategories
     const matchedCategory = displayCategories.find(
-      c => c.slug === cleanSlug || c.id === cleanSlug
-    ) || exploreServices.find(
       c => c.slug === cleanSlug || c.id === cleanSlug
     ) || mainCategories.find(
       c => c.slug === cleanSlug || c.id === cleanSlug
@@ -1081,7 +351,7 @@ const UserDashboard = () => {
       title: cleanSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
     };
 
-    // 2. Resolve default/fallback template
+    // 2. Base view (shown with no sub-services if the live fetch below finds none)
     const fallbackDetail = resolveCategoryDetail(matchedCategory);
 
     // 3. Try fetching live brand services from MongoDB
@@ -1134,9 +404,8 @@ const UserDashboard = () => {
       console.error('Error fetching live brand services:', err);
     }
 
-    // Fallback template
     setActiveDetailView(fallbackDetail);
-  }, [displayCategories, exploreServices, mainCategories, RESERVED_SLUGS]);
+  }, [displayCategories, mainCategories, RESERVED_SLUGS]);
 
   // Synchronize categorySlug from URL with category view
   useEffect(() => {
@@ -1160,7 +429,6 @@ const UserDashboard = () => {
     if (!banner) return;
     if (banner.targetCategoryId) {
       const cat = displayCategories.find(c => c.id === banner.targetCategoryId || c.slug === banner.targetCategoryId) ||
-                  exploreServices.find(c => c.id === banner.targetCategoryId || c.slug === banner.targetCategoryId) ||
                   mainCategories.find(c => c.id === banner.targetCategoryId || c.slug === banner.targetCategoryId);
       if (cat) {
         handleCategoryClick(cat);
@@ -1176,25 +444,7 @@ const UserDashboard = () => {
     toast.success('Browsing featured service banner');
   };
 
-  // Base fallback presets for Lower Sections
-  const newNoteworthyServices = [
-    { id: 'native-ro', title: 'Native Water Purifier', image: '/native_water_purifier.png', subtitle: 'Native RO', isGreenText: false },
-    { id: 'bath-kitchen-clean', title: 'Bathroom & Kitchen Clean', image: '/intense_bathroom_cleaning.png', subtitle: 'Deep Clean', isGreenText: false },
-    { id: 'ac-maintenance', title: 'AC Service & Repair', image: '/ac_repair_wall.png', subtitle: 'Certified Tech', isGreenText: false },
-    { id: 'ac-foam-jet-quick', title: 'Foam-Jet AC Service', image: '/ac_foam_jet_service.png', subtitle: '⚡ In 44 mins', isGreenText: true },
-    { id: 'plumbing-express', title: 'Tap & Plumbing Fix', image: '/tap_plumbing_repair.png', subtitle: '⚡ Instant Fix', isGreenText: true },
-  ];
-
-  const mostBookedServices = [
-    { id: 'foam-jet-ac', title: 'Foam-jet AC service', image: '/ac_foam_jet_service.png', rating: '4.75', isInstant: true, price: '₹649', originalPrice: '', discountBadge: '' },
-    { id: 'ac-repair', title: 'AC repair', image: '/ac_repair_wall.png', rating: '4.73', isInstant: true, price: '₹299', originalPrice: '', discountBadge: '' },
-    { id: 'intense-clean-2', title: 'Intense cleaning (2 bath)', image: '/intense_bathroom_cleaning.png', rating: '4.80', isInstant: false, price: '₹872', originalPrice: '₹1,038', discountBadge: '8% OFF' },
-    { id: 'tap-repair', title: 'Tap repair', image: '/tap_plumbing_repair.png', rating: '4.77', isInstant: false, price: '₹49', originalPrice: '', discountBadge: '' },
-    { id: 'mattress-clean-mb', title: 'Mattress cleaning', image: '/mattress_cleaning.png', rating: '4.85', isInstant: false, price: '₹599', originalPrice: '', discountBadge: '' },
-    { id: 'geyser-check-mb', title: 'Geyser check-up', image: '/geyser_checkup.png', rating: '4.72', isInstant: false, price: '₹249', originalPrice: '', discountBadge: '' },
-  ];
-
-  // Dynamic Noteworthy Services with fallback to base preset
+  // Noteworthy services managed from the admin panel
   const displayNoteworthy = useMemo(() => {
     if (homeContent?.noteworthy && homeContent.noteworthy.length > 0) {
       return homeContent.noteworthy.map((item, idx) => ({
@@ -1208,10 +458,10 @@ const UserDashboard = () => {
         targetServiceId: item.targetServiceId
       }));
     }
-    return newNoteworthyServices;
+    return [];
   }, [homeContent?.noteworthy]);
 
-  // Dynamic Most Booked Services with fallback to base preset
+  // Most booked services managed from the admin panel
   const displayMostBooked = useMemo(() => {
     if (homeContent?.booked && homeContent.booked.length > 0) {
       return homeContent.booked.map((item, idx) => ({
@@ -1228,7 +478,7 @@ const UserDashboard = () => {
         targetServiceId: item.targetServiceId
       }));
     }
-    return mostBookedServices;
+    return [];
   }, [homeContent?.booked]);
 
   // Unified click handler for dynamic cards
@@ -1254,33 +504,6 @@ const UserDashboard = () => {
     }
     handleToggleAddService(card, 'Services');
   };
-
-  const cleaningEssentials = [
-    { id: 'intense-clean-2b', title: 'Intense cleaning (2 bath)', image: '/intense_bathroom_cleaning.png', rating: '4.80', price: '₹872', originalPrice: '₹1,038', discountBadge: '8% OFF', isTextTile: false },
-    { id: 'intense-clean-3b', title: 'Intense cleaning (3 bath)', image: '/intense_bathroom_cleaning.png', rating: '4.80', price: '₹1,225', originalPrice: '₹1,557', discountBadge: '11% OFF', isTextTile: false },
-    { id: 'classic-clean-2b', title: 'Classic cleaning (2 bath)', image: '', rating: '4.81', price: '₹794', originalPrice: '₹858', discountBadge: '', isTextTile: true, tileText: '2 BATHROOMS' },
-    { id: 'classic-clean-3b', title: 'Classic cleaning (3 bath)', image: '/intense_bathroom_cleaning.png', rating: '4.81', price: '₹1,159', originalPrice: '₹1,287', discountBadge: '', isTextTile: false },
-    { id: 'mattress-clean-ce', title: 'Mattress cleaning', image: '/mattress_cleaning.png', rating: '4.84', price: '₹399', originalPrice: '', discountBadge: '', isTextTile: false },
-    { id: 'tap-repair-ce', title: 'Sink & Tap Sanitation', image: '/tap_plumbing_repair.png', rating: '4.77', price: '₹199', originalPrice: '', discountBadge: '', isTextTile: false },
-  ];
-
-  const applianceRepairServices = [
-    { id: 'foam-jet-ac-1', title: 'Foam-jet AC service', image: '/ac_foam_jet_service.png', rating: '4.75', isInstant: true, price: '₹649', originalPrice: '' },
-    { id: 'ac-repair-1', title: 'AC repair', image: '/ac_repair_wall.png', rating: '4.73', isInstant: true, price: '₹299', originalPrice: '' },
-    { id: 'foam-jet-2acs', title: 'Foam-jet service (2 ACs)', image: '/ac_foam_jet_service.png', rating: '4.75', isInstant: true, price: '₹1,198', originalPrice: '₹1,298' },
-    { id: 'ac-uninstall', title: 'AC uninstallation', image: '/ac_repair_wall.png', rating: '4.79', isInstant: true, price: '₹649', originalPrice: '' },
-    { id: 'geyser-check', title: 'Geyser check-up', image: '/geyser_checkup.png', rating: '4.72', isInstant: false, price: '₹249', originalPrice: '' },
-    { id: 'native-ro-service', title: 'RO Purifier Service', image: '/native_water_purifier.png', rating: '4.88', isInstant: false, price: '₹399', originalPrice: '' },
-  ];
-
-  const homeRepairServices = [
-    { id: 'tap-repair-hr', title: 'Tap repair', image: '/tap_plumbing_repair.png', rating: '4.77', isInstant: false, price: '₹49' },
-    { id: 'drill-hang-decor', title: 'Drill & hang decor', image: '/drill_wall_decor.png', rating: '4.83', isInstant: true, price: '₹49' },
-    { id: 'fan-repair', title: 'Fan repair (wall/ceiling)', image: '/ac_repair_wall.png', rating: '4.79', isInstant: false, price: '₹49' },
-    { id: 'switchboard-repair', title: 'Switchboard repair', image: '/switchboard_repair.png', rating: '4.83', isInstant: false, price: '₹79' },
-    { id: 'switch-socket-replace', title: 'Switch replacement', image: '/switchboard_repair.png', rating: '4.83', isInstant: false, price: '₹49' },
-    { id: 'door-lock-fix', title: 'Door handle & lock', image: '/drill_wall_decor.png', rating: '4.80', isInstant: true, price: '₹99' },
-  ];
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -1767,7 +990,7 @@ const UserDashboard = () => {
           )}
 
           {/* =============================================================
-              3. "New and noteworthy" (Dynamic from Admin / Fallback Preset)
+              3. "New and noteworthy" (Dynamic from Admin)
              ============================================================= */}
           {homeContent?.isNoteworthyVisible !== false && displayNoteworthy.length > 0 && (
             <section className="hidden md:block space-y-2 relative">
@@ -1836,7 +1059,7 @@ const UserDashboard = () => {
           )}
 
           {/* =============================================================
-              4. "Most booked services" (Dynamic from Admin / Fallback Preset)
+              4. "Most booked services" (Dynamic from Admin)
              ============================================================= */}
           {homeContent?.isBookedVisible !== false && displayMostBooked.length > 0 && (
             <section className="hidden md:block space-y-2 relative">
@@ -1931,7 +1154,7 @@ const UserDashboard = () => {
           )}
 
           {/* =============================================================
-              5. PROMOTIONAL FEATURE CARDS (Dynamic Admin Promos / Native RO Fallback)
+              5. PROMOTIONAL FEATURE CARDS (Dynamic Admin Promos)
              ============================================================= */}
           {homeContent?.isPromosVisible !== false && (
             (homeContent?.promos && homeContent.promos.length > 0) ? (
@@ -1976,41 +1199,11 @@ const UserDashboard = () => {
                   </section>
                 ))}
               </div>
-            ) : (
-              <section className="hidden md:flex w-full rounded-2xl bg-[#EBE7DF] overflow-hidden border border-slate-200/60 p-4 sm:p-5 flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
-                <div className="space-y-1.5 max-w-lg">
-                  <span className="inline-block bg-[#007F5F] text-white font-bold text-[9px] px-2 py-0.5 rounded-[3px]">
-                    Up to ₹3,550 off
-                  </span>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-extrabold text-[#111827] tracking-tight">
-                      NATIVE RO water purifier
-                    </h3>
-                    <p className="text-xs font-medium text-slate-700">
-                      Needs no service for 2 years
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => navigate('/user/category/solar-service')}
-                    className="px-3.5 py-1.5 rounded-md bg-white text-[#111827] font-bold text-xs shadow-2xs hover:bg-slate-50 transition-colors"
-                  >
-                    Buy now
-                  </button>
-                </div>
-
-                <div className="w-full sm:w-1/3 flex items-center justify-center">
-                  <img
-                    src="/native_water_purifier.png"
-                    alt="Native Water Purifier"
-                    className="max-h-28 sm:max-h-36 object-contain rounded-lg shadow-2xs"
-                  />
-                </div>
-              </section>
-            )
+            ) : null
           )}
 
           {/* =============================================================
-              6. CATEGORY SECTIONS (Dynamic Admin CategorySections / Fallback Presets)
+              6. CATEGORY SECTIONS (Dynamic Admin CategorySections)
              ============================================================= */}
           {homeContent?.isCategorySectionsVisible !== false && (
             (homeContent?.categorySections && homeContent.categorySections.length > 0) ? (
@@ -2108,275 +1301,7 @@ const UserDashboard = () => {
                   </section>
                 );
               })
-            ) : (
-              <>
-                {/* SECTION: "Cleaning Essentials" (Desktop / Tablet Only) */}
-                <section className="hidden md:block space-y-2 relative">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-base font-bold text-[#111827] tracking-tight">
-                        Cleaning Essentials
-                      </h2>
-                      <p className="text-[10px] sm:text-[11px] text-slate-500">Monthly essential services</p>
-                    </div>
-                    <button
-                      onClick={() => navigate('/user/category/cleaning-service')}
-                      className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      See all
-                    </button>
-                  </div>
-
-                  <div className="relative group/carousel">
-                    <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-cleaning']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      <button
-                        onClick={() => scrollCarousel('carousel-cleaning', -220)}
-                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                        aria-label="Scroll left"
-                      >
-                        <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                      </button>
-                    </div>
-
-                    <div
-                      id="carousel-cleaning"
-                      onScroll={() => handleCarouselScroll('carousel-cleaning')}
-                      className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
-                    >
-                      {cleaningEssentials.map((card) => (
-                        <div
-                          key={card.id}
-                          onClick={() => handleServiceCardClick(card)}
-                          className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
-                        >
-                          <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-[#EFEFEF] border border-slate-200/80 shadow-2xs flex items-center justify-center">
-                            {card.isTextTile ? (
-                              <div className="flex flex-col items-center justify-center text-center p-2">
-                                <span className="text-2xl font-black text-[#111827] tracking-tighter">2</span>
-                                <span className="text-[9px] font-extrabold text-[#111827] tracking-wider uppercase mt-0.5">BATHROOMS</span>
-                              </div>
-                            ) : (
-                              <img
-                                src={card.image}
-                                alt={card.title}
-                                className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                              />
-                            )}
-                            {card.discountBadge && (
-                              <span className="absolute top-1.5 left-1.5 bg-[#007F5F] text-white font-bold text-[8px] px-1 py-0.2 rounded-[2px] uppercase tracking-wide">
-                                {card.discountBadge}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="px-0.5">
-                            <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
-                              {card.title}
-                            </h3>
-
-                            <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
-                              <span className="flex items-center gap-0.5 font-bold">
-                                ★ {card.rating}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
-                              {card.originalPrice && (
-                                <span className="text-[9px] text-slate-400 line-through font-normal">
-                                  {card.originalPrice}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-cleaning']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      <button
-                        onClick={() => scrollCarousel('carousel-cleaning', 220)}
-                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                        aria-label="Scroll right"
-                      >
-                        <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                      </button>
-                    </div>
-                  </div>
-                </section>
-
-                {/* SECTION: "Appliance repair & service" (Desktop / Tablet Only) */}
-                <section className="hidden md:block space-y-2 relative">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-base font-bold text-[#111827] tracking-tight">
-                      Appliance repair & service
-                    </h2>
-                    <button
-                      onClick={() => navigate('/user/category/ac-appliance-repair')}
-                      className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      See all
-                    </button>
-                  </div>
-
-                  <div className="relative group/carousel">
-                    <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-appliance']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      <button
-                        onClick={() => scrollCarousel('carousel-appliance', -220)}
-                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                        aria-label="Scroll left"
-                      >
-                        <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                      </button>
-                    </div>
-
-                    <div
-                      id="carousel-appliance"
-                      onScroll={() => handleCarouselScroll('carousel-appliance')}
-                      className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
-                    >
-                      {applianceRepairServices.map((card) => (
-                        <div
-                          key={card.id}
-                          onClick={() => handleServiceCardClick(card)}
-                          className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
-                        >
-                          <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
-                            <img
-                              src={card.image}
-                              alt={card.title}
-                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                            />
-                          </div>
-
-                          <div className="px-0.5">
-                            <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
-                              {card.title}
-                            </h3>
-
-                            <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
-                              <span className="flex items-center gap-0.5 font-bold">
-                                ★ {card.rating}
-                              </span>
-                              {card.isInstant && (
-                                <>
-                                  <span className="text-slate-300">•</span>
-                                  <span className="text-[#00875A] font-bold">
-                                    ⚡ Instant
-                                  </span>
-                                </>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
-                              {card.originalPrice && (
-                                <span className="text-[9px] text-slate-400 line-through font-normal">
-                                  {card.originalPrice}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-appliance']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      <button
-                        onClick={() => scrollCarousel('carousel-appliance', 220)}
-                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                        aria-label="Scroll right"
-                      >
-                        <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                      </button>
-                    </div>
-                  </div>
-                </section>
-
-                {/* SECTION: "Home repair & installation" (Desktop / Tablet Only) */}
-                <section className="hidden md:block space-y-2 relative">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-base font-bold text-[#111827] tracking-tight">
-                      Home repair & installation
-                    </h2>
-                    <button
-                      onClick={() => navigate('/user/category/electrician')}
-                      className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] sm:text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      See all
-                    </button>
-                  </div>
-
-                  <div className="relative group/carousel">
-                    <div className={`absolute left-1 sm:-left-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-home-repair']?.canLeft ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      <button
-                        onClick={() => scrollCarousel('carousel-home-repair', -220)}
-                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                        aria-label="Scroll left"
-                      >
-                        <FiArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                      </button>
-                    </div>
-
-                    <div
-                      id="carousel-home-repair"
-                      onScroll={() => handleCarouselScroll('carousel-home-repair')}
-                      className="flex md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 px-1"
-                    >
-                      {homeRepairServices.map((card) => (
-                        <div
-                          key={card.id}
-                          onClick={() => handleServiceCardClick(card)}
-                          className="group cursor-pointer flex flex-col w-[135px] sm:w-[155px] md:w-auto shrink-0 snap-start"
-                        >
-                          <div className="w-full aspect-[4/3] relative overflow-hidden rounded-2xl bg-slate-100 border border-slate-200/80 shadow-2xs">
-                            <img
-                              src={card.image}
-                              alt={card.title}
-                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                            />
-                          </div>
-
-                          <div className="px-0.5">
-                            <h3 className="text-[11px] sm:text-xs font-bold text-[#111827] leading-tight mt-1.5 line-clamp-1">
-                              {card.title}
-                            </h3>
-
-                            <div className="flex items-center gap-1 text-[10px] text-slate-700 font-medium mt-0.5">
-                              <span className="flex items-center gap-0.5 font-bold">
-                                ★ {card.rating}
-                              </span>
-                              {card.isInstant && (
-                                <>
-                                  <span className="text-slate-300">•</span>
-                                  <span className="text-[#00875A] font-bold">
-                                    ⚡ Instant
-                                  </span>
-                                </>
-                              )}
-                            </div>
-
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span className="text-[11px] sm:text-xs font-bold text-[#111827]">{card.price}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className={`absolute right-1 sm:-right-2 top-[48%] -translate-y-1/2 z-20 flex md:hidden transition-opacity duration-200 ${scrollState['carousel-home-repair']?.canRight ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      <button
-                        onClick={() => scrollCarousel('carousel-home-repair', 220)}
-                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/95 backdrop-blur-xs border border-slate-200/90 shadow-md flex items-center justify-center text-slate-800 hover:bg-slate-50 active:scale-95 transition-all focus:outline-none"
-                        aria-label="Scroll right"
-                      >
-                        <FiArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-900" />
-                      </button>
-                    </div>
-                  </div>
-                </section>
-              </>
-            )
+            ) : null
           )}
 
           {/* STATUS BAND (Desktop / Tablet Only) */}
