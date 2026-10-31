@@ -1,4 +1,5 @@
 const Vendor = require('../../models/Vendor');
+const Category = require('../../models/Category');
 const { generateOTP, hashOTP, storeOTP, verifyOTP, checkRateLimit } = require('../../utils/redisOtp.util');
 const { generateTokenPair, verifyRefreshToken, generateVerificationToken, verifyVerificationToken } = require('../../utils/tokenService');
 const { sendOTP: sendSMSOTP } = require('../../services/smsService');
@@ -242,11 +243,22 @@ const register = async (req, res) => {
     const otherUrls = await cloudinaryService.resolveImages(req.body.otherDocuments, 'zippto/vendors/documents/others');
     const experienceCertificateUrl = await cloudinaryService.resolveImage(req.body.experienceCertificate || '', 'zippto/vendors/experience');
 
+    // Services the vendor offers: keep only names that match an active category (so dispatch matching works)
+    const requested = (Array.isArray(req.body.service) ? req.body.service : [req.body.service])
+      .map((v) => String(v || '').trim().toLowerCase())
+      .filter(Boolean);
+    let selectedServices = [];
+    if (requested.length > 0) {
+      const activeCategories = await Category.find({ status: 'active' }).select('title').lean();
+      selectedServices = activeCategories.map((c) => c.title).filter((t) => requested.includes(t.trim().toLowerCase()));
+    }
+
     const vendor = await Vendor.create({
       name: name.trim(),
       email: (email && email.trim()) ? email.trim().toLowerCase() : undefined,
       phone,
-      service: [], // Default empty as requested
+      service: selectedServices,
+      categories: selectedServices,
       aadhar: {
         number: aadhar,
         document: aadharUrl,

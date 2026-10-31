@@ -9,6 +9,7 @@ import LogoLoader from '../../../components/common/LogoLoader';
 import Logo from '../../../components/common/Logo';
 import { AuthHeader, AuthFooter } from '../../../components/auth/AuthChrome';
 import { compressImage } from '../../../utils/imageCompression';
+import { publicCatalogService } from '../../../services/catalogService';
 
 import { z } from "zod";
 
@@ -30,7 +31,7 @@ const EMPTY_FORM = {
   phoneNumber: '',
   aadhar: '',
   pan: '',
-  service: '',
+  service: [],
   documents: [],
   yearsOfExperience: '',
   experienceDescription: ''
@@ -49,7 +50,14 @@ const VendorSignup = () => {
   const location = useLocation();
   const [draft] = useState(loadDraft);
   const [step, setStep] = useState('details'); // 'details' or 'otp'
-  const [formData, setFormData] = useState(() => ({ ...EMPTY_FORM, ...draft.formData }));
+  const [formData, setFormData] = useState(() => {
+    const initial = { ...EMPTY_FORM, ...draft.formData };
+    // Older drafts stored service as a string
+    if (!Array.isArray(initial.service)) initial.service = [];
+    return initial;
+  });
+  const [serviceOptions, setServiceOptions] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpToken, setOtpToken] = useState('');
   const [verificationToken, setVerificationToken] = useState(draft.verificationToken || '');
@@ -57,6 +65,27 @@ const VendorSignup = () => {
   const [documentPreview, setDocumentPreview] = useState(draft.documentPreview || {});
   const [uploadingDocs, setUploadingDocs] = useState({});
   const [resendTimer, setResendTimer] = useState(0);
+
+  // Service categories the vendor can choose from (live from the catalog)
+  useEffect(() => {
+    let cancelled = false;
+    publicCatalogService.getCategories()
+      .then((res) => {
+        if (!cancelled && res?.success && Array.isArray(res.categories)) {
+          setServiceOptions(res.categories.map((c) => c.title).filter(Boolean));
+        }
+      })
+      .catch(() => { /* leave empty; the form shows a retry hint */ })
+      .finally(() => { if (!cancelled) setServicesLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const toggleService = (title) => {
+    setFormData((p) => ({
+      ...p,
+      service: p.service.includes(title) ? p.service.filter((t) => t !== title) : [...p.service, title]
+    }));
+  };
 
   // Timer countdown effect
   useEffect(() => {
@@ -229,6 +258,11 @@ const VendorSignup = () => {
       return;
     }
 
+    if (formData.service.length === 0) {
+      toast.error('Please select at least one service you offer');
+      return;
+    }
+
     // Manual Document Validation remains
     const hasAadharDoc = formData.documents.some(d => d.type === 'aadhar');
     const hasAadharBackDoc = formData.documents.some(d => d.type === 'aadharBack');
@@ -252,7 +286,7 @@ const VendorSignup = () => {
           phone: formData.phoneNumber,
           aadhar: formData.aadhar,
           pan: formData.pan,
-          service: [],
+          service: formData.service,
           aadharDocument: aadharDoc,
           aadharBackDocument: aadharBackDoc,
           panDocument: panDoc,
@@ -516,6 +550,39 @@ const VendorSignup = () => {
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* Services Section - Required */}
+                <div className="md:col-span-2 border-2 border-dashed border-gray-200 rounded-2xl p-5 space-y-3 bg-gray-50/40 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-base font-bold text-gray-900">Services You Offer</h3>
+                    <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 rounded-full border border-red-200">Required</span>
+                    <p className="text-xs text-gray-400 ml-auto hidden sm:block">You'll receive booking alerts only for these</p>
+                  </div>
+                  {servicesLoading ? (
+                    <p className="text-sm text-gray-400">Loading services...</p>
+                  ) : serviceOptions.length === 0 ? (
+                    <p className="text-sm text-red-500">Could not load services. Please refresh the page.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {serviceOptions.map((title) => {
+                        const selected = formData.service.includes(title);
+                        return (
+                          <button
+                            key={title}
+                            type="button"
+                            onClick={() => toggleService(title)}
+                            aria-pressed={selected}
+                            className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 ${selected ? 'text-white shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'}`}
+                            style={selected ? { backgroundColor: brandColor, borderColor: brandColor } : undefined}
+                          >
+                            {selected && <FiCheckCircle className="inline mr-1.5 -mt-0.5" />}
+                            {title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Work Experience Section - Optional */}

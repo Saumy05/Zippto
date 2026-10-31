@@ -19,55 +19,6 @@ const toAssetUrl = (url) => {
   return url;
 };
 
-const DEFAULT_SUB_SERVICES = {
-  electrician: [
-    { id: 'switch-socket', name: 'Switch & Socket Replacement', icon: '🔌' },
-    { id: 'fan-repair', name: 'Ceiling Fan Repair & Mounting', icon: '🌀' },
-    { id: 'mcb-repair', name: 'MCB & Fuse Box Repair', icon: '⚡' },
-    { id: 'tv-install', name: 'TV Installation & Wiring', icon: '📺' },
-  ],
-  plumber: [
-    { id: 'tap-repair', name: 'Tap & Mixer Leakage Repair', icon: '🚰' },
-    { id: 'drainage-clear', name: 'Blockage & Drainage Clearing', icon: '🧼' },
-    { id: 'toilet-flush', name: 'Flush Tank & Toilet Repair', icon: '🚽' },
-    { id: 'pipe-fitting', name: 'Water Pipe & Tank Fitting', icon: '🚿' },
-  ],
-  carpenter: [
-    { id: 'door-lock', name: 'Door Hinge & Lock Repair', icon: '🚪' },
-    { id: 'furniture-assemble', name: 'Furniture Assembly & Repair', icon: '🪑' },
-    { id: 'sofa-repair', name: 'Sofa Repair & Upholstery', icon: '🛋️' },
-    { id: 'hanger-decor', name: 'Hanger & Wall Decor Fitting', icon: '🖼️' },
-  ],
-  'salon-for-women': [
-    { id: 'waxing', name: 'Waxing & Hair Removal', icon: '💅' },
-    { id: 'facial', name: 'Facial & Clean Up', icon: '✨' },
-    { id: 'korean-glow', name: 'Korean Glow Facial', icon: '🌸' },
-    { id: 'mani-pedi', name: 'Pedicure & Manicure', icon: '💅' },
-    { id: 'hair-care', name: 'Hair Styling & Care', icon: '💇‍♀️' },
-  ],
-  'ac-appliance-repair': [
-    { id: 'ac-foam-jet', name: 'AC Foam Jet Service', icon: '❄️' },
-    { id: 'ac-gas-fill', name: 'AC Gas Leak Refill', icon: '🧪' },
-    { id: 'fridge-repair', name: 'Refrigerator Repair', icon: '🧊' },
-    { id: 'washing-machine', name: 'Washing Machine Repair', icon: '🧺' },
-  ],
-  'cleaning-service': [
-    { id: 'full-home-clean', name: 'Full Home Deep Cleaning', icon: '🧹' },
-    { id: 'bathroom-clean', name: 'Bathroom Sanitization & Scrub', icon: '🧼' },
-    { id: 'kitchen-clean', name: 'Kitchen Chimney & Tile Cleaning', icon: '🍳' },
-  ],
-  'pest-control': [
-    { id: 'cockroach-pest', name: 'Cockroach Control', icon: '🪲' },
-    { id: 'termite-pest', name: 'Termite Treatment', icon: '🪵' },
-    { id: 'bedbug-pest', name: 'Bed Bug Eradication', icon: '🛏️' },
-  ],
-  'painting-service': [
-    { id: 'interior-paint', name: 'Full Interior Paint', icon: '🎨' },
-    { id: 'waterproof-paint', name: 'Waterproofing', icon: '💧' },
-    { id: 'wall-texture', name: 'Wall Texture Painting', icon: '🖼️' },
-  ]
-};
-
 const RADIUS_PRESETS = [5, 10, 15, 25, 50];
 
 const ManageServices = () => {
@@ -140,19 +91,6 @@ const ManageServices = () => {
         const catRes = await publicCatalogService.getCategories();
         let fetchedCats = [];
 
-        const defaultCatalog = [
-          { id: 'electrician', slug: 'electrician', title: 'Electrician', icon: '/cat_images/electrician.jpg', description: 'Switches, wiring, fans & MCB repairs' },
-          { id: 'plumber', slug: 'plumber', title: 'Plumber', icon: '/cat_images/plumber.jpg', description: 'Tap repair, pipe leaks & drainage clearance' },
-          { id: 'carpenter', slug: 'carpenter', title: 'Carpenter', icon: '/cat_images/carpenter.jpg', description: 'Door locks, furniture assembly & wooden repair' },
-          { id: 'salon-for-women', slug: 'salon-for-women', title: 'Salon for Women', icon: '/cat_images/salon_women.jpg', description: 'At-home facial, waxing, mani-pedi & hair care' },
-          { id: 'ac-appliance-repair', slug: 'ac-appliance-repair', title: 'AC & Appliance Repair', icon: '/ac_repair_wall.png', description: 'Split AC servicing, fridge & washing machine repair' },
-          { id: 'cleaning-service', slug: 'cleaning-service', title: 'Cleaning Service', icon: '/cat_cleaning.png', description: 'Full home deep cleaning & bathroom sanitization' },
-          { id: 'pest-control', slug: 'pest-control', title: 'Pest Control', icon: '/intense_bathroom_cleaning.png', description: 'Cockroach, termite & mosquito pest treatment' },
-          { id: 'painting-service', slug: 'painting-service', title: 'Painting Service', icon: '/drill_wall_decor.png', description: 'Interior & exterior wall painting & waterproofing' },
-          { id: 'construction-renovation', slug: 'construction-renovation', title: 'Construction & Renovation', icon: '/switchboard_repair.png', description: 'Civil repair, false ceiling & marble laying' },
-          { id: 'solar-service', slug: 'solar-service', title: 'Solar Service', icon: '/native_water_purifier.png', description: 'Rooftop panel installation & maintenance' }
-        ];
-
         if (catRes.success && Array.isArray(catRes.categories) && catRes.categories.length > 0) {
           const cleanCats = catRes.categories.filter(c => 
             !c.title.toLowerCase().includes('test') && 
@@ -172,7 +110,6 @@ const ManageServices = () => {
           }
 
           fetchedCats = cleanCats.map(c => {
-            const fallback = defaultCatalog.find(d => d.slug === c.slug);
             const catBrands = allBrands.filter(b =>
               b.categorySlug === c.slug ||
               b.categoryId === c.id ||
@@ -182,31 +119,18 @@ const ManageServices = () => {
             
             const liveSubServices = catBrands.length > 0
               ? catBrands.map(b => ({ id: b.slug, name: b.title, icon: '⚡' }))
-              : (DEFAULT_SUB_SERVICES[c.slug] || DEFAULT_SUB_SERVICES[c.id] || []);
+              : [];
 
             return {
               id: c.slug || c.id || c._id,
               slug: c.slug || c.id || c._id,
               title: c.title,
-              icon: c.icon || c.homeIconUrl || fallback?.icon || '',
-              description: c.description || fallback?.description || 'On-demand service category',
+              icon: c.icon || c.homeIconUrl || '',
+              description: c.description || 'On-demand service category',
               subServices: liveSubServices
             };
           });
 
-          defaultCatalog.forEach(d => {
-            if (!fetchedCats.some(f => f.slug === d.slug)) {
-              fetchedCats.push({
-                ...d,
-                subServices: DEFAULT_SUB_SERVICES[d.slug] || []
-              });
-            }
-          });
-        } else {
-          fetchedCats = defaultCatalog.map(d => ({
-            ...d,
-            subServices: DEFAULT_SUB_SERVICES[d.slug] || []
-          }));
         }
 
         setCategories(fetchedCats);
@@ -263,7 +187,7 @@ const ManageServices = () => {
     if (!isCategorySelected(cat)) {
       setSelectedServices(prev => Array.from(new Set([...prev, catSlug])));
       // Auto opt-in all sub-services for this category
-      const subList = cat.subServices || DEFAULT_SUB_SERVICES[catSlug] || [];
+      const subList = cat.subServices || [];
       const subIds = subList.map(s => s.id);
       setSelectedSubServices(prev => Array.from(new Set([...prev, ...subIds])));
       toast.success(`${cat.title} added!`);
@@ -281,7 +205,7 @@ const ManageServices = () => {
       return item !== catSlug && item !== catTitle;
     }));
 
-    const subList = cat.subServices || DEFAULT_SUB_SERVICES[catSlug] || [];
+    const subList = cat.subServices || [];
     const subIds = subList.map(s => s.id);
     setSelectedSubServices(prev => prev.filter(id => !subIds.includes(id)));
     toast.success(`${cat.title} removed`);
@@ -535,7 +459,7 @@ const ManageServices = () => {
             <div className="space-y-3">
               {activeCategoryObjects.map((cat) => {
                 const isExpanded = expandedCategoryId === cat.id;
-                const subList = cat.subServices || DEFAULT_SUB_SERVICES[cat.slug] || [];
+                const subList = cat.subServices || [];
 
                 return (
                   <div
