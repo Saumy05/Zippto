@@ -1,5 +1,6 @@
 const Ticket = require('../../models/Ticket');
 const Booking = require('../../models/Booking');
+const cloudinaryService = require('../../services/cloudinaryService');
 
 /**
  * Create a new support ticket / dispute
@@ -36,7 +37,7 @@ const createTicket = async (req, res) => {
       category: category || 'booking_issue',
       subject: subject.trim(),
       description: description.trim(),
-      attachments: attachments || [],
+      attachments: await cloudinaryService.resolveImages(attachments, 'zippto/tickets'),
       refundRequested: Boolean(refundRequested),
       refundAmount: Number(refundAmount) || 0,
       refundStatus: refundRequested ? 'pending' : 'none'
@@ -48,6 +49,7 @@ const createTicket = async (req, res) => {
       ticket
     });
   } catch (error) {
+    if (error.name === 'ImageUploadError') return res.status(502).json({ success: false, message: error.message });
     console.error('Create ticket error:', error);
     res.status(500).json({
       success: false,

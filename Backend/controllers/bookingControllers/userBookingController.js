@@ -10,6 +10,7 @@ const { validationResult } = require('express-validator');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
 const { sendNotificationToUser, sendNotificationToVendor } = require('../../services/firebaseAdmin');
+const cloudinaryService = require('../../services/cloudinaryService');
 const { getPlatformFlags } = require('../../utils/platformSettings');
 const CouponRedemption = require('../../models/CouponRedemption');
 const { getInvoiceForBooking, InvoiceError } = require('../../services/invoiceService');
@@ -1174,7 +1175,7 @@ const addReview = async (req, res) => {
     // Update booking
     booking.rating = rating;
     booking.review = review || null;
-    booking.reviewImages = reviewImages || [];
+    booking.reviewImages = await cloudinaryService.resolveImages(reviewImages, 'zippto/bookings/reviews');
     booking.reviewedAt = new Date();
 
     await booking.save();
@@ -1237,6 +1238,7 @@ const addReview = async (req, res) => {
       data: booking
     });
   } catch (error) {
+    if (error.name === 'ImageUploadError') return res.status(502).json({ success: false, message: error.message });
     console.error('Add review error:', error);
     res.status(500).json({
       success: false,

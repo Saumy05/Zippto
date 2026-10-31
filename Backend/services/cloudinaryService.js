@@ -97,8 +97,36 @@ const deleteFile = async (publicId) => {
   }
 };
 
+/**
+ * Error raised when an inline image could not be stored on Cloudinary.
+ * Controllers map it to a 502 so a base64 string is never saved into the database instead.
+ */
+class ImageUploadError extends Error {
+  constructor(message = 'Image upload failed. Please try again.') {
+    super(message);
+    this.name = 'ImageUploadError';
+  }
+}
+
+/**
+ * Turns an inline base64 image (data URI) into a Cloudinary URL.
+ * Anything else (an existing URL, empty value) is returned unchanged.
+ */
+const resolveImage = async (value, folder) => {
+  if (typeof value !== 'string' || !value.startsWith('data:')) return value;
+  const result = await uploadFile(value, { folder });
+  if (!result.success) throw new ImageUploadError();
+  return result.url;
+};
+
+const resolveImages = (values, folder) =>
+  Promise.all((Array.isArray(values) ? values : []).map((v) => resolveImage(v, folder)));
+
 module.exports = {
   uploadFile,
-  deleteFile
+  deleteFile,
+  resolveImage,
+  resolveImages,
+  ImageUploadError
 };
 

@@ -8,7 +8,7 @@ const streamifier = require('streamifier');
  * @param {String} resourceType - 'image', 'raw', 'video', 'auto'
  * @returns {Promise<Object>} - Cloudinary upload result
  */
-const uploadToCloudinary = (fileBuffer, folder = 'homster/documents', resourceType = 'auto') => {
+const uploadToCloudinary = (fileBuffer, folder = 'zippto/documents', resourceType = 'auto') => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
@@ -57,7 +57,7 @@ const uploadVendorDocument = async (fileBuffer, documentType, vendorId) => {
  */
 const uploadProfilePhoto = async (fileBuffer, userType, userId) => {
   try {
-    const folder = `homster/profiles/${userType}s/${userId}`;
+    const folder = `zippto/profiles/${userType}s/${userId}`;
     const result = await uploadToCloudinary(fileBuffer, folder, 'image');
     return result.secure_url;
   } catch (error) {

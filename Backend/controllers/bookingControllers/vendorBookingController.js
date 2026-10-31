@@ -5,6 +5,7 @@ const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
 const { releaseRedemptionForBooking, payableAfterCoupon } = require('../../services/couponService');
 const { sendNotificationToUser, sendNotificationToVendor } = require('../../services/firebaseAdmin');
+const cloudinaryService = require('../../services/cloudinaryService');
 
 /**
  * Get vendor bookings with filters
@@ -995,7 +996,7 @@ const completeSelfJob = async (req, res) => {
     }
 
     if (workPhotos && Array.isArray(workPhotos)) {
-      booking.workPhotos = workPhotos;
+      booking.workPhotos = await cloudinaryService.resolveImages(workPhotos, 'zippto/bookings/work-photos');
     }
 
     // If bill was already generated via /bill route, finalize completion smoothly
@@ -1179,7 +1180,7 @@ const completeSelfJob = async (req, res) => {
     booking.customerConfirmationOTP = payOtp;
     booking.paymentOtpAttempts = 0;
 
-    if (workPhotos) booking.workPhotos = workPhotos;
+    if (workPhotos) booking.workPhotos = await cloudinaryService.resolveImages(workPhotos, 'zippto/bookings/work-photos');
 
     // Store bill summary in workDoneDetails for frontend display
     booking.workDoneDetails = {
@@ -1271,6 +1272,7 @@ const completeSelfJob = async (req, res) => {
       }
     });
   } catch (error) {
+    if (error.name === 'ImageUploadError') return res.status(502).json({ success: false, message: error.message });
     console.error('Complete self job error:', error);
     res.status(500).json({ success: false, message: 'Failed to complete job' });
   }

@@ -235,42 +235,12 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Vendor already exists with this phone or email. Please login.' });
     }
 
-    // Upload documents
-    let aadharUrl = req.body.aadharDocument || null;
-    let aadharBackUrl = req.body.aadharBackDocument || null;
-    let panUrl = req.body.panDocument || null;
-    let otherUrls = req.body.otherDocuments || [];
-
-    if (aadharUrl && aadharUrl.startsWith('data:')) {
-      const uploadRes = await cloudinaryService.uploadFile(aadharUrl, { folder: 'vendors/documents' });
-      if (uploadRes.success) aadharUrl = uploadRes.url;
-    }
-    if (aadharBackUrl && aadharBackUrl.startsWith('data:')) {
-      const uploadRes = await cloudinaryService.uploadFile(aadharBackUrl, { folder: 'vendors/documents' });
-      if (uploadRes.success) aadharBackUrl = uploadRes.url;
-    }
-    if (panUrl && panUrl.startsWith('data:')) {
-      const uploadRes = await cloudinaryService.uploadFile(panUrl, { folder: 'vendors/documents' });
-      if (uploadRes.success) panUrl = uploadRes.url;
-    }
-    if (otherUrls && otherUrls.length > 0) {
-      const uploadedOthers = [];
-      for (const doc of otherUrls) {
-        if (doc && doc.startsWith('data:')) {
-          const up = await cloudinaryService.uploadFile(doc, { folder: 'vendors/documents/others' });
-          if (up.success) uploadedOthers.push(up.url);
-        } else uploadedOthers.push(doc);
-      }
-      otherUrls = uploadedOthers;
-    }
-
-    // Upload optional experience certificate
-    let experienceCertificateUrl = req.body.experienceCertificate || '';
-    if (experienceCertificateUrl && experienceCertificateUrl.startsWith('data:')) {
-      const uploadRes = await cloudinaryService.uploadFile(experienceCertificateUrl, { folder: 'vendors/experience' });
-      if (uploadRes.success) experienceCertificateUrl = uploadRes.url;
-      else console.error('Experience certificate upload failed, keeping inline file:', uploadRes.error);
-    }
+    // Upload documents (inline base64 goes to Cloudinary; a failed upload aborts instead of storing base64 in the DB)
+    const aadharUrl = await cloudinaryService.resolveImage(req.body.aadharDocument || null, 'zippto/vendors/documents');
+    const aadharBackUrl = await cloudinaryService.resolveImage(req.body.aadharBackDocument || null, 'zippto/vendors/documents');
+    const panUrl = await cloudinaryService.resolveImage(req.body.panDocument || null, 'zippto/vendors/documents');
+    const otherUrls = await cloudinaryService.resolveImages(req.body.otherDocuments, 'zippto/vendors/documents/others');
+    const experienceCertificateUrl = await cloudinaryService.resolveImage(req.body.experienceCertificate || '', 'zippto/vendors/experience');
 
     const vendor = await Vendor.create({
       name: name.trim(),
@@ -340,6 +310,7 @@ const register = async (req, res) => {
     });
 
   } catch (error) {
+    if (error.name === 'ImageUploadError') return res.status(502).json({ success: false, message: error.message });
     console.error('Vendor registration error:', error);
     res.status(500).json({
       success: false,

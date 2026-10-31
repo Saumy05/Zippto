@@ -131,14 +131,7 @@ const updateProfile = async (req, res) => {
 
     // Update profile photo - upload to Cloudinary if it's a base64 string
     if (profilePhoto !== undefined) {
-      if (profilePhoto && profilePhoto.startsWith('data:')) {
-        const uploadRes = await cloudinaryService.uploadFile(profilePhoto, { folder: 'vendors/profiles' });
-        if (uploadRes.success) {
-          vendor.profilePhoto = uploadRes.url;
-        }
-      } else {
-        vendor.profilePhoto = profilePhoto;
-      }
+      vendor.profilePhoto = await cloudinaryService.resolveImage(profilePhoto, 'zippto/vendors/profiles');
     }
 
     // Handle multiple service categories
@@ -165,10 +158,7 @@ const updateProfile = async (req, res) => {
     // If aadharDocument exists and is not empty, update it
     if (aadharDocument || aadharNumber) {
       let aadharUrl = aadharDocument || vendor.aadhar?.document;
-      if (aadharUrl && aadharUrl.startsWith('data:')) {
-        const uploadRes = await cloudinaryService.uploadFile(aadharUrl, { folder: 'vendors/documents' });
-        if (uploadRes.success) aadharUrl = uploadRes.url;
-      }
+      aadharUrl = await cloudinaryService.resolveImage(aadharUrl, 'zippto/vendors/documents');
 
       if (vendor.aadhar) {
         if (aadharNumber) vendor.aadhar.number = aadharNumber;
@@ -184,10 +174,7 @@ const updateProfile = async (req, res) => {
     // If panDocument exists and is not empty, update it
     if (panDocument || panNumber) {
       let panUrl = panDocument || vendor.pan?.document;
-      if (panUrl && panUrl.startsWith('data:')) {
-        const uploadRes = await cloudinaryService.uploadFile(panUrl, { folder: 'vendors/documents' });
-        if (uploadRes.success) panUrl = uploadRes.url;
-      }
+      panUrl = await cloudinaryService.resolveImage(panUrl, 'zippto/vendors/documents');
 
       if (vendor.pan) {
         if (panNumber) vendor.pan.number = panNumber;
@@ -223,6 +210,7 @@ const updateProfile = async (req, res) => {
       }
     });
   } catch (error) {
+    if (error.name === 'ImageUploadError') return res.status(502).json({ success: false, message: error.message });
     console.error('Update vendor profile error:', error);
     res.status(500).json({
       success: false,

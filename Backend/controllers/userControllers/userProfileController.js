@@ -114,14 +114,7 @@ const updateProfile = async (req, res) => {
 
     // Update profile photo - upload to Cloudinary if it's a base64 string
     if (profilePhoto) {
-      if (profilePhoto.startsWith('data:')) {
-        const uploadRes = await cloudinaryService.uploadFile(profilePhoto, { folder: 'users/profiles' });
-        if (uploadRes.success) {
-          updateData.profilePhoto = uploadRes.url;
-        }
-      } else {
-        updateData.profilePhoto = profilePhoto;
-      }
+      updateData.profilePhoto = await cloudinaryService.resolveImage(profilePhoto, 'zippto/users/profiles');
     }
 
     // Update addresses - client sends the full saved list (add/edit/delete)
@@ -195,6 +188,7 @@ const updateProfile = async (req, res) => {
       }
     });
   } catch (error) {
+    if (error.name === 'ImageUploadError') return res.status(502).json({ success: false, message: error.message });
     console.error('Update profile error:', error);
     res.status(500).json({
       success: false,
