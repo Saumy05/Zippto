@@ -6,6 +6,7 @@ import { MdStar } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../../theme';
 import AddressSelectionModal from './components/AddressSelectionModal';
+import SavedAddressesModal from './components/SavedAddressesModal';
 import TimeSlotModal from './components/TimeSlotModal';
 import VendorSearchModal from './components/VendorSearchModal';
 import { bookingService } from '../../../../services/bookingService';
@@ -36,6 +37,7 @@ const Checkout = () => {
 
   const [cartItems, setCartItems] = useState([]);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showSavedAddresses, setShowSavedAddresses] = useState(false);
   const [showTimeSlotModal, setShowTimeSlotModal] = useState(false);
   const [address, setAddress] = useState('');
   const [houseNumber, setHouseNumber] = useState('');
@@ -280,16 +282,43 @@ const Checkout = () => {
     return addressDetails?.components?.find(c => c.types.includes(type))?.long_name || '';
   };
 
+  // Edit/choose address: pick from saved addresses first; the saved list falls back to the map
+  // flow by itself when the user has none
+  const openAddressPicker = () => setShowSavedAddresses(true);
+
+  const handleAddNewAddress = () => {
+    setShowSavedAddresses(false);
+    setShowAddressModal(true);
+  };
+
+  const handleSavedAddressSelect = (saved) => {
+    setAddress(saved.addressLine1);
+    setHouseNumber(saved.addressLine2 || '');
+    setAddressDetails({
+      address: saved.addressLine1,
+      lat: saved.lat,
+      lng: saved.lng,
+      type: saved.type,
+      city: saved.city,
+      state: saved.state,
+      pincode: saved.pincode
+    });
+    setShowSavedAddresses(false);
+    if (bookingType === 'scheduled' && (!selectedDate || !selectedTime)) {
+      setShowTimeSlotModal(true);
+    }
+  };
+
   const handleProceed = async () => {
     // Validation
     if (bookingType === 'instant') {
       if (!addressDetails) {
-        setShowAddressModal(true);
+        openAddressPicker();
         return;
       }
     } else {
       if (!addressDetails || !selectedDate || !selectedTime) {
-        if (!addressDetails) setShowAddressModal(true);
+        if (!addressDetails) openAddressPicker();
         else if (!selectedDate || !selectedTime) setShowTimeSlotModal(true);
         return;
       }
@@ -862,7 +891,9 @@ const Checkout = () => {
         const response = await userAuthService.getProfile();
         if (response.success && response.user) {
           // Append as the new default, keeping the user's other saved addresses
-          const existing = (response.user.addresses || []).map(a => ({ ...a, isDefault: false }));
+          const existing = (response.user.addresses || [])
+            .filter(a => !(a.addressLine1 === newAddress.addressLine1 && (a.addressLine2 || '') === (newAddress.addressLine2 || '')))
+            .map(a => ({ ...a, isDefault: false }));
           const updatedAddresses = [...existing, newAddress];
           await userAuthService.updateProfile({ addresses: updatedAddresses });
           toast.success('Address updated in profile!');
@@ -1570,7 +1601,7 @@ const Checkout = () => {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowAddressModal(true)}
+                  onClick={() => openAddressPicker()}
                   className="p-1.5 hover:bg-gray-100 rounded-full transition-colors shrink-0 mt-0.5"
                 >
                   <FiEdit2 className="w-4 h-4 text-gray-600" />
@@ -1608,7 +1639,7 @@ const Checkout = () => {
             </div>
           ) : (
             <div
-              onClick={() => setShowAddressModal(true)}
+              onClick={() => openAddressPicker()}
               className="flex items-center justify-between p-3 bg-red-50 border border-red-100 rounded-xl cursor-pointer active:scale-[0.98] transition-all"
             >
               <div className="flex items-center gap-3">
@@ -1735,6 +1766,16 @@ const Checkout = () => {
           </div>
         </div>
       )}
+
+      {/* Saved Addresses */}
+      <SavedAddressesModal
+        isOpen={showSavedAddresses}
+        onClose={() => setShowSavedAddresses(false)}
+        selectedAddress={address}
+        selectedHouseNumber={houseNumber}
+        onSelect={handleSavedAddressSelect}
+        onAddNew={handleAddNewAddress}
+      />
 
       {/* Address Selection Modal */}
       <AddressSelectionModal
