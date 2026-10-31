@@ -30,11 +30,14 @@ import { useSettings } from '../../../../context/SettingsContext';
 import { userAuthService } from '../../../../services/authService';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import NotificationBell from '../../components/common/NotificationBell';
+import LogoutConfirmModal from '../../../../components/common/LogoutConfirmModal';
 
 const Account = () => {
   const navigate = useNavigate();
   const { openLanguageModal } = useLanguage();
   const { isReferralEnabled, referralRewardAmount, refereeRewardAmount } = useSettings();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [userProfile, setUserProfile] = useState({
     name: 'Verified Customer',
     phone: '',
@@ -111,6 +114,7 @@ const Account = () => {
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       await userAuthService.logout();
     } catch (e) {
       // Ignore network errors on logout
@@ -118,6 +122,8 @@ const Account = () => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('userData');
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
       toast.success('Logged out successfully');
       navigate('/user/login');
     }
@@ -473,8 +479,8 @@ const Account = () => {
           {/* LOGOUT BUTTON SECTION */}
           <section className="pt-2">
             <button
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-extrabold text-xs uppercase tracking-wider rounded-2xl transition-colors active:scale-98 shadow-2xs"
+              onClick={() => setShowLogoutModal(true)}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-extrabold text-xs uppercase tracking-wider rounded-2xl transition-colors active:scale-98 shadow-2xs cursor-pointer"
             >
               <FiLogOut className="w-4 h-4" />
               <span>Log Out of Zippto Account</span>
@@ -490,6 +496,15 @@ const Account = () => {
 
         </main>
       </div>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        isLoading={isLoggingOut}
+        title="Log Out of Zippto?"
+        message="Are you sure you want to log out? You will need to sign in with your phone number to access your saved addresses and bookings."
+      />
     </div>
   );
 };

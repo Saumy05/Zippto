@@ -8,6 +8,7 @@ import { vendorAuthService } from '../../../../services/authService';
 import { useLanguage } from '../../../../context/LanguageContext';
 import Header from '../../components/layout/Header';
 import LogoLoader from '../../../../components/common/LogoLoader';
+import LogoutConfirmModal from '../../../../components/common/LogoutConfirmModal';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -33,6 +34,8 @@ const Profile = () => {
 
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [error, setError] = useState(null);
 
   useLayoutEffect(() => {
@@ -320,22 +323,8 @@ const Profile = () => {
         <div className="mb-3">
           <button
             type="button"
-            onClick={async (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              try {
-                await vendorAuthService.logout();
-                toast.success('Logged out successfully');
-                navigate('/vendor/login');
-              } catch (error) {
-                localStorage.removeItem('vendorAccessToken');
-                localStorage.removeItem('vendorRefreshToken');
-                localStorage.removeItem('vendorData');
-                toast.success('Logged out successfully');
-                navigate('/vendor/login');
-              }
-            }}
-            className="w-full font-semibold py-3 rounded-xl active:scale-98 transition-all text-white flex items-center justify-center gap-2"
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full font-semibold py-3 rounded-xl active:scale-98 transition-all text-white flex items-center justify-center gap-2 cursor-pointer"
             style={{
               backgroundColor: '#EF4444',
               boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
@@ -354,6 +343,30 @@ const Profile = () => {
           </button>
         </div>
       </main>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={async () => {
+          try {
+            setIsLoggingOut(true);
+            await vendorAuthService.logout();
+          } catch (error) {
+            // fallback
+          } finally {
+            localStorage.removeItem('vendorAccessToken');
+            localStorage.removeItem('vendorRefreshToken');
+            localStorage.removeItem('vendorData');
+            setIsLoggingOut(false);
+            setShowLogoutModal(false);
+            toast.success('Logged out successfully');
+            navigate('/vendor/login');
+          }
+        }}
+        isLoading={isLoggingOut}
+        title="Log Out of Partner Portal?"
+        message="Are you sure you want to log out? You will need to sign in again to receive new customer bookings and manage active jobs."
+      />
 
     </div>
   );

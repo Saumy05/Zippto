@@ -7,10 +7,13 @@ import { vendorAuthService } from '../../../../services/authService';
 import { registerFCMToken, removeFCMToken } from '../../../../services/pushNotificationService';
 import { useLanguage } from '../../../../context/LanguageContext';
 import Header from '../../components/layout/Header';
+import LogoutConfirmModal from '../../../../components/common/LogoutConfirmModal';
 
 const Settings = () => {
   const navigate = useNavigate();
   const { currentLang, changeLanguage, supportedLanguages, openLanguageModal } = useLanguage();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [settings, setSettings] = useState({
     notifications: true,
     soundAlerts: true,
@@ -86,6 +89,7 @@ const Settings = () => {
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       await vendorAuthService.logout();
       toast.success('Logged out successfully');
       navigate('/vendor/login');
@@ -96,6 +100,9 @@ const Settings = () => {
       localStorage.removeItem('vendorData');
       toast.success('Logged out successfully');
       navigate('/vendor/login');
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
     }
   };
 
@@ -263,11 +270,7 @@ const Settings = () => {
         {/* Logout */}
         <button
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleLogout();
-          }}
+          onClick={() => setShowLogoutModal(true)}
           className="w-full py-4 rounded-xl font-semibold text-white mb-4 flex items-center justify-center gap-2 transition-all active:scale-95"
           style={{
             background: themeColors.button,
@@ -291,6 +294,14 @@ const Settings = () => {
         </button>
       </main>
 
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        isLoading={isLoggingOut}
+        title="Log Out of Partner Portal?"
+        message="Are you sure you want to log out? You will need to sign in again to receive new customer bookings and manage active jobs."
+      />
     </div>
   );
 };

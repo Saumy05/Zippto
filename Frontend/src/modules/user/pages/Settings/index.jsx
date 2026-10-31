@@ -18,10 +18,13 @@ import { useLanguage } from '../../../../context/LanguageContext';
 import { userAuthService } from '../../../../services/authService';
 import { registerFCMToken, removeFCMToken } from '../../../../services/pushNotificationService';
 import NotificationBell from '../../components/common/NotificationBell';
+import LogoutConfirmModal from '../../../../components/common/LogoutConfirmModal';
 
 const Settings = () => {
   const navigate = useNavigate();
   const { openLanguageModal } = useLanguage();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // State for notification toggles
   const [notifications, setNotifications] = useState({
@@ -79,6 +82,23 @@ const Settings = () => {
         toast.error('Failed to update settings', { id: toastId });
         setNotifications(prev => ({ ...prev, push: !newState }));
       }
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await userAuthService.logout();
+    } catch (e) {
+      // Ignore network errors on logout
+    } finally {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userData');
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
+      toast.success('Logged out successfully');
+      navigate('/user/login');
     }
   };
 
@@ -277,15 +297,9 @@ const Settings = () => {
             <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs divide-y divide-slate-100 overflow-hidden">
               {/* Log Out */}
               <button
-                onClick={async () => {
-                  const confirmed = window.confirm('Are you sure you want to log out of Zippto?');
-                  if (confirmed) {
-                    await userAuthService.logout();
-                    navigate('/user/login');
-                    toast.success('Logged out successfully');
-                  }
-                }}
-                className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-rose-50/50 transition-colors text-left group"
+                type="button"
+                onClick={() => setShowLogoutModal(true)}
+                className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-rose-50/50 transition-colors text-left group cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-200/60 group-hover:scale-105 transition-transform">
@@ -327,6 +341,15 @@ const Settings = () => {
 
         </main>
       </div>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        isLoading={isLoggingOut}
+        title="Log Out of Zippto?"
+        message="Are you sure you want to log out? You will need to sign back in with your mobile number to access your account."
+      />
     </div>
   );
 };
