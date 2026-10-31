@@ -895,11 +895,17 @@ const Checkout = () => {
             .filter(a => !(a.addressLine1 === newAddress.addressLine1 && (a.addressLine2 || '') === (newAddress.addressLine2 || '')))
             .map(a => ({ ...a, isDefault: false }));
           const updatedAddresses = [...existing, newAddress];
-          await userAuthService.updateProfile({ addresses: updatedAddresses });
-          toast.success('Address updated in profile!');
+          const saveResponse = await userAuthService.updateProfile({ addresses: updatedAddresses });
+          if (saveResponse.success) {
+            toast.success('Address updated in profile!');
+          } else {
+            // e.g. the 10-address limit; the booking still uses this address
+            toast.error(saveResponse.message || 'Could not save address to your profile');
+          }
         }
       } catch (e) {
         console.error('Failed to save address to profile', e);
+        toast.error(e.response?.data?.message || 'Could not save address to your profile');
       }
     }
 
