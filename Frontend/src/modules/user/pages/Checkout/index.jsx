@@ -1529,7 +1529,7 @@ const Checkout = () => {
       </main>
 
       {/* Bottom Action Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
 
         {/* Booking Type Toggle */}
         <div className="px-4 pt-3 pb-0">

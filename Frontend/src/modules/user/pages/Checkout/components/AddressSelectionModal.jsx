@@ -12,6 +12,7 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
   const [mapAddress, setMapAddress] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [autocomplete, setAutocomplete] = useState(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -25,7 +26,17 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
+      // The map renders on the GPU; mounting it while the sheet is still sliding in leaves the
+      // whole sheet black in some Android WebViews, so wait for the animation to finish.
+      const timer = setTimeout(() => setMapReady(true), 250);
+      return () => {
+        clearTimeout(timer);
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.width = '';
+      };
     } else {
+      setMapReady(false);
       document.body.style.overflow = '';
       document.body.style.position = '';
       document.body.style.width = '';
@@ -85,8 +96,8 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
         <div
           className={`bg-white rounded-t-[32px] shadow-2xl ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
           style={{
-            height: '85vh',
-            maxHeight: '90vh',
+            height: '85dvh',
+            maxHeight: '90dvh',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
@@ -125,10 +136,16 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
           {/* Map Section */}
           <div className="px-4 pb-2 shrink-0">
             <div className="rounded-xl overflow-hidden shadow-sm border border-gray-100">
-              <LocationPicker
-                onLocationSelect={handleLocationSelect}
-                initialPosition={selectedLocation}
-              />
+              {mapReady ? (
+                <LocationPicker
+                  onLocationSelect={handleLocationSelect}
+                  initialPosition={selectedLocation}
+                />
+              ) : (
+                <div className="h-64 bg-gray-200 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                </div>
+              )}
             </div>
           </div>
 
