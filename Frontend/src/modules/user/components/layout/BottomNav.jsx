@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../../../context/CartContext';
@@ -49,6 +49,26 @@ const BottomNav = React.memo(() => {
     return () => obs.disconnect();
   }, []);
 
+  // Publish the nav's real height (cart bar + pill + safe area) so other floating UI, such as the
+  // live booking card, can sit above it instead of guessing and overlapping
+  const navRef = useRef(null);
+  useEffect(() => {
+    const root = document.documentElement;
+    const el = navRef.current;
+    if (!el) {
+      root.style.setProperty('--bottom-nav-height', '0px');
+      return undefined;
+    }
+    const update = () => root.style.setProperty('--bottom-nav-height', `${el.offsetHeight}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.setProperty('--bottom-nav-height', '0px');
+    };
+  }, [isModalOpen, isKeyboardOpen]);
+
   const navItems = useMemo(() => [
     { id: 'home',     label: 'Home',     icon: FiHome,           filledIcon: HiHome,             path: '/user'           },
     { id: 'bookings', label: 'Bookings', icon: BsCalendar2Check, filledIcon: BsCalendar2CheckFill,path: '/user/my-bookings'},
@@ -82,6 +102,7 @@ const BottomNav = React.memo(() => {
 
   return (
     <nav
+      ref={navRef}
       data-bottom-nav="true"
       data-role="bottom-nav"
       className="fixed bottom-0 left-0 right-0 z-50 w-full lg:hidden bottom-nav-container pointer-events-none"

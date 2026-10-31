@@ -572,6 +572,7 @@ const BookingDetails = () => {
   const statusStr = (booking.status || '').toLowerCase();
   const isCancelled = ['cancelled', 'rejected'].includes(statusStr);
   const isCompleted = ['work_done', 'completed'].includes(statusStr);
+  const isPaid = ['success', 'paid', 'collected_by_vendor'].includes((booking.paymentStatus || '').toLowerCase()) || booking.cashCollected === true;
   const isInTransit = ['journey_started', 'started'].includes(statusStr);
   const isAtLocation = ['visited', 'in_progress'].includes(statusStr);
   const isAssigned = ['assigned', 'confirmed'].includes(statusStr) || isInTransit || isAtLocation || isCompleted;

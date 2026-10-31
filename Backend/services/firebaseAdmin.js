@@ -69,7 +69,8 @@ const URGENT_PUSH_TYPES = new Set([
   'booking_timeout',
   'booking_rejected'
 ]);
-const URGENT_ANDROID_CHANNEL_ID = 'booking_alerts';
+// Must match the id of the high-importance channel created in the Flutter app; override per environment if it differs
+const URGENT_ANDROID_CHANNEL_ID = process.env.FCM_URGENT_CHANNEL_ID || 'booking_alerts';
 
 const PUSH_SETTING_TTL_MS = 10 * 1000;
 const pushSettingCache = { value: null, at: 0 };
