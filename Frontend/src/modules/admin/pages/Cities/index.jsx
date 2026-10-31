@@ -185,11 +185,11 @@ const CityManagement = () => {
             </button>
           )}
           <h1 className="text-2xl font-bold text-gray-800">
-            {selectedState ? selectedState : 'City Management'}
+            {selectedState ? 'City Management' : 'State Management'}
           </h1>
           <p className="text-sm text-gray-500">
             {selectedState && currentState
-              ? `${currentState.cities.length} cities · ${currentState.active} active`
+              ? `${selectedState} · ${currentState.cities.length} cities · ${currentState.active} active`
               : `${states.length} states / UTs · ${cities.length} cities · ${cities.filter((c) => c.isActive).length} active`}
           </p>
         </div>

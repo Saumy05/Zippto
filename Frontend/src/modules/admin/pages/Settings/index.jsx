@@ -796,8 +796,8 @@ const AdminSettings = () => {
             <div className="w-8.5 h-8.5 bg-teal-50 group-hover:bg-teal-100 rounded-lg flex items-center justify-center mb-2.5 transition-colors">
               <FiMapPin className="w-4 h-4 text-teal-600" />
             </div>
-            <h3 className="text-sm font-bold text-gray-900 group-hover:text-teal-600 transition-colors">City Management</h3>
-            <p className="text-xs text-gray-500 leading-snug mt-1">Manage operational cities and default location</p>
+            <h3 className="text-sm font-bold text-gray-900 group-hover:text-teal-600 transition-colors">State Management</h3>
+            <p className="text-xs text-gray-500 leading-snug mt-1">Manage states, their cities and the default location</p>
           </div>
         </div>
       )}

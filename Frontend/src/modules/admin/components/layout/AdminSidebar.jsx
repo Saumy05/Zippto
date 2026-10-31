@@ -191,7 +191,7 @@ const navSections = [
           { label: "Customization Settings",    to: "/admin/settings/customization", superOnly: true },
           { label: "Payment & Storage Keys",    to: "/admin/integrations", superOnly: true },
           { label: "Contact & Support",         to: "/admin/settings/system", superOnly: true },
-          { label: "City Management",           to: "/admin/settings/cities", superOnly: true },
+          { label: "State Management",          to: "/admin/settings/cities", superOnly: true },
           { label: "Languages & Localization",  to: "/admin/settings/languages" },
           { label: "Manage Admins",             to: "/admin/settings/admins", superOnly: true }
         ]
