@@ -48,6 +48,11 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline, onOpe
 
   if (!isOpen || !booking) return null;
 
+  // Safeguard: Do not display if status is still in journey/visit/in_progress before billing is finalized
+  const isAwaitingPayment = ['awaiting_payment', 'work_done'].includes((booking.status || '').toLowerCase());
+  const isPaid = ['success', 'paid', 'collected_by_vendor'].includes((booking.paymentStatus || '').toLowerCase()) || booking.cashCollected;
+  if (!isPaid && !isAwaitingPayment) return null;
+
   // --- 1. Total & Breakdown Calculations ---
   const isPlanBenefit = booking.paymentMethod === 'plan_benefit';
   const bill = booking.bill;
@@ -140,8 +145,6 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline, onOpe
       setWalletPaying(false);
     }
   };
-
-  const isPaid = ['success', 'paid', 'collected_by_vendor'].includes((booking.paymentStatus || '').toLowerCase()) || booking.cashCollected;
 
   return (
     <AnimatePresence>

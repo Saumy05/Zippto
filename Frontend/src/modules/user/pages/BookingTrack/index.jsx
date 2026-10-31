@@ -273,9 +273,11 @@ const BookingTrack = () => {
           if (data.billGenerated || data.payOnlineTriggered || data.qrPaymentInitiated) {
             setShowPaymentModal(true);
             toast.success('Bill generated! Pay online is now activated.', { icon: '💳' });
-          } else if (data.customerConfirmationOTP) {
+          } else if (data.customerConfirmationOTP && ['awaiting_payment', 'work_done'].includes((data.status || prev?.status)?.toLowerCase())) {
             setShowPaymentModal(true);
             toast.success('Professional has requested payment!');
+          } else if (data.status === 'in_progress') {
+            setShowPaymentModal(false);
           }
           refreshBooking(false);
         }
@@ -893,8 +895,8 @@ const BookingTrack = () => {
           </div>
         )}
 
-        {/* Final Payment Card - Show when bill is finalized (OTP exists) or status is awaiting_payment / work_done */}
-        {(booking?.customerConfirmationOTP || booking?.paymentOtp || booking?.paymentStatus === 'success' || booking?.paymentStatus === 'paid' || booking?.status?.toLowerCase() === 'awaiting_payment') && ['work_done', 'awaiting_payment', 'visited', 'in_progress'].includes(booking?.status?.toLowerCase()) && !booking?.cashCollected && (
+        {/* Final Payment Card - Show when bill is finalized and status is awaiting_payment / work_done */}
+        {(booking?.customerConfirmationOTP || booking?.paymentOtp || booking?.paymentStatus === 'success' || booking?.paymentStatus === 'paid' || booking?.status?.toLowerCase() === 'awaiting_payment') && ['work_done', 'awaiting_payment'].includes(booking?.status?.toLowerCase()) && !booking?.cashCollected && (
           <div
             className={`mb-4 relative overflow-hidden rounded-2xl p-5 shadow-lg transition-all ${['success', 'paid'].includes(booking?.paymentStatus?.toLowerCase())
               ? 'bg-gradient-to-br from-green-500 via-green-600 to-emerald-700'

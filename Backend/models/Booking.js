@@ -171,6 +171,10 @@ const bookingSchema = new mongoose.Schema({
     ref: 'VendorBill',
     default: null
   },
+  billGenerated: {
+    type: Boolean,
+    default: false
+  },
 
   // ==========================================
   // 4. PAYMENT INFORMATION

@@ -264,6 +264,7 @@ const createOrUpdateBill = async (req, res) => {
     booking.finalAmount = payableTotal;
     booking.userPayableAmount = payableTotal;
     booking.vendorBillId = bill._id;
+    booking.billGenerated = true;
 
     // Always issue a fresh payment OTP with the bill: any previous customerConfirmationOTP is the
     // visit OTP (already known to the vendor) or an OTP for an older version of the bill.

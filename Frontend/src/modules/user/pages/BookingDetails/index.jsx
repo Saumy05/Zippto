@@ -238,8 +238,15 @@ const BookingDetails = () => {
       return;
     }
 
-    const hasPaymentRequest = booking.customerConfirmationOTP || booking.qrPaymentInitiated ||
-      booking.billGenerated || booking.payOnlineTriggered || booking.status === 'awaiting_payment';
+    // Payment modal must ONLY show when billing is finalized and awaiting payment
+    const isAwaitingPayment = ['awaiting_payment', 'work_done'].includes(booking.status?.toLowerCase());
+    if (!isAwaitingPayment) {
+      setShowPaymentModal(false);
+      return;
+    }
+
+    const hasPaymentRequest = booking.billGenerated || booking.vendorBillId || booking.bill ||
+      booking.payOnlineTriggered || booking.qrPaymentInitiated || booking.customerConfirmationOTP;
     if (!hasPaymentRequest) return;
 
     const signature = [
@@ -277,6 +284,10 @@ const BookingDetails = () => {
               sessionStorage.setItem(toastKey, '1');
               toast.success('Bill ready! You can now pay online.', { icon: '💳' });
             }
+          } else if (data.status === 'in_progress') {
+            sessionStorage.removeItem(`bill_toast_${id}`);
+            sessionStorage.removeItem(`payment_request_sig_${id}`);
+            setShowPaymentModal(false);
           }
 
           // Use debounced reload to avoid rapid-fire fetches from socket bursts
@@ -1075,7 +1086,7 @@ const BookingDetails = () => {
           </div>
 
           {/* 5. LIVE BILL & PAYMENT ACTION CARD (When Bill is Generated or Payment Pending) */}
-          {(!isCancelled && !isPaid && (booking.customerConfirmationOTP || booking.paymentOtp || booking.status === 'awaiting_payment' || booking.status === 'work_done' || booking.billGenerated)) ? (
+          {(!isCancelled && !isPaid && ['awaiting_payment', 'work_done'].includes(booking.status?.toLowerCase()) && (booking.billGenerated || booking.vendorBillId || booking.bill || booking.customerConfirmationOTP || booking.paymentOtp)) ? (
             <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 rounded-3xl p-5 text-white shadow-xl border border-teal-500/30 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
               

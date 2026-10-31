@@ -48,6 +48,51 @@ const toAssetUrl = (url) => {
 let homeCache = { homeContent: null, categories: [] };
 let mainCategoriesCache = [];
 
+// Matches a service section with the currently selected subcategory tab/pill
+const isSectionMatch = (sec, selectedId) => {
+  if (!selectedId || selectedId === 'all') return true;
+  const clean = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const sId = clean(selectedId);
+  if (!sId) return true;
+
+  const secId = clean(sec.id);
+  const secTitle = clean(sec.sectionTitle);
+  const brandSlug = clean(sec.brandSlug);
+  const brandTitle = clean(sec.brandTitle);
+
+  if (
+    secId === sId ||
+    brandSlug === sId ||
+    secTitle === sId ||
+    brandTitle === sId ||
+    secTitle.includes(sId) ||
+    sId.includes(secTitle) ||
+    (secId && secId.includes(sId)) ||
+    (secId && sId.includes(secId))
+  ) {
+    return true;
+  }
+
+  // Token matching for words (e.g. "inverter", "fan", "light", "mcb", "doorbell", "wiring", "appliances", "socket")
+  const tokens = String(selectedId).toLowerCase().split(/[\s\-_\/&,]+/).filter(t => t.length > 2);
+  const secText = `${sec.id} ${sec.sectionTitle} ${sec.brandSlug || ''} ${sec.brandTitle || ''}`.toLowerCase();
+  if (tokens.some(token => secText.includes(token))) {
+    return true;
+  }
+
+  return false;
+};
+
+// Checks if a subGrid tile is the active selected subcategory
+const isSgActive = (sg, selectedId) => {
+  if (!selectedId || selectedId === 'all') return false;
+  const clean = (str) => String(str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const sId = clean(selectedId);
+  const sgId = clean(sg.id);
+  const sgName = clean(sg.name);
+  return sgId === sId || sgName === sId || sgName.includes(sId) || sId.includes(sgName);
+};
+
 const UserDashboard = () => {
   const navigate = useNavigate();
   const { categorySlug } = useParams();
@@ -88,17 +133,17 @@ const UserDashboard = () => {
   // Interactive Flow States
   const [activeCategoryModal, setActiveCategoryModal] = useState(null);
   const [activeDetailView, setActiveDetailView] = useState(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(null);
 
-  // After picking a sub-service in the category sheet, scroll to its section once the view renders
+  // Synchronize selected subcategory when navigating with scrollTo/scrollToSection
   useEffect(() => {
-    const target = location.state?.scrollTo;
-    if (!target || !activeDetailView) return;
-    const key = String(target).toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const timer = setTimeout(() => {
-      document.getElementById(`section-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [activeDetailView, location.state]);
+    const target = location.state?.scrollTo || location.state?.scrollToSection;
+    if (target) {
+      setSelectedSubcategoryId(String(target));
+    } else if (activeDetailView?.subGrid?.length > 0 && !selectedSubcategoryId) {
+      setSelectedSubcategoryId(activeDetailView.subGrid[0].id || activeDetailView.subGrid[0].name);
+    }
+  }, [activeDetailView, location.state, selectedSubcategoryId]);
 
   // Cart Add / Remove Toggle Handler
   const handleToggleAddService = async (item, sectionTitle) => {
@@ -380,6 +425,8 @@ const UserDashboard = () => {
             b.sections.forEach(sec => {
               dynamicSections.push({
                 id: (b.slug || sec.title || '').toLowerCase().replace(/[^a-z0-9]/g, '-'),
+                brandSlug: b.slug,
+                brandTitle: b.title,
                 sectionTitle: sec.title || b.title,
                 items: (sec.cards || []).map(card => ({
                   id: card.id || card._id,
@@ -405,6 +452,9 @@ const UserDashboard = () => {
             subGrid: dynamicSubGrid,
             detailedSections: dynamicSections
           });
+
+          const target = location.state?.scrollTo || location.state?.scrollToSection;
+          setSelectedSubcategoryId(target ? String(target) : (dynamicSubGrid[0]?.id || dynamicSubGrid[0]?.name));
           return;
         }
       }
@@ -413,7 +463,13 @@ const UserDashboard = () => {
     }
 
     setActiveDetailView(fallbackDetail);
-  }, [displayCategories, mainCategories, RESERVED_SLUGS]);
+    const target = location.state?.scrollTo || location.state?.scrollToSection;
+    if (fallbackDetail?.subGrid?.length > 0) {
+      setSelectedSubcategoryId(target ? String(target) : (fallbackDetail.subGrid[0]?.id || fallbackDetail.subGrid[0]?.name));
+    } else {
+      setSelectedSubcategoryId(null);
+    }
+  }, [displayCategories, mainCategories, RESERVED_SLUGS, location.state]);
 
   // Synchronize categorySlug from URL with category view
   useEffect(() => {
@@ -421,6 +477,7 @@ const UserDashboard = () => {
       loadCategoryView(categorySlug);
     } else {
       setActiveDetailView(null);
+      setSelectedSubcategoryId(null);
     }
   }, [categorySlug, loadCategoryView]);
 
@@ -526,6 +583,18 @@ const UserDashboard = () => {
       setNewsletterInput('');
     }, 500);
   };
+
+  // Filter detailedSections to show only the selected subcategory (or all if 'all' is selected)
+  const visibleSections = useMemo(() => {
+    if (!activeDetailView?.detailedSections) return [];
+    if (!selectedSubcategoryId || selectedSubcategoryId === 'all') {
+      return activeDetailView.detailedSections;
+    }
+    const filtered = activeDetailView.detailedSections.filter((sec) =>
+      isSectionMatch(sec, selectedSubcategoryId)
+    );
+    return filtered.length > 0 ? filtered : activeDetailView.detailedSections;
+  }, [activeDetailView?.detailedSections, selectedSubcategoryId]);
 
   return (
     <div className={`min-h-screen bg-[#F8FAFC] text-[#111827] font-sans antialiased pb-24 lg:pb-12 selection:bg-slate-900 selection:text-white transition-[padding] duration-200 ${mobileSearchOpen ? 'pt-[108px]' : 'pt-15'}`}>
@@ -730,125 +799,183 @@ const UserDashboard = () => {
           </div>
 
           {activeDetailView.subGrid && activeDetailView.subGrid.length > 0 && (
-            <div className="grid grid-cols-3 gap-3 sm:gap-4">
-              {activeDetailView.subGrid.map((sg) => (
-                <div
-                  key={sg.id}
-                  onClick={() => {
-                    const cleanKey = (sg.id || sg.name || '').toLowerCase().replace(/[^a-z0-9]/g, '-');
-                    let targetEl = document.getElementById(`section-${cleanKey}`);
-                    if (!targetEl) {
-                      const cleanName = sg.name.toLowerCase().trim();
-                      targetEl = Array.from(document.querySelectorAll('[id^="section-"]')).find(el =>
-                        el.id.toLowerCase().includes(cleanKey.slice(0, 4)) ||
-                        el.textContent.toLowerCase().includes(cleanName)
-                      );
-                    }
-                    if (targetEl) {
-                      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      targetEl.classList.add('bg-amber-50/70', 'p-2.5', 'rounded-2xl', 'transition-all', 'duration-300');
-                      setTimeout(() => {
-                        targetEl.classList.remove('bg-amber-50/70', 'p-2.5', 'rounded-2xl');
-                      }, 1400);
-                    }
-                  }}
-                  className="flex flex-col items-center text-center cursor-pointer group active:scale-95 transition-transform"
-                >
-                  <div className="w-full aspect-square rounded-2xl bg-white border border-slate-200/90 shadow-2xs overflow-hidden flex items-center justify-center p-2 group-hover:border-slate-400 group-hover:shadow-md transition-all">
-                    <img
-                      src={sg.image}
-                      alt={sg.name}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/cat_images/electrician.jpg';
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-0.5">
+                <span>Select a service type:</span>
+                {selectedSubcategoryId && selectedSubcategoryId !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubcategoryId('all')}
+                    className="text-blue-600 hover:text-blue-700 font-bold text-[11.5px] hover:underline cursor-pointer"
+                  >
+                    View All ({activeDetailView.detailedSections?.reduce((sum, s) => sum + (s.items?.length || 0), 0) || 0})
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3.5">
+                {activeDetailView.subGrid.map((sg) => {
+                  const isActive = isSgActive(sg, selectedSubcategoryId);
+                  return (
+                    <div
+                      key={sg.id}
+                      onClick={() => {
+                        const newId = sg.id || sg.name;
+                        setSelectedSubcategoryId(newId);
                       }}
-                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
-                    />
-                  </div>
-                  <span className="mt-1.5 text-[10.5px] sm:text-xs font-bold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {sg.name}
-                  </span>
-                </div>
-              ))}
+                      className="flex flex-col items-center text-center cursor-pointer group active:scale-95 transition-transform"
+                    >
+                      <div
+                        className={`w-full aspect-square rounded-2xl bg-white overflow-hidden flex items-center justify-center p-2 relative transition-all duration-200 ${
+                          isActive
+                            ? 'border-2 border-blue-600 ring-2 ring-blue-100 shadow-md bg-blue-50/30'
+                            : 'border border-slate-200/90 shadow-2xs group-hover:border-slate-400 group-hover:shadow-md'
+                        }`}
+                      >
+                        <img
+                          src={sg.image}
+                          alt={sg.name}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/cat_images/electrician.jpg';
+                          }}
+                          className={`max-h-full max-w-full object-contain transition-transform duration-200 ${
+                            isActive ? 'scale-105' : 'group-hover:scale-105'
+                          }`}
+                        />
+                        {isActive && (
+                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                            <FiCheck className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className={`mt-1.5 text-[10.5px] sm:text-xs leading-snug line-clamp-2 transition-colors ${
+                          isActive
+                            ? 'font-extrabold text-blue-600'
+                            : 'font-bold text-slate-800 group-hover:text-blue-600'
+                        }`}
+                      >
+                        {sg.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          {activeDetailView.detailedSections && activeDetailView.detailedSections.length > 0 ? (
-            <div className="space-y-5 pt-2">
-              {activeDetailView.detailedSections.map((sec, idx) => {
-                const secAnchorId = `section-${(sec.id || sec.sectionTitle || `sec-${idx}`).toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-                return (
-                  <div key={idx} id={secAnchorId} className="space-y-2.5 scroll-mt-24">
-                    <h3 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-1.5 flex items-center justify-between">
+          {visibleSections && visibleSections.length > 0 ? (
+            <div className="space-y-4 pt-1">
+              {/* Header showing currently displayed subcategory */}
+              <div className="flex items-center justify-between pb-1 border-b border-slate-200/90">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                    {selectedSubcategoryId === 'all'
+                      ? 'All Services'
+                      : (activeDetailView.subGrid?.find(sg => isSgActive(sg, selectedSubcategoryId))?.name || visibleSections[0]?.sectionTitle || 'Services')}
+                  </h3>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    ({visibleSections.reduce((acc, s) => acc + (s.items?.length || 0), 0)} services)
+                  </span>
+                </div>
+
+                {selectedSubcategoryId !== 'all' ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubcategoryId('all')}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                  >
+                    View All
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (activeDetailView.subGrid?.length > 0) {
+                        setSelectedSubcategoryId(activeDetailView.subGrid[0].id || activeDetailView.subGrid[0].name);
+                      }
+                    }}
+                    className="text-[11px] font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Show Selected Only
+                  </button>
+                )}
+              </div>
+
+              {visibleSections.map((sec, idx) => (
+                <div key={idx} className="space-y-2.5">
+                  {(selectedSubcategoryId === 'all' || visibleSections.length > 1) && (
+                    <h4 className="text-xs sm:text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-1 flex items-center justify-between">
                       <span>{sec.sectionTitle}</span>
                       <span className="text-[10px] text-slate-400 font-medium">({sec.items.length} services)</span>
-                    </h3>
+                    </h4>
+                  )}
 
-                    <div className="space-y-2.5">
-                      {sec.items.map((item) => {
-                        const isAdded = cartItems.some(
-                          ci => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
-                        );
-                        return (
-                          <div
-                            key={item.id}
-                            className="bg-white border border-slate-200/80 rounded-xl p-3 flex items-start justify-between gap-3 shadow-2xs hover:border-slate-300 transition-all"
-                          >
-                            <div className="space-y-1 flex-1">
-                              <h4 className="text-xs sm:text-sm font-bold text-slate-900">{item.title}</h4>
-                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                                <span className="flex items-center gap-0.5 font-bold text-amber-500">
-                                  <FiStar className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                  {Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : (item.rating || 'New')}
+                  <div className="space-y-2.5">
+                    {sec.items.map((item) => {
+                      const isAdded = cartItems.some(
+                        ci => (ci.serviceId && ci.serviceId === item.id) || ci.title === item.title
+                      );
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-white border border-slate-200/80 rounded-xl p-3 flex items-start justify-between gap-3 shadow-2xs hover:border-slate-300 transition-all"
+                        >
+                          <div className="space-y-1 flex-1">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900">{item.title}</h4>
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                              <span className="flex items-center gap-0.5 font-bold text-amber-500">
+                                <FiStar className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                {Number(item.rating) > 0 ? Number(item.rating).toFixed(1) : (item.rating || 'New')}
+                              </span>
+                              {item.reviews && item.reviews !== '0' && item.reviews !== 0 && (
+                                <span className="text-slate-400">
+                                  ({typeof item.reviews === 'number' ? `${item.reviews}` : item.reviews})
                                 </span>
-                                {item.reviews && item.reviews !== '0' && item.reviews !== 0 && (
-                                  <span className="text-slate-400">
-                                    ({typeof item.reviews === 'number' ? `${item.reviews}` : item.reviews})
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs font-bold text-slate-900">{item.price}</p>
-                              <p className="text-[11px] text-slate-500 leading-snug line-clamp-2 pt-0.5">
-                                {item.desc}
-                              </p>
+                              )}
                             </div>
-
-                            <div className="flex flex-col items-center shrink-0 space-y-1.5">
-                              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-slate-100 overflow-hidden border border-slate-100 relative">
-                                <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (isAdded) {
-                                    navigate('/cart');
-                                  } else {
-                                    handleToggleAddService(item, sec.sectionTitle);
-                                  }
-                                }}
-                                className={`w-16 sm:w-20 py-1 rounded-md font-bold text-[11px] transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer ${
-                                  isAdded
-                                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
-                                    : 'bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-95'
-                                }`}
-                                title={isAdded ? 'Go to Cart' : 'Add to Cart'}
-                              >
-                                {isAdded ? (
-                                  <>
-                                    <FiCheck className="w-3 h-3" /> Added
-                                  </>
-                                ) : (
-                                  <>Add +</>
-                                )}
-                              </button>
-                            </div>
+                            <p className="text-xs font-bold text-slate-900">{item.price}</p>
+                            <p className="text-[11px] text-slate-500 leading-snug line-clamp-2 pt-0.5">
+                              {item.desc}
+                            </p>
                           </div>
-                        );
-                      })}
-                    </div>
+
+                          <div className="flex flex-col items-center shrink-0 space-y-1.5">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-slate-100 overflow-hidden border border-slate-100 relative">
+                              <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isAdded) {
+                                  navigate('/cart');
+                                } else {
+                                  handleToggleAddService(item, sec.sectionTitle);
+                                }
+                              }}
+                              className={`w-16 sm:w-20 py-1 rounded-md font-bold text-[11px] transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer ${
+                                isAdded
+                                  ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                                  : 'bg-white text-red-600 border border-red-200 hover:bg-red-50 active:scale-95'
+                              }`}
+                              title={isAdded ? 'Go to Cart' : 'Add to Cart'}
+                            >
+                              {isAdded ? (
+                                <>
+                                  <FiCheck className="w-3 h-3" /> Added
+                                </>
+                              ) : (
+                                <>Add +</>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-slate-200/80 p-8 sm:p-12 text-center flex flex-col items-center justify-center my-4 shadow-2xs">
@@ -859,14 +986,24 @@ const UserDashboard = () => {
                 No services available yet
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">
-                We are currently onboarding certified professionals for <span className="font-semibold text-slate-700">{activeDetailView.title}</span>. Please check back soon or browse our other active categories!
+                We are currently onboarding certified professionals for{' '}
+                <span className="font-semibold text-slate-700">
+                  {selectedSubcategoryId && selectedSubcategoryId !== 'all'
+                    ? (activeDetailView.subGrid?.find(sg => isSgActive(sg, selectedSubcategoryId))?.name || activeDetailView.title)
+                    : activeDetailView.title}
+                </span>. Please check back soon or browse our other active categories!
               </p>
               <button
-                onClick={() => navigate('/user')}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
+                onClick={() => {
+                  if (selectedSubcategoryId && selectedSubcategoryId !== 'all') {
+                    setSelectedSubcategoryId('all');
+                  } else {
+                    navigate('/user');
+                  }
+                }}
+                className="px-5 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-all cursor-pointer shadow-xs active:scale-95"
               >
-                <FiArrowLeft className="w-4 h-4" />
-                <span>Browse Other Categories</span>
+                {selectedSubcategoryId && selectedSubcategoryId !== 'all' ? 'View All Services' : 'Browse Other Categories'}
               </button>
             </div>
           )}

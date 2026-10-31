@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import vendorBillService from '../../../../services/vendorBillService';
 import vendorWalletService from '../../../../services/vendorWalletService';
-import { getBookingById } from '../../services/bookingService';
+import { getBookingById, updateBookingStatus } from '../../services/bookingService';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { OtpVerificationModal, ScanAndPayModal } from '../../components/common';
 import { useSocket } from '../../../../context/SocketContext';
@@ -170,8 +170,8 @@ const BillingPage = () => {
         return;
       }
 
-      // Check if OTP was already sent
-      if (bookingData?.customerConfirmationOTP || bookingData?.paymentOtp) {
+      // Check if OTP was already sent for a finalized bill
+      if (bookingData?.status === 'awaiting_payment' && (bookingData?.customerConfirmationOTP || bookingData?.paymentOtp)) {
         setIsOtpSent(true);
       }
 
@@ -509,26 +509,44 @@ const BillingPage = () => {
     return expectedNewNetOwed > cashLimit;
   }, [walletInfo, calculations]);
 
-  const handleProceedToFinalReview = async () => {
-    try {
-      setSubmitting(true);
-      const res = await vendorBillService.createOrUpdateBill(id, {
-        services: selectedServices,
-        parts: selectedParts,
-        customItems,
-        transportCharges,
-        applyPartsGST
-      });
-
-      if (res.success) {
-        toast.success('Bill generated! Pay Online triggered for customer.');
+  const revertToInProgressIfNeeded = async () => {
+    if (booking?.status === 'awaiting_payment') {
+      try {
+        await updateBookingStatus(id, 'in_progress');
+        setBooking(prev => prev ? {
+          ...prev,
+          status: 'in_progress',
+          billGenerated: false,
+          customerConfirmationOTP: null,
+          paymentOtp: null,
+          qrPaymentInitiated: false
+        } : prev);
+        setIsOtpSent(false);
+        toast('Bill opened for editing. Job set back to in-progress.', { icon: '✏️' });
+      } catch (err) {
+        console.error('Failed to revert status to in_progress:', err);
       }
-    } catch (err) {
-      console.error('Error saving bill on review:', err);
-    } finally {
-      setSubmitting(false);
-      setCurrentStep(5);
     }
+  };
+
+  const handleStepChange = async (targetStep) => {
+    // If stepping back to edit items while in awaiting_payment, revert status to in_progress
+    if (targetStep < currentStep && booking?.status === 'awaiting_payment') {
+      await revertToInProgressIfNeeded();
+    }
+    setCurrentStep(targetStep);
+  };
+
+  const handleHeaderBack = async () => {
+    if (booking?.status === 'awaiting_payment') {
+      await revertToInProgressIfNeeded();
+    }
+    navigate(`/vendor/booking/${id}`, { replace: true });
+  };
+
+  const handleProceedToFinalReview = () => {
+    // Simply advance to the Review step without saving to backend or alerting user prematurely
+    setCurrentStep(5);
   };
 
   const handleSubmit = async () => {
@@ -543,18 +561,18 @@ const BillingPage = () => {
       });
 
       if (res.success) {
-        toast.success('Bill generated successfully!');
+        toast.success('Bill generated! Customer notified to pay online.', { icon: '📲' });
         localStorage.removeItem(`billing_step_${id}`);
         localStorage.removeItem(`billing_max_step_${id}`);
         localStorage.removeItem(`billing_data_${id}`);
-        navigate(`/vendor/booking/${id}`, { replace: true });
+        fetchData();
       } else {
         toast.error(res.message || 'Failed to generate bill');
-        setSubmitting(false);
       }
     } catch (error) {
       console.error('Submit bill error:', error);
       toast.error('An error occurred');
+    } finally {
       setSubmitting(false);
     }
   };
@@ -595,7 +613,7 @@ const BillingPage = () => {
   };
 
   const handleOpenCashModal = async () => {
-    if (isOtpSent || booking?.customerConfirmationOTP || booking?.paymentOtp) {
+    if (isOtpSent && booking?.status === 'awaiting_payment') {
       setShowOtpModal(true);
     } else {
       await handleSendOTP();
@@ -848,7 +866,7 @@ const BillingPage = () => {
       <div className="sticky-header sticky top-0 z-50 bg-white">
         {/* Title Bar */}
         <div className="px-4 py-4 shadow-sm border-b border-gray-100 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full">
+          <button onClick={handleHeaderBack} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full cursor-pointer" title="Back to Booking">
             <FiArrowLeft className="w-5 h-5" />
           </button>
           <div>
@@ -871,7 +889,7 @@ const BillingPage = () => {
             const isReached = step.id <= maxStep;
 
             return (
-              <button key={step.id} onClick={() => isReached && setCurrentStep(step.id)}
+              <button key={step.id} onClick={() => isReached && handleStepChange(step.id)}
                 className={`flex flex-col items-center gap-1 z-10 relative transition-all ${isActive ? 'opacity-100 scale-105' : isReached ? 'opacity-80' : 'opacity-40'}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${(isActive || isCompleted) ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-100 text-gray-400'} ${isActive ? 'ring-4 ring-blue-50' : ''}`}>
                   {isCompleted ? <FiCheck className="w-4 h-4" /> : <step.icon />}
@@ -1257,7 +1275,7 @@ const BillingPage = () => {
         )}
         {currentStep === 2 && (
           <>
-            <button onClick={() => setCurrentStep(1)} className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl">Back</button>
+            <button onClick={() => handleStepChange(1)} className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl">Back</button>
             <button onClick={() => setCurrentStep(3)} className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg">
               Next: Extras <FiArrowRight />
             </button>
@@ -1265,7 +1283,7 @@ const BillingPage = () => {
         )}
         {currentStep === 3 && (
           <>
-            <button onClick={() => setCurrentStep(2)} className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl">Back</button>
+            <button onClick={() => handleStepChange(2)} className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl">Back</button>
             <button onClick={() => setCurrentStep(4)} className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg">
               Next: Transport <FiArrowRight />
             </button>
@@ -1273,23 +1291,13 @@ const BillingPage = () => {
         )}
         {currentStep === 4 && (
           <>
-            <button onClick={() => setCurrentStep(3)} className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl">Back</button>
+            <button onClick={() => handleStepChange(3)} className="flex-1 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl">Back</button>
             <button
               onClick={handleProceedToFinalReview}
-              disabled={submitting}
-              className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all disabled:opacity-50"
+              className="flex-[2] py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg active:scale-98 transition-all"
             >
-              {submitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Activating Pay Online...</span>
-                </>
-              ) : (
-                <>
-                  <span>Next: Final Review</span>
-                  <FiArrowRight />
-                </>
-              )}
+              <span>Next: Final Review</span>
+              <FiArrowRight />
             </button>
           </>
         )}
@@ -1305,31 +1313,42 @@ const BillingPage = () => {
           ) : (
             <>
               <button
-                onClick={() => setCurrentStep(4)}
-                disabled={submitting || otpLoading}
-                className="w-20 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl disabled:opacity-50"
+                onClick={() => handleStepChange(4)}
+                disabled={submitting || otpLoading || qrLoading}
+                className="w-14 py-3 text-gray-600 font-bold bg-white border border-gray-200 rounded-xl disabled:opacity-50 text-xs flex items-center justify-center"
               >
                 Back
+              </button>
+
+              {/* Send Bill to Customer CTA */}
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || otpLoading || qrLoading}
+                className="flex-1 py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50 text-xs sm:text-sm cursor-pointer"
+                title="Send bill to customer so they can pay online"
+              >
+                <FiCreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{submitting ? 'Sending...' : 'Send Bill'}</span>
               </button>
 
               {/* Cash Collection CTA */}
               <button
                 onClick={handleOpenCashModal}
-                disabled={otpLoading || qrLoading}
-                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50 text-xs sm:text-sm cursor-pointer"
+                disabled={submitting || otpLoading || qrLoading}
+                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50 text-xs sm:text-sm cursor-pointer"
               >
-                <FiDollarSign className="w-4 h-4" />
+                <FiDollarSign className="w-3.5 h-3.5" />
                 <span>{otpLoading ? 'Loading...' : 'Collect Cash'}</span>
               </button>
 
               {/* Online QR CTA */}
               <button
                 onClick={handleOnlinePayment}
-                disabled={otpLoading || qrLoading}
-                className="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50 text-xs sm:text-sm cursor-pointer"
+                disabled={submitting || otpLoading || qrLoading}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-50 text-xs sm:text-sm cursor-pointer"
               >
-                <MdQrCode className="w-4 h-4" />
-                <span>{qrLoading ? 'Generating QR...' : 'UPI QR Code'}</span>
+                <MdQrCode className="w-3.5 h-3.5" />
+                <span>{qrLoading ? '...' : 'UPI QR'}</span>
               </button>
             </>
           )

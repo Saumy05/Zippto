@@ -653,12 +653,12 @@ const updateBookingStatus = async (req, res) => {
     if (status && status !== booking.status) {
       const validTransitions = {
         [BOOKING_STATUS.PENDING]: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.REJECTED, BOOKING_STATUS.CANCELLED],
-        [BOOKING_STATUS.AWAITING_PAYMENT]: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REJECTED],
+        [BOOKING_STATUS.AWAITING_PAYMENT]: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.CANCELLED, BOOKING_STATUS.REJECTED, BOOKING_STATUS.IN_PROGRESS],
         [BOOKING_STATUS.CONFIRMED]: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CANCELLED],
         [BOOKING_STATUS.ASSIGNED]: [BOOKING_STATUS.VISITED, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CANCELLED],
         [BOOKING_STATUS.VISITED]: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CANCELLED],
-        [BOOKING_STATUS.IN_PROGRESS]: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED],
-        [BOOKING_STATUS.WORK_DONE]: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED]
+        [BOOKING_STATUS.IN_PROGRESS]: [BOOKING_STATUS.WORK_DONE, BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED, BOOKING_STATUS.AWAITING_PAYMENT],
+        [BOOKING_STATUS.WORK_DONE]: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED, BOOKING_STATUS.IN_PROGRESS]
       };
 
       if (!validTransitions[booking.status]?.includes(status)) {
@@ -671,8 +671,15 @@ const updateBookingStatus = async (req, res) => {
       // Update booking status
       booking.status = status;
 
-      if (status === BOOKING_STATUS.IN_PROGRESS && !booking.startedAt) {
-        booking.startedAt = new Date();
+      if (status === BOOKING_STATUS.IN_PROGRESS) {
+        if (!booking.startedAt) {
+          booking.startedAt = new Date();
+        }
+        // If transitioning back to in_progress from awaiting_payment, clear pending payment flags/OTP
+        booking.billGenerated = false;
+        booking.customerConfirmationOTP = undefined;
+        booking.paymentOtp = undefined;
+        booking.qrPaymentInitiated = false;
       }
 
       if (status === BOOKING_STATUS.WORK_DONE && !booking.completedAt) {
@@ -731,11 +738,20 @@ const updateBookingStatus = async (req, res) => {
     // Emit socket event for real-time UI refresh
     const io = req.app.get('io');
     if (io) {
-      io.to(`user_${booking.userId}`).emit('booking_updated', {
+      const updatePayload = {
         bookingId: booking._id,
         status: booking.status,
-        message: `Booking status updated to ${booking.status}`
-      });
+        billGenerated: booking.billGenerated,
+        customerConfirmationOTP: booking.customerConfirmationOTP,
+        paymentOtp: booking.paymentOtp,
+        qrPaymentInitiated: false,
+        message: status === BOOKING_STATUS.IN_PROGRESS
+          ? 'Technician is updating job details.'
+          : `Booking status updated to ${booking.status}`
+      };
+
+      io.to(`user_${booking.userId}`).emit('booking_updated', updatePayload);
+      io.to(`tracking_${booking._id}`).emit('booking_updated', updatePayload);
     }
 
     res.status(200).json({
@@ -836,7 +852,6 @@ const startSelfJob = async (req, res) => {
     booking.status = BOOKING_STATUS.JOURNEY_STARTED;
     booking.journeyStartedAt = new Date();
     booking.visitOtp = otp;
-    booking.customerConfirmationOTP = otp;
     booking.assignedAt = booking.assignedAt || new Date(); // Implicitly assigned to self now
 
     await booking.save();

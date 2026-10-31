@@ -181,6 +181,10 @@ exports.initiateOnlineCollection = async (req, res) => {
     // Store QR ID to track later
     booking.razorpayQrId = qrResult.qrCodeId;
     booking.paymentMethod = 'online'; // Mark as online as soon as QR is shown
+    if (booking.status !== 'completed' && booking.status !== 'cancelled') {
+      booking.status = 'awaiting_payment';
+    }
+    booking.billGenerated = true;
     await booking.save();
 
     // Emit socket event to user with full bill details & OTP
@@ -188,6 +192,8 @@ exports.initiateOnlineCollection = async (req, res) => {
     if (io) {
       io.to(`user_${booking.userId}`).emit('booking_updated', {
         bookingId: booking._id,
+        status: booking.status,
+        billGenerated: true,
         finalAmount: booking.finalAmount,
         workDoneDetails: booking.workDoneDetails,
         qrPaymentInitiated: true,
@@ -339,6 +345,10 @@ exports.initiateCashCollection = async (req, res) => {
     if (otp !== booking.customerConfirmationOTP) booking.paymentOtpAttempts = 0;
     booking.customerConfirmationOTP = otp;
     booking.paymentOtp = otp;
+    if (booking.status !== 'completed' && booking.status !== 'cancelled') {
+      booking.status = 'awaiting_payment';
+    }
+    booking.billGenerated = true;
     await booking.save();
 
     // Emit socket event to user with full bill details and OTP
@@ -346,6 +356,8 @@ exports.initiateCashCollection = async (req, res) => {
     if (io) {
       io.to(`user_${booking.userId}`).emit('booking_updated', {
         bookingId: booking._id,
+        status: booking.status,
+        billGenerated: true,
         finalAmount: booking.finalAmount,
         customerConfirmationOTP: booking.customerConfirmationOTP,
         paymentOtp: booking.paymentOtp,
