@@ -7,7 +7,6 @@ import { vendorAuthService } from '../../../../services/authService';
 import { registerFCMToken, removeFCMToken } from '../../../../services/pushNotificationService';
 import { useLanguage } from '../../../../context/LanguageContext';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -292,7 +291,6 @@ const Settings = () => {
         </button>
       </main>
 
-      <BottomNav />
     </div>
   );
 };

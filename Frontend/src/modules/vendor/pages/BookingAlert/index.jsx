@@ -74,7 +74,7 @@ const BookingAlert = () => {
 
       window.dispatchEvent(new Event('vendorJobsUpdated'));
       toast.success('Booking accepted!');
-      navigate('/vendor/dashboard', { replace: true });
+      navigate(`/vendor/booking/${id}`, { replace: true });
     } catch (error) {
       console.error('Error accepting:', error);
       toast.error(error.response?.data?.message || 'Failed to accept booking. It may have been accepted by another vendor.');

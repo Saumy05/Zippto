@@ -6,7 +6,6 @@ import { vendorTheme as themeColors } from '../../../../theme';
 import { vendorAuthService } from '../../../../services/authService';
 import { publicCatalogService } from '../../../../services/catalogService';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
 const toAssetUrl = (url) => {
@@ -592,7 +591,6 @@ const ManageServices = () => {
         </div>
       </main>
 
-      <BottomNav />
     </div>
   );
 };

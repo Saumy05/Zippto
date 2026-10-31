@@ -76,7 +76,8 @@ const VendorRoutes = () => {
   const shouldHideBottomNav = location.pathname === '/vendor/login' ||
     location.pathname === '/vendor/signup' ||
     location.pathname.endsWith('/map') ||
-    location.pathname.includes('/booking-alert/');
+    location.pathname.includes('/booking-alert/') ||
+    location.pathname.endsWith('/billing'); // Generate Bill is a full-screen wizard with its own Back / Next bar
 
   const shouldShowBottomNav = !shouldHideBottomNav;
 

@@ -4,7 +4,7 @@ const { validationResult } = require('express-validator');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
 const { releaseRedemptionForBooking, payableAfterCoupon } = require('../../services/couponService');
-const { sendNotificationToUser, sendNotificationToVendor } = require('../../services/firebaseAdmin');
+const { sendNotificationToUser, sendNotificationToVendor, sendBookingTakenPush } = require('../../services/firebaseAdmin');
 const cloudinaryService = require('../../services/cloudinaryService');
 
 /**
@@ -326,6 +326,14 @@ const acceptBooking = async (req, res) => {
         vendorName: req.user.businessName || req.user.name,
         acceptedAt: new Date()
       });
+    }
+
+    // Swap the stale "New Booking Request" push on the other vendors' devices (locked phones included)
+    // for a "job already taken" notice. Fire-and-forget: it must not delay the accepting vendor's response.
+    const otherNotifiedVendors = (booking.notifiedVendors || []).filter(v => String(v) !== String(vendorId));
+    if (otherNotifiedVendors.length > 0) {
+      sendBookingTakenPush(otherNotifiedVendors, booking._id)
+        .catch(err => console.error('[AcceptBooking] booking_taken push failed:', err.message));
     }
 
     // Send notification to user

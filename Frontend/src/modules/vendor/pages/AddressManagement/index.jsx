@@ -6,7 +6,6 @@ import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import vendorService from '../../../../services/vendorService';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import LocationPicker from '../../../user/pages/Checkout/components/LocationPicker';
 
 const libraries = ['places', 'geometry'];
@@ -281,7 +280,6 @@ const AddressManagement = () => {
         </div>
       </main>
 
-      <BottomNav />
     </div>
   );
 };

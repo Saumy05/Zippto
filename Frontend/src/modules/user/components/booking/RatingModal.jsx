@@ -83,7 +83,7 @@ const RatingModal = ({ isOpen, onClose, onSubmit, bookingName, partnerName }) =>
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-4">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -99,14 +99,14 @@ const RatingModal = ({ isOpen, onClose, onSubmit, bookingName, partnerName }) =>
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: "100%", opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-lg bg-white rounded-t-[32px] sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+          className="relative w-full max-w-lg bg-white rounded-t-[32px] sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col"
         >
           {/* Top Bar (Mobile Drag Handle) */}
           <div className="flex justify-center py-3 sm:hidden">
             <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
           </div>
 
-          <div className="p-6 sm:p-8 overflow-y-auto flex-1">
+          <div className="p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:p-8 overflow-y-auto flex-1">
             {/* Header */}
             <div className="flex justify-between items-start mb-6">
               <div>

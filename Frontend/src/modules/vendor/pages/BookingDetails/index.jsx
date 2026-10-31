@@ -4,7 +4,6 @@ import { FiMapPin, FiClock, FiDollarSign, FiUser, FiPhone, FiNavigation, FiArrow
 import { motion, AnimatePresence } from 'framer-motion';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 import {
   getBookingById,
@@ -379,7 +378,6 @@ export default function BookingDetails() {
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-28 animate-pulse" />
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 h-44 animate-pulse" />
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -1306,7 +1304,6 @@ export default function BookingDetails() {
         userType="vendor"
       />
 
-      <BottomNav />
     </div>
   );
 }

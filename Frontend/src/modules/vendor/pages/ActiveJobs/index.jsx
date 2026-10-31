@@ -4,7 +4,6 @@ import { FiBriefcase, FiMapPin, FiClock, FiUser, FiFilter, FiSearch, FiLoader, F
 import { toast } from 'react-hot-toast';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import ChatDrawerModal from '../../../../components/chat/ChatDrawerModal';
 
@@ -341,7 +340,6 @@ const ActiveJobs = memo(() => {
         userType="vendor"
       />
 
-      <BottomNav />
     </div>
   );
 });

@@ -535,8 +535,7 @@ const Checkout = () => {
         return;
       }
 
-      // Open modal and start searching
-      setShowVendorModal(true);
+      // Searching happens on the booking page itself (no popup); the button shows progress meanwhile
       setCurrentStep('searching');
       setSearchingVendors(true);
 
@@ -694,9 +693,15 @@ const Checkout = () => {
           setTimeout(() => window.location.reload(), 2000);
         }
       } else {
-        // Move to waiting state - alerts sent to nearby vendors
-        setCurrentStep('waiting');
-        toast.success('Finding nearby vendors... Alerts sent to vendors within 10km!');
+        // Alerts are on their way to nearby vendors. Continue on the booking page, which shows the
+        // live search and flips to "confirmed" the moment a vendor accepts.
+        setSearchingVendors(false);
+        const newBookingId = booking?._id || booking?.id;
+        if (newBookingId) {
+          navigate(`/user/booking-confirmation/${newBookingId}`, { replace: true });
+        } else {
+          setCurrentStep('waiting');
+        }
       }
 
       // REMOVED local setCartItems([]) - The summary should remain visible while searching

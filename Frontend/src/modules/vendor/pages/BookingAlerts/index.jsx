@@ -203,6 +203,7 @@ const BookingAlerts = () => {
       // Trigger global update
       window.dispatchEvent(new Event('vendorStatsUpdated'));
       window.dispatchEvent(new Event('vendorJobsUpdated'));
+      navigate(`/vendor/booking/${bookingId}`);
     } catch (error) {
       console.error('Accept error:', error);
       const msg = error.response?.data?.message || 'Failed to accept booking';

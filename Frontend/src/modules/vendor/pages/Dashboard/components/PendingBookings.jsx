@@ -31,6 +31,7 @@ const PendingBookings = memo(({ bookings, setPendingBookings, setActiveAlertBook
         window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: bId } }));
         window.dispatchEvent(new Event('vendorStatsUpdated'));
         toast.success('Booking accepted successfully!');
+        navigate(`/vendor/booking/${bId}`);
       }
     } catch (error) {
       console.error('Error accepting:', error);

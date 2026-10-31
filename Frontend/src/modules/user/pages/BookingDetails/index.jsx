@@ -38,7 +38,8 @@ import {
   FiCompass,
   FiPlus,
   FiMinus,
-  FiCrosshair
+  FiCrosshair,
+  FiTool
 } from 'react-icons/fi';
 import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
 import { bookingService } from '../../../../services/bookingService';

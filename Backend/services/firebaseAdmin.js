@@ -206,8 +206,17 @@ async function sendPushNotification(tokens, payload) {
     message.data.body = payload.body || 'New Update';
     if (payload.icon) message.data.icon = payload.icon;
 
+    // A booking's alert and its later "job taken" notice share a tag / collapse id, so the system tray
+    // swaps the stale alert for the notice by itself, even while the phone is locked and the app is
+    // asleep (no app code involved).
+    const bookingTag = String(payload.data?.bookingId || payload.data?.relatedId || '');
+
     // Urgent alerts: show on the lock screen, ring, vibrate and stay until acted on
     if (URGENT_PUSH_TYPES.has(String(payload.data?.type || ''))) {
+      if (bookingTag) {
+        message.android.notification.tag = bookingTag;
+        message.apns.headers['apns-collapse-id'] = bookingTag.slice(0, 64);
+      }
       Object.assign(message.android.notification, {
         channelId: URGENT_ANDROID_CHANNEL_ID,
         priority: 'max',
@@ -231,6 +240,16 @@ async function sendPushNotification(tokens, payload) {
         silent: false,
         tag: String(payload.data?.bookingId || payload.data?.relatedId || payload.data?.type)
       });
+    }
+
+    // "Job already taken": replaces the booking alert still showing on other vendors' lock screens
+    if (String(payload.data?.type || '') === 'booking_taken' && bookingTag) {
+      message.android.notification.tag = bookingTag;
+      message.android.ttl = 60 * 1000;
+      message.apns.headers['apns-collapse-id'] = bookingTag.slice(0, 64);
+      message.apns.payload.aps['interruption-level'] = 'passive'; // no sound / wake for a notice
+      message.webpush.headers.TTL = '60';
+      Object.assign(message.webpush.notification, { tag: bookingTag, silent: true, renotify: false });
     }
 
     // Log intent
@@ -385,6 +404,24 @@ async function sendNotificationToVendor(vendorId, payload, includeMobile = true)
 }
 
 /**
+ * Tell vendors that a booking they were alerted about has been taken (or is no longer available).
+ * Replaces their still-visible alert notification and is a no-op for vendors without devices.
+ * @param {Array<string|ObjectId>} vendorIds
+ * @param {string|ObjectId} bookingId
+ * @param {string} [message]
+ */
+async function sendBookingTakenPush(vendorIds, bookingId, message = 'Another partner has already accepted this booking.') {
+  const id = String(bookingId);
+  await Promise.all((vendorIds || []).map(vendorId =>
+    sendNotificationToVendor(vendorId, {
+      title: 'Job already taken',
+      body: message,
+      data: { type: 'booking_taken', bookingId: id, relatedId: id, link: '/vendor/dashboard' }
+    })
+  ));
+}
+
+/**
  * Send notification to a specific admin
  * @param {string} adminId - Admin's MongoDB _id
  * @param {Object} payload - Notification payload
@@ -457,6 +494,7 @@ module.exports = {
   sendPushNotification,
   sendNotificationToUser,
   sendNotificationToVendor,
+  sendBookingTakenPush,
   sendNotificationToAdmin,
   sendNotificationToAllAdmins
 };

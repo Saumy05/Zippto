@@ -1,9 +1,10 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiX, HiLocationMarker, HiSearch } from 'react-icons/hi';
+import { HiX, HiLocationMarker, HiSearch, HiHome, HiBriefcase } from 'react-icons/hi';
 import { useJsApiLoader } from '@react-google-maps/api';
 import { useCity } from '../../../../context/CityContext';
 import flutterBridge from '../../../../utils/flutterBridge';
+import { userAuthService } from '../../../../services/authService';
 
 // Must match the libraries used by every other useJsApiLoader call (same loader id).
 const libraries = ['places', 'geometry'];
@@ -48,6 +49,19 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
   const [searching, setSearching] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [notice, setNotice] = useState(null); // { type: 'error' | 'info', text }
+  const [savedAddresses, setSavedAddresses] = useState([]);
+
+  // The user's saved addresses (from Manage Addresses): choosing one needs no search and no Maps call
+  useEffect(() => {
+    if (!isOpen || !localStorage.getItem('accessToken')) return undefined;
+    let cancelled = false;
+    userAuthService.getProfile()
+      .then((res) => {
+        if (!cancelled && res?.success) setSavedAddresses(res.user?.addresses || []);
+      })
+      .catch(() => { /* not logged in / offline: just hide the list */ });
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -188,6 +202,16 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
       });
     });
 
+  const handleSavedAddressSelect = (a) => {
+    setNotice(null);
+    applyPlace({
+      address: [a.addressLine1, a.city].filter(Boolean).join(', '),
+      city: a.city,
+      latitude: a.lat,
+      longitude: a.lng
+    });
+  };
+
   const handleUseCurrentLocation = async () => {
     setNotice(null);
     setDetecting(true);
@@ -302,6 +326,39 @@ const CitySelectorModal = ({ isOpen, onClose }) => {
                         {searching ? 'Searching…' : 'No places found. Try a different search.'}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {/* Saved addresses (hidden while searching) */}
+                {savedAddresses.length > 0 && query.trim().length < 2 && (
+                  <div className="mt-3">
+                    <p className="px-1 mb-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400">Saved addresses</p>
+                    <div className="rounded-xl border border-gray-100 overflow-hidden">
+                      {savedAddresses.map((a) => {
+                        const Icon = a.type === 'work' ? HiBriefcase : a.type === 'other' ? HiLocationMarker : HiHome;
+                        return (
+                          <button
+                            key={a._id || a.id || `${a.addressLine1}|${a.addressLine2 || ''}`}
+                            type="button"
+                            onClick={() => handleSavedAddressSelect(a)}
+                            className="w-full text-left px-3 py-2.5 flex items-start gap-3 hover:bg-gray-50 border-b border-gray-50 last:border-b-0"
+                          >
+                            <Icon className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
+                            <span className="min-w-0">
+                              <span className="flex items-center gap-1.5">
+                                <span className="text-sm font-semibold text-gray-800 capitalize">{a.type || 'home'}</span>
+                                {a.isDefault && (
+                                  <span className="px-1.5 py-px rounded-full bg-emerald-50 text-emerald-700 text-[9px] font-bold uppercase">Default</span>
+                                )}
+                              </span>
+                              <span className="block text-xs text-gray-500 truncate">
+                                {a.addressLine2 ? `${a.addressLine2}, ` : ''}{a.addressLine1}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 

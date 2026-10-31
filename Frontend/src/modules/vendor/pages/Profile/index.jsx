@@ -7,7 +7,6 @@ import { vendorTheme as themeColors } from '../../../../theme';
 import { vendorAuthService } from '../../../../services/authService';
 import { useLanguage } from '../../../../context/LanguageContext';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
 
 const Profile = () => {
@@ -169,7 +168,7 @@ const Profile = () => {
       <main className="px-4 pt-4 pb-6">
         {/* Profile Header Card with Phone & Email */}
         <div
-          className="rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden"
+          className="rounded-2xl p-4 mb-4 shadow-xl relative overflow-hidden"
           style={{
             background: themeColors.button,
             border: `2px solid ${themeColors.button}`,
@@ -193,7 +192,7 @@ const Profile = () => {
           />
 
           <div className="relative z-10">
-            <div className="flex items-start gap-4">
+            <div className="flex items-start gap-3">
               {/* Profile Photo - Circle with Rating Below */}
               <div className="flex flex-col items-center flex-shrink-0">
                 <div
@@ -202,9 +201,9 @@ const Profile = () => {
                     background: 'rgba(255, 255, 255, 0.35)',
                     backdropFilter: 'blur(15px)',
                     boxShadow: '0 8px 20px rgba(0, 0, 0, 0.25), inset 0 2px 6px rgba(255, 255, 255, 0.5)',
-                    border: '3.5px solid rgba(255, 255, 255, 0.6)',
-                    width: '72px',
-                    height: '72px',
+                    border: '2.5px solid rgba(255, 255, 255, 0.6)',
+                    width: '56px',
+                    height: '56px',
                   }}
                 >
                   {profile.photo ? (
@@ -214,7 +213,7 @@ const Profile = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <FiUser className="w-9 h-9 text-white" />
+                    <FiUser className="w-7 h-7 text-white" />
                   )}
                 </div>
                 {/* Star Rating Below Photo */}
@@ -228,8 +227,8 @@ const Profile = () => {
 
               {/* Name and Info */}
               <div className="flex-1 min-w-0 flex flex-col">
-                <h2 className="text-xl font-bold text-white mb-1 break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.name}</h2>
-                <p className="text-white text-sm opacity-95 mb-2.5 font-medium break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.businessName}</p>
+                <h2 className="text-lg font-bold text-white mb-0.5 break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.name}</h2>
+                <p className="text-white text-xs opacity-95 mb-2 font-medium break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.businessName}</p>
 
                 {/* Phone and Email */}
                 <div className="space-y-1.5">
@@ -239,148 +238,37 @@ const Profile = () => {
                     </div>
                     <span className="text-xs text-white font-semibold break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.phone}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="p-1 rounded-md bg-white/15 backdrop-blur-sm flex-shrink-0">
-                      <FiMail className="w-3 h-3 text-white" />
+                  {profile.email && (
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-md bg-white/15 backdrop-blur-sm flex-shrink-0">
+                        <FiMail className="w-3 h-3 text-white" />
+                      </div>
+                      <span className="text-xs text-white font-semibold break-all">{profile.email}</span>
                     </div>
-                    <span className="text-xs text-white font-semibold break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.email}</span>
-                  </div>
+                  )}
                 </div>
               </div>
 
               {/* Navigate Button */}
               <button
                 onClick={() => navigate('/vendor/profile/details')}
-                className="p-3.5 rounded-xl flex-shrink-0 transition-all duration-300 active:scale-95 mt-1"
+                className="p-2.5 rounded-xl flex-shrink-0 transition-all duration-300 active:scale-95"
                 style={{
                   background: 'rgba(255, 255, 255, 0.28)',
                   backdropFilter: 'blur(12px)',
                   boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
                   border: '1.5px solid rgba(255, 255, 255, 0.35)',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.12) rotate(5deg)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.38)';
-                  e.currentTarget.style.boxShadow = '0 6px 18px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.28)';
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)';
-                }}
+                aria-label="Profile details"
               >
-                <FiArrowRight className="w-5 h-5 text-white" style={{ fontWeight: 'bold' }} />
+                <FiArrowRight className="w-5 h-5 text-white" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Three Cards Section - Horizontal */}
-        <div className="px-4 mb-5">
-          <div className="grid grid-cols-3 gap-3">
-            {/* Active Jobs */}
-            <button
-              onClick={() => navigate('/vendor/jobs')}
-              className="flex flex-col items-center justify-center p-4 rounded-2xl active:scale-95 transition-all duration-300 relative overflow-hidden bg-white"
-              style={{
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)',
-                border: '1.5px solid rgba(0, 166, 166, 0.15)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 166, 166, 0.15), 0 3px 8px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.borderColor = hexToRgba(themeColors.button, 0.25);
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)';
-                e.currentTarget.style.borderColor = hexToRgba(themeColors.button, 0.15);
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
-                style={{
-                  backgroundColor: hexToRgba(themeColors.button, 0.12),
-                  boxShadow: `0 2px 8px ${hexToRgba(themeColors.button, 0.2)}`,
-                }}
-              >
-                <FiBriefcase className="w-5 h-5" style={{ color: themeColors.button }} />
-              </div>
-              <span className="text-[11px] font-bold text-gray-800 text-center leading-tight">
-                Active Jobs
-              </span>
-            </button>
-
-            {/* Wallet */}
-            <button
-              onClick={() => navigate('/vendor/wallet')}
-              className="flex flex-col items-center justify-center p-4 rounded-2xl active:scale-95 transition-all duration-300 relative overflow-hidden bg-white"
-              style={{
-                boxShadow: '0 4px 12px rgba(0, 166, 166, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)',
-                border: '1.5px solid rgba(0, 166, 166, 0.15)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 166, 166, 0.15), 0 3px 8px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.borderColor = hexToRgba(themeColors.button, 0.25);
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)';
-                e.currentTarget.style.borderColor = hexToRgba(themeColors.button, 0.15);
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
-                style={{
-                  backgroundColor: hexToRgba(themeColors.button, 0.12),
-                  boxShadow: `0 2px 8px ${hexToRgba(themeColors.button, 0.2)}`,
-                }}
-              >
-                <FaWallet className="w-5 h-5" style={{ color: themeColors.button }} />
-              </div>
-              <span className="text-[11px] font-bold text-gray-800 text-center leading-tight">
-                Wallet
-              </span>
-            </button>
-
-            {/* Services */}
-            <button
-              onClick={() => navigate('/vendor/manage-services')}
-              className="flex flex-col items-center justify-center p-4 rounded-2xl active:scale-95 transition-all duration-300 relative overflow-hidden bg-white"
-              style={{
-                boxShadow: '0 4px 12px rgba(0, 166, 166, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)',
-                border: '1.5px solid rgba(0, 166, 166, 0.15)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 166, 166, 0.15), 0 3px 8px rgba(0, 0, 0, 0.08)';
-                e.currentTarget.style.borderColor = hexToRgba(themeColors.button, 0.25);
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05)';
-                e.currentTarget.style.borderColor = hexToRgba(themeColors.button, 0.15);
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center mb-2"
-                style={{
-                  backgroundColor: hexToRgba(themeColors.button, 0.12),
-                  boxShadow: `0 2px 8px ${hexToRgba(themeColors.button, 0.2)}`,
-                }}
-              >
-                <FiBriefcase className="w-5 h-5" style={{ color: themeColors.button }} />
-              </div>
-              <span className="text-[11px] font-bold text-gray-800 text-center leading-tight">
-                Services
-              </span>
-            </button>
-          </div>
-        </div>
-
         {/* Menu List Section */}
-        <div className="px-4 mb-4 space-y-3">
+        <div className="mb-4 space-y-2.5">
           {menuItems.map((item) => {
             const IconComponent = item.icon;
             return (
@@ -393,12 +281,12 @@ const Profile = () => {
                     navigate(item.path);
                   }
                 }}
-                className="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-teal-200 hover:shadow-md transition-all active:scale-[0.98]"
+                className="w-full flex items-center justify-between px-3.5 py-3 bg-white rounded-2xl shadow-sm border border-gray-100 hover:border-teal-200 hover:shadow-md transition-all active:scale-[0.98]"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   {item.customIcon ? (
                     <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors group-hover:bg-teal-50"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors group-hover:bg-teal-50"
                       style={{
                         backgroundColor: hexToRgba(themeColors.button, 0.1),
                         border: `1px solid ${hexToRgba(themeColors.button, 0.2)}`,
@@ -409,19 +297,19 @@ const Profile = () => {
                   ) : (
                     IconComponent && (
                       <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors"
                         style={{ backgroundColor: hexToRgba(themeColors.button, 0.1) }}
                       >
-                        <IconComponent className="w-6 h-6" style={{ color: themeColors.button }} />
+                        <IconComponent className="w-5 h-5" style={{ color: themeColors.button }} />
                       </div>
                     )
                   )}
-                  <span className="text-[15px] font-bold text-gray-800 text-left">
+                  <span className="text-sm font-bold text-gray-800 text-left">
                     {item.label}
                   </span>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
-                  <FiChevronRight className="w-5 h-5 text-gray-400" />
+                <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center">
+                  <FiChevronRight className="w-4 h-4 text-gray-400" />
                 </div>
               </button>
             );
@@ -429,7 +317,7 @@ const Profile = () => {
         </div>
 
         {/* Logout Button */}
-        <div className="px-4 mb-3">
+        <div className="mb-3">
           <button
             type="button"
             onClick={async (e) => {
@@ -467,7 +355,6 @@ const Profile = () => {
         </div>
       </main>
 
-      <BottomNav />
     </div>
   );
 };

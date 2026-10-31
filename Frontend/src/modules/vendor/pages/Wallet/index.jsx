@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiDollarSign, FiArrowUp, FiArrowDown, FiArrowRight, FiClock, FiCheckCircle, FiAlertCircle, FiSend } from 'react-icons/fi';
+import { FiDollarSign, FiArrowUp, FiArrowDown, FiArrowRight, FiClock, FiCheckCircle, FiAlertCircle, FiSend, FiX } from 'react-icons/fi';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import LogoLoader from '../../../../components/common/LogoLoader';
 import vendorWalletService from '../../../../services/vendorWalletService';
 import { toast } from 'react-hot-toast';
@@ -150,76 +149,77 @@ const Wallet = () => {
     <div className="min-h-screen pb-24" style={{ background: themeColors.backgroundGradient }}>
       <Header title="Wallet & Ledger" />
 
-      <main className="px-4 py-6">
-        {/* Earnings Card (Green) */}
-        <div className="rounded-2xl p-6 shadow-xl relative overflow-hidden mb-4 bg-gradient-to-br from-green-600 to-green-800">
-          <div className="relative z-10 text-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-white/80 text-sm font-medium mb-1">Available Earnings</p>
-                <p className="text-3xl font-bold mb-4">₹{wallet.earnings?.toLocaleString() || 0}</p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                <FiDollarSign className="w-6 h-6 text-white" />
-              </div>
+      <main className="px-4 py-4">
+        {/* Earnings Card (Green): balance on the left, withdraw on the right */}
+        <div className="rounded-2xl p-4 shadow-lg relative overflow-hidden mb-3 bg-gradient-to-br from-green-600 to-green-800 text-white">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-white/80 text-xs font-medium mb-0.5">Available Earnings</p>
+              <p className="text-3xl font-extrabold tracking-tight truncate">₹{wallet.earnings?.toLocaleString() || 0}</p>
             </div>
-
             <button
               onClick={() => navigate('/vendor/wallet/withdraw')}
-              className="w-full bg-white text-green-700 py-3 rounded-xl font-bold text-sm hover:bg-green-50 active:scale-95 transition-all shadow-sm"
+              className="shrink-0 bg-white text-green-700 px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-green-50 active:scale-95 transition-all shadow-sm flex items-center gap-1.5"
             >
-              Request Withdrawal
+              Withdraw
+              <FiArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Dues Card (Red) */}
-        <div className="rounded-2xl p-6 shadow-xl relative overflow-hidden mb-6 bg-gradient-to-br from-red-600 to-red-800">
-          <div className="relative z-10 text-white">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-white/80 text-sm font-medium">Amount Due to Admin</p>
-                  {wallet.dues > 0 && <FiAlertCircle className="w-4 h-4 text-red-200 animate-pulse" />}
+        {/* Dues: a quiet row when nothing is due, a red action card only when it matters */}
+        {wallet.dues > 0 ? (
+          <div className="rounded-2xl p-4 shadow-lg relative overflow-hidden mb-4 bg-gradient-to-br from-red-600 to-red-800 text-white">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <p className="text-white/80 text-xs font-medium">Amount Due to Admin</p>
+                  <FiAlertCircle className="w-3.5 h-3.5 text-red-200 animate-pulse" />
                 </div>
-                <p className="text-3xl font-bold mb-4">₹{wallet.dues?.toLocaleString() || 0}</p>
+                <p className="text-2xl font-extrabold tracking-tight truncate">₹{wallet.dues?.toLocaleString() || 0}</p>
               </div>
-              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                <FiArrowDown className="w-6 h-6 text-white" />
+              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm shrink-0">
+                <FiArrowDown className="w-5 h-5 text-white" />
               </div>
             </div>
-
-            {wallet.dues > 0 ? (
-              <div className="space-y-2">
-                {wallet.earnings > 0 && (
-                  <button
-                    onClick={handleOffsetDues}
-                    className="w-full bg-amber-400 text-slate-900 py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider hover:bg-amber-300 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <span>⚡ Settle ₹{Math.min(wallet.dues, wallet.earnings).toLocaleString()} from Earnings</span>
-                  </button>
-                )}
+            <div className="space-y-2">
+              {wallet.earnings > 0 && (
                 <button
-                  onClick={() => navigate('/vendor/wallet/settle')}
-                  className="w-full bg-white text-red-700 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-red-50 active:scale-95 transition-all shadow-sm cursor-pointer"
+                  onClick={handleOffsetDues}
+                  className="w-full bg-amber-400 text-slate-900 py-2.5 rounded-xl font-extrabold text-xs uppercase tracking-wider hover:bg-amber-300 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  Pay via UPI / Card / Bank
+                  <span>⚡ Settle ₹{Math.min(wallet.dues, wallet.earnings).toLocaleString()} from Earnings</span>
                 </button>
-              </div>
-            ) : (
-              <div className="w-full bg-white/10 text-white py-3 rounded-xl font-medium text-sm text-center border border-white/20">
-                No Dues Pending
-              </div>
-            )}
+              )}
+              <button
+                onClick={() => navigate('/vendor/wallet/settle')}
+                className="w-full bg-white text-red-700 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-red-50 active:scale-95 transition-all shadow-sm cursor-pointer"
+              >
+                Pay via UPI / Card / Bank
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3 bg-white rounded-2xl px-4 py-3 mb-4 shadow-sm border border-emerald-100">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                <FiCheckCircle className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-gray-800 leading-tight">No dues pending</p>
+                <p className="text-[11px] text-gray-500">You don't owe the platform anything</p>
+              </div>
+            </div>
+            <span className="text-sm font-bold text-emerald-600 shrink-0">₹0</span>
+          </div>
+        )}
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           {/* Cash Collected */}
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-red-100">
+          <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-red-100">
             <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 rounded-lg bg-red-50">
+              <div className="p-1.5 rounded-lg bg-red-50">
                 <FiArrowDown className="w-4 h-4 text-red-500" />
               </div>
               <p className="text-xs text-gray-600 font-semibold">Cash Collected</p>
@@ -230,9 +230,9 @@ const Wallet = () => {
           </div>
 
           {/* Total Settled */}
-          <div className="bg-white rounded-2xl p-4 shadow-lg border border-green-100">
+          <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-green-100">
             <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 rounded-lg bg-green-50">
+              <div className="p-1.5 rounded-lg bg-green-50">
                 <FiArrowUp className="w-4 h-4 text-green-500" />
               </div>
               <p className="text-xs text-gray-600 font-semibold">Total Settled</p>
@@ -245,7 +245,7 @@ const Wallet = () => {
 
         {/* Blocked Status Notice */}
         {wallet.isBlocked && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
             <div className="flex items-start gap-3">
               <FiX className="w-5 h-5 text-red-600 mt-0.5" />
               <div>
@@ -265,7 +265,7 @@ const Wallet = () => {
         )}
 
         {/* Cash Limit Indicator */}
-        <div className="bg-white rounded-2xl p-4 shadow-lg mb-6 border border-blue-50">
+        <div className="bg-white rounded-2xl p-3.5 shadow-sm mb-4 border border-blue-50">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-gray-700">Cash Collection Limit</p>
             <p className="text-xs font-medium text-gray-500">
@@ -279,15 +279,15 @@ const Wallet = () => {
               style={{ width: `${Math.min(100, (wallet.dues / (wallet.cashLimit || 10000)) * 100)}%` }}
             />
           </div>
-          <p className="text-[10px] text-gray-400 mt-2">
-            * Your account will be auto-blocked if you exceed the ₹{(wallet.cashLimit || 10000).toLocaleString()} limit.
+          <p className="text-[10px] text-gray-400 mt-1.5">
+            Account is auto-blocked above ₹{(wallet.cashLimit || 10000).toLocaleString()} in dues.
           </p>
         </div>
 
 
 
         {/* Filter Buttons */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
           {[
             { id: 'all', label: 'All' },
             { id: 'cash_collected', label: 'Cash Collected' },
@@ -299,7 +299,7 @@ const Wallet = () => {
             <button
               key={filterOption.id}
               onClick={() => setFilter(filterOption.id)}
-              className={`px-4 py-2 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${filter === filterOption.id
+              className={`px-3.5 py-1.5 rounded-full font-semibold text-xs whitespace-nowrap transition-all ${filter === filterOption.id
                 ? 'text-white'
                 : 'bg-white text-gray-700'
                 }`}
@@ -321,7 +321,7 @@ const Wallet = () => {
 
         {/* Transactions/Ledger */}
         <div>
-          <h3 className="font-bold text-gray-800 mb-4">Transaction History</h3>
+          <h3 className="font-bold text-gray-800 mb-3 text-sm">Transaction History</h3>
           {filteredTransactions.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center shadow-md">
               <FiDollarSign className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -329,11 +329,11 @@ const Wallet = () => {
               <p className="text-sm text-gray-500">Your ledger will appear here</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filteredTransactions.map((txn) => (
                 <div
                   key={txn._id}
-                  className="bg-white rounded-xl p-4 shadow-md border-l-4"
+                  className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 border-l-4"
                   style={{
                     borderLeftColor:
                       txn.type === 'cash_collected' ? '#DC2626' :
@@ -345,7 +345,7 @@ const Wallet = () => {
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                       style={{
                         background:
                           txn.type === 'cash_collected' ? '#FEE2E2' :
@@ -359,11 +359,11 @@ const Wallet = () => {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
                         <p className="font-bold text-gray-900 text-sm">
                           {getTransactionLabel(txn.type)}
                         </p>
-                        <p className={`text-lg font-bold ${['cash_collected', 'tds_deduction', 'withdrawal', 'platform_fee'].includes(txn.type)
+                        <p className={`text-base font-bold shrink-0 ${['cash_collected', 'tds_deduction', 'withdrawal', 'platform_fee'].includes(txn.type)
                           ? 'text-red-600'
                           : 'text-green-600'
                           }`}>
@@ -371,7 +371,7 @@ const Wallet = () => {
                         </p>
                       </div>
 
-                      <p className="text-xs text-gray-600 truncate mb-1">{txn.description}</p>
+                      <p className="text-xs text-gray-600 truncate mb-0.5">{txn.description}</p>
 
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-400">{formatDate(txn.createdAt)}</span>
@@ -392,14 +392,13 @@ const Wallet = () => {
         {/* View Settlements Link */}
         <button
           onClick={() => navigate('/vendor/wallet/settlements')}
-          className="w-full mt-6 py-3 rounded-xl font-semibold text-gray-700 bg-white border border-gray-200 flex items-center justify-center gap-2 transition-all active:scale-95"
+          className="w-full mt-4 py-3 rounded-xl font-semibold text-sm text-gray-700 bg-white border border-gray-200 flex items-center justify-center gap-2 transition-all active:scale-95"
         >
           View Settlement History
           <FiArrowRight className="w-4 h-4" />
         </button>
       </main>
 
-      <BottomNav />
     </div>
   );
 };

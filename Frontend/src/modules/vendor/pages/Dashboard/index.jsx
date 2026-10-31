@@ -301,10 +301,8 @@ const Dashboard = memo(() => {
       const bId = String(location.state.openBookingId);
       const booking = pendingBookings.find(b => String(b.id || b._id) === bId);
       if (booking) {
-        setActiveAlertBookings(prev => {
-          if (prev.find(p => String(p.id || p._id) === bId)) return prev;
-          return [...prev, booking];
-        });
+        // Same global alert the socket path uses (the old local state setter no longer exists)
+        window.dispatchEvent(new CustomEvent('showDashboardBookingAlert', { detail: booking }));
         // Clear state to avoid reopening on refresh
         navigate(location.pathname, { replace: true, state: {} });
       }
@@ -401,6 +399,7 @@ const Dashboard = memo(() => {
 
         window.dispatchEvent(new CustomEvent('removeVendorBooking', { detail: { id: bookingId } }));
         window.dispatchEvent(new Event('vendorStatsUpdated'));
+        navigate(`/vendor/booking/${bookingId}`);
       }
     } catch (error) {
       console.error('Error accepting:', error);
@@ -621,19 +620,19 @@ const Dashboard = memo(() => {
         )}
 
         {/* Vendor Hero Card (Clean Professional Enterprise Light Design) */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-8 shadow-sm relative overflow-hidden">
           {/* Subtle Decorative Backdrop Highlights */}
           <div className="absolute top-0 right-0 w-80 h-80 bg-teal-500/5 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
           <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-6">
             {/* Vendor Profile Info */}
             <div
-              className="flex items-center gap-4 cursor-pointer group"
+              className="flex items-center gap-3 sm:gap-4 cursor-pointer group min-w-0"
               onClick={() => navigate('/vendor/profile')}
             >
               <div className="relative">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 p-0.5 shadow-sm flex-shrink-0 overflow-hidden">
+                <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 p-0.5 shadow-sm flex-shrink-0 overflow-hidden">
                   <div className="w-full h-full rounded-[14px] bg-teal-50 flex items-center justify-center overflow-hidden">
                     {vendorProfile.photo ? (
                       <img
@@ -642,57 +641,57 @@ const Dashboard = memo(() => {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     ) : (
-                      <FiUser className="w-9 h-9 text-teal-700" />
+                      <FiUser className="w-6 h-6 sm:w-9 sm:h-9 text-teal-700" />
                     )}
                   </div>
                 </div>
-                <div className={`absolute -bottom-1 -right-1 text-white p-1 rounded-lg shadow-xs border-2 border-white transition-colors duration-300 ${isOnline && !isPending ? 'bg-emerald-500' : 'bg-slate-400'}`}>
-                  <FiShield className="w-3.5 h-3.5" />
+                <div className={`absolute -bottom-1 -right-1 text-white p-0.5 sm:p-1 rounded-lg shadow-xs border-2 border-white transition-colors duration-300 ${isOnline && !isPending ? 'bg-emerald-500' : 'bg-slate-400'}`}>
+                  <FiShield className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <h1 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight truncate group-hover:text-teal-700 transition-colors">
+                  {vendorProfile.name}
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium truncate">
+                  {vendorProfile.businessName}
+                </p>
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                   {isPending ? (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
                       <FiClock className="w-3 h-3 text-amber-600 animate-pulse" />
                       Under Review
                     </span>
                   ) : isRejected ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
                       Rejected
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
                       <FiShield className="w-3 h-3 text-teal-600" />
                       Verified Partner
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
                     <FiStar className="w-3 h-3 fill-amber-400 text-amber-500" />
                     {stats.rating > 0 ? (
                       <span>{stats.rating.toFixed(1)} Rating{stats.totalReviews > 0 ? ` (${stats.totalReviews})` : ''}</span>
                     ) : (
-                      <span>No Ratings Yet</span>
+                      <span>No ratings yet</span>
                     )}
                   </span>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight group-hover:text-teal-700 transition-colors">
-                  {vendorProfile.name}
-                </h1>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                  {vendorProfile.businessName}
-                </p>
               </div>
             </div>
 
             {/* Quick Action CTA Buttons + Availability Toggle */}
-            <div className="flex items-center gap-3 flex-wrap border-t md:border-t-0 pt-4 md:pt-0 border-slate-100">
+            <div className="flex items-center gap-2 sm:gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
               {/* ─── Availability Toggle ─── */}
               <button
                 onClick={handleAvailabilityToggle}
                 disabled={availabilityLoading}
-                className={`relative flex items-center justify-center gap-2.5 w-[88px] py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs border ${
+                className={`relative flex items-center justify-center gap-2 w-[84px] py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all shadow-xs border ${
                   isPending
                     ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-90'
                     : isOnline
@@ -725,17 +724,19 @@ const Dashboard = memo(() => {
 
               <button
                 onClick={() => navigate('/vendor/manage-services')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95"
+                className="flex-1 md:flex-none justify-center flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shadow-xs active:scale-95"
               >
                 <FiSliders className="w-4 h-4" />
                 Manage Services
               </button>
               <button
                 onClick={() => navigate('/vendor/settings')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all active:scale-95"
+                aria-label="Settings"
+                title="Settings"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all active:scale-95"
               >
                 <FiSettings className="w-4 h-4 text-slate-500" />
-                Settings
+                <span className="hidden sm:inline">Settings</span>
               </button>
             </div>
           </div>

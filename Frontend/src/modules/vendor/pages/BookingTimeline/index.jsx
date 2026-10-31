@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FiCheck, FiClock, FiUser, FiMapPin, FiTool, FiDollarSign, FiFileText, FiCheckCircle, FiX, FiNavigation } from 'react-icons/fi';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
-import BottomNav from '../../components/layout/BottomNav';
 import { getBookingById, updateBookingStatus, startSelfJob, verifySelfVisit, completeSelfJob, collectSelfCash } from '../../services/bookingService';
 import { CashCollectionModal, ConfirmDialog } from '../../components/common';
 import WorkCompletionModal from '../../components/common/WorkCompletionModal';
@@ -289,7 +288,6 @@ const BookingTimeline = () => {
         </div>
       </main>
 
-      <BottomNav />
 
       {/* Arrival OTP Modal */}
       {isVisitModalOpen && (

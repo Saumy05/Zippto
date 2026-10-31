@@ -20,39 +20,35 @@ export default function GlobalBookingAlert() {
         const now = Date.now();
         let pendingJobs = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
 
-        // Every few heartbeats or if forced, sync with Server API for missed sockets
+        // Every few heartbeats or if forced, sync with the server for missed sockets.
+        // The server list is authoritative: it only holds requests that are still unassigned, so anything
+        // it no longer returns was taken by another vendor, expired or cancelled while this device was
+        // asleep (locked phone = dead socket = missed "booking taken" event).
         const token = localStorage.getItem('vendorAccessToken') || sessionStorage.getItem('vendorAccessToken');
         if (token && (forceServerSync || (Math.random() > 0.8))) {
           try {
-            const { getBookings } = await import('../../services/bookingService');
-            const response = await getBookings();
-            if (response.success && response.data) {
-              const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
-              const vId = String(vendorData._id || vendorData.id);
-              
-              const serverJobs = response.data
-                .filter(b => {
-                  const status = b.status?.toLowerCase();
-                  const isRelevant = status === 'searching' || status === 'requested';
-                  const isMine = !b.vendorId || String(b.vendorId?._id || b.vendorId) === vId;
-                  return isRelevant && isMine;
-                })
-                .map(b => ({
-                  ...b,
-                  id: b._id || b.id,
-                  serviceType: b.serviceName || b.serviceId?.title,
-                  customerName: b.userId?.name || 'Customer'
-                }));
+            const { getPendingAlerts } = await import('../../services/bookingService');
+            const serverJobs = (await getPendingAlerts()) || [];
+            const serverIds = new Set(serverJobs.map(j => String(j.id || j._id || j.bookingId)));
+            const FRESH_MS = 20000; // an alert pushed by socket may beat its server-side request row by a moment
 
-              const existingIds = new Set(pendingJobs.map(j => String(j.id || j._id)));
-              let updated = false;
-              serverJobs.forEach(sj => {
-                if (!existingIds.has(String(sj.id))) {
-                  pendingJobs.unshift(sj);
-                  updated = true;
-                }
-              });
-              if (updated) localStorage.setItem('vendorPendingJobs', JSON.stringify(pendingJobs));
+            const kept = pendingJobs.filter(j =>
+              serverIds.has(String(j.id || j._id)) ||
+              (j.createdAt && now - new Date(j.createdAt).getTime() < FRESH_MS)
+            );
+            const keptIds = new Set(kept.map(j => String(j.id || j._id)));
+            serverJobs.forEach(sj => {
+              if (!keptIds.has(String(sj.id || sj._id || sj.bookingId))) kept.unshift({ ...sj, id: sj.id || sj._id || sj.bookingId });
+            });
+
+            const droppedIds = pendingJobs
+              .filter(j => !kept.includes(j))
+              .map(j => String(j.id || j._id));
+            pendingJobs = kept;
+            localStorage.setItem('vendorPendingJobs', JSON.stringify(pendingJobs));
+
+            if (droppedIds.length > 0) {
+              setActiveAlertBookings(prev => prev.filter(b => !droppedIds.includes(String(b.id || b._id))));
             }
           } catch (e) { console.error("Server sync error:", e); }
         }
@@ -167,7 +163,8 @@ export default function GlobalBookingAlert() {
 
           window.dispatchEvent(new Event('vendorJobsUpdated'));
           window.dispatchEvent(new Event('vendorStatsUpdated'));
-          toast.success('Job accepted! You can now start journey.');
+          toast.success('Job accepted! You can now start your journey.');
+          navigate(`/vendor/booking/${id}`);
         } catch (e) {
           const errMsg = e.response?.data?.message || 'Failed to accept job';
           toast.error(errMsg);

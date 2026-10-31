@@ -707,7 +707,7 @@ const BillingPage = () => {
             ))}
           </div>
         </div>
-        <div className="p-4 space-y-3 pb-48">
+        <div className="p-4 space-y-3 pb-36">
           {filteredServices.map(item => {
             const selected = isServiceSelected(item._id);
             return (
@@ -763,7 +763,7 @@ const BillingPage = () => {
             );
           })}
         </div>
-        <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-3">
+        <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-3">
           <button onClick={() => setViewMode('timeline')} className="flex-1 py-3.5 bg-white text-gray-700 font-bold rounded-xl border border-gray-200">
             Save & Exit
           </button>
@@ -799,7 +799,7 @@ const BillingPage = () => {
             ))}
           </div>
         </div>
-        <div className="p-4 space-y-3 pb-48">
+        <div className="p-4 space-y-3 pb-36">
           {filteredParts.map(item => {
             const selected = isPartSelected(item._id);
             return (
@@ -821,7 +821,7 @@ const BillingPage = () => {
             );
           })}
         </div>
-        <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-3">
+        <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-3">
           <button onClick={() => setViewMode('timeline')} className="flex-1 py-3.5 bg-white text-gray-700 font-bold rounded-xl border border-gray-200">
             Save & Exit
           </button>
@@ -880,7 +880,7 @@ const BillingPage = () => {
         </div>
       </div>
 
-      <div className="p-4 space-y-6 pb-48">
+      <div className="p-4 space-y-6 pb-36">
         {currentStep === 1 && (
           <div className="animate-in fade-in slide-in-from-right-4">
             <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
@@ -1079,15 +1079,15 @@ const BillingPage = () => {
                     Services
                   </h4>
                   <div className="space-y-2 text-sm pl-2">
-                    <div className="flex justify-between text-gray-600">
-                      <span>Original Booking : {booking.serviceName || 'Service'}</span>
+                    <div className="flex justify-between gap-3 text-gray-600">
+                      <span className="min-w-0">Original Booking : {booking.serviceName || 'Service'}</span>
                       {booking.paymentMethod === 'plan_benefit' ? (
-                        <span className="text-green-600 font-bold">FREE (PLAN)</span>
+                        <span className="text-green-600 font-bold shrink-0">FREE (PLAN)</span>
                       ) : (
-                        <span>₹{calculations.originalBase.toFixed(2)}</span>
+                        <span className="shrink-0">₹{calculations.originalBase.toFixed(2)}</span>
                       )}
                     </div>
-                    {selectedServices.map(s => <div key={s.catalogId} className="flex justify-between text-gray-600"><span>{s.name} x {s.quantity}</span><span>₹{(s.price * s.quantity).toFixed(2)}</span></div>)}
+                    {selectedServices.map(s => <div key={s.catalogId} className="flex justify-between gap-3 text-gray-600"><span className="min-w-0">{s.name} x {s.quantity}</span><span className="shrink-0">₹{(s.price * s.quantity).toFixed(2)}</span></div>)}
 
                     <div className="flex justify-between text-xs text-gray-500 border-t border-dashed border-gray-100 pt-1 mt-1">
                       <span>Service GST ({calculations.serviceGstPct}%)</span>
@@ -1220,49 +1220,14 @@ const BillingPage = () => {
                 <div className="bg-gray-50 px-6 py-4 border-t border-gray-100/50 space-y-4">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center justify-center gap-2">
                     <FiClock className="w-3 h-3" />
-                    Select a payment method to close this job
+                    Choose a payment method below to close this job
                   </p>
 
-                  {/* Dual Payment Options in Body */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    {/* Option 1: Cash Collection */}
-                    <button
-                      type="button"
-                      onClick={handleOpenCashModal}
-                      disabled={otpLoading || qrLoading}
-                      className="p-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 active:scale-98 transition-all text-left cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                          <FiDollarSign className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-wide">Collect Cash</p>
-                          <p className="text-[11px] text-emerald-100 font-medium">Verify customer 4-digit PIN</p>
-                        </div>
-                      </div>
-                      <FiArrowRight className="w-4 h-4 text-emerald-200" />
-                    </button>
-
-                    {/* Option 2: Collect Online via QR */}
-                    <button
-                      type="button"
-                      onClick={handleOnlinePayment}
-                      disabled={otpLoading || qrLoading}
-                      className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 active:scale-98 transition-all text-left cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                          <MdQrCode className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-wide">Collect via UPI QR</p>
-                          <p className="text-[11px] text-blue-100 font-medium">Customer scans QR code</p>
-                        </div>
-                      </div>
-                      <FiArrowRight className="w-4 h-4 text-blue-200" />
-                    </button>
-                  </div>
+                  {/* The Collect Cash / UPI QR buttons live in the bar below; keep only short hints here */}
+                  <ul className="text-xs text-gray-600 space-y-1.5 pt-1">
+                    <li className="flex items-start gap-2"><FiDollarSign className="w-3.5 h-3.5 mt-0.5 text-emerald-600 shrink-0" /><span><b>Collect Cash:</b> customer shares their 4-digit PIN to confirm.</span></li>
+                    <li className="flex items-start gap-2"><MdQrCode className="w-3.5 h-3.5 mt-0.5 text-blue-600 shrink-0" /><span><b>UPI QR Code:</b> customer scans the QR and pays online.</span></li>
+                  </ul>
 
                   {/* Realtime Waiting Indicator for User Online Pay */}
                   <div className="p-3 bg-amber-50 border border-amber-200/60 rounded-xl flex items-center gap-2.5 text-amber-800 text-xs font-medium">
@@ -1278,7 +1243,7 @@ const BillingPage = () => {
       </div>
 
       {/* Fixed Bottom Navigation for Timeline View */}
-      <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-2 sm:gap-3">
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-2 sm:gap-3">
         {currentStep === 1 && (
           <button onClick={() => setCurrentStep(2)} className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg">
             Next: Parts <FiArrowRight />
