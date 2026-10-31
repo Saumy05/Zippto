@@ -225,27 +225,35 @@ const BookingDetails = () => {
     }
   }, [booking, id]);
 
-  // Handle Payment Modal Visibility - Auto-open on new payment request from vendor
+  // Payment popup: open it for a NEW payment request from the vendor, never again for the same one.
+  // Every vendor step refreshes `booking`, so deciding from the current flags alone re-opened the popup on
+  // each step (and after the customer had closed it). Instead each request gets a signature (OTP, cash vs
+  // QR, bill/online flags); the popup opens only when that signature differs from the last one handled.
   useEffect(() => {
     if (!booking) return;
-    
-    const isPaymentDone = booking.paymentStatus === 'success' || booking.cashCollected === true;
-    const lastSeenOtp = sessionStorage.getItem(`last_seen_otp_${booking._id}`);
-    const hasNewOtpRequest = booking.customerConfirmationOTP && booking.customerConfirmationOTP !== lastSeenOtp;
-    const hasShown = sessionStorage.getItem(`payment_modal_shown_${booking._id}`);
 
-    if (!isPaymentDone && (hasNewOtpRequest || (!hasShown && (booking.customerConfirmationOTP || booking.qrPaymentInitiated || booking.billGenerated || booking.status === 'awaiting_payment')))) {
-      setShowPaymentModal(true);
-      sessionStorage.setItem(`payment_modal_shown_${booking._id}`, 'true');
-      if (booking.customerConfirmationOTP) {
-        sessionStorage.setItem(`last_seen_otp_${booking._id}`, booking.customerConfirmationOTP);
-      }
-    } else if (booking.qrPaymentInitiated === false && booking.customerConfirmationOTP && !isPaymentDone) {
-      setShowPaymentModal(true);
-    } else if (isPaymentDone) {
+    const isPaymentDone = booking.paymentStatus === 'success' || booking.cashCollected === true;
+    if (isPaymentDone) {
       setShowPaymentModal(false);
+      return;
     }
-  }, [booking]);
+
+    const hasPaymentRequest = booking.customerConfirmationOTP || booking.qrPaymentInitiated ||
+      booking.billGenerated || booking.payOnlineTriggered || booking.status === 'awaiting_payment';
+    if (!hasPaymentRequest) return;
+
+    const signature = [
+      booking.customerConfirmationOTP || '',
+      booking.qrPaymentInitiated ? 'qr' : 'cash',
+      booking.billGenerated ? 'bill' : '',
+      booking.payOnlineTriggered ? 'online' : ''
+    ].join('|');
+    const storageKey = `payment_request_sig_${booking._id || id}`;
+    if (sessionStorage.getItem(storageKey) === signature) return; // already shown (or dismissed)
+
+    sessionStorage.setItem(storageKey, signature);
+    setShowPaymentModal(true);
+  }, [booking, id]);
 
   // Socket Listener for Real-time Updates
   useEffect(() => {
@@ -263,8 +271,12 @@ const BookingDetails = () => {
           });
 
           if (data.billGenerated || data.payOnlineTriggered) {
-            setShowPaymentModal(true);
-            toast.success('Bill ready! You can now pay online.', { icon: '💳' });
+            // The payment popup itself is opened by the effect above (only for a new request)
+            const toastKey = `bill_toast_${id}`;
+            if (!sessionStorage.getItem(toastKey)) {
+              sessionStorage.setItem(toastKey, '1');
+              toast.success('Bill ready! You can now pay online.', { icon: '💳' });
+            }
           }
 
           // Use debounced reload to avoid rapid-fire fetches from socket bursts

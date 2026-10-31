@@ -88,6 +88,11 @@ const pushSettingCache = { value: null, at: 0 };
  */
 async function sendPushNotification(tokens, payload) {
   try {
+    if (!admin.apps.length) {
+      console.warn('[FCM] Firebase Admin SDK is not initialized, skipping push');
+      return { successCount: 0, failureCount: 0 };
+    }
+
     // Dynamic Global Toggle Check
     try {
       // Short cache: a booking alert fans out to many vendors at once and each push re-read this setting
@@ -175,7 +180,6 @@ async function sendPushNotification(tokens, payload) {
     message.android.notification = {
       title: message.notification.title,
       body: message.notification.body,
-      icon: 'stock_ticker_update',
       color: '#f44336'
     };
 
@@ -193,15 +197,7 @@ async function sendPushNotification(tokens, payload) {
       badge: '/zippto_logo.png',
     };
 
-    /*
-    if (payload.icon) {
-      message.notification.image = payload.icon;
-      message.android.notification.image = payload.icon;
-    }
-    */
-
     // Ensure critical fields are also in data for background handling
-    // Use payload source directly since message.notification is disabled
     message.data.title = payload.title || 'App Notification';
     message.data.body = payload.body || 'New Update';
     if (payload.icon) message.data.icon = payload.icon;
@@ -233,12 +229,18 @@ async function sendPushNotification(tokens, payload) {
       message.apns.payload.aps['interruption-level'] = 'time-sensitive';
 
       message.webpush.headers.Urgency = 'high';
+      message.webpush.headers.urgency = 'high';
       message.webpush.headers.TTL = '300';
       Object.assign(message.webpush.notification, {
         requireInteraction: true,
-        vibrate: [500, 200, 500, 200, 500],
+        vibrate: [500, 200, 500, 200, 500, 300, 500],
         silent: false,
-        tag: String(payload.data?.bookingId || payload.data?.relatedId || payload.data?.type)
+        tag: bookingTag || String(payload.data?.type || 'booking_alert'),
+        renotify: true,
+        actions: [
+          { action: 'accept', title: '✓ Accept' },
+          { action: 'reject', title: '✗ Decline' }
+        ]
       });
     }
 
@@ -404,21 +406,157 @@ async function sendNotificationToVendor(vendorId, payload, includeMobile = true)
 }
 
 /**
+ * Fast Multicast: Send urgent booking alert push to multiple vendors simultaneously in a single multicast call.
+ * Bulk inserts in-app Notification documents in parallel so no vendor is delayed.
+ * @param {Array<Object|string>} vendors - Array of vendor objects or vendor IDs
+ * @param {Object} booking - Booking details for the notification
+ * @returns {Promise<Object>}
+ */
+async function sendBookingAlertToVendors(vendors, booking) {
+  try {
+    if (!vendors || vendors.length === 0) return { successCount: 0, failureCount: 0 };
+
+    const Vendor = require('../models/Vendor');
+    const Notification = require('../models/Notification');
+
+    const vendorIds = vendors.map(v => (v && v._id ? v._id.toString() : String(v)));
+
+    // Collect tokens from passed vendor objects if already available in memory; otherwise fetch via single query
+    let allTokens = [];
+    const missingVendorIds = [];
+
+    vendors.forEach(v => {
+      if (v && typeof v === 'object' && (v.fcmTokens || v.fcmTokenMobile)) {
+        if (Array.isArray(v.fcmTokens)) allTokens.push(...v.fcmTokens);
+        if (Array.isArray(v.fcmTokenMobile)) allTokens.push(...v.fcmTokenMobile);
+      } else {
+        const id = v && v._id ? v._id.toString() : String(v);
+        missingVendorIds.push(id);
+      }
+    });
+
+    if (missingVendorIds.length > 0) {
+      const dbVendors = await Vendor.find({ _id: { $in: missingVendorIds } })
+        .select('name businessName fcmTokens fcmTokenMobile')
+        .lean();
+
+      dbVendors.forEach(v => {
+        if (Array.isArray(v.fcmTokens)) allTokens.push(...v.fcmTokens);
+        if (Array.isArray(v.fcmTokenMobile)) allTokens.push(...v.fcmTokenMobile);
+      });
+    }
+
+    allTokens = Array.from(new Set(allTokens.filter(t => t && typeof t === 'string' && t.trim().length > 0)));
+
+    const bookingId = (booking._id || booking.bookingId || '').toString();
+    const serviceName = booking.serviceName || booking.serviceCategory || 'Service Request';
+    const customerName = booking.customerName || 'Customer';
+    const customerPhone = booking.customerPhone || '';
+    const price = booking.finalAmount || booking.price || 0;
+    const priceText = price > 0 ? `₹${price}` : 'New Request';
+
+    const title = '🏢 [Partner] 🔔 New Booking Request!';
+    const body = `New ${serviceName} booking (${priceText}) from ${customerName}. Tap to Accept!`;
+
+    const pushPayload = {
+      title,
+      body,
+      highPriority: true,
+      data: {
+        type: 'new_booking',
+        bookingId,
+        relatedId: bookingId,
+        relatedType: 'booking',
+        serviceName,
+        customerName,
+        customerPhone,
+        price: String(price),
+        distance: String(booking.distance || ''),
+        link: `/vendor/bookings/${bookingId}`,
+        createdAt: new Date().toISOString()
+      }
+    };
+
+    // 1. Send ONE fast multicast push to all vendor tokens simultaneously
+    const pushPromise = allTokens.length > 0
+      ? sendPushNotification(allTokens, pushPayload).catch(err => {
+          console.error('[sendBookingAlertToVendors] FCM Multicast error:', err.message);
+          return { successCount: 0, failureCount: 0 };
+        })
+      : Promise.resolve({ successCount: 0, failureCount: 0 });
+
+    // 2. Bulk insert in-app Notification records in parallel
+    const notificationsToInsert = vendorIds.map(vId => ({
+      vendorId: vId,
+      type: 'booking_request',
+      title: 'New Booking Request',
+      message: body,
+      relatedId: bookingId,
+      relatedType: 'booking',
+      data: {
+        bookingId,
+        serviceName,
+        customerName,
+        price,
+        distance: booking.distance || null
+      },
+      actionUrl: `/vendor/bookings/${bookingId}`
+    }));
+
+    const dbPromise = Notification.insertMany(notificationsToInsert, { ordered: false }).catch(err => {
+      console.error('[sendBookingAlertToVendors] Notification bulk insert error:', err.message);
+    });
+
+    const [pushResult] = await Promise.all([pushPromise, dbPromise]);
+    console.log(`[sendBookingAlertToVendors] Instant alert for booking #${booking.bookingNumber || bookingId} sent to ${vendorIds.length} vendors (${allTokens.length} tokens)`);
+    return pushResult;
+  } catch (error) {
+    console.error('[sendBookingAlertToVendors] Error:', error);
+    return { successCount: 0, failureCount: 0 };
+  }
+}
+
+/**
  * Tell vendors that a booking they were alerted about has been taken (or is no longer available).
- * Replaces their still-visible alert notification and is a no-op for vendors without devices.
+ * Replaces their still-visible alert notification in a single batch multicast push.
  * @param {Array<string|ObjectId>} vendorIds
  * @param {string|ObjectId} bookingId
  * @param {string} [message]
  */
 async function sendBookingTakenPush(vendorIds, bookingId, message = 'Another partner has already accepted this booking.') {
-  const id = String(bookingId);
-  await Promise.all((vendorIds || []).map(vendorId =>
-    sendNotificationToVendor(vendorId, {
+  try {
+    if (!vendorIds || vendorIds.length === 0) return;
+
+    const Vendor = require('../models/Vendor');
+    const id = String(bookingId);
+
+    const vendors = await Vendor.find({ _id: { $in: vendorIds } })
+      .select('fcmTokens fcmTokenMobile')
+      .lean();
+
+    let allTokens = [];
+    vendors.forEach(v => {
+      if (Array.isArray(v.fcmTokens)) allTokens.push(...v.fcmTokens);
+      if (Array.isArray(v.fcmTokenMobile)) allTokens.push(...v.fcmTokenMobile);
+    });
+
+    allTokens = Array.from(new Set(allTokens.filter(t => t && typeof t === 'string' && t.trim().length > 0)));
+    if (allTokens.length === 0) return;
+
+    await sendPushNotification(allTokens, {
       title: 'Job already taken',
       body: message,
-      data: { type: 'booking_taken', bookingId: id, relatedId: id, link: '/vendor/dashboard' }
-    })
-  ));
+      highPriority: false,
+      data: {
+        type: 'booking_taken',
+        bookingId: id,
+        relatedId: id,
+        link: '/vendor/dashboard'
+      }
+    });
+  } catch (err) {
+    console.error('[sendBookingTakenPush] Error:', err.message);
+  }
 }
 
 /**
@@ -494,6 +632,7 @@ module.exports = {
   sendPushNotification,
   sendNotificationToUser,
   sendNotificationToVendor,
+  sendBookingAlertToVendors,
   sendBookingTakenPush,
   sendNotificationToAdmin,
   sendNotificationToAllAdmins
