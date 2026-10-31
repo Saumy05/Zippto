@@ -452,32 +452,11 @@ const createBooking = async (req, res) => {
     // All operations below will run non-blocking after the HTTP response has been sent.
     setImmediate(async () => {
       try {
-        // Re-fetch user and booking for background tasks to ensure latest state
-        const userForBackground = await User.findById(userId);
-        const bookingForBackground = await Booking.findById(booking._id)
-          .populate('userId', 'name phone email')
-          .populate('serviceId', 'title iconUrl')
-          .populate('categoryId', 'title slug');
-        const serviceForBackground = await Service.findById(serviceId); // Re-fetch service if needed
-
-        if (!userForBackground || !bookingForBackground || !serviceForBackground) {
-          console.error('[CreateBooking] Background task failed: User, Booking or Service not found after initial creation.');
-          return;
-        }
-
-        // If Plus membership was added, update user status
-        if (isPlusAdded) {
-          const expiryDate = new Date();
-          expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year membership
-          userForBackground.plans = {
-            isActive: true,
-            name: 'Plus Membership',
-            expiry: expiryDate,
-            price: 999 // Or fetch based on constants if needed, hardcoding placeholder or 0
-          };
-          await userForBackground.save();
-          console.log(`User ${userId} upgraded to Plus Membership until ${expiryDate}`);
-        }
+        // Alert vendors FIRST using the documents already in memory: re-fetching them cost extra
+        // DB round-trips before the first alert could go out.
+        const userForBackground = user;
+        const bookingForBackground = booking;
+        const serviceForBackground = service;
 
         // Nearby vendors offering this service category found
         // Alert all qualified matching vendors in radius (prioritizing online vendors, up to 10 vendors in wave 1)
@@ -561,7 +540,11 @@ const createBooking = async (req, res) => {
         bookingForBackground.currentWave = 1;
         bookingForBackground.waveStartedAt = new Date();
         bookingForBackground.notifiedVendors = wave1Vendors.map(v => v._id);
-        await bookingForBackground.save();
+
+        // DB bookkeeping (booking wave info + BookingRequest rows) runs in parallel with the alerts
+        // below instead of blocking them; it is awaited before anything depends on it.
+        const bookingSavePromise = bookingForBackground.save();
+        let requestsPromise = Promise.resolve();
 
         if (wave1Vendors.length > 0) {
           console.log(`[CreateBooking] Wave 1: Alerting ${wave1Vendors.length} matching vendors offering ${bookingForBackground.serviceCategory || 'this service'}`);
@@ -578,21 +561,20 @@ const createBooking = async (req, res) => {
             expiresAt: new Date(Date.now() + 60 * 60 * 1000) // Expires in 1 hour
           }));
 
-          try {
-            await BookingRequest.insertMany(bookingRequests, { ordered: false });
-            console.log(`[CreateBooking] Created ${bookingRequests.length} BookingRequest entries`);
-          } catch (err) {
-            // Ignore duplicate key errors (if retrying)
-            if (err.code !== 11000) console.error('[CreateBooking] BookingRequest insert error:', err);
-          }
+          requestsPromise = BookingRequest.insertMany(bookingRequests, { ordered: false })
+            .then(() => console.log(`[CreateBooking] Created ${bookingRequests.length} BookingRequest entries`))
+            .catch(err => {
+              // Ignore duplicate key errors (if retrying)
+              if (err.code !== 11000) console.error('[CreateBooking] BookingRequest insert error:', err);
+            });
         } else {
           console.warn(`[CreateBooking] NO VENDORS FOUND matching service category! Escalating to admin for manual assignment.`);
+          await bookingSavePromise; // escalation reads/updates the saved booking
           const { escalateBookingToAdmin } = require('../../services/bookingEscalation');
           await escalateBookingToAdmin(bookingForBackground, 'No partner offers this service in the customer area');
         }
 
-        // Send notifications to all matching Wave 1 vendors
-        // 1. Emit Socket.IO event FIRST (Instant & Reliable)
+        // 1. Socket.IO alert goes out immediately (instant & reliable for online vendors)
         const { getIO } = require('../../sockets');
         const io = getIO();
         if (io) {
@@ -636,37 +618,52 @@ const createBooking = async (req, res) => {
           });
         }
 
-        // 2. Send Firebase/FCM notifications (External service - call AFTER socket)
-        try {
-          const vendorNotifications = wave1Vendors.map(vendor =>
-            createNotification({
-              vendorId: vendor._id,
-              type: 'booking_request',
-              title: 'New Booking Request',
-              message: `New service request for ${serviceForBackground.title} from ${userForBackground.name}`,
-              relatedId: bookingForBackground._id,
-              relatedType: 'booking',
-              data: {
-                bookingId: bookingForBackground._id,
-                serviceName: serviceForBackground.title,
-                customerName: userForBackground.name,
-                customerPhone: userForBackground.phone,
-                scheduledDate: scheduledDate,
-                scheduledTime: scheduledTime,
-                location: address,
-                price: finalAmount,
-                distance: vendor.distance
-              },
-              pushData: {
-                type: 'new_booking',
-                dataOnly: false,
-                link: `/vendor/bookings/${bookingForBackground._id}`
-              }
-            })
-          );
-          await Promise.all(vendorNotifications);
-        } catch (notifError) {
+        // 2. Push (FCM) is started right away for every vendor in parallel, covering vendors whose app
+        // is closed/backgrounded. Not awaited here so it can't delay anything else.
+        const vendorPushPromise = Promise.all(wave1Vendors.map(vendor =>
+          createNotification({
+            vendorId: vendor._id,
+            type: 'booking_request',
+            title: 'New Booking Request',
+            message: `New service request for ${serviceForBackground.title} from ${userForBackground.name}`,
+            relatedId: bookingForBackground._id,
+            relatedType: 'booking',
+            data: {
+              bookingId: bookingForBackground._id,
+              serviceName: serviceForBackground.title,
+              customerName: userForBackground.name,
+              customerPhone: userForBackground.phone,
+              scheduledDate: scheduledDate,
+              scheduledTime: scheduledTime,
+              location: address,
+              price: finalAmount,
+              distance: vendor.distance
+            },
+            pushData: {
+              type: 'new_booking',
+              dataOnly: false,
+              link: `/vendor/bookings/${bookingForBackground._id}`
+            }
+          })
+        )).catch(notifError => {
           console.error('[CreateBooking] Firebase/Notification Error (Non-blocking):', notifError.message);
+        });
+
+        // Everything below is bookkeeping: wait for the writes/pushes started above to settle
+        await Promise.all([bookingSavePromise, requestsPromise, vendorPushPromise]);
+
+        // If Plus membership was added, update user status
+        if (isPlusAdded) {
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year membership
+          userForBackground.plans = {
+            isActive: true,
+            name: 'Plus Membership',
+            expiry: expiryDate,
+            price: 999 // Or fetch based on constants if needed, hardcoding placeholder or 0
+          };
+          await userForBackground.save();
+          console.log(`User ${userId} upgraded to Plus Membership until ${expiryDate}`);
         }
 
         // NOTIFY USER: Send actionable notification so they can track status
@@ -703,7 +700,17 @@ const createBooking = async (req, res) => {
         // Send confirmation emails (fire-and-forget — never blocks)
         const vendorObj = vendorId ? await require('../../models/Vendor').findById(vendorId).lean() : null;
         const { sendBookingEmails } = require('../../services/emailService');
-        sendBookingEmails(bookingForBackground, userForBackground, vendorObj, serviceForBackground)
+        // Emails need the full customer/service documents and the populated booking; the in-memory
+        // ones used for alerting are trimmed (selected fields / lean)
+        const [userForEmail, serviceForEmail, bookingForEmail] = await Promise.all([
+          User.findById(userId),
+          Service.findById(serviceId),
+          Booking.findById(booking._id)
+            .populate('userId', 'name phone email')
+            .populate('serviceId', 'title iconUrl')
+            .populate('categoryId', 'title slug')
+        ]);
+        sendBookingEmails(bookingForEmail || bookingForBackground, userForEmail || userForBackground, vendorObj, serviceForEmail || serviceForBackground)
           .catch(err => console.error('[CreateBooking][bg] Email error:', err));
 
       } catch (bgErr) {

@@ -224,8 +224,6 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
     }
 
     const baseQuery = _buildVendorQuery(filters, hasCoordinates);
-    const totalApprovedVendors = await Vendor.countDocuments({ approvalStatus: { $in: ['approved', 'APPROVED'] }, isActive: true });
-    console.log(`[LocationService] Total Approved/Active Vendors in DB: ${totalApprovedVendors}`);
     console.log(`[LocationService] Searching with query: ${JSON.stringify(baseQuery)}`);
 
     // OPTION 1: Try Redis geo cache first (fastest - <5ms)

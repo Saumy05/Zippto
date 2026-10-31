@@ -71,6 +71,9 @@ const URGENT_PUSH_TYPES = new Set([
 ]);
 const URGENT_ANDROID_CHANNEL_ID = 'booking_alerts';
 
+const PUSH_SETTING_TTL_MS = 10 * 1000;
+const pushSettingCache = { value: null, at: 0 };
+
 /**
  * Send push notification to specific device tokens (Data-Only for maximum reliability)
  * @param {Array<string>} tokens - Array of FCM registration tokens
@@ -86,7 +89,12 @@ async function sendPushNotification(tokens, payload) {
   try {
     // Dynamic Global Toggle Check
     try {
-      const globalSettings = await Settings.findOne({ type: 'global' }).select('isPushNotificationEnabled').lean();
+      // Short cache: a booking alert fans out to many vendors at once and each push re-read this setting
+      if (Date.now() - pushSettingCache.at > PUSH_SETTING_TTL_MS) {
+        pushSettingCache.value = await Settings.findOne({ type: 'global' }).select('isPushNotificationEnabled').lean();
+        pushSettingCache.at = Date.now();
+      }
+      const globalSettings = pushSettingCache.value;
       if (globalSettings && globalSettings.isPushNotificationEnabled === false) {
         console.log('[FCM] Push notifications are globally disabled by Admin in Settings');
         return { successCount: 0, failureCount: 0, disabled: true };
@@ -342,7 +350,7 @@ async function sendNotificationToUser(userId, payload, includeMobile = true) {
 async function sendNotificationToVendor(vendorId, payload, includeMobile = true) {
   try {
     const Vendor = require('../models/Vendor');
-    const vendor = await Vendor.findById(vendorId);
+    const vendor = await Vendor.findById(vendorId).select('name businessName fcmTokens fcmTokenMobile').lean();
 
     if (!vendor) {
       console.log(`[FCM] ❌ Vendor not found for notification: ${vendorId}`);
