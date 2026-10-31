@@ -337,16 +337,70 @@ self.addEventListener('push', (event) => {
   console.log('[SW] 📨 Push event received:', event);
 });
 
+// ---------------------------------------------------------------------------
+// Offline support (app shell caching)
+// ---------------------------------------------------------------------------
+const CACHE_NAME = 'zippto-shell-v1';
+const SHELL_URL = '/index.html';
+const IS_DEV_HOST = ['localhost', '127.0.0.1'].includes(self.location.hostname);
+
 // Install event
 self.addEventListener('install', (event) => {
   console.log('[SW] 📦 Service Worker installing...');
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.add(new Request(SHELL_URL, { cache: 'reload' })))
+      .catch(() => {})
+  );
   self.skipWaiting();
 });
 
 // Activate event
 self.addEventListener('activate', (event) => {
   console.log('[SW] ✅ Service Worker activated');
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+      .then(() => clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (IS_DEV_HOST || request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api')) return;
+
+  // Page loads: network first, fall back to the cached app shell when offline
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(SHELL_URL, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(SHELL_URL).then((cached) => cached || Response.error()))
+    );
+    return;
+  }
+
+  // Static files (hashed JS/CSS bundles, images, fonts): cache first, fill the cache on miss
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      });
+    })
+  );
 });
 
 console.log('[SW] 🚀 Firebase Messaging Service Worker loaded');

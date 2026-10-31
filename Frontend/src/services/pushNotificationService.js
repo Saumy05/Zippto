@@ -314,19 +314,12 @@ function setupForegroundNotificationHandler(handler) {
  */
 async function initializePushNotifications() {
   try {
-    if (!isPushEnabled()) {
-      return;
-    }
     if (!('serviceWorker' in navigator)) {
       // console.log('Service workers not supported');
       return;
     }
 
-    if (!('Notification' in window)) {
-      // console.log('Notifications not supported');
-      return;
-    }
-
+    // Always register: the same worker also caches the app shell for offline launches
     await registerServiceWorker();
     // console.log('✅ Push notifications initialized');
   } catch (error) {
