@@ -7,6 +7,7 @@ import { themeColors } from '../../../theme';
 import { userAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
 import LogoLoader from '../../../components/common/LogoLoader';
+import useKeyboardVisible from '../../../hooks/useKeyboardVisible';
 
 import { z } from "zod";
 
@@ -20,6 +21,7 @@ const signupSchema = z.object({
 const Signup = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isKeyboardOpen = useKeyboardVisible();
   const [step, setStep] = useState('details'); // 'details' or 'otp'
   const [formData, setFormData] = useState({
     name: '',
@@ -249,44 +251,46 @@ const Signup = () => {
   const brandColor = themeColors.brand?.teal || '#347989';
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-start sm:justify-center py-12 sm:px-6 lg:px-8 relative overflow-x-hidden">
+    <div className="h-[100dvh] min-h-[100dvh] bg-gray-50 flex flex-col justify-center py-2 sm:py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden auth-screen-container">
       {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl pointer-events-none" />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8 relative z-10 animate-fade-in">
-        <Logo className="h-16 w-auto transform hover:scale-110 transition-transform duration-500 mx-auto" />
-        <h2 className="mt-4 text-3xl font-extrabold text-gray-900 tracking-tight">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-2.5 sm:mb-5 relative z-10 animate-fade-in auth-header-wrapper">
+        <div className={`flex justify-center transition-all duration-300 auth-logo-wrapper ${isKeyboardOpen ? 'hidden' : 'mb-2 sm:mb-3'}`}>
+          <Logo className="h-12 w-12 sm:h-16 sm:w-auto transform hover:scale-105 transition-transform duration-300 mx-auto" />
+        </div>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">
           {step === 'details' ? 'Create Account' : 'Verify Phone'}
         </h2>
-        <p className="mt-2 text-sm text-gray-600 animate-stagger-1 animate-fade-in">
+        <p className="mt-0.5 text-xs sm:text-sm text-gray-600 animate-stagger-1 animate-fade-in">
           {step === 'details' ? 'Join Zippto to start booking services' : `We've sent a 6-digit code to ${formData.phoneNumber}`}
         </p>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
-        <div className="bg-white py-8 px-4 shadow-2xl shadow-gray-200/50 sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-0 relative z-10">
+        <div className="bg-white py-4 sm:py-6 px-4 sm:px-8 shadow-xl shadow-gray-200/50 rounded-2xl border border-gray-100 relative overflow-hidden animate-slide-in-bottom auth-card">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#347989] via-[#D68F35] to-[#BB5F36]" />
 
           {step === 'details' ? (
-            <form onSubmit={handleDetailsSubmit} className="space-y-6">
+            <form onSubmit={handleDetailsSubmit} className="space-y-3 sm:space-y-4">
               {verificationToken && (
                 <button
                   type="button"
                   onClick={() => navigate('/user/login')}
-                  className="flex items-center text-sm text-gray-500 hover:text-[#347989] transition-colors mb-4 animate-fade-in"
+                  className="flex items-center text-xs sm:text-sm text-gray-500 hover:text-[#347989] transition-colors mb-2 animate-fade-in cursor-pointer"
                 >
-                  <FiChevronLeft className="mr-1" /> Back to Login
+                  <FiChevronLeft className="mr-0.5" /> Back to Login
                 </button>
               )}
 
               <div className="animate-stagger-1 animate-fade-in">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5">
                   Full Name
                 </label>
-                <div className="relative rounded-xl shadow-sm group">
+                <div className="relative rounded-xl shadow-xs group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
-                    <FiUser className="h-5 w-5 text-gray-400" />
+                    <FiUser className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-gray-400" />
                   </div>
                   <input
                     ref={nameInputRef}
@@ -296,7 +300,7 @@ const Signup = () => {
                     required
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
+                    className="block w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
                     placeholder="Enter your name"
                     style={{ '--tw-ring-color': brandColor }}
                   />
@@ -304,12 +308,12 @@ const Signup = () => {
               </div>
 
               <div className="animate-stagger-2 animate-fade-in">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
+                <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5">
+                  Email <span className="text-gray-400 text-[10px] sm:text-xs font-normal ml-1">(Optional)</span>
                 </label>
-                <div className="relative rounded-xl shadow-sm group">
+                <div className="relative rounded-xl shadow-xs group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
-                    <FiMail className="h-5 w-5 text-gray-400" />
+                    <FiMail className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-gray-400" />
                   </div>
                   <input
                     id="email"
@@ -317,7 +321,7 @@ const Signup = () => {
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
+                    className="block w-full pl-9 sm:pl-10 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
                     placeholder="you@example.com"
                     style={{ '--tw-ring-color': brandColor }}
                   />
@@ -326,15 +330,15 @@ const Signup = () => {
 
               {!verificationToken && (
                 <div className="animate-stagger-3 animate-fade-in">
-                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="phoneNumber" className="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5">
                     Phone Number
                   </label>
-                  <div className="relative rounded-xl shadow-sm group">
+                  <div className="relative rounded-xl shadow-xs group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
-                      <FiPhone className="h-5 w-5 text-gray-400" />
+                      <FiPhone className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-gray-400" />
                     </div>
-                    <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
-                      <span className="text-gray-500 font-medium border-r border-gray-300 pr-2">+91</span>
+                    <div className="absolute inset-y-0 left-9 sm:left-10 flex items-center pointer-events-none">
+                      <span className="text-gray-500 font-medium border-r border-gray-300 pr-1.5 text-xs sm:text-sm">+91</span>
                     </div>
                     <input
                       id="phoneNumber"
@@ -344,7 +348,7 @@ const Signup = () => {
                       required
                       value={formData.phoneNumber}
                       onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: normalizePhoneInput(e.target.value) }))}
-                      className="block w-full pl-24 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
+                      className="block w-full pl-20 sm:pl-24 pr-4 py-2 sm:py-2.5 border border-gray-300 rounded-xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
                       placeholder="9876543210"
                       style={{ '--tw-ring-color': brandColor }}
                     />
@@ -352,11 +356,11 @@ const Signup = () => {
                 </div>
               )}
 
-              <div className="animate-stagger-4 animate-fade-in">
+              <div className="animate-stagger-4 animate-fade-in pt-1">
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-bold rounded-xl text-white transition-all duration-500 shadow-lg hover:shadow-xl hover:-translate-y-1 transform disabled:opacity-50 disabled:cursor-not-allowed  overflow-hidden"
+                  className="group relative w-full flex justify-center py-2.5 sm:py-3.5 px-4 border border-transparent text-xs sm:text-sm font-bold rounded-xl text-white transition-all duration-500 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden cursor-pointer"
                   style={{
                     backgroundColor: brandColor,
                     boxShadow: `0 10px 15px -3px ${brandColor}4D`
@@ -364,28 +368,28 @@ const Signup = () => {
                 >
                   <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                   {isLoading ? (
-                    <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
+                    <LogoLoader fullScreen={false} inline={true} size="w-5 h-5" />
                   ) : (
                     <span className="flex items-center relative z-10">
                       {verificationToken ? 'Complete Registration' : 'Send OTP'}
-                      <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                      <FiArrowRight className="ml-1.5 group-hover:translate-x-1 transition-transform" />
                     </span>
                   )}
                 </button>
               </div>
             </form>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-5">
               <button
                 type="button"
                 onClick={() => setStep('details')}
-                className="flex items-center text-sm text-gray-500 hover:text-[#347989] transition-colors mb-4 animate-fade-in"
+                className="flex items-center text-xs sm:text-sm text-gray-500 hover:text-[#347989] transition-colors mb-2 animate-fade-in cursor-pointer"
               >
-                <FiChevronLeft className="mr-1" /> Edit details
+                <FiChevronLeft className="mr-0.5" /> Edit details
               </button>
 
-              <form onSubmit={handleOtpSubmit} className="space-y-8">
-                <div className="flex justify-between gap-2 sm:gap-4 animate-stagger-1 animate-fade-in">
+              <form onSubmit={handleOtpSubmit} className="space-y-4 sm:space-y-6">
+                <div className="flex justify-between gap-1.5 sm:gap-3 animate-stagger-1 animate-fade-in">
                   {otp.map((digit, index) => (
                     <input
                       key={index}
@@ -397,7 +401,7 @@ const Signup = () => {
                       onChange={(e) => handleOtpChange(index, e.target.value)}
                       onKeyDown={(e) => handleOtpKeyDown(index, e)}
                       onPaste={handleOtpPaste}
-                      className="w-full h-14 text-center text-xl font-bold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
+                      className="w-full h-11 sm:h-14 text-center text-lg sm:text-xl font-bold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-300 hover:border-gray-400"
                       style={{
                         '--tw-ring-color': brandColor,
                         caretColor: brandColor,
@@ -424,7 +428,7 @@ const Signup = () => {
                       }
                     }}
                     disabled={resendTimer > 0}
-                    className="text-sm font-semibold hover:text-[#D68F35] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="text-xs sm:text-sm font-semibold hover:text-[#D68F35] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     style={{ color: brandColor }}
                   >
                     {resendTimer > 0
@@ -437,7 +441,7 @@ const Signup = () => {
                   <button
                     type="submit"
                     disabled={isLoading || otp.join('').length !== 6}
-                    className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-bold rounded-xl text-white transition-all duration-500 shadow-lg hover:shadow-xl hover:-translate-y-1 transform disabled:opacity-50 disabled:cursor-not-allowed  overflow-hidden"
+                    className="group relative w-full flex justify-center py-2.5 sm:py-3.5 px-4 border border-transparent text-xs sm:text-sm font-bold rounded-xl text-white transition-all duration-500 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden cursor-pointer"
                     style={{
                       backgroundColor: brandColor,
                       boxShadow: `0 10px 15px -3px ${brandColor}4D`
@@ -445,11 +449,11 @@ const Signup = () => {
                   >
                     <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                     {isLoading ? (
-                      <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
+                      <LogoLoader fullScreen={false} inline={true} size="w-5 h-5" />
                     ) : (
                       <span className="flex items-center relative z-10">
                         Create Account
-                        <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                        <FiArrowRight className="ml-1.5 group-hover:translate-x-1 transition-transform" />
                       </span>
                     )}
                   </button>
@@ -459,7 +463,7 @@ const Signup = () => {
           )}
         </div>
 
-        <p className="mt-8 text-center text-sm text-gray-500 animate-fade-in animate-stagger-5">
+        <p className={`mt-3 sm:mt-5 text-center text-xs sm:text-sm text-gray-500 animate-fade-in auth-hide-on-keyboard ${isKeyboardOpen ? 'hidden' : 'block'}`}>
           Already have an account?{' '}
           <Link to="/user/login" className="font-semibold text-[#347989] hover:text-[#D68F35] transition-colors duration-300">
             Sign in

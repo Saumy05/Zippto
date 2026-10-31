@@ -7,6 +7,7 @@ import { themeColors } from '../../../theme';
 import { userAuthService } from '../../../services/authService';
 import Logo from '../../../components/common/Logo';
 import LogoLoader from '../../../components/common/LogoLoader';
+import useKeyboardVisible from '../../../hooks/useKeyboardVisible';
 
 import { z } from "zod";
 
@@ -18,6 +19,7 @@ const phoneSchema = z.object({
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isKeyboardOpen = useKeyboardVisible();
   const [step, setStep] = useState('phone'); // 'phone' or 'otp'
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -194,19 +196,19 @@ const Login = () => {
   const brandColor = themeColors.brand?.teal || '#347989';
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-start sm:justify-center py-12 sm:px-6 lg:px-8 relative overflow-x-hidden">
+    <div className="h-[100dvh] min-h-[100dvh] bg-gray-50 flex flex-col justify-center py-2 sm:py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden auth-screen-container">
       {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl pointer-events-none" />
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8 relative z-10 animate-fade-in">
-        <div className="flex justify-center mb-6">
-          <Logo className="h-24 w-24 transform hover:scale-110 transition-transform duration-500" />
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-2.5 sm:mb-6 relative z-10 animate-fade-in auth-header-wrapper">
+        <div className={`flex justify-center transition-all duration-300 auth-logo-wrapper ${isKeyboardOpen ? 'hidden' : 'mb-2 sm:mb-4'}`}>
+          <Logo className="h-12 w-12 sm:h-20 sm:w-20 transform hover:scale-105 transition-transform duration-300" />
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">
           {step === 'phone' ? 'Sign in to account' : 'Verify your phone'}
         </h2>
-        <p className="mt-2 text-sm text-gray-600 animate-stagger-1 animate-fade-in">
+        <p className="mt-1 text-xs sm:text-sm text-gray-600 animate-stagger-1 animate-fade-in">
           {step === 'phone'
             ? 'Enter your mobile number to get started'
             : `We've sent a code to +91 ${phoneNumber}`
@@ -214,22 +216,22 @@ const Login = () => {
         </p>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
-        <div className="bg-white py-8 px-4 shadow-2xl shadow-gray-200/50 sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-0 relative z-10">
+        <div className="bg-white py-4 sm:py-7 px-4 sm:px-8 shadow-xl shadow-gray-200/50 rounded-2xl border border-gray-100 relative overflow-hidden animate-slide-in-bottom auth-card">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#347989] via-[#D68F35] to-[#BB5F36]" />
 
           {step === 'phone' ? (
-            <form className="space-y-6" onSubmit={handlePhoneSubmit}>
+            <form className="space-y-3.5 sm:space-y-5" onSubmit={handlePhoneSubmit}>
               <div className="animate-stagger-1 animate-fade-in">
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="phone" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   Mobile Number
                 </label>
-                <div className="relative rounded-xl shadow-sm group">
+                <div className="relative rounded-xl shadow-xs group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
-                    <FiPhone className="h-5 w-5 text-gray-400" />
+                    <FiPhone className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-gray-400" />
                   </div>
                   <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
-                    <span className="text-gray-500 font-medium border-r pr-2 border-gray-300 sm:text-sm">+91</span>
+                    <span className="text-gray-500 font-medium border-r pr-2 border-gray-300 text-xs sm:text-sm">+91</span>
                   </div>
                   <input
                     ref={phoneInputRef}
@@ -237,7 +239,7 @@ const Login = () => {
                     inputMode="tel"
                     autoComplete="tel-national"
                     id="phone"
-                    className="block w-full pl-24 pr-4 py-3.5 border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] sm:text-sm transition-all duration-300 ease-in-out hover:border-gray-400"
+                    className="block w-full pl-22 sm:pl-24 pr-4 py-2.5 sm:py-3.5 border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] text-sm transition-all duration-300 ease-in-out hover:border-gray-400"
                     placeholder="98765 43210"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(normalizePhoneInput(e.target.value))}
@@ -250,34 +252,34 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading || phoneNumber.length < 10}
-                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#347989] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-1 transform shadow-lg shadow-[#347989]/30 hover:shadow-[#347989]/40 overflow-hidden"
+                  className="group relative w-full flex justify-center py-2.5 sm:py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#347989] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 transform shadow-md shadow-[#347989]/30 hover:shadow-[#347989]/40 overflow-hidden cursor-pointer"
                   style={{ backgroundColor: brandColor }}
                 >
                   <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                   {isLoading ? (
-                    <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
+                    <LogoLoader fullScreen={false} inline={true} size="w-5 h-5" />
                   ) : (
-                    <span className="flex items-center gap-2 relative z-10">
+                    <span className="flex items-center gap-1.5 relative z-10 text-xs sm:text-sm">
                       Get OTP <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
                     </span>
                   )}
                 </button>
               </div>
 
-              <div className="mt-6 animate-stagger-3 animate-fade-in">
+              <div className={`mt-3 sm:mt-5 animate-stagger-3 animate-fade-in auth-hide-on-keyboard ${isKeyboardOpen ? 'hidden' : 'block'}`}>
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-gray-200" />
                   </div>
-                  <div className="relative flex justify-center text-sm">
+                  <div className="relative flex justify-center text-xs">
                     <span className="px-2 bg-white text-gray-500">New to Zippto?</span>
                   </div>
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-3 sm:mt-4">
                   <Link
                     to="/user/signup"
-                    className="w-full inline-flex justify-center py-3 px-4 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:text-[#347989] hover:bg-gray-50 border border-gray-200 transition-all duration-300 hover:border-[#347989]/30"
+                    className="w-full inline-flex justify-center py-2.5 sm:py-3 px-4 rounded-xl shadow-xs bg-white text-xs sm:text-sm font-medium text-gray-600 hover:text-[#347989] hover:bg-gray-50 border border-gray-200 transition-all duration-300 hover:border-[#347989]/30"
                   >
                     Create an account
                   </Link>
@@ -285,8 +287,8 @@ const Login = () => {
               </div>
             </form>
           ) : (
-            <form className="space-y-6" onSubmit={handleOtpSubmit}>
-              <div className="flex justify-center gap-2 sm:gap-3 py-4 animate-stagger-1 animate-fade-in">
+            <form className="space-y-4 sm:space-y-5" onSubmit={handleOtpSubmit}>
+              <div className="flex justify-center gap-2 sm:gap-3 py-2 sm:py-3 animate-stagger-1 animate-fade-in">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
@@ -298,14 +300,14 @@ const Login = () => {
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                      onPaste={handleOtpPaste}
-                    className="w-11 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] transition-all duration-300 shadow-sm border focus:-translate-y-1 hover:border-gray-400"
+                    onPaste={handleOtpPaste}
+                    className="w-10 h-11 sm:w-12 sm:h-13 text-center text-lg sm:text-2xl font-bold border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] transition-all duration-300 shadow-xs border hover:border-gray-400"
                     style={{ caretColor: brandColor }}
                   />
                 ))}
               </div>
 
-              <div className="flex items-center justify-between text-sm animate-stagger-2 animate-fade-in">
+              <div className="flex items-center justify-between text-xs sm:text-sm animate-stagger-2 animate-fade-in">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -315,9 +317,9 @@ const Login = () => {
                     setStep('phone');
                     setResendTimer(0);
                   }}
-                  className="flex items-center font-medium text-gray-600 hover:text-[#347989] transition-colors"
+                  className="flex items-center font-medium text-gray-600 hover:text-[#347989] transition-colors cursor-pointer text-xs"
                 >
-                  <FiChevronLeft className="mr-1" /> Change Number
+                  <FiChevronLeft className="mr-0.5" /> Change Number
                 </button>
 
                 <button
@@ -339,7 +341,7 @@ const Login = () => {
                     }
                   }}
                   disabled={isLoading || resendTimer > 0}
-                  className="font-medium text-[#347989] hover:text-[#D68F35] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="font-medium text-[#347989] hover:text-[#D68F35] transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-xs"
                 >
                   {resendTimer > 0
                     ? `Resend in ${Math.floor(resendTimer / 60)}:${String(resendTimer % 60).padStart(2, '0')}`
@@ -351,14 +353,14 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading || otp.join('').length !== 6}
-                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#347989] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#347989]/30 hover:shadow-[#347989]/40 hover:-translate-y-1 transform overflow-hidden"
+                  className="group relative w-full flex justify-center py-2.5 sm:py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#347989] disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#347989]/30 hover:shadow-[#347989]/40 hover:-translate-y-0.5 transform overflow-hidden cursor-pointer"
                   style={{ backgroundColor: brandColor }}
                 >
                   <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
                   {isLoading ? (
-                    <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
+                    <LogoLoader fullScreen={false} inline={true} size="w-5 h-5" />
                   ) : (
-                    <span className="flex items-center gap-2 relative z-10">
+                    <span className="flex items-center gap-1.5 relative z-10 text-xs sm:text-sm">
                       Verify & Continue <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
                     </span>
                   )}
