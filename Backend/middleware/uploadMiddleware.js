@@ -27,7 +27,7 @@ const diskStorage = multer.diskStorage({
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'appzeto',
+    folder: 'zippto',
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'gif'],
     transformation: [
       { quality: 'auto:good', fetch_format: 'auto' }
