@@ -503,9 +503,22 @@ export default function BookingDetails() {
   const finalTotal = bill?.grandTotal || (booking?.finalAmount || 0);
   const hasBill = !!bill;
 
+  const handleBack = () => {
+    // When job is completed or cancelled, pressing back should return to Jobs list, not billing
+    if (['completed', 'cancelled'].includes(booking?.status?.toLowerCase())) {
+      navigate('/vendor/jobs');
+      return;
+    }
+    if (window.history.state?.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate('/vendor/jobs');
+    }
+  };
+
   return (
     <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
-      <Header title="Booking Details" />
+      <Header title="Booking Details" onBack={handleBack} />
 
       <main className="px-4 py-6">
         {/* Service Type Card */}

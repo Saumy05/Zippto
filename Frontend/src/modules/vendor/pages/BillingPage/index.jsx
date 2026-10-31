@@ -119,7 +119,7 @@ const BillingPage = () => {
           localStorage.removeItem(`billing_data_${id}`);
           fetchData();
           setTimeout(() => {
-            navigate(`/vendor/booking/${id}`);
+            navigate(`/vendor/booking/${id}`, { replace: true });
           }, 1000);
         }
       }
@@ -163,6 +163,12 @@ const BillingPage = () => {
       const bookingRes = await getBookingById(id);
       const bookingData = bookingRes.data || bookingRes;
       setBooking(bookingData);
+
+      // If booking is already completed, do not allow staying in billing wizard
+      if (bookingData?.status === 'completed') {
+        navigate(`/vendor/booking/${id}`, { replace: true });
+        return;
+      }
 
       // Check if OTP was already sent
       if (bookingData?.customerConfirmationOTP || bookingData?.paymentOtp) {
@@ -541,7 +547,7 @@ const BillingPage = () => {
         localStorage.removeItem(`billing_step_${id}`);
         localStorage.removeItem(`billing_max_step_${id}`);
         localStorage.removeItem(`billing_data_${id}`);
-        navigate(`/vendor/booking/${id}`);
+        navigate(`/vendor/booking/${id}`, { replace: true });
       } else {
         toast.error(res.message || 'Failed to generate bill');
         setSubmitting(false);
@@ -614,7 +620,7 @@ const BillingPage = () => {
         localStorage.removeItem(`billing_max_step_${id}`);
         localStorage.removeItem(`billing_data_${id}`);
         fetchData();
-        navigate(`/vendor/booking/${id}`);
+        navigate(`/vendor/booking/${id}`, { replace: true });
       } else {
         toast.error(res.message || 'Invalid OTP');
       }
@@ -669,7 +675,7 @@ const BillingPage = () => {
         localStorage.removeItem(`billing_max_step_${id}`);
         localStorage.removeItem(`billing_data_${id}`);
         fetchData();
-        navigate(`/vendor/booking/${id}`);
+        navigate(`/vendor/booking/${id}`, { replace: true });
       } else {
         toast.error(res.message || 'Payment not yet confirmed');
       }
@@ -1290,7 +1296,7 @@ const BillingPage = () => {
         {currentStep === 5 && (
           (booking?.status === 'completed' || booking?.paymentStatus === 'success' || booking?.paymentStatus === 'paid') ? (
             <button
-              onClick={() => navigate(`/vendor/booking/${id}`)}
+              onClick={() => navigate(`/vendor/booking/${id}`, { replace: true })}
               className="w-full py-4 bg-emerald-600 text-white font-black text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
             >
               <FiCheckCircle className="w-5 h-5" />

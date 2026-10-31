@@ -54,18 +54,20 @@ const BottomNav = memo(() => {
     }
   };
 
-  // Hide nav when specific routes are active (booking alerts, maps)
-  const hideNavRoutes = [
-    '/vendor/booking-alert/',
-    '/vendor/booking/',
+  // Show nav ONLY on primary tab pages (Home, Jobs, Wallet, Profile, Alerts)
+  const primaryTabPages = [
+    '/vendor',
+    '/vendor/dashboard',
+    '/vendor/jobs',
+    '/vendor/wallet',
+    '/vendor/profile',
+    '/vendor/booking-alerts'
   ];
 
-  const shouldHideNav = hideNavRoutes.some(route =>
-    location.pathname.includes(route) &&
-    (location.pathname.includes('/map') || location.pathname.includes('/alert/'))
-  );
+  const normalizedPath = location.pathname.replace(/\/$/, '') || '/vendor';
+  const isPrimaryTab = primaryTabPages.includes(normalizedPath);
 
-  if (shouldHideNav || isKeyboardOpen) {
+  if (!isPrimaryTab || isKeyboardOpen) {
     return null;
   }
 

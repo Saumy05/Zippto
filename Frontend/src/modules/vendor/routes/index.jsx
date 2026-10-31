@@ -71,15 +71,19 @@ const LoadingFallback = () => (
 const VendorRoutes = () => {
   const location = useLocation();
 
-  // Check if current route should hide bottom nav (auth routes or map)
-  // Check if current route should hide bottom nav (auth routes or map or booking alert)
-  const shouldHideBottomNav = location.pathname === '/vendor/login' ||
-    location.pathname === '/vendor/signup' ||
-    location.pathname.endsWith('/map') ||
-    location.pathname.includes('/booking-alert/') ||
-    location.pathname.endsWith('/billing'); // Generate Bill is a full-screen wizard with its own Back / Next bar
+  // Bottom Navigation should strictly appear on root-level tab pages only
+  const primaryTabPages = [
+    '/vendor',
+    '/vendor/dashboard',
+    '/vendor/jobs',
+    '/vendor/wallet',
+    '/vendor/profile',
+    '/vendor/booking-alerts'
+  ];
 
-  const shouldShowBottomNav = !shouldHideBottomNav;
+  const normalizedPath = location.pathname.replace(/\/$/, '') || '/vendor';
+  const shouldShowBottomNav = primaryTabPages.includes(normalizedPath);
+  const shouldHideBottomNav = !shouldShowBottomNav;
 
   return (
     <ErrorBoundary>
