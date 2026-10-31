@@ -20,6 +20,19 @@ import PendingBookings from './components/PendingBookings';
 
 const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '') || 'http://localhost:5000';
 
+// Last dashboard response, kept across tab switches (the page unmounts when you leave it). Revisiting
+// shows this instantly and refreshes quietly in the background, like other apps. Keyed by vendor so
+// another account never sees the previous one's numbers.
+let dashboardCache = null; // { vendorKey, response }
+const currentVendorKey = () => {
+  try {
+    const v = JSON.parse(localStorage.getItem('vendorData') || '{}');
+    return String(v._id || v.id || '');
+  } catch (e) {
+    return '';
+  }
+};
+
 const Dashboard = memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,7 +95,7 @@ const Dashboard = memo(() => {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [recentJobs, setRecentJobs] = useState([]);
   const [pendingBookings, setPendingBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !(dashboardCache && dashboardCache.vendorKey === currentVendorKey()));
   const [error, setError] = useState('');
   const [globalConfig, setGlobalConfig] = useState({ maxSearchTime: 5, waveDuration: 60 });
 
@@ -254,6 +267,7 @@ const Dashboard = memo(() => {
         vendorDashboardService.getDashboardStats(),
         getPendingAlerts().catch(() => [])
       ]);
+      dashboardCache = { vendorKey: currentVendorKey(), response };
       processApiResponse(response);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
@@ -264,7 +278,14 @@ const Dashboard = memo(() => {
   }, [processApiResponse]);
 
   useEffect(() => {
-    loadDashboardData();
+    if (dashboardCache && dashboardCache.vendorKey === currentVendorKey()) {
+      // Show the last known data straight away, then refresh without a spinner
+      processApiResponse(dashboardCache.response);
+      setLoading(false);
+      loadDashboardData(false);
+    } else {
+      loadDashboardData();
+    }
 
     // Fetch latest vendor profile to sync approval status
     vendorAuthService.getProfile()
@@ -293,7 +314,7 @@ const Dashboard = memo(() => {
         setIsOnline(isApproved ? online : false);
       })
       .catch(() => {/* silently ignore — defaults to offline */});
-  }, [loadDashboardData]);
+  }, [loadDashboardData, processApiResponse]);
 
   // Check for redirected state (to open a specific alert modal)
   useEffect(() => {

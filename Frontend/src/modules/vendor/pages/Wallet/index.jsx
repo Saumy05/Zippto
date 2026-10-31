@@ -7,10 +7,23 @@ import LogoLoader from '../../../../components/common/LogoLoader';
 import vendorWalletService from '../../../../services/vendorWalletService';
 import { toast } from 'react-hot-toast';
 
+// Last wallet data, kept across tab switches so revisiting shows it instantly while refreshing quietly.
+// Keyed by vendor so another account never sees the previous one's balance.
+let walletCache = null; // { vendorKey, wallet, transactions }
+const currentVendorKey = () => {
+  try {
+    const v = JSON.parse(localStorage.getItem('vendorData') || '{}');
+    return String(v._id || v.id || '');
+  } catch (e) {
+    return '';
+  }
+};
+const readWalletCache = () => (walletCache && walletCache.vendorKey === currentVendorKey() ? walletCache : null);
+
 const Wallet = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [wallet, setWallet] = useState({
+  const [loading, setLoading] = useState(() => !readWalletCache());
+  const [wallet, setWallet] = useState(() => readWalletCache()?.wallet || {
     balance: 0,
     dues: 0,
     earnings: 0,
@@ -21,7 +34,7 @@ const Wallet = () => {
     pendingSettlements: 0,
     cashLimit: 10000
   });
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState(() => readWalletCache()?.transactions || []);
   const [filter, setFilter] = useState('all');
 
   useLayoutEffect(() => {
@@ -42,12 +55,13 @@ const Wallet = () => {
   }, []);
 
   useEffect(() => {
-    loadWalletData();
+    // Cached data is already on screen: refresh without the full-screen loader
+    loadWalletData(!readWalletCache());
   }, []);
 
-  const loadWalletData = async () => {
+  const loadWalletData = async (showSpinner = true) => {
     try {
-      setLoading(true);
+      if (showSpinner) setLoading(true);
       const [walletRes, txnRes] = await Promise.all([
         vendorWalletService.getWallet(),
         vendorWalletService.getTransactions({ limit: 50 })
@@ -59,6 +73,10 @@ const Wallet = () => {
 
       if (txnRes.success) {
         setTransactions(txnRes.data || []);
+      }
+
+      if (walletRes.success && txnRes.success) {
+        walletCache = { vendorKey: currentVendorKey(), wallet: walletRes.data, transactions: txnRes.data || [] };
       }
     } catch (error) {
       console.error('Error loading wallet:', error);
